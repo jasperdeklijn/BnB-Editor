@@ -13,7 +13,7 @@ import type { SectionStyles } from "@/lib/types"
 interface ContactSectionProps {
   data: Record<string, unknown>
   isPreview: boolean
-  onUpdate: (newData: Record<string, unknown>) => void
+  onUpdate?: (newData: Record<string, unknown>) => void // Made onUpdate optional
   styles?: SectionStyles
 }
 
@@ -22,6 +22,12 @@ export function ContactSection({ data, isPreview, onUpdate, styles }: ContactSec
   const address = data.address as string
   const phone = data.phone as string
   const email = data.email as string
+
+  const handleUpdate = (newData: Record<string, unknown>) => {
+    if (onUpdate) {
+      onUpdate(newData)
+    }
+  }
 
   const sectionStyle: React.CSSProperties = {
     backgroundColor: styles?.backgroundColor,
@@ -39,10 +45,10 @@ export function ContactSection({ data, isPreview, onUpdate, styles }: ContactSec
       <div className="mx-auto max-w-6xl">
         <EditableText
           value={title}
-          onChange={(value) => onUpdate({ title: value })}
+          onChange={(value) => handleUpdate({ title: value })} // Use safe handler
           isPreview={isPreview}
           as="h2"
-          className="mb-12 text-balance text-center text-3xl font-bold text-foreground md:text-4xl"
+          className="mb-12 text-balance text-center text-4xl font-bold text-amber-950"
           style={textStyle}
         />
         <div className="grid gap-12 md:grid-cols-2">
@@ -55,10 +61,10 @@ export function ContactSection({ data, isPreview, onUpdate, styles }: ContactSec
                 </h3>
                 <EditableText
                   value={address}
-                  onChange={(value) => onUpdate({ address: value })}
+                  onChange={(value) => handleUpdate({ address: value })} // Use safe handler
                   isPreview={isPreview}
-                  as="p"
-                  className="text-muted-foreground"
+                  as="span"
+                  className="text-amber-800"
                   style={textStyle}
                 />
               </div>
@@ -71,10 +77,10 @@ export function ContactSection({ data, isPreview, onUpdate, styles }: ContactSec
                 </h3>
                 <EditableText
                   value={phone}
-                  onChange={(value) => onUpdate({ phone: value })}
+                  onChange={(value) => handleUpdate({ phone: value })} // Use safe handler
                   isPreview={isPreview}
-                  as="p"
-                  className="text-muted-foreground"
+                  as="span"
+                  className="text-amber-800"
                   style={textStyle}
                 />
               </div>
@@ -87,10 +93,10 @@ export function ContactSection({ data, isPreview, onUpdate, styles }: ContactSec
                 </h3>
                 <EditableText
                   value={email}
-                  onChange={(value) => onUpdate({ email: value })}
+                  onChange={(value) => handleUpdate({ email: value })} // Use safe handler
                   isPreview={isPreview}
-                  as="p"
-                  className="text-muted-foreground"
+                  as="span"
+                  className="text-amber-800"
                   style={textStyle}
                 />
               </div>

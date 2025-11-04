@@ -8,13 +8,19 @@ import type { SectionStyles } from "@/lib/types"
 interface AboutSectionProps {
   data: Record<string, unknown>
   isPreview: boolean
-  onUpdate: (newData: Record<string, unknown>) => void
+  onUpdate?: (newData: Record<string, unknown>) => void // Made onUpdate optional
   styles?: SectionStyles
 }
 
 export function AboutSection({ data, isPreview, onUpdate, styles }: AboutSectionProps) {
   const title = data.title as string
   const description = data.description as string
+
+  const handleUpdate = (newData: Record<string, unknown>) => {
+    if (onUpdate) {
+      onUpdate(newData)
+    }
+  }
 
   const sectionStyle: React.CSSProperties = {
     backgroundColor: styles?.backgroundColor,
@@ -32,18 +38,19 @@ export function AboutSection({ data, isPreview, onUpdate, styles }: AboutSection
       <div className="mx-auto max-w-4xl">
         <EditableText
           value={title}
-          onChange={(value) => onUpdate({ title: value })}
+          onChange={(value) => handleUpdate({ title: value })} // Use safe handler
           isPreview={isPreview}
           as="h2"
-          className="mb-6 text-balance text-3xl font-bold text-foreground md:text-4xl"
+          className="mb-6 text-balance text-4xl font-bold text-amber-950"
           style={textStyle}
         />
         <EditableText
           value={description}
-          onChange={(value) => onUpdate({ description: value })}
+          onChange={(value) => handleUpdate({ description: value })} // Use safe handler
           isPreview={isPreview}
           as="p"
-          className="text-pretty text-lg leading-relaxed text-muted-foreground"
+          multiline
+          className="text-pretty text-lg leading-relaxed text-amber-800"
           style={textStyle}
         />
       </div>

@@ -10,18 +10,18 @@ import type { SectionStyles } from "@/lib/types"
 interface RoomsSectionProps {
   data: Record<string, unknown>
   isPreview: boolean
-  onUpdate: (newData: Record<string, unknown>) => void
+  onUpdate?: (newData: Record<string, unknown>) => void // Made onUpdate optional
   styles?: SectionStyles
 }
 
 export function RoomsSection({ data, isPreview, onUpdate, styles }: RoomsSectionProps) {
   const title = data.title as string
-  const rooms = data.rooms as Array<{ name: string; description: string; price: string }>
+  const rooms = (data.rooms as Array<{ name: string; description: string; price: string }>) || []
 
-  const updateRoom = (index: number, field: string, value: string) => {
-    const newRooms = [...rooms]
-    newRooms[index] = { ...newRooms[index], [field]: value }
-    onUpdate({ rooms: newRooms })
+  const handleUpdate = (newData: Record<string, unknown>) => {
+    if (onUpdate) {
+      onUpdate(newData)
+    }
   }
 
   const sectionStyle: React.CSSProperties = {
@@ -40,10 +40,10 @@ export function RoomsSection({ data, isPreview, onUpdate, styles }: RoomsSection
       <div className="mx-auto max-w-6xl">
         <EditableText
           value={title}
-          onChange={(value) => onUpdate({ title: value })}
+          onChange={(value) => handleUpdate({ title: value })} // Use safe handler
           isPreview={isPreview}
           as="h2"
-          className="mb-12 text-balance text-center text-3xl font-bold text-foreground md:text-4xl"
+          className="mb-12 text-balance text-center text-4xl font-bold text-amber-950"
           style={textStyle}
         />
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -54,31 +54,46 @@ export function RoomsSection({ data, isPreview, onUpdate, styles }: RoomsSection
                 <CardTitle>
                   <EditableText
                     value={room.name}
-                    onChange={(value) => updateRoom(index, "name", value)}
+                    onChange={(value) => {
+                      const newRooms = [...rooms]
+                      newRooms[index] = { ...room, name: value }
+                      handleUpdate({ rooms: newRooms }) // Use safe handler
+                    }}
                     isPreview={isPreview}
                     as="span"
+                    className="text-amber-950"
                     style={textStyle}
                   />
                 </CardTitle>
                 <CardDescription>
                   <EditableText
                     value={room.description}
-                    onChange={(value) => updateRoom(index, "description", value)}
+                    onChange={(value) => {
+                      const newRooms = [...rooms]
+                      newRooms[index] = { ...room, description: value }
+                      handleUpdate({ rooms: newRooms }) // Use safe handler
+                    }}
                     isPreview={isPreview}
                     as="span"
+                    className="text-amber-700"
+                    style={textStyle}
                   />
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <span className="text-2xl font-bold text-amber-700">
-                    <EditableText
-                      value={room.price}
-                      onChange={(value) => updateRoom(index, "price", value)}
-                      isPreview={isPreview}
-                      as="span"
-                    />
-                  </span>
+                  <EditableText
+                    value={room.price}
+                    onChange={(value) => {
+                      const newRooms = [...rooms]
+                      newRooms[index] = { ...room, price: value }
+                      handleUpdate({ rooms: newRooms }) // Use safe handler
+                    }}
+                    isPreview={isPreview}
+                    as="p"
+                    className="text-2xl font-bold text-amber-900"
+                    style={textStyle}
+                  />
                   <Button size="sm" variant="outline">
                     View Details
                   </Button>

@@ -9,7 +9,7 @@ import type { SectionStyles } from "@/lib/types"
 interface HeroSectionProps {
   data: Record<string, unknown>
   isPreview: boolean
-  onUpdate: (newData: Record<string, unknown>) => void
+  onUpdate?: (newData: Record<string, unknown>) => void // Made onUpdate optional
   styles?: SectionStyles
 }
 
@@ -17,6 +17,12 @@ export function HeroSection({ data, isPreview, onUpdate, styles }: HeroSectionPr
   const title = data.title as string
   const subtitle = data.subtitle as string
   const ctaText = data.ctaText as string
+
+  const handleUpdate = (newData: Record<string, unknown>) => {
+    if (onUpdate) {
+      onUpdate(newData)
+    }
+  }
 
   const sectionStyle: React.CSSProperties = {
     backgroundColor: styles?.backgroundColor,
@@ -40,7 +46,7 @@ export function HeroSection({ data, isPreview, onUpdate, styles }: HeroSectionPr
       <div className="relative z-10 max-w-3xl text-center">
         <EditableText
           value={title}
-          onChange={(value) => onUpdate({ title: value })}
+          onChange={(value) => handleUpdate({ title: value })} // Use safe handler
           isPreview={isPreview}
           as="h1"
           className="mb-6 text-balance text-5xl font-bold tracking-tight text-amber-950 md:text-6xl"
@@ -48,7 +54,7 @@ export function HeroSection({ data, isPreview, onUpdate, styles }: HeroSectionPr
         />
         <EditableText
           value={subtitle}
-          onChange={(value) => onUpdate({ subtitle: value })}
+          onChange={(value) => handleUpdate({ subtitle: value })} // Use safe handler
           isPreview={isPreview}
           as="p"
           className="mb-8 text-pretty text-xl text-amber-900"
@@ -57,7 +63,7 @@ export function HeroSection({ data, isPreview, onUpdate, styles }: HeroSectionPr
         <Button size="lg" className="bg-amber-700 text-amber-50 hover:bg-amber-800">
           <EditableText
             value={ctaText}
-            onChange={(value) => onUpdate({ ctaText: value })}
+            onChange={(value) => handleUpdate({ ctaText: value })} // Use safe handler
             isPreview={isPreview}
             as="span"
             className="bg-transparent text-amber-50 hover:bg-transparent"

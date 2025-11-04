@@ -9,18 +9,18 @@ import type { SectionStyles } from "@/lib/types"
 interface AmenitiesSectionProps {
   data: Record<string, unknown>
   isPreview: boolean
-  onUpdate: (newData: Record<string, unknown>) => void
+  onUpdate?: (newData: Record<string, unknown>) => void // Made onUpdate optional
   styles?: SectionStyles
 }
 
 export function AmenitiesSection({ data, isPreview, onUpdate, styles }: AmenitiesSectionProps) {
   const title = data.title as string
-  const items = data.items as string[]
+  const amenities = (data.amenities as string[]) || []
 
-  const updateItem = (index: number, value: string) => {
-    const newItems = [...items]
-    newItems[index] = value
-    onUpdate({ items: newItems })
+  const handleUpdate = (newData: Record<string, unknown>) => {
+    if (onUpdate) {
+      onUpdate(newData)
+    }
   }
 
   const sectionStyle: React.CSSProperties = {
@@ -39,24 +39,28 @@ export function AmenitiesSection({ data, isPreview, onUpdate, styles }: Amenitie
       <div className="mx-auto max-w-4xl">
         <EditableText
           value={title}
-          onChange={(value) => onUpdate({ title: value })}
+          onChange={(value) => handleUpdate({ title: value })} // Use safe handler
           isPreview={isPreview}
           as="h2"
-          className="mb-12 text-balance text-center text-3xl font-bold text-foreground md:text-4xl"
+          className="mb-12 text-balance text-center text-4xl font-bold text-amber-950"
           style={textStyle}
         />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {items.map((item, index) => (
+          {amenities.map((amenity, index) => (
             <div key={index} className="flex items-center gap-3">
               <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-amber-700">
                 <Check className="h-5 w-5 text-amber-50" />
               </div>
               <EditableText
-                value={item}
-                onChange={(value) => updateItem(index, value)}
+                value={amenity}
+                onChange={(value) => {
+                  const newAmenities = [...amenities]
+                  newAmenities[index] = value
+                  handleUpdate({ amenities: newAmenities }) // Use safe handler
+                }}
                 isPreview={isPreview}
                 as="span"
-                className="text-lg text-foreground"
+                className="text-amber-800"
                 style={textStyle}
               />
             </div>

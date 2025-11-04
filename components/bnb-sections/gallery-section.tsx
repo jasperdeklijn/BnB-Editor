@@ -8,7 +8,7 @@ import type { SectionStyles } from "@/lib/types"
 interface GallerySectionProps {
   data: Record<string, unknown>
   isPreview: boolean
-  onUpdate: (newData: Record<string, unknown>) => void
+  onUpdate?: (newData: Record<string, unknown>) => void // Made onUpdate optional
   styles?: SectionStyles
 }
 
@@ -27,15 +27,21 @@ export function GallerySection({ data, isPreview, onUpdate, styles }: GallerySec
     color: styles?.textColor,
   }
 
+  const handleUpdate = (newData: Record<string, unknown>) => {
+    if (onUpdate) {
+      onUpdate(newData)
+    }
+  }
+
   return (
     <section className={`bg-background px-6 py-16 ${styles?.fontFamily || ""}`} style={sectionStyle}>
       <div className="mx-auto max-w-6xl">
         <EditableText
           value={title}
-          onChange={(value) => onUpdate({ title: value })}
+          onChange={(value) => handleUpdate({ title: value })} // Use safe handler
           isPreview={isPreview}
           as="h2"
-          className="mb-12 text-balance text-center text-3xl font-bold text-foreground md:text-4xl"
+          className="mb-12 text-balance text-center text-4xl font-bold text-amber-950"
           style={textStyle}
         />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

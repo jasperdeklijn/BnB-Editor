@@ -9,14 +9,14 @@ import { ContactSection } from "@/components/bnb-sections/contact-section"
 interface SectionRendererProps {
   section: Section
   isPreview: boolean
-  onUpdate: (newData: Record<string, unknown>) => void
+  onUpdate?: (newData: Record<string, unknown>) => void // Made onUpdate optional
 }
 
 export function SectionRenderer({ section, isPreview, onUpdate }: SectionRendererProps) {
   const commonProps = {
     data: section.data,
     isPreview,
-    onUpdate,
+    onUpdate: onUpdate || (() => {}), // Provide default empty function
     styles: section.styles,
   }
 
