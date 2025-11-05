@@ -1,3 +1,5 @@
+"use client"
+
 import type { Section } from "@/lib/types"
 import { HeroSection } from "@/components/bnb-sections/hero-section"
 import { AboutSection } from "@/components/bnb-sections/about-section"
@@ -16,7 +18,7 @@ export function SectionRenderer({ section, isPreview, onUpdate }: SectionRendere
   const commonProps = {
     data: section.data,
     isPreview,
-    onUpdate: onUpdate || (() => {}), // Provide default empty function
+    ...(onUpdate && { onUpdate }), // Only include onUpdate if it exists
     styles: section.styles,
   }
 
