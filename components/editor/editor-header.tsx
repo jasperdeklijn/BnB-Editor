@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Eye, EyeOff, Save, Upload } from "lucide-react"
+import { Eye, EyeOff, Save, Upload, Monitor, Tablet, Smartphone } from "lucide-react"
 
 interface EditorHeaderProps {
   title: string
@@ -12,6 +12,8 @@ interface EditorHeaderProps {
   onSave: () => void
   onPublish: () => void
   isSaving: boolean
+  device: "desktop" | "tablet" | "mobile"
+  onDeviceChange: (device: "desktop" | "tablet" | "mobile") => void
 }
 
 export function EditorHeader({
@@ -22,6 +24,8 @@ export function EditorHeader({
   onSave,
   onPublish,
   isSaving,
+  device,
+  onDeviceChange,
 }: EditorHeaderProps) {
   return (
     <header className="flex items-center justify-between border-b bg-background px-6 py-3">
@@ -35,6 +39,32 @@ export function EditorHeader({
         />
       </div>
       <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 rounded-md border p-1">
+          <Button
+            variant={device === "desktop" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => onDeviceChange("desktop")}
+            className="h-8 px-2"
+          >
+            <Monitor className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={device === "tablet" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => onDeviceChange("tablet")}
+            className="h-8 px-2"
+          >
+            <Tablet className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={device === "mobile" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => onDeviceChange("mobile")}
+            className="h-8 px-2"
+          >
+            <Smartphone className="h-4 w-4" />
+          </Button>
+        </div>
         <Button variant="outline" size="sm" onClick={onPreviewToggle}>
           {isPreview ? (
             <>

@@ -21,6 +21,7 @@ export function EditorClient({ userId }: EditorClientProps) {
   const [isPreview, setIsPreview] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null)
+  const [device, setDevice] = useState<"desktop" | "tablet" | "mobile">("desktop")
   const router = useRouter()
 
   // Load or create website on mount
@@ -131,6 +132,8 @@ export function EditorClient({ userId }: EditorClientProps) {
         onSave={handleSave}
         onPublish={handlePublish}
         isSaving={isSaving}
+        device={device}
+        onDeviceChange={setDevice}
       />
       <div className="flex flex-1 overflow-hidden">
         {!isPreview && <EditorSidebar />}
@@ -140,6 +143,7 @@ export function EditorClient({ userId }: EditorClientProps) {
           isPreview={isPreview}
           selectedSectionId={selectedSectionId}
           onSectionSelect={setSelectedSectionId}
+          device={device}
         />
         {!isPreview && <StyleSidebar selectedSection={selectedSection} onStyleUpdate={handleStyleUpdate} />}
       </div>

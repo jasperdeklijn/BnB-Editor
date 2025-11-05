@@ -1,11 +1,10 @@
 "use client"
 
 import type React from "react"
-
+import { Trash2, GripVertical, ChevronUp, ChevronDown } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import type { Section } from "@/lib/types"
 import { SectionRenderer } from "./section-renderer"
-import { Trash2, GripVertical } from "lucide-react"
-import { Button } from "@/components/ui/button"
 
 interface EditorCanvasProps {
   sections: Section[]
@@ -13,6 +12,7 @@ interface EditorCanvasProps {
   isPreview: boolean
   selectedSectionId: string | null
   onSectionSelect: (id: string | null) => void
+  device: "desktop" | "tablet" | "mobile"
 }
 
 export function EditorCanvas({
@@ -21,6 +21,7 @@ export function EditorCanvas({
   isPreview,
   selectedSectionId,
   onSectionSelect,
+  device,
 }: EditorCanvasProps) {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
@@ -69,6 +70,41 @@ export function EditorCanvas({
     )
   }
 
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    e.dataTransfer.effectAllowed = "move"
+    e.dataTransfer.setData("draggedIndex", index.toString())
+  }
+
+  const handleDragOverSection = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+    e.dataTransfer.dropEffect = "move"
+  }
+
+  const handleDropOnSection = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const draggedIndex = Number.parseInt(e.dataTransfer.getData("draggedIndex"))
+    if (isNaN(draggedIndex) || draggedIndex === dropIndex) return
+
+    const newSections = [...sections]
+    const [draggedSection] = newSections.splice(draggedIndex, 1)
+    newSections.splice(dropIndex, 0, draggedSection)
+    setSections(newSections)
+  }
+
+  const getDeviceWidth = () => {
+    switch (device) {
+      case "mobile":
+        return "max-w-[375px]"
+      case "tablet":
+        return "max-w-[768px]"
+      default:
+        return "max-w-7xl"
+    }
+  }
+
   return (
     <main className="flex-1 overflow-auto bg-muted/30" onDrop={handleDrop} onDragOver={handleDragOver}>
       <div className={isPreview ? "" : "p-8"}>
@@ -77,24 +113,50 @@ export function EditorCanvas({
             <p className="text-muted-foreground">Drag and drop sections here to start building</p>
           </div>
         ) : (
-          <div className="mx-auto max-w-7xl">
+          <div className={`mx-auto ${getDeviceWidth()}`}>
             {sections.map((section, index) => (
-              <div key={section.id} className={`group relative ${!isPreview ? "mb-4" : ""}`}>
+              <div
+                key={section.id}
+                className={`group relative ${!isPreview ? "mb-4" : ""}`}
+                draggable={!isPreview}
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragOver={(e) => handleDragOverSection(e, index)}
+                onDrop={(e) => handleDropOnSection(e, index)}
+              >
                 {!isPreview && (
-                  <div className="absolute -left-12 top-4 z-10 flex flex-col gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <div className="absolute -left-14 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-1 rounded-md border bg-background p-1 shadow-sm opacity-100 transition-opacity">
                     <Button
                       size="icon"
-                      variant="outline"
-                      className="h-8 w-8 bg-transparent"
+                      variant="ghost"
+                      className="h-7 w-7 cursor-move"
+                      onMouseDown={(e) => e.stopPropagation()}
+                    >
+                      <GripVertical className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                    <div className="h-px bg-border" />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
                       onClick={() => handleMoveUp(index)}
                       disabled={index === 0}
                     >
-                      <GripVertical className="h-4 w-4" />
+                      <ChevronUp className="h-4 w-4" />
                     </Button>
                     <Button
                       size="icon"
-                      variant="outline"
-                      className="h-8 w-8 bg-transparent"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      onClick={() => handleMoveDown(index)}
+                      disabled={index === sections.length - 1}
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                    <div className="h-px bg-border" />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-destructive hover:text-destructive"
                       onClick={() => handleDelete(section.id)}
                     >
                       <Trash2 className="h-4 w-4" />
