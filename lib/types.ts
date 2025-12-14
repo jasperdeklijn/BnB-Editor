@@ -13,7 +13,7 @@ export interface Section {
   data: Record<string, unknown>
   styles?: SectionStyles
   transitionFromPrev?: {
-    type: "none" | "fade" | "gradient" | "slide"
+    type: "none" | "fade" | "gradient" | "slide" | "wave" | "curve" | "diagonal" | "zigzag" | "split"
   }
 }
 

@@ -222,7 +222,7 @@ export function EditorCanvas({
                         </button>
 
                         {openTransitionIndex === index && (
-                          <div className="ml-2 flex gap-1 rounded-md border bg-background p-1 shadow-sm">
+                          <div className="ml-2 flex gap-1 rounded-md border bg-background p-1 shadow-sm max-w-xl flex-wrap">
                             <button
                               type="button"
                               onClick={() => {
@@ -273,6 +273,91 @@ export function EditorCanvas({
                               className="px-2 py-1 text-xs rounded hover:bg-muted/10"
                             >
                               Slide
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (sections[index]) {
+                                  const newSections = [...sections]
+                                  newSections[index] = {
+                                    ...newSections[index],
+                                    transitionFromPrev: { type: "wave" },
+                                  }
+                                  setSections(newSections)
+                                }
+                                setOpenTransitionIndex(null)
+                              }}
+                              className="px-2 py-1 text-xs rounded hover:bg-muted/10"
+                            >
+                              Wave
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (sections[index]) {
+                                  const newSections = [...sections]
+                                  newSections[index] = {
+                                    ...newSections[index],
+                                    transitionFromPrev: { type: "curve" },
+                                  }
+                                  setSections(newSections)
+                                }
+                                setOpenTransitionIndex(null)
+                              }}
+                              className="px-2 py-1 text-xs rounded hover:bg-muted/10"
+                            >
+                              Curve
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (sections[index]) {
+                                  const newSections = [...sections]
+                                  newSections[index] = {
+                                    ...newSections[index],
+                                    transitionFromPrev: { type: "diagonal" },
+                                  }
+                                  setSections(newSections)
+                                }
+                                setOpenTransitionIndex(null)
+                              }}
+                              className="px-2 py-1 text-xs rounded hover:bg-muted/10"
+                            >
+                              Diagonal
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (sections[index]) {
+                                  const newSections = [...sections]
+                                  newSections[index] = {
+                                    ...newSections[index],
+                                    transitionFromPrev: { type: "zigzag" },
+                                  }
+                                  setSections(newSections)
+                                }
+                                setOpenTransitionIndex(null)
+                              }}
+                              className="px-2 py-1 text-xs rounded hover:bg-muted/10"
+                            >
+                              Zigzag
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (sections[index]) {
+                                  const newSections = [...sections]
+                                  newSections[index] = {
+                                    ...newSections[index],
+                                    transitionFromPrev: { type: "split" },
+                                  }
+                                  setSections(newSections)
+                                }
+                                setOpenTransitionIndex(null)
+                              }}
+                              className="px-2 py-1 text-xs rounded hover:bg-muted/10"
+                            >
+                              Split
                             </button>
                             <button
                               type="button"
