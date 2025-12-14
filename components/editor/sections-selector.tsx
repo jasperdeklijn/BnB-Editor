@@ -44,6 +44,8 @@ export function SectionsSelector({ className = "" }: SectionsSelectorProps) {
         Sections
       </h3>
 
+      {/* Color pickers moved to the section editor for per-section styling */}
+
       <div className={`space-y-2 ${collapsed ? "flex flex-col items-center" : ""}`}>
         {sectionTypes.map(({ type, label, icon }) => (
           <div

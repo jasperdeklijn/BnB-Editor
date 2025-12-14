@@ -161,9 +161,34 @@ export function SelectionEditor({ selectedSection, onUpdate, onStyleUpdate, onDe
 
         <Card className="p-4">
           <Label>Styles</Label>
-          <div className="mt-2 flex gap-2">
-            <Input placeholder="fontFamily" onChange={(e) => onStyleUpdate({ ...(selectedSection.styles || {}), fontFamily: e.target.value })} />
-            <Input placeholder="backgroundColor" onChange={(e) => onStyleUpdate({ ...(selectedSection.styles || {}), backgroundColor: e.target.value })} />
+          <div className="mt-2 flex gap-2 items-center">
+            <Input
+              placeholder="fontFamily"
+              value={(selectedSection.styles as any)?.fontFamily || ""}
+              onChange={(e) => onStyleUpdate({ ...(selectedSection.styles || {}), fontFamily: e.target.value })}
+            />
+
+            <label className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">BG</span>
+              <input
+                type="color"
+                aria-label="Background color"
+                value={(selectedSection.styles as any)?.backgroundColor || "#ffffff"}
+                onChange={(e) => onStyleUpdate({ ...(selectedSection.styles || {}), backgroundColor: e.target.value })}
+                className="h-8 w-8 rounded border p-0"
+              />
+            </label>
+
+            <label className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Text</span>
+              <input
+                type="color"
+                aria-label="Text color"
+                value={(selectedSection.styles as any)?.color || "#000000"}
+                onChange={(e) => onStyleUpdate({ ...(selectedSection.styles || {}), color: e.target.value })}
+                className="h-8 w-8 rounded border p-0"
+              />
+            </label>
           </div>
         </Card>
       </div>
