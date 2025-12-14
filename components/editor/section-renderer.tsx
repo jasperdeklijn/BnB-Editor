@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import type { Section } from "@/lib/types"
 import { HeroSection } from "@/components/bnb-sections/hero-section"
 import { AboutSection } from "@/components/bnb-sections/about-section"
@@ -17,9 +17,9 @@ interface SectionRendererProps {
 
 function TransitionWrapper({ type, children }: { type?: string; children: React.ReactNode }) {
   const [visible, setVisible] = useState(false)
+  const wrapperRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    // Trigger the transition on mount or when type changes
     setVisible(false)
     const raf = requestAnimationFrame(() => setVisible(true))
     return () => cancelAnimationFrame(raf)
@@ -27,11 +27,37 @@ function TransitionWrapper({ type, children }: { type?: string; children: React.
 
   if (type === "fade") {
     return (
-      <div className={`transition-opacity duration-700 ${visible ? "opacity-100" : "opacity-0"}`}>{children}</div>
+      <div
+        ref={wrapperRef}
+        className={`transition-opacity duration-1000 ${visible ? "opacity-100" : "opacity-0"}`}
+      >
+        {children}
+      </div>
     )
   }
 
-  // Default: no wrapper animation
+  if (type === "gradient") {
+    return (
+      <div className="relative">
+        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-background via-background/50 to-transparent pointer-events-none z-10" />
+        {children}
+      </div>
+    )
+  }
+
+  if (type === "slide") {
+    return (
+      <div
+        ref={wrapperRef}
+        className={`transition-all duration-700 ${
+          visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+        }`}
+      >
+        {children}
+      </div>
+    )
+  }
+
   return <>{children}</>
 }
 
