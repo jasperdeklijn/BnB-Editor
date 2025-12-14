@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { EditorSidebar } from "./editor-sidebar"
+import { SectionsSelector } from "./sections-selector"
 import { EditorCanvas } from "./editor-canvas"
 import { EditorHeader } from "./editor-header"
-import { StyleSidebar } from "./style-sidebar"
+import { SelectionEditor } from "./section-editor"
 import type { Section, SectionStyles } from "@/lib/types"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
@@ -88,6 +88,29 @@ export function EditorClient({ userId }: EditorClientProps) {
     }
   }
 
+  // Persist sections immediately when updated from children
+  const persistSections = async (newSections: Section[]) => {
+    setSections(newSections)
+
+    if (!websiteId) return
+
+    setIsSaving(true)
+    const supabase = createClient()
+
+    const { error } = await supabase
+      .from("websites")
+      .update({
+        sections: newSections,
+      })
+      .eq("id", websiteId)
+
+    setIsSaving(false)
+
+    if (error) {
+      console.error("Error persisting sections:", error)
+    }
+  }
+
   const handlePublish = async () => {
     if (!websiteId) return
 
@@ -120,6 +143,15 @@ export function EditorClient({ userId }: EditorClientProps) {
     )
   }
 
+  const handleContentUpdate = (id: string, data: Record<string, unknown>) => {
+    setSections((prev) => prev.map((s) => (s.id === id ? { ...s, data: { ...s.data, ...data } } : s)))
+  }
+
+  const handleDelete = (id: string) => {
+    setSections((prev) => prev.filter((s) => s.id !== id))
+    if (selectedSectionId === id) setSelectedSectionId(null)
+  }
+
   const selectedSection = sections.find((s) => s.id === selectedSectionId) || null
 
   return (
@@ -136,16 +168,23 @@ export function EditorClient({ userId }: EditorClientProps) {
         onDeviceChange={setDevice}
       />
       <div className="flex flex-1 overflow-hidden">
-        {!isPreview && <EditorSidebar />}
+        {!isPreview && <SectionsSelector />}
         <EditorCanvas
           sections={sections}
-          setSections={setSections}
+          setSections={persistSections}
           isPreview={isPreview}
           selectedSectionId={selectedSectionId}
           onSectionSelect={setSelectedSectionId}
           device={device}
         />
-        {!isPreview && <StyleSidebar selectedSection={selectedSection} onStyleUpdate={handleStyleUpdate} />}
+        {!isPreview && (
+          <SelectionEditor
+            selectedSection={selectedSection}
+            onUpdate={handleContentUpdate}
+            onStyleUpdate={handleStyleUpdate}
+            onDelete={handleDelete}
+          />
+        )}
       </div>
     </div>
   )

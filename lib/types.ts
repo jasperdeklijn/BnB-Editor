@@ -12,6 +12,9 @@ export interface Section {
   type: SectionType
   data: Record<string, unknown>
   styles?: SectionStyles
+  transitionFromPrev?: {
+    type: "none" | "fade" | "gradient" | "slide"
+  }
 }
 
 export interface Website {

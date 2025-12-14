@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import React, { useRef, useState } from "react"
 import { Trash2, GripVertical, ChevronUp, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Section } from "@/lib/types"
@@ -23,6 +23,59 @@ export function EditorCanvas({
   onSectionSelect,
   device,
 }: EditorCanvasProps) {
+  const sectionRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+  const [hoverDropIndex, setHoverDropIndex] = useState<number | null>(null)
+  const [openTransitionIndex, setOpenTransitionIndex] = useState<number | null>(null)
+
+  const moveSection = (from: number, to: number) => {
+    if (from === to) return
+
+    const refs = sectionRefs.current
+
+    // Record current positions (FLIP technique)
+    const oldRects = new Map<string, DOMRect>()
+    sections.forEach((s) => {
+      const el = refs.get(s.id)
+      if (el) oldRects.set(s.id, el.getBoundingClientRect())
+    })
+
+    // Build the new order and update state
+    const newSections = [...sections]
+    const [moved] = newSections.splice(from, 1)
+    newSections.splice(to, 0, moved)
+    setSections(newSections)
+
+    // After DOM updates, play the flip animation
+    requestAnimationFrame(() => {
+      newSections.forEach((s) => {
+        const el = refs.get(s.id)
+        const oldRect = oldRects.get(s.id)
+        if (!el || !oldRect) return
+
+        const newRect = el.getBoundingClientRect()
+        const deltaY = oldRect.top - newRect.top
+        if (deltaY === 0) return
+
+        // Apply inverse transform, then animate to zero
+        el.style.transition = 'none'
+        el.style.transform = `translateY(${deltaY}px)`
+
+        // Force layout so the browser picks up the starting transform
+        void el.getBoundingClientRect()
+
+        el.style.transition = 'transform 200ms ease'
+        el.style.transform = ''
+
+        const cleanup = () => {
+          el.style.transition = ''
+          el.style.transform = ''
+          el.removeEventListener('transitionend', cleanup)
+        }
+
+        el.addEventListener('transitionend', cleanup)
+      })
+    })
+  }
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     const sectionType = e.dataTransfer.getData("sectionType")
@@ -48,20 +101,6 @@ export function EditorCanvas({
     if (selectedSectionId === id) {
       onSectionSelect(null)
     }
-  }
-
-  const handleMoveUp = (index: number) => {
-    if (index === 0) return
-    const newSections = [...sections]
-    ;[newSections[index - 1], newSections[index]] = [newSections[index], newSections[index - 1]]
-    setSections(newSections)
-  }
-
-  const handleMoveDown = (index: number) => {
-    if (index === sections.length - 1) return
-    const newSections = [...sections]
-    ;[newSections[index], newSections[index + 1]] = [newSections[index + 1], newSections[index]]
-    setSections(newSections)
   }
 
   const updateSection = (id: string, newData: Record<string, unknown>) => {
@@ -94,6 +133,53 @@ export function EditorCanvas({
     setSections(newSections)
   }
 
+  const handleDragOverGap = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+    // If dragging a new section from palette, show copy; otherwise move
+    const isNew = !!e.dataTransfer.getData("sectionType")
+    e.dataTransfer.dropEffect = isNew ? "copy" : "move"
+    setHoverDropIndex(index)
+  }
+
+  const handleDropOnGap = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const sectionType = e.dataTransfer.getData("sectionType")
+    const draggedIndexData = e.dataTransfer.getData("draggedIndex")
+
+    if (sectionType) {
+      const newSection: Section = {
+        id: `section-${Date.now()}`,
+        type: sectionType as Section["type"],
+        data: getDefaultData(sectionType as Section["type"]),
+      }
+
+      const newSections = [...sections]
+      newSections.splice(index, 0, newSection)
+      setSections(newSections)
+      setHoverDropIndex(null)
+      return
+    }
+
+    const draggedIndex = Number.parseInt(draggedIndexData)
+    if (!isNaN(draggedIndex)) {
+      if (draggedIndex === index || draggedIndex === index - 1) {
+        setHoverDropIndex(null)
+        return
+      }
+
+      const newSections = [...sections]
+      const [removed] = newSections.splice(draggedIndex, 1)
+      // Adjust target index if removal happened before the target
+      const targetIndex = draggedIndex < index ? index - 1 : index
+      newSections.splice(targetIndex, 0, removed)
+      setSections(newSections)
+      setHoverDropIndex(null)
+    }
+  }
+
   const getDeviceWidth = () => {
     switch (device) {
       case "mobile":
@@ -115,68 +201,200 @@ export function EditorCanvas({
         ) : (
           <div className={`mx-auto ${getDeviceWidth()}`}>
             {sections.map((section, index) => (
-              <div
-                key={section.id}
-                className={`group relative ${!isPreview ? "mb-4" : ""}`}
-                draggable={!isPreview}
-                onDragStart={(e) => handleDragStart(e, index)}
-                onDragOver={(e) => handleDragOverSection(e, index)}
-                onDrop={(e) => handleDropOnSection(e, index)}
-              >
+              <React.Fragment key={section.id}>
                 {!isPreview && (
-                  <div className="absolute -left-14 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-1 rounded-md border bg-background p-1 shadow-sm opacity-100 transition-opacity">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7 cursor-move"
-                      onMouseDown={(e) => e.stopPropagation()}
-                    >
-                      <GripVertical className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                    <div className="h-px bg-border" />
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7"
-                      onClick={() => handleMoveUp(index)}
-                      disabled={index === 0}
-                    >
-                      <ChevronUp className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7"
-                      onClick={() => handleMoveDown(index)}
-                      disabled={index === sections.length - 1}
-                    >
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                    <div className="h-px bg-border" />
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7 text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(section.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                  <div
+                    onDragOver={(e) => handleDragOverGap(e, index)}
+                    onDragLeave={() => setHoverDropIndex(null)}
+                    onDrop={(e) => handleDropOnGap(e, index)}
+                    className={`h-10 my-2 rounded transition-all flex items-center justify-center ${
+                      hoverDropIndex === index ? "bg-amber-300/40 border-2 border-amber-400" : ""
+                    }`}
+                  >
+                    {hoverDropIndex === index ? null : (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setOpenTransitionIndex(openTransitionIndex === index ? null : index)}
+                          className="rounded-md border px-3 py-1 text-sm bg-background shadow-sm"
+                        >
+                          Add transition
+                        </button>
+
+                        {openTransitionIndex === index && (
+                          <div className="ml-2 flex gap-1 rounded-md border bg-background p-1 shadow-sm">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (sections[index]) {
+                                  const newSections = [...sections]
+                                  newSections[index] = {
+                                    ...newSections[index],
+                                    transitionFromPrev: { type: "fade" },
+                                  }
+                                  setSections(newSections)
+                                }
+                                setOpenTransitionIndex(null)
+                              }}
+                              className="px-2 py-1 text-xs rounded hover:bg-muted/10"
+                            >
+                              Fade
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (sections[index]) {
+                                  const newSections = [...sections]
+                                  newSections[index] = {
+                                    ...newSections[index],
+                                    transitionFromPrev: { type: "gradient" },
+                                  }
+                                  setSections(newSections)
+                                }
+                                setOpenTransitionIndex(null)
+                              }}
+                              className="px-2 py-1 text-xs rounded hover:bg-muted/10"
+                            >
+                              Gradient
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (sections[index]) {
+                                  const newSections = [...sections]
+                                  newSections[index] = {
+                                    ...newSections[index],
+                                    transitionFromPrev: { type: "slide" },
+                                  }
+                                  setSections(newSections)
+                                }
+                                setOpenTransitionIndex(null)
+                              }}
+                              className="px-2 py-1 text-xs rounded hover:bg-muted/10"
+                            >
+                              Slide
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (sections[index]) {
+                                  const newSections = [...sections]
+                                  newSections[index] = {
+                                    ...newSections[index],
+                                    transitionFromPrev: { type: "none" },
+                                  }
+                                  setSections(newSections)
+                                }
+                                setOpenTransitionIndex(null)
+                              }}
+                              className="px-2 py-1 text-xs rounded hover:bg-muted/10 text-destructive"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
+
                 <div
-                  className={`${!isPreview ? "cursor-pointer rounded-lg border bg-background shadow-sm transition-all" : ""} ${
-                    selectedSectionId === section.id && !isPreview ? "ring-2 ring-amber-500 ring-offset-2" : ""
-                  }`}
-                  onClick={() => !isPreview && onSectionSelect(section.id)}
+                  ref={(el) => {
+                    if (el) sectionRefs.current.set(section.id, el)
+                    else sectionRefs.current.delete(section.id)
+                  }}
+                  className={`group relative ${!isPreview ? "mb-4" : ""}`}
+                  draggable={!isPreview}
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragOver={(e) => handleDragOverSection(e, index)}
+                  onDrop={(e) => handleDropOnSection(e, index)}
                 >
-                  <SectionRenderer
-                    section={section}
-                    isPreview={isPreview}
-                    onUpdate={(newData) => updateSection(section.id, newData)}
-                  />
+                  {!isPreview && (
+                    <div
+                      className={
+                        `absolute left-1/2 top-0 z-10 flex -translate-x-1/2 flex-row gap-1 rounded-md border bg-background p-1 shadow-sm transition-all duration-150 ease-out` +
+                        (selectedSectionId === section.id
+                          ? ' -translate-y-full opacity-100 scale-100'
+                          : ' -translate-y-2 opacity-0 scale-95 pointer-events-none')
+                      }
+                      aria-hidden={selectedSectionId !== section.id}
+                    >
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 cursor-move"
+                        onMouseDown={(e) => e.stopPropagation()}
+                      >
+                        <GripVertical className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                      <div className="w-px bg-border my-auto" />
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7"
+                        onClick={() => moveSection(index, index - 1)}
+                        disabled={index === 0}
+                      >
+                        <ChevronUp className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7"
+                        onClick={() => moveSection(index, index + 1)}
+                        disabled={index === sections.length - 1}
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                      <div className="w-px bg-border my-auto" />
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(section.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                  <div
+                    className={`${!isPreview ? "cursor-pointer rounded-lg border bg-background shadow-sm transition-all" : ""} ${
+                      selectedSectionId === section.id && !isPreview ? "ring-2 ring-amber-500 ring-offset-2" : ""
+                    }`}
+                    onClick={() => !isPreview && onSectionSelect(section.id)}
+                  >
+                    <SectionRenderer
+                      section={section}
+                      isPreview={isPreview}
+                      onUpdate={(newData) => updateSection(section.id, newData)}
+                    />
+                  </div>
                 </div>
-              </div>
+              </React.Fragment>
             ))}
+
+            {!isPreview && (
+              <div
+                onDragOver={(e) => handleDragOverGap(e, sections.length)}
+                onDragLeave={() => setHoverDropIndex(null)}
+                onDrop={(e) => handleDropOnGap(e, sections.length)}
+                className={`h-10 my-4 rounded transition-all flex items-center justify-center ${
+                  hoverDropIndex === sections.length ? "bg-amber-300/40 border-2 border-amber-400" : ""
+                }`}
+              >
+                {hoverDropIndex === sections.length ? null : (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled
+                      className="rounded-md border px-3 py-1 text-sm bg-muted-foreground/5 text-muted-foreground cursor-not-allowed"
+                    >
+                      Add transition
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

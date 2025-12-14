@@ -1,5 +1,6 @@
 "use client"
 
+import React, { useEffect, useState } from "react"
 import type { Section } from "@/lib/types"
 import { HeroSection } from "@/components/bnb-sections/hero-section"
 import { AboutSection } from "@/components/bnb-sections/about-section"
@@ -14,6 +15,26 @@ interface SectionRendererProps {
   onUpdate?: (newData: Record<string, unknown>) => void // Made onUpdate optional
 }
 
+function TransitionWrapper({ type, children }: { type?: string; children: React.ReactNode }) {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    // Trigger the transition on mount or when type changes
+    setVisible(false)
+    const raf = requestAnimationFrame(() => setVisible(true))
+    return () => cancelAnimationFrame(raf)
+  }, [type])
+
+  if (type === "fade") {
+    return (
+      <div className={`transition-opacity duration-700 ${visible ? "opacity-100" : "opacity-0"}`}>{children}</div>
+    )
+  }
+
+  // Default: no wrapper animation
+  return <>{children}</>
+}
+
 export function SectionRenderer({ section, isPreview, onUpdate }: SectionRendererProps) {
   const commonProps = {
     data: section.data,
@@ -22,20 +43,32 @@ export function SectionRenderer({ section, isPreview, onUpdate }: SectionRendere
     styles: section.styles,
   }
 
+  const transitionType = section.transitionFromPrev?.type
+
+  let inner: React.ReactElement | null = null
+
   switch (section.type) {
     case "hero":
-      return <HeroSection {...commonProps} />
+      inner = <HeroSection {...commonProps} />
+      break
     case "about":
-      return <AboutSection {...commonProps} />
+      inner = <AboutSection {...commonProps} />
+      break
     case "rooms":
-      return <RoomsSection {...commonProps} />
+      inner = <RoomsSection {...commonProps} />
+      break
     case "gallery":
-      return <GallerySection {...commonProps} />
+      inner = <GallerySection {...commonProps} />
+      break
     case "amenities":
-      return <AmenitiesSection {...commonProps} />
+      inner = <AmenitiesSection {...commonProps} />
+      break
     case "contact":
-      return <ContactSection {...commonProps} />
+      inner = <ContactSection {...commonProps} />
+      break
     default:
-      return null
+      inner = null
   }
+
+  return <TransitionWrapper type={transitionType}>{inner}</TransitionWrapper>
 }
