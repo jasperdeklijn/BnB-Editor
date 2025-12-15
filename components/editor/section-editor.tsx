@@ -16,7 +16,9 @@ interface SelectionEditorProps {
 }
 
 export function SelectionEditor({ selectedSection, onUpdate, onStyleUpdate, onDelete }: SelectionEditorProps) {
-  const [localRooms, setLocalRooms] = useState<any[]>(() => (selectedSection?.data?.rooms ? [...selectedSection.data.rooms] : []))
+  const [localRooms, setLocalRooms] = useState<any[]>(() =>
+    Array.isArray((selectedSection as any)?.data?.rooms) ? [...(selectedSection as any).data.rooms] : [],
+  )
 
   if (!selectedSection) {
     return (
@@ -184,11 +186,38 @@ export function SelectionEditor({ selectedSection, onUpdate, onStyleUpdate, onDe
               <input
                 type="color"
                 aria-label="Text color"
-                value={(selectedSection.styles as any)?.color || "#000000"}
-                onChange={(e) => onStyleUpdate({ ...(selectedSection.styles || {}), color: e.target.value })}
+                value={(selectedSection.styles as any)?.textColor || "#000000"}
+                onChange={(e) => onStyleUpdate({ ...(selectedSection.styles || {}), textColor: e.target.value })}
                 className="h-8 w-8 rounded border p-0"
               />
             </label>
+          </div>
+        </Card>
+        <Card className="p-4">
+          <Label>Transition From Previous</Label>
+          <div className="mt-2">
+            <select
+              value={(selectedSection.transitionFromPrev as any)?.type || "none"}
+              onChange={(e) => {
+                const v = e.target.value
+                if (v === "none") {
+                  onUpdate(selectedSection.id, { transitionFromPrev: null })
+                } else {
+                  onUpdate(selectedSection.id, { transitionFromPrev: { type: v } })
+                }
+              }}
+              className="w-full rounded border px-2 py-1"
+            >
+              <option value="none">None</option>
+              <option value="fade">Fade</option>
+              <option value="gradient">Gradient</option>
+              <option value="slide">Slide</option>
+              <option value="wave">Wave</option>
+              <option value="curve">Curve</option>
+              <option value="diagonal">Diagonal</option>
+              <option value="zigzag">Zigzag</option>
+              <option value="split">Split</option>
+            </select>
           </div>
         </Card>
       </div>

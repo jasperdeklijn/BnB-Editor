@@ -7,6 +7,7 @@ import { EditorHeader } from "./editor-header"
 import { SelectionEditor } from "./section-editor"
 import type { Section, SectionStyles } from "@/lib/types"
 import { createClient } from "@/lib/supabase/client"
+import websiteSections from "@/lib/supabase/websiteSections"
 import { useRouter } from "next/navigation"
 
 interface EditorClientProps {
@@ -45,7 +46,22 @@ export function EditorClient({ userId }: EditorClientProps) {
       setWebsiteId(website.id)
       setTitle(website.title)
       setSlug(website.slug)
-      setSections(website.sections || [])
+
+      // Load normalized sections from website_sections
+      const { data: rows, error: listErr } = await websiteSections.listSections(website.id, supabase)
+      if (listErr) {
+        console.error('Failed to load sections:', listErr)
+        setSections([])
+      } else {
+        const mapped = (rows || []).map((r: any) => ({
+          id: r.id,
+          type: r.type,
+          data: r.content || {},
+          styles: r.styles || {},
+          transitionFromPrev: r.transition || undefined,
+        }))
+        setSections(mapped)
+      }
     } else {
       // Create new website
       const newSlug = `bnb-${Date.now()}`
@@ -55,7 +71,6 @@ export function EditorClient({ userId }: EditorClientProps) {
           user_id: userId,
           title: "My BnB Website",
           slug: newSlug,
-          sections: [],
         })
         .select()
         .single()
@@ -73,13 +88,7 @@ export function EditorClient({ userId }: EditorClientProps) {
     setIsSaving(true)
     const supabase = createClient()
 
-    const { error } = await supabase
-      .from("websites")
-      .update({
-        title,
-        sections,
-      })
-      .eq("id", websiteId)
+    const { error } = await supabase.from("websites").update({ title }).eq("id", websiteId)
 
     setIsSaving(false)
 
@@ -90,6 +99,8 @@ export function EditorClient({ userId }: EditorClientProps) {
 
   // Persist sections immediately when updated from children
   const persistSections = async (newSections: Section[]) => {
+    // Optimistically update UI
+    const prevSections = sections
     setSections(newSections)
 
     if (!websiteId) return
@@ -97,17 +108,48 @@ export function EditorClient({ userId }: EditorClientProps) {
     setIsSaving(true)
     const supabase = createClient()
 
-    const { error } = await supabase
-      .from("websites")
-      .update({
-        sections: newSections,
-      })
-      .eq("id", websiteId)
+    try {
+      // Find removed sections and delete them in DB
+      const prevIds = prevSections.map((s) => s.id)
+      const newIds = newSections.map((s) => s.id)
+      const removed = prevIds.filter((id) => !newIds.includes(id))
+      for (const id of removed) {
+        if (!id.startsWith('section-')) {
+          await websiteSections.deleteSection(id, supabase)
+        }
+      }
 
-    setIsSaving(false)
+      // Create or update sections in order
+      const finalIds: string[] = []
+      for (let i = 0; i < newSections.length; i++) {
+        const s = newSections[i]
+        const payload = {
+          type: s.type,
+          content: s.data ?? {},
+          styles: s.styles ?? {},
+          transition: s.transitionFromPrev ?? null,
+          position: i + 1,
+        }
 
-    if (error) {
-      console.error("Error persisting sections:", error)
+        if (s.id.startsWith('section-')) {
+          const { data: created } = await websiteSections.createSection(websiteId, payload as any, supabase)
+          if (created) {
+            finalIds.push(created.id)
+            // replace temp id in local state
+            setSections((prev) => prev.map((p) => (p.id === s.id ? { ...p, id: created.id } : p)))
+          }
+        } else {
+          await websiteSections.updateSection(s.id, payload as any, supabase)
+          finalIds.push(s.id)
+        }
+      }
+
+      // Ensure DB ordering
+      await websiteSections.reorderSections(websiteId, finalIds, supabase)
+    } catch (err) {
+      console.error('Error persisting sections:', err)
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -117,11 +159,13 @@ export function EditorClient({ userId }: EditorClientProps) {
     setIsSaving(true)
     const supabase = createClient()
 
+    // Ensure latest sections are persisted and ordered before publishing
+    await persistSections(sections)
+
     const { error } = await supabase
       .from("websites")
       .update({
         title,
-        sections,
         published: true,
       })
       .eq("id", websiteId)

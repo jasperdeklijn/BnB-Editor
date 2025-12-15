@@ -49,7 +49,6 @@ export function AboutSection({ data, isPreview, onUpdate, styles }: AboutSection
           onChange={(value) => handleUpdate({ description: value })} // Use safe handler
           isPreview={isPreview}
           as="p"
-          multiline
           className="text-pretty text-lg leading-relaxed text-amber-800"
           style={textStyle}
         />

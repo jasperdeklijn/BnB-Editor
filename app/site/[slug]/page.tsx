@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { SectionRenderer } from "@/components/editor/section-renderer"
+import websiteSections from '@/lib/supabase/websiteSections'
+import React from "react"
+import { SectionRenderer, TransitionWrapper } from "@/components/editor/section-renderer"
 import type { Website } from "@/lib/types"
 
 interface PageProps {
@@ -14,33 +16,54 @@ export default async function PublicSitePage({ params }: PageProps) {
   console.log("[v0] PublicSitePage: Slug =", slug)
 
   const supabase = await createClient()
-  console.log("[v0] PublicSitePage: Supabase client created")
 
-  // Fetch the published website by slug
-  const { data: website, error } = await supabase
-    .from("websites")
-    .select("*")
-    .eq("slug", slug)
-    .eq("published", true)
-    .single()
+  // Fetch website and normalized sections
+  const { data: website, error } = await websiteSections.fetchWebsiteWithSectionsBySlug(slug, supabase)
 
-  console.log("[v0] PublicSitePage: Query result", { website, error })
+  if (error || !website) return notFound()
 
-  if (error || !website) {
-    console.log("[v0] PublicSitePage: Website not found, showing 404")
-    notFound()
+  const sections = (website.website_sections || []).map((r: any) => ({
+    id: r.id,
+    type: r.type,
+    data: r.content || {},
+    styles: r.styles || {},
+    transitionFromPrev: r.transition || undefined,
+  }))
+
+  const nodes: React.ReactNode[] = []
+  for (let i = 0; i < sections.length; i++) {
+    const section = sections[i]
+    const next = sections[i + 1]
+
+    if (next && next.transitionFromPrev?.type) {
+      const t = next.transitionFromPrev.type
+      nodes.push(
+        <React.Fragment key={`pair-${next.id}`}>
+          <TransitionWrapper type={t} position="bottom">
+            <div className="relative">
+              <SectionRenderer section={section} isPreview={true} wrapTransition={false} />
+            </div>
+          </TransitionWrapper>
+
+          <TransitionWrapper type={t} position="top">
+            <div className="relative">
+              <SectionRenderer section={next} isPreview={true} wrapTransition={false} />
+            </div>
+          </TransitionWrapper>
+        </React.Fragment>,
+      )
+
+      i++
+    } else {
+      nodes.push(
+        <div key={section.id} className="relative">
+          <SectionRenderer section={section} isPreview={true} />
+        </div>,
+      )
+    }
   }
 
-  const typedWebsite = website as unknown as Website
-  console.log("[v0] PublicSitePage: Rendering", typedWebsite.sections.length, "sections")
-
-  return (
-    <div className="min-h-screen bg-background">
-      {typedWebsite.sections.map((section) => (
-        <SectionRenderer key={section.id} section={section} isPreview={true} />
-      ))}
-    </div>
-  )
+  return <div className="min-h-screen bg-background">{nodes}</div>
 }
 
 export async function generateMetadata({ params }: PageProps) {
