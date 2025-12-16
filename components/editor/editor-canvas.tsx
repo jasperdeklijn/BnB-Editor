@@ -25,7 +25,7 @@ export function EditorCanvas({
 }: EditorCanvasProps) {
   const sectionRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const [hoverDropIndex, setHoverDropIndex] = useState<number | null>(null)
-  const [openTransitionIndex, setOpenTransitionIndex] = useState<number | null>(null)
+  const [isDraggingNewSection, setIsDraggingNewSection] = useState(false)
 
   /* -----------------------------
      Drag & Drop helpers
@@ -48,6 +48,24 @@ export function EditorCanvas({
 
   const handleDropOnGap = (e: React.DragEvent, index: number) => {
     e.preventDefault()
+    // Accept either a dragged existing section (text/plain index) or a new
+    // section type from the sections selector (`sectionType`).
+    const sectionType = e.dataTransfer.getData("sectionType")
+    if (sectionType) {
+      const id = `section_${Math.random().toString(36).slice(2, 9)}`
+      const newSection: Section = {
+        id,
+        type: sectionType as Section["type"],
+        data: {},
+        styles: {},
+      }
+      const newSections = [...sections]
+      newSections.splice(index, 0, newSection)
+      setSections(newSections)
+      setHoverDropIndex(null)
+      return
+    }
+
     const draggedIndexData = e.dataTransfer.getData("text/plain")
     const draggedIndex = Number.parseInt(draggedIndexData)
 
@@ -64,6 +82,19 @@ export function EditorCanvas({
 
     setSections(newSections)
     setHoverDropIndex(null)
+  }
+
+  const addSectionAt = (index: number) => {
+    const id = `section_${Math.random().toString(36).slice(2, 9)}`
+    const newSection: Section = {
+      id,
+      type: "hero",
+      data: {},
+      styles: {},
+    }
+    const newSections = [...sections]
+    newSections.splice(index, 0, newSection)
+    setSections(newSections)
   }
 
   const handleDragOverSection = (e: React.DragEvent) => {
@@ -180,6 +211,41 @@ export function EditorCanvas({
                   </div>
                 )}
 
+                {/* Insert zone (gap) before this section: transition select + add button + drop handlers */}
+                {!isPreview && (
+                  <div
+                    onDragOver={(e) => handleDragOverGap(e, i)}
+                    onDrop={(e) => handleDropOnGap(e, i)}
+                    className={`flex items-center justify-between gap-3 px-3 py-2 rounded ${hoverDropIndex === i ? "bg-amber-50" : "bg-transparent"}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs text-muted-foreground">Transition</label>
+                      <select
+                        value={(sections[i]?.transitionFromPrev as any)?.type || "none"}
+                        onChange={(e) => {
+                          const v = e.target.value as any
+                          if (v === "none") {
+                            updateSection(sections[i].id, { transitionFromPrev: undefined })
+                          } else {
+                            updateSection(sections[i].id, { transitionFromPrev: { type: v } as any })
+                          }
+                        }}
+                        className="text-sm rounded border px-2 py-1"
+                      >
+                        <option value="none">None</option>
+                        <option value="fade">Fade</option>
+                        <option value="gradient">Gradient</option>
+                        <option value="slide">Slide</option>
+                        <option value="wave">Wave</option>
+                        <option value="curve">Curve</option>
+                        <option value="diagonal">Diagonal</option>
+                        <option value="zigzag">Zigzag</option>
+                        <option value="split">Split</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
                 <div
                   className={`${!isPreview ? "cursor-pointer rounded-lg border bg-background shadow-sm" : ""} ${
                     selectedSectionId === section.id && !isPreview
@@ -203,19 +269,21 @@ export function EditorCanvas({
               </div>
             )
 
-            if (next?.transitionFromPrev?.type) {
-              return (
-                <TransitionWrapper
-                  key={section.id}
-                  type={next.transitionFromPrev.type}
-                >
-                  {content}
-                </TransitionWrapper>
-              )
-            }
+            const wrapped = next?.transitionFromPrev?.type ? (
+              <TransitionWrapper
+                key={section.id}
+                type={next.transitionFromPrev.type}
+                position={"top"}
+              >
+                {content}
+              </TransitionWrapper>
+            ) : (
+              <React.Fragment key={section.id}>{content}</React.Fragment>
+            )
 
-            return <React.Fragment key={section.id}>{content}</React.Fragment>
+            return <React.Fragment key={`group-${section.id}`}>{wrapped}</React.Fragment>
           })}
+          {/* Insert zone (gap) at the end of the sections list */}
         </div>
       </div>
     </main>
