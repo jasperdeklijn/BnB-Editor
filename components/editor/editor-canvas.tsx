@@ -144,8 +144,8 @@ export function EditorCanvas({
               >
                 {!isPreview && (
                   <div
-                    className={`absolute left-1/2 top-0 z-10 flex -translate-x-1/2 gap-1 rounded-md border bg-background p-1 shadow-sm transition-all ${
-                      selectedSectionId === section.id
+                    className={`absolute left-1/2 top-0 z-10 flex -translate-x-1/2 gap-1 rounded-md border bg-ba
+ckground p-1 shadow-sm transition-all ${                                                                                              selectedSectionId === section.id
                         ? "-translate-y-full opacity-100"
                         : "-translate-y-2 opacity-0 pointer-events-none"
                     }`}
