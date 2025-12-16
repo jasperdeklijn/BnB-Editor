@@ -5,6 +5,9 @@ import { Trash2, GripVertical, ChevronUp, ChevronDown, Copy } from "lucide-react
 import { Button } from "@/components/ui/button"
 import type { Section, SectionType } from "@/lib/types"
 import { SectionRenderer, TransitionWrapper } from "./section-renderer"
+import websiteSections from "@/lib/supabase/websiteSections"
+import { createClient } from "@/lib/supabase/client"
+import type { SupabaseClient } from "@supabase/supabase-js"
 
 interface EditorCanvasProps {
   sections: Section[]
@@ -13,6 +16,8 @@ interface EditorCanvasProps {
   selectedSectionId: string | null
   onSectionSelect: (id: string | null) => void
   device: "desktop" | "tablet" | "mobile"
+  websiteId?: string | null
+  supabase?: SupabaseClient
 }
 
 export function EditorCanvas({
@@ -22,6 +27,8 @@ export function EditorCanvas({
   selectedSectionId,
   onSectionSelect,
   device,
+  websiteId,
+  supabase,
 }: EditorCanvasProps) {
   const sectionRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const [hoverDropIndex, setHoverDropIndex] = useState<number | null>(null)
@@ -102,22 +109,44 @@ export function EditorCanvas({
     }
   }
 
-  const handleDropOnGap = (e: React.DragEvent, index: number) => {
+  const handleDropOnGap = async (e: React.DragEvent, index: number) => {
     e.preventDefault()
 
     const sectionType = e.dataTransfer.getData("sectionType") as SectionType
     if (sectionType) {
+      const tempId = `section-${Date.now()}`
       const newSection: Section = {
-        id: `section-${Date.now()}`,
+        id: tempId,
         type: sectionType,
         data: getDefaultSectionData(sectionType),
         styles: {},
       }
+
       const newSections = [...sections]
       newSections.splice(index, 0, newSection)
       setSections(newSections)
+      alert('Section added')
       setHoverDropIndex(null)
       setIsDraggingNewSection(false)
+
+      if (!websiteId) return
+
+      try {
+        const client = supabase ?? createClient()
+        const payload = {
+          type: sectionType,
+          content: newSection.data ?? {},
+          styles: newSection.styles ?? {},
+          transition: null,
+          position: index + 1,
+        }
+        const { data: created } = await websiteSections.createSection(websiteId, payload as any, client)
+        if (created && created.id) {
+          setSections((prev) => prev.map((s) => (s.id === tempId ? { ...s, id: created.id } : s)))
+        }
+      } catch (err) {
+        // ignore persistence errors for now
+      }
       return
     }
 
@@ -161,6 +190,7 @@ export function EditorCanvas({
     const newSections = [...sections]
     newSections.splice(index + 1, 0, newSection)
     setSections(newSections)
+    alert('Section duplicated')
   }
 
   /* -----------------------------
@@ -173,6 +203,7 @@ export function EditorCanvas({
     const [item] = newSections.splice(from, 1)
     newSections.splice(to, 0, item)
     setSections(newSections)
+    alert('Section moved')
   }
 
   const handleDelete = (id: string) => {
@@ -180,12 +211,14 @@ export function EditorCanvas({
     if (selectedSectionId === id) {
       onSectionSelect(null)
     }
+    alert('Section deleted')
   }
 
   const updateSection = (id: string, newData: Partial<Section>) => {
     setSections(
       sections.map((s) => (s.id === id ? { ...s, ...newData } : s)),
     )
+    alert('Section updated')
   }
 
   /* -----------------------------
