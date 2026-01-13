@@ -123,3 +123,33 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Popup button animations */
+@keyframes pop-in {
+  from {
+    transform: translateY(6px) scale(.98);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.popup-btn {
+  transition: transform .18s cubic-bezier(.2,.8,.2,1), opacity .18s;
+  transform: translateY(6px) scale(.98);
+  opacity: 0;
+}
+
+.section-actions.opacity-100 .popup-btn {
+  animation: pop-in .18s cubic-bezier(.2,.8,.2,1) forwards;
+}
+
+.popup-btn:hover {
+  transform: translateY(0) scale(1.06);
+}
+
+.popup-btn:active {
+  transform: translateY(0) scale(.96);
+}

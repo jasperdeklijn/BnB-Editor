@@ -187,8 +187,24 @@ export function EditorClient({ userId }: EditorClientProps) {
     )
   }
 
-  const handleContentUpdate = (id: string, data: Record<string, unknown>) => {
-    setSections((prev) => prev.map((s) => (s.id === id ? { ...s, data: { ...s.data, ...data } } : s)))
+  // Update section content fields (merged into `data`) or top-level metadata like `transitionFromPrev`.
+  const handleSectionUpdate = (id: string, data: Record<string, unknown>) => {
+    setSections((prev) =>
+      prev.map((s) => {
+        if (s.id !== id) return s
+        // If update contains `transitionFromPrev`, apply at top-level
+        if (Object.prototype.hasOwnProperty.call(data, "transitionFromPrev")) {
+          const { transitionFromPrev, ...rest } = data
+          return {
+            ...s,
+            transitionFromPrev: transitionFromPrev as any,
+            data: { ...s.data, ...rest },
+          }
+        }
+        // Default: merge into `data` object
+        return { ...s, data: { ...s.data, ...data } }
+      }),
+    )
   }
 
   const handleDelete = (id: string) => {
@@ -223,11 +239,11 @@ export function EditorClient({ userId }: EditorClientProps) {
         />
         {!isPreview && (
           <SelectionEditor
-            selectedSection={selectedSection}
-            onUpdate={handleContentUpdate}
-            onStyleUpdate={handleStyleUpdate}
-            onDelete={handleDelete}
-          />
+              selectedSection={selectedSection}
+              onUpdate={handleSectionUpdate}
+              onStyleUpdate={handleStyleUpdate}
+              onDelete={handleDelete}
+            />
         )}
       </div>
     </div>

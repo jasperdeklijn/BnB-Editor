@@ -97,7 +97,10 @@ export function TransitionWrapper({
     <div className="relative">
       {position === "top" || position === "both" ? topDecoration(t) : null}
       {children ? (
-        <div ref={wrapperRef} className={`${t === "fade" ? `transition-opacity duration-1000 ${visible ? "opacity-100" : "opacity-0"}` : ""} ${t === "slide" ? `transition-all duration-700 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}` : ""}`}>
+        <div
+          ref={wrapperRef}
+          className={`relative pointer-events-auto ${t === "fade" ? `transition-opacity duration-700 ${visible ? "opacity-100" : "opacity-0"}` : ""} ${t === "slide" ? `transition-all duration-500 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}` : ""}`}
+        >
           {children}
         </div>
       ) : null}

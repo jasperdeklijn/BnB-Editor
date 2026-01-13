@@ -5,6 +5,7 @@ import { Trash2, GripVertical, ChevronUp, ChevronDown, Copy } from "lucide-react
 import { Button } from "@/components/ui/button"
 import type { Section, SectionType } from "@/lib/types"
 import { SectionRenderer, TransitionWrapper } from "./section-renderer"
+import React from "react"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { createClient } from "@/lib/supabase/client"
 import type { SupabaseClient } from "@supabase/supabase-js"
@@ -30,6 +31,54 @@ export function EditorCanvas({
   websiteId,
   supabase,
 }: EditorCanvasProps) {
+  function SectionTransition({
+    type,
+    from = {},
+    to = {},
+  }: {
+    type: string
+    from?: Record<string, unknown>
+    to?: Record<string, unknown>
+  }) {
+    const fromBg = (from as any)?.backgroundColor || "#ffffff"
+    const toBg = (to as any)?.backgroundColor || "#fff7ed"
+    const height = 56
+
+    const baseStyle: React.CSSProperties = {
+      height,
+      width: "100%",
+    }
+
+    if (type === "fade" || type === "gradient") {
+      return (
+        <div style={{ ...baseStyle, background: `linear-gradient(180deg, ${fromBg} 0%, ${toBg} 100%)` }} className="my-2 pointer-events-none" />
+      )
+    }
+
+    if (type === "wave") {
+      return (
+        <div className="my-2 pointer-events-none" style={{ ...baseStyle, background: "transparent" }}>
+          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="w-full h-full" style={{ display: "block" }}>
+            <defs>
+              <linearGradient id="grad-wave" x1="0%" x2="0%" y1="0%" y2="100%">
+                <stop offset="0%" stopColor={fromBg} stopOpacity="1" />
+                <stop offset="100%" stopColor={toBg} stopOpacity="1" />
+              </linearGradient>
+            </defs>
+            <path d="M0,0 C150,60 350,0 600,40 C850,80 1050,20 1200,60 L1200,120 L0,120 Z" fill="url(#grad-wave)" />
+          </svg>
+        </div>
+      )
+    }
+
+    if (type === "slide" || type === "curve" || type === "diagonal" || type === "zigzag" || type === "split") {
+      return (
+        <div style={{ ...baseStyle, background: `linear-gradient(180deg, ${fromBg} 0%, ${toBg} 100%)` }} className="my-2 pointer-events-none" />
+      )
+    }
+
+    return null
+  }
   const sectionRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const [hoverDropIndex, setHoverDropIndex] = useState<number | null>(null)
   const [draggingSectionIndex, setDraggingSectionIndex] = useState<number | null>(null)
@@ -125,7 +174,6 @@ export function EditorCanvas({
       const newSections = [...sections]
       newSections.splice(index, 0, newSection)
       setSections(newSections)
-      alert('Section added')
       setHoverDropIndex(null)
       setIsDraggingNewSection(false)
 
@@ -142,7 +190,7 @@ export function EditorCanvas({
         }
         const { data: created } = await websiteSections.createSection(websiteId, payload as any, client)
         if (created && created.id) {
-          setSections((prev) => prev.map((s) => (s.id === tempId ? { ...s, id: created.id } : s)))
+          setSections(sections.map((s) => (s.id === tempId ? { ...s, id: created.id } : s)))
         }
       } catch (err) {
         // ignore persistence errors for now
@@ -190,7 +238,6 @@ export function EditorCanvas({
     const newSections = [...sections]
     newSections.splice(index + 1, 0, newSection)
     setSections(newSections)
-    alert('Section duplicated')
   }
 
   /* -----------------------------
@@ -203,7 +250,63 @@ export function EditorCanvas({
     const [item] = newSections.splice(from, 1)
     newSections.splice(to, 0, item)
     setSections(newSections)
-    alert('Section moved')
+  }
+
+  // Animate reordering using FLIP when triggered by up/down buttons
+  const moveSectionAnimated = async (from: number, to: number) => {
+    if (to < 0 || to >= sections.length) return
+
+    // capture before positions
+    const beforeRects = new Map<string, DOMRect>()
+    sectionRefs.current.forEach((el, id) => {
+      if (el) beforeRects.set(id, el.getBoundingClientRect())
+    })
+
+    // perform the reorder in state
+    const newSections = [...sections]
+    const [item] = newSections.splice(from, 1)
+    newSections.splice(to, 0, item)
+    setSections(newSections)
+
+    // wait for DOM update
+    await new Promise((res) => requestAnimationFrame(res))
+
+    // capture after positions and apply inverse transforms
+    sectionRefs.current.forEach((el, id) => {
+      const before = beforeRects.get(id)
+      const after = el?.getBoundingClientRect()
+      if (!before || !after || !el) return
+      const deltaY = before.top - after.top
+      if (deltaY === 0) return
+
+      // apply inverse transform instantly (no transition)
+      el.style.transition = 'none'
+      el.style.transform = `translateY(${deltaY}px)`
+
+      // force reflow to make the transform take effect
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      el.getBoundingClientRect()
+
+      // then animate to natural position
+      requestAnimationFrame(() => {
+        el.style.transition = 'transform 220ms cubic-bezier(.2,.8,.2,1)'
+        el.style.transform = 'translateY(0)'
+      })
+
+      const cleanup = () => {
+        try {
+          el.style.transition = ''
+          el.style.transform = ''
+        } catch (e) {
+          /* ignore */
+        }
+        el.removeEventListener('transitionend', cleanup)
+      }
+
+      el.addEventListener('transitionend', cleanup)
+      // safety cleanup
+      setTimeout(cleanup, 350)
+    })
   }
 
   const handleDelete = (id: string) => {
@@ -211,14 +314,12 @@ export function EditorCanvas({
     if (selectedSectionId === id) {
       onSectionSelect(null)
     }
-    alert('Section deleted')
   }
 
   const updateSection = (id: string, newData: Partial<Section>) => {
     setSections(
       sections.map((s) => (s.id === id ? { ...s, ...newData } : s)),
     )
-    alert('Section updated')
   }
 
   /* -----------------------------
@@ -294,31 +395,31 @@ export function EditorCanvas({
                 >
                   {!isPreview && (
                     <div
-                      className={`absolute left-1/2 top-0 z-10 flex -translate-x-1/2 gap-1 rounded-lg border bg-background p-1 shadow-lg transition-all ${
+                      className={`absolute section-actions left-1/2 top-0 z-10 flex -translate-x-1/2 gap-1 rounded-lg border bg-background p-1 shadow-lg transition-all ${
                         selectedSectionId === section.id
                           ? "-translate-y-full opacity-100"
                           : "-translate-y-2 opacity-0 pointer-events-none"
                       }`}
                     >
-                      <Button size="icon" variant="ghost" className="h-7 w-7 cursor-grab active:cursor-grabbing">
+                      <Button size="icon" variant="ghost" className="h-7 w-7 cursor-grab active:cursor-grabbing popup-btn">
                         <GripVertical className="h-4 w-4" />
                       </Button>
                       <div className="h-6 w-px bg-border" />
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => moveSection(i, i - 1)}
+                        onClick={() => moveSectionAnimated(i, i - 1)}
                         disabled={i === 0}
-                        className="h-7 w-7"
+                        className="h-7 w-7 popup-btn"
                       >
                         <ChevronUp className="h-4 w-4" />
                       </Button>
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => moveSection(i, i + 1)}
+                        onClick={() => moveSectionAnimated(i, i + 1)}
                         disabled={i === sections.length - 1}
-                        className="h-7 w-7"
+                        className="h-7 w-7 popup-btn"
                       >
                         <ChevronDown className="h-4 w-4" />
                       </Button>
@@ -327,14 +428,14 @@ export function EditorCanvas({
                         size="icon"
                         variant="ghost"
                         onClick={() => handleDuplicate(i)}
-                        className="h-7 w-7"
+                        className="h-7 w-7 popup-btn"
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                        className="h-7 w-7 text-destructive hover:bg-destructive/10 popup-btn"
                         onClick={() => handleDelete(section.id)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -381,14 +482,19 @@ export function EditorCanvas({
               </React.Fragment>
             )
 
+            // If the next section declares a transition, render an explicit
+            // visual separator between this section and the next so the
+            // transition is always visible in the editor.
             if (next?.transitionFromPrev?.type) {
               return (
-                <TransitionWrapper
-                  key={section.id}
-                  type={next.transitionFromPrev.type}
-                >
+                <React.Fragment key={section.id}>
                   {content}
-                </TransitionWrapper>
+                  <SectionTransition
+                    type={next.transitionFromPrev.type}
+                    from={section.styles}
+                    to={next.styles}
+                  />
+                </React.Fragment>
               )
             }
 
