@@ -8,6 +8,15 @@ export type WebsiteSection = {
   type: string
   content: any
   styles: any
+  created_at?: string
+  updated_at?: string
+}
+
+export type SectionTransition = {
+  id: string
+  website_id: string
+  from_section_id: string
+  to_section_id: string
   transition: any
   created_at?: string
   updated_at?: string
@@ -32,7 +41,6 @@ export async function fetchWebsiteWithSectionsBySlug(slug: string, supabase?: Su
         position,
         content,
         styles,
-        transition,
         created_at,
         updated_at
       )
@@ -93,7 +101,6 @@ export async function createSection(
     position,
     content: section.content ?? {},
     styles: section.styles ?? {},
-    transition: section.transition ?? null,
   }
 
   const { data, error } = await client.from('website_sections').insert(payload).select().single()
@@ -198,11 +205,95 @@ export async function duplicateSection(sectionId: string, supabase?: SupabaseCli
     position: originalPos + 1,
     content: (section as any).content ?? {},
     styles: (section as any).styles ?? {},
-    transition: (section as any).transition ?? null,
   }
 
   const { data, error } = await client.from('website_sections').insert(payload).select().single()
   return { data, error }
+}
+
+// Transition management functions
+export async function getTransitionsBetweenSections(websiteId: string, supabase?: SupabaseClient) {
+  const client = await getClient(supabase)
+  const { data, error } = await client
+    .from('section_transitions')
+    .select('*')
+    .eq('website_id', websiteId)
+
+  return { data, error }
+}
+
+export async function getTransitionFromSection(fromSectionId: string, toSectionId: string, supabase?: SupabaseClient) {
+  const client = await getClient(supabase)
+  const { data, error } = await client
+    .from('section_transitions')
+    .select('*')
+    .eq('from_section_id', fromSectionId)
+    .eq('to_section_id', toSectionId)
+    .single()
+
+  return { data, error }
+}
+
+export async function setTransition(
+  websiteId: string,
+  fromSectionId: string,
+  toSectionId: string,
+  transition: any,
+  supabase?: SupabaseClient
+) {
+  const client = await getClient(supabase)
+  
+  if (!transition || transition.type === 'none') {
+    // Delete if no transition
+    const { error } = await client
+      .from('section_transitions')
+      .delete()
+      .eq('from_section_id', fromSectionId)
+      .eq('to_section_id', toSectionId)
+    
+    return { data: null, error }
+  }
+
+  // Upsert the transition - specify columns for conflict resolution
+  const { data, error } = await client
+    .from('section_transitions')
+    .upsert({
+      website_id: websiteId,
+      from_section_id: fromSectionId,
+      to_section_id: toSectionId,
+      transition,
+    }, { onConflict: 'from_section_id,to_section_id' })
+    .select()
+    .single()
+
+  return { data, error }
+}
+
+export async function deleteTransition(fromSectionId: string, toSectionId: string, supabase?: SupabaseClient) {
+  const client = await getClient(supabase)
+  const { error } = await client
+    .from('section_transitions')
+    .delete()
+    .eq('from_section_id', fromSectionId)
+    .eq('to_section_id', toSectionId)
+
+  return { error }
+}
+
+export async function deleteTransitionsForSection(sectionId: string, supabase?: SupabaseClient) {
+  const client = await getClient(supabase)
+  // Delete transitions where this section is either from or to
+  const { error: err1 } = await client
+    .from('section_transitions')
+    .delete()
+    .eq('from_section_id', sectionId)
+
+  const { error: err2 } = await client
+    .from('section_transitions')
+    .delete()
+    .eq('to_section_id', sectionId)
+
+  return { error: err1 || err2 }
 }
 
 export default {
@@ -215,4 +306,9 @@ export default {
   moveSection,
   reorderSections,
   duplicateSection,
+  getTransitionsBetweenSections,
+  getTransitionFromSection,
+  setTransition,
+  deleteTransition,
+  deleteTransitionsForSection,
 }

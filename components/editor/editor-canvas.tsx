@@ -489,12 +489,13 @@ export function EditorCanvas({
             // If the next section declares a transition, render an explicit
             // visual separator between this section and the next so the
             // transition is always visible in the editor.
-            if (next?.transitionFromPrev?.type) {
+            if (next?.transitionFromPrev?.type || (section as any).transitionToNext?.type) {
+              const transType = (section as any).transitionToNext?.type || next?.transitionFromPrev?.type
               return (
                 <React.Fragment key={section.id}>
                   {content}
-                 <SectionTransition
-                    type={next.transitionFromPrev.type}
+                  <SectionTransition
+                    type={transType}
                     from={section.styles as Record<string, unknown>}
                     to={next.styles as Record<string, unknown>}
                   />

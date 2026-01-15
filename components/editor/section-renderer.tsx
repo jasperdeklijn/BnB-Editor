@@ -20,10 +20,14 @@ export function TransitionWrapper({
   type,
   children,
   position = "top",
+  fromColor = "#ffffff",
+  toColor = "#fafaf9",
 }: {
   type?: string
   children?: React.ReactNode
   position?: "top" | "bottom" | "both"
+  fromColor?: string
+  toColor?: string
 }) {
   const [visible, setVisible] = useState(false)
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -36,21 +40,45 @@ export function TransitionWrapper({
 
   const topDecoration = (t?: string) => {
     if (!t) return null
+    
+    const gradientId = `grad-${t}-${Math.random().toString(36).substr(2, 9)}`
+    
     if (t === "fade") {
-      return <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-background/80 via-background/40 to-transparent pointer-events-none z-10 -translate-y-24" />
+      return (
+        <div
+          className="absolute inset-x-0 top-0 h-32 pointer-events-none z-10 -translate-y-32"
+          style={{
+            background: `linear-gradient(180deg, ${fromColor} 0%, ${toColor} 100%)`,
+          }}
+        />
+      )
     }
     if (t === "gradient") {
-      return <div className="absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-amber-50/0 via-amber-100/30 to-transparent pointer-events-none z-10 -translate-y-32" />
+      return (
+        <div
+          className="absolute inset-x-0 top-0 h-40 pointer-events-none z-10 -translate-y-40"
+          style={{
+            background: `linear-gradient(180deg, ${fromColor} 0%, ${toColor}dd 50%, ${toColor} 100%)`,
+          }}
+        />
+      )
     }
     if (t === "slide") {
-      return <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-transparent to-background/20 pointer-events-none z-10 -translate-y-16" />
+      return (
+        <div
+          className="absolute inset-x-0 top-0 h-24 pointer-events-none z-10 -translate-y-24"
+          style={{
+            background: `linear-gradient(180deg, ${fromColor} 0%, ${toColor}99 100%)`,
+          }}
+        />
+      )
     }
     if (t === "diagonal") {
       return (
         <div
           className="absolute inset-x-0 top-0 h-32 pointer-events-none z-10 -translate-y-32"
           style={{
-            background: 'linear-gradient(165deg, transparent 0%, transparent 48%, rgba(251, 191, 36, 0.15) 48%, rgba(251, 191, 36, 0.15) 52%, transparent 52%, transparent 100%)',
+            background: `linear-gradient(145deg, ${fromColor} 0%, ${fromColor}88 45%, ${toColor}88 55%, ${toColor} 100%)`,
           }}
         />
       )
@@ -58,33 +86,51 @@ export function TransitionWrapper({
     if (t === "wave") {
       return (
         <svg
-          className="absolute inset-x-0 top-0 w-full h-24 -translate-y-24 pointer-events-none z-10"
+          className="absolute inset-x-0 top-0 w-full h-28 -translate-y-28 pointer-events-none z-10"
           viewBox="0 0 1200 120"
           preserveAspectRatio="none"
         >
-          <path d="M0,0 C150,60 350,0 600,40 C850,80 1050,20 1200,60 L1200,120 L0,120 Z" fill="currentColor" className="text-background/30" />
+          <defs>
+            <linearGradient id={gradientId} x1="0%" x2="0%" y1="0%" y2="100%">
+              <stop offset="0%" stopColor={fromColor} />
+              <stop offset="100%" stopColor={toColor} />
+            </linearGradient>
+          </defs>
+          <path d="M0,30 C200,10 300,50 600,40 C900,30 1000,60 1200,30 L1200,120 L0,120 Z" fill={`url(#${gradientId})`} />
         </svg>
       )
     }
     if (t === "zigzag") {
       return (
-        <svg className="absolute inset-x-0 top-0 w-full h-16 -translate-y-16 pointer-events-none z-10" viewBox="0 0 1200 60" preserveAspectRatio="none">
-          <path d="M0,30 L100,0 L200,60 L300,0 L400,60 L500,0 L600,60 L700,0 L800,60 L900,0 L1000,60 L1100,0 L1200,30 L1200,60 L0,60 Z" fill="currentColor" className="text-amber-200/40" />
+        <svg className="absolute inset-x-0 top-0 w-full h-20 -translate-y-20 pointer-events-none z-10" viewBox="0 0 1200 80" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id={gradientId} x1="0%" x2="0%" y1="0%" y2="100%">
+              <stop offset="0%" stopColor={fromColor} />
+              <stop offset="100%" stopColor={toColor} />
+            </linearGradient>
+          </defs>
+          <path d="M0,40 L80,0 L160,80 L240,0 L320,80 L400,0 L480,80 L560,0 L640,80 L720,0 L800,80 L880,0 L960,80 L1040,0 L1120,80 L1200,40 L1200,80 L0,80 Z" fill={`url(#${gradientId})`} />
         </svg>
       )
     }
     if (t === "curve") {
       return (
-        <svg className="absolute inset-x-0 top-0 w-full h-32 -translate-y-32 pointer-events-none z-10" viewBox="0 0 1200 120" preserveAspectRatio="none">
-          <path d="M0,0 Q600,120 1200,0 L1200,120 L0,120 Z" fill="currentColor" className="text-background/25" />
+        <svg className="absolute inset-x-0 top-0 w-full h-36 -translate-y-36 pointer-events-none z-10" viewBox="0 0 1200 140" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id={gradientId} x1="0%" x2="0%" y1="0%" y2="100%">
+              <stop offset="0%" stopColor={fromColor} />
+              <stop offset="100%" stopColor={toColor} />
+            </linearGradient>
+          </defs>
+          <path d="M0,20 Q300,120 600,30 T1200,20 L1200,140 L0,140 Z" fill={`url(#${gradientId})`} />
         </svg>
       )
     }
     if (t === "split") {
       return (
-        <div className="absolute inset-x-0 top-0 h-20 pointer-events-none z-10 -translate-y-20 flex">
-          <div className="flex-1 bg-gradient-to-br from-amber-100/40 to-transparent" />
-          <div className="flex-1 bg-gradient-to-bl from-orange-100/40 to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-24 pointer-events-none z-10 -translate-y-24 flex" style={{ background: fromColor }}>
+          <div className="flex-1" style={{ background: `linear-gradient(to bottom right, ${fromColor}, ${toColor})` }} />
+          <div className="flex-1" style={{ background: `linear-gradient(to bottom left, ${fromColor}, ${toColor})` }} />
         </div>
       )
     }
@@ -162,7 +208,8 @@ export function SectionRenderer({ section, isPreview, onUpdate, wrapTransition }
 
   const t = section.transitionFromPrev?.type
   if (t && t !== "none") {
-    return <TransitionWrapper type={t}>{inner}</TransitionWrapper>
+    const bgColor = (section.styles as any)?.backgroundColor || "#fafaf9"
+    return <TransitionWrapper type={t} fromColor="#ffffff" toColor={bgColor}>{inner}</TransitionWrapper>
   }
 
   return inner

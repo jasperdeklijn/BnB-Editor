@@ -15,6 +15,9 @@ export interface Section {
   transitionFromPrev?: {
     type: "none" | "fade" | "gradient" | "slide" | "wave" | "curve" | "diagonal" | "zigzag" | "split"
   }
+  transitionToNext?: {
+    type: "none" | "fade" | "gradient" | "slide" | "wave" | "curve" | "diagonal" | "zigzag" | "split"
+  }
 }
 
 export interface Website {

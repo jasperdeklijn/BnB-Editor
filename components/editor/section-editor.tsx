@@ -23,20 +23,30 @@ import {
 
 interface SelectionEditorProps {
   selectedSection: Section | null
+  sections: Section[]
   onUpdate: (id: string, data: Record<string, unknown>) => void
   onStyleUpdate: (styles: SectionStyles) => void
   onDelete: (id: string) => void
+  websiteId?: string | null
 }
 
-export function SelectionEditor({ selectedSection, onUpdate, onStyleUpdate, onDelete }: SelectionEditorProps) {
+export function SelectionEditor({ selectedSection, sections, onUpdate, onStyleUpdate, onDelete, websiteId }: SelectionEditorProps) {
   const [localRooms, setLocalRooms] = useState<any[]>(() =>
     Array.isArray((selectedSection as any)?.data?.rooms) ? [...(selectedSection as any).data.rooms] : [],
   )
+  const [transitionType, setTransitionType] = useState<string>("none")
 
   // Keep localRooms in sync when selected section changes
   useEffect(() => {
     setLocalRooms(Array.isArray((selectedSection as any)?.data?.rooms) ? [...(selectedSection as any).data.rooms] : [])
   }, [selectedSection?.id])
+
+  // Track transition type for the next section
+  useEffect(() => {
+    if (selectedSection) {
+      setTransitionType((selectedSection?.transitionToNext as any)?.type || "none")
+    }
+  }, [selectedSection?.id, selectedSection?.transitionToNext])
 
   if (!selectedSection) {
     return (
@@ -73,6 +83,22 @@ export function SelectionEditor({ selectedSection, onUpdate, onStyleUpdate, onDe
     const updated = localRooms.filter((_, i) => i !== index)
     setLocalRooms(updated)
     onUpdate(selectedSection.id, { rooms: updated })
+  }
+
+  const handleTransitionChange = (newType: string) => {
+    setTransitionType(newType)
+    const nextSectionIdx = sections.findIndex(s => s.id === selectedSection.id) + 1
+    
+    if (nextSectionIdx >= 0 && nextSectionIdx < sections.length) {
+      const nextSection = sections[nextSectionIdx]
+      
+      // Save transition
+      onUpdate(selectedSection.id, {
+        transitionToNext: newType === "none" ? null : { type: newType },
+      })
+      
+      console.log(`✓ Transition set: ${selectedSection.type} → ${newType} → ${nextSection.type}`)
+    }
   }
 
   return (
@@ -299,34 +325,41 @@ export function SelectionEditor({ selectedSection, onUpdate, onStyleUpdate, onDe
             </div>
           </div>
         </Card>
-        <Card className="p-4 space-y-3">
-          <Label className="flex items-center gap-2">
-            <Wand2 className="h-3.5 w-3.5" />
-            Transition
-          </Label>
-          <select
-            value={(selectedSection.transitionFromPrev as any)?.type || "none"}
-            onChange={(e) => {
-              const v = e.target.value
-              if (v === "none") {
-                onUpdate(selectedSection.id, { transitionFromPrev: null })
-              } else {
-                onUpdate(selectedSection.id, { transitionFromPrev: { type: v } })
-              }
-            }}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:bg-accent"
-          >
-            <option value="none">None</option>
-            <option value="fade">Fade</option>
-            <option value="gradient">Gradient</option>
-            <option value="slide">Slide</option>
-            <option value="wave">Wave</option>
-            <option value="curve">Curve</option>
-            <option value="diagonal">Diagonal</option>
-            <option value="zigzag">Zigzag</option>
-            <option value="split">Split</option>
-          </select>
-        </Card>
+        
+        {/* Transition Editor */}
+        {sections.length > 1 && sections.findIndex(s => s.id === selectedSection.id) < sections.length - 1 && (
+          <Card className="p-4 space-y-3">
+            <Label className="flex items-center gap-2">
+              <Wand2 className="h-3.5 w-3.5" />
+              Transition to Next Section
+            </Label>
+            <p className="text-xs text-muted-foreground mb-2">
+              Select how this section transitions to the next one
+            </p>
+            <select
+              value={transitionType}
+              onChange={(e) => handleTransitionChange(e.target.value)}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:bg-accent"
+            >
+              <option value="none">None</option>
+              <option value="fade">Fade</option>
+              <option value="gradient">Gradient</option>
+              <option value="slide">Slide</option>
+              <option value="wave">Wave</option>
+              <option value="curve">Curve</option>
+              <option value="diagonal">Diagonal</option>
+              <option value="zigzag">Zigzag</option>
+              <option value="split">Split</option>
+            </select>
+            {transitionType !== "none" && (
+              <div className="mt-3 p-2 rounded bg-amber-50 border border-amber-200">
+                <p className="text-xs text-amber-800">
+                  Preview: Check the editor canvas to see the {transitionType} transition
+                </p>
+              </div>
+            )}
+          </Card>
+        )}
       </div>
     </div>
   )

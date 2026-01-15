@@ -53,13 +53,23 @@ export function EditorClient({ userId }: EditorClientProps) {
         console.error('Failed to load sections:', listErr)
         setSections([])
       } else {
-        const mapped = (rows || []).map((r: any) => ({
+        // Load transitions from separate table
+        const { data: transitions } = await websiteSections.getTransitionsBetweenSections(website.id, supabase)
+        
+        // Create a map of from_section_id -> transition
+        const transitionMap = new Map()
+        if (transitions && Array.isArray(transitions)) {
+          for (const t of transitions) {
+            transitionMap.set(t.from_section_id, t.transition)
+          }
+        }
+        
+        const mapped = (rows || []).map((r: any, idx: number) => ({
           id: r.id,
           type: r.type,
           data: r.content || {},
           styles: r.styles || {},
-          transitionFromPrev: r.transition || undefined,
-        }))
+          transitionFromPrev: transitionMap.get(r.id) || undefined,          transitionToNext: transitions && Array.isArray(transitions) ? transitions.find(t => t.from_section_id === r.id)?.transition : undefined,        }))
         setSections(mapped)
       }
     } else {
@@ -121,13 +131,14 @@ export function EditorClient({ userId }: EditorClientProps) {
 
       // Create or update sections in order
       const finalIds: string[] = []
+      const idMapping = new Map<string, string>() // temp ID -> persisted ID
+      
       for (let i = 0; i < newSections.length; i++) {
         const s = newSections[i]
         const payload = {
           type: s.type,
           content: s.data ?? {},
           styles: s.styles ?? {},
-          transition: s.transitionFromPrev ?? null,
           position: i + 1,
         }
 
@@ -135,17 +146,38 @@ export function EditorClient({ userId }: EditorClientProps) {
           const { data: created } = await websiteSections.createSection(websiteId, payload as any, supabase)
           if (created) {
             finalIds.push(created.id)
+            idMapping.set(s.id, created.id)
             // replace temp id in local state
             setSections((prev) => prev.map((p) => (p.id === s.id ? { ...p, id: created.id } : p)))
           }
         } else {
           await websiteSections.updateSection(s.id, payload as any, supabase)
           finalIds.push(s.id)
+          idMapping.set(s.id, s.id)
         }
       }
 
       // Ensure DB ordering
       await websiteSections.reorderSections(websiteId, finalIds, supabase)
+
+      // Now save all transitions with their final IDs
+      for (let i = 0; i < newSections.length; i++) {
+        const section = newSections[i]
+        if (section.transitionFromPrev && section.transitionFromPrev.type !== 'none') {
+          const persistedFromId = idMapping.get(section.id) || section.id
+          const prevSection = newSections[i - 1]
+          if (prevSection) {
+            const persistedPrevId = idMapping.get(prevSection.id) || prevSection.id
+            await websiteSections.setTransition(
+              websiteId,
+              persistedPrevId,
+              persistedFromId,
+              section.transitionFromPrev,
+              supabase
+            ).catch(err => console.error('Error saving transition:', err))
+          }
+        }
+      }
     } catch (err) {
       console.error('Error persisting sections:', err)
     } finally {
@@ -187,12 +219,44 @@ export function EditorClient({ userId }: EditorClientProps) {
     )
   }
 
-  // Update section content fields (merged into `data`) or top-level metadata like `transitionFromPrev`.
+  // Update section content fields (merged into `data`) or top-level metadata like transitions.
   const handleSectionUpdate = (id: string, data: Record<string, unknown>) => {
     setSections((prev) =>
-      prev.map((s) => {
+      prev.map((s, idx) => {
         if (s.id !== id) return s
-        // If update contains `transitionFromPrev`, apply at top-level
+        
+        // Handle transitionToNext (transition FROM this section TO next)
+        if (Object.prototype.hasOwnProperty.call(data, "transitionToNext")) {
+          const { transitionToNext, ...rest } = data
+          const nextSection = prev[idx + 1]
+          
+          // Update local state first
+          const updatedSection = {
+            ...s,
+            transitionFromPrev: transitionToNext as any,
+            data: { ...s.data, ...rest },
+          }
+          
+          // Save to database if both sections have persisted IDs
+          if (
+            nextSection &&
+            websiteId &&
+            !s.id.startsWith('section-') &&
+            !nextSection.id.startsWith('section-')
+          ) {
+            websiteSections.setTransition(
+              websiteId,
+              id,
+              nextSection.id,
+              transitionToNext as any,
+              createClient()
+            ).catch(err => console.error('Error saving transition:', err))
+          }
+          
+          return updatedSection
+        }
+        
+        // Handle old transitionFromPrev (for backwards compatibility)
         if (Object.prototype.hasOwnProperty.call(data, "transitionFromPrev")) {
           const { transitionFromPrev, ...rest } = data
           return {
@@ -201,6 +265,7 @@ export function EditorClient({ userId }: EditorClientProps) {
             data: { ...s.data, ...rest },
           }
         }
+        
         // Default: merge into `data` object
         return { ...s, data: { ...s.data, ...data } }
       }),
@@ -240,9 +305,11 @@ export function EditorClient({ userId }: EditorClientProps) {
         {!isPreview && (
           <SelectionEditor
               selectedSection={selectedSection}
-              onUpdate={handleSectionUpdate}
-              onStyleUpdate={handleStyleUpdate}
-              onDelete={handleDelete}
+            sections={sections}
+            onUpdate={handleSectionUpdate}
+            onStyleUpdate={handleStyleUpdate}
+            onDelete={handleDelete}
+            websiteId={websiteId}
             />
         )}
       </div>

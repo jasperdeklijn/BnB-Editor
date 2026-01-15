@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server"
 import websiteSections from '@/lib/supabase/websiteSections'
 import React from "react"
 import { SectionRenderer, TransitionWrapper } from "@/components/editor/section-renderer"
-import type { Website } from "@/lib/types"
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -27,27 +26,53 @@ export default async function PublicSitePage({ params }: PageProps) {
     type: r.type,
     data: r.content || {},
     styles: r.styles || {},
-    transitionFromPrev: r.transition || undefined,
+    transitionFromPrev: undefined, // Will be populated from transitions table
   }))
 
-  const nodes: React.ReactNode[] = []
-  for (let i = 0; i < sections.length; i++) {
-    const section = sections[i]
-    const next = sections[i + 1]
+  // Fetch transitions for this website
+  const { data: transitions = [] } = await websiteSections.getTransitionsBetweenSections(website.id, supabase)
 
-    if (next && next.transitionFromPrev?.type) {
-      const t = next.transitionFromPrev.type
+  // Build a map of section index to next section's transition
+  const transitionMap = new Map<string, any>()
+  if (transitions && Array.isArray(transitions)) {
+    for (const t of transitions) {
+      transitionMap.set(t.from_section_id, t.transition)
+    }
+  }
+
+  // Apply transitions to sections
+  const sectionsWithTransitions = sections.map((s, idx) => {
+    const nextSection = sections[idx + 1]
+    if (nextSection && transitionMap.has(s.id)) {
+      return {
+        ...s,
+        nextSectionTransition: transitionMap.get(s.id),
+      }
+    }
+    return s
+  })
+
+  const nodes: React.ReactNode[] = []
+  for (let i = 0; i < sectionsWithTransitions.length; i++) {
+    const section = sectionsWithTransitions[i]
+    const nextSection = sectionsWithTransitions[i + 1]
+    const transitionType = (section as any).nextSectionTransition?.type
+
+    if (nextSection && transitionType && transitionType !== "none") {
+      const fromColor = (section.styles as any)?.backgroundColor || "#ffffff"
+      const toColor = (nextSection.styles as any)?.backgroundColor || "#fafaf9"
+      
       nodes.push(
-        <React.Fragment key={`pair-${next.id}`}>
-          <TransitionWrapper type={t} position="bottom">
+        <React.Fragment key={`pair-${nextSection.id}`}>
+          <TransitionWrapper type={transitionType} position="bottom" fromColor={fromColor} toColor={toColor}>
             <div className="relative">
               <SectionRenderer section={section} isPreview={true} wrapTransition={false} />
             </div>
           </TransitionWrapper>
 
-          <TransitionWrapper type={t} position="top">
+          <TransitionWrapper type={transitionType} position="top" fromColor={fromColor} toColor={toColor}>
             <div className="relative">
-              <SectionRenderer section={next} isPreview={true} wrapTransition={false} />
+              <SectionRenderer section={nextSection} isPreview={true} wrapTransition={false} />
             </div>
           </TransitionWrapper>
         </React.Fragment>,
