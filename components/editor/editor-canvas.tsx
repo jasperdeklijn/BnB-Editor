@@ -5,7 +5,6 @@ import { Trash2, GripVertical, ChevronUp, ChevronDown, Copy } from "lucide-react
 import { Button } from "@/components/ui/button"
 import type { Section, SectionType } from "@/lib/types"
 import { SectionRenderer, TransitionWrapper } from "./section-renderer"
-import React from "react"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { createClient } from "@/lib/supabase/client"
 import type { SupabaseClient } from "@supabase/supabase-js"
@@ -350,7 +349,12 @@ export function EditorCanvas({
       <div className={isPreview ? "" : "p-8"}>
         <div className={`mx-auto ${getDeviceWidth()} transition-all duration-300`}>
           {!isPreview && sections.length === 0 && (
-            <div className="flex min-h-[500px] items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-background/50 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div
+              className="flex min-h-[500px] items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-background/50 animate-in fade-in slide-in-from-bottom-4 duration-500"
+              onDragOver={(e) => handleDragOverGap(e, 0)}
+              onDragLeave={handleDragLeaveGap}
+              onDrop={(e) => handleDropOnGap(e, 0)}
+            >
               <div className="text-center">
                 <div className="mb-4 text-5xl">👋</div>
                 <h3 className="mb-2 text-lg font-semibold">Start Building</h3>
@@ -489,10 +493,10 @@ export function EditorCanvas({
               return (
                 <React.Fragment key={section.id}>
                   {content}
-                  <SectionTransition
+                 <SectionTransition
                     type={next.transitionFromPrev.type}
-                    from={section.styles}
-                    to={next.styles}
+                    from={section.styles as Record<string, unknown>}
+                    to={next.styles as Record<string, unknown>}
                   />
                 </React.Fragment>
               )
