@@ -1,4 +1,21 @@
-export type SectionType = "hero" | "gallery" | "rooms" | "contact" | "amenities" | "about"
+export type SectionType =
+  | "hero"
+  | "gallery"
+  | "rooms"
+  | "contact"
+  | "amenities"
+  | "about"
+
+export type TransitionType =
+  | "none"
+  | "fade"
+  | "gradient"
+  | "slide"
+  | "wave"
+  | "curve"
+  | "diagonal"
+  | "zigzag"
+  | "split"
 
 export interface SectionStyles {
   fontFamily?: string
@@ -7,17 +24,25 @@ export interface SectionStyles {
   backgroundImage?: string
 }
 
+export interface SectionTransition {
+  type: TransitionType
+}
+
 export interface Section {
   id: string
   type: SectionType
   data: Record<string, unknown>
   styles?: SectionStyles
-  transitionFromPrev?: {
-    type: "none" | "fade" | "gradient" | "slide" | "wave" | "curve" | "diagonal" | "zigzag" | "split"
-  }
-  transitionToNext?: {
-    type: "none" | "fade" | "gradient" | "slide" | "wave" | "curve" | "diagonal" | "zigzag" | "split"
-  }
+
+  /**
+   * Derived at runtime (never stored)
+   */
+  transitionFromPrev?: SectionTransition
+
+  /**
+   * Stored / editor-controlled
+   */
+  transitionToNext?: SectionTransition
 }
 
 export interface Website {

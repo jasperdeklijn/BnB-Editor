@@ -212,7 +212,7 @@ export async function duplicateSection(sectionId: string, supabase?: SupabaseCli
 }
 
 // Transition management functions
-export async function getTransitionsBetweenSections(websiteId: string, supabase?: SupabaseClient) {
+export async function getTransitionsFromWebsite(websiteId: string, supabase?: SupabaseClient) {
   const client = await getClient(supabase)
   const { data, error } = await client
     .from('section_transitions')
@@ -306,7 +306,7 @@ export default {
   moveSection,
   reorderSections,
   duplicateSection,
-  getTransitionsBetweenSections,
+  getTransitionsFromWebsite,
   getTransitionFromSection,
   setTransition,
   deleteTransition,
