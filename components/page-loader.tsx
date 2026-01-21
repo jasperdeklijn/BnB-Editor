@@ -19,7 +19,7 @@ export async function loadPublicWebsitePage({
 
   const { data: website, error } =
     await websiteSections.fetchWebsiteWithSectionsBySlug(slug, supabase)
-    
+
   if (error || !website) return notFound()
 
   const sections: Section[] = (website.website_sections || []).map(
@@ -31,8 +31,6 @@ export async function loadPublicWebsitePage({
       transitionToNext: r.transition_to_next || undefined,
     })
   )
-
-  console.log("Sections:", sections)
 
   // Derive transitionFromPrev
   for (let i = 1; i < sections.length; i++) {
