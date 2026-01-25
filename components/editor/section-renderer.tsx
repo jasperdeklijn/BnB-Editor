@@ -8,6 +8,8 @@ import { RoomsSection } from "@/components/bnb-sections/rooms-section"
 import { GallerySection } from "@/components/bnb-sections/gallery-section"
 import { AmenitiesSection } from "@/components/bnb-sections/amenities-section"
 import { ContactSection } from "@/components/bnb-sections/contact-section"
+import { NavSection } from "@/components/bnb-sections/nav-section"
+import { FooterSection } from "@/components/bnb-sections/footer-section"
 
 interface SectionRendererProps {
   section: Section
@@ -308,6 +310,12 @@ export function SectionRenderer({ section, isPreview, onUpdate, wrapTransition }
       break
     case "contact":
       inner = <ContactSection {...commonProps} />
+      break
+    case "nav":
+      inner = <NavSection {...commonProps} />
+      break
+    case "footer":
+      inner = <FooterSection {...commonProps} />
       break
     default:
       inner = null

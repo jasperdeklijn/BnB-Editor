@@ -2,16 +2,18 @@
 
 import type React from "react"
 import { useState } from "react"
-import { ImageIcon, Home, Bed, Mail, Sparkles, Info, ChevronLeft, ChevronRight, Plus } from "lucide-react"
+import { ImageIcon, Home, Bed, Mail, Sparkles, Info, ChevronLeft, ChevronRight, Plus, Menu, Layout  } from "lucide-react"
 import type { SectionType } from "@/lib/types"
 
 const sectionTypes: { type: SectionType; label: string; icon: React.ReactNode; description: string }[] = [
+  { type: "nav", label: "Navigation", icon: <Menu className="h-5 w-5" />, description: "Top navbar" },
   { type: "hero", label: "Hero", icon: <Home className="h-5 w-5" />, description: "Main header section" },
   { type: "about", label: "About", icon: <Info className="h-5 w-5" />, description: "Tell your story" },
   { type: "rooms", label: "Rooms", icon: <Bed className="h-5 w-5" />, description: "Showcase rooms" },
   { type: "gallery", label: "Gallery", icon: <ImageIcon className="h-5 w-5" />, description: "Photo gallery" },
   { type: "amenities", label: "Amenities", icon: <Sparkles className="h-5 w-5" />, description: "List features" },
   { type: "contact", label: "Contact", icon: <Mail className="h-5 w-5" />, description: "Contact form" },
+  { type: "footer", label: "Footer", icon: <Layout className="h-5 w-5" />, description: "Bottom footer" },
 ]
 
 interface SectionsSelectorProps {

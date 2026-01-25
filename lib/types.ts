@@ -5,6 +5,8 @@ export type SectionType =
   | "contact"
   | "amenities"
   | "about"
+  | "nav"
+  | "footer"
 
 export type TransitionType =
   | "none"
