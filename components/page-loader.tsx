@@ -110,7 +110,7 @@ export async function loadPublicWebsitePage({
           <TransitionWrapper
             key={`${section.id}-bottom`}
             type={transition.type}
-            position="bottom"
+            position="both"
             fromColor={fromColor}
             toColor={toColor}
           >

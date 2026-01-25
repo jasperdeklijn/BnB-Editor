@@ -25,7 +25,7 @@ export function TransitionWrapper({
 }: {
   type?: string
   children?: React.ReactNode
-  position?: "top" | "bottom" | "both"
+  position?: "top" | "bottom" | "both" | "center"
   fromColor?: string
   toColor?: string
 }) {
@@ -37,6 +37,119 @@ export function TransitionWrapper({
     const raf = requestAnimationFrame(() => setVisible(true))
     return () => cancelAnimationFrame(raf)
   }, [type, position])
+
+  // Standalone centered transition decorations (for use between sections)
+  const centerDecoration = (t?: string) => {
+    if (!t) return null
+    
+    const gradientId = `grad-${t}-${Math.random().toString(36).substr(2, 9)}`
+    const height = 80
+
+    if (t === "fade") {
+      return (
+        <div
+          className="w-full pointer-events-none"
+          style={{
+            height,
+            background: `linear-gradient(180deg, ${fromColor} 0%, ${toColor} 100%)`,
+          }}
+        />
+      )
+    }
+    if (t === "gradient") {
+      return (
+        <div
+          className="w-full pointer-events-none"
+          style={{
+            height: height + 20,
+            background: `linear-gradient(180deg, ${fromColor} 0%, ${toColor}dd 50%, ${toColor} 100%)`,
+          }}
+        />
+      )
+    }
+    if (t === "slide") {
+      return (
+        <div
+          className="w-full pointer-events-none"
+          style={{
+            height,
+            background: `linear-gradient(180deg, ${fromColor} 0%, ${toColor}99 100%)`,
+          }}
+        />
+      )
+    }
+    if (t === "diagonal") {
+      return (
+        <svg
+          className="w-full pointer-events-none"
+          viewBox="0 0 1200 120"
+          preserveAspectRatio="none"
+          style={{ height }}
+        >
+          <defs>
+            <linearGradient id={gradientId} x1="0%" x2="0%" y1="0%" y2="100%">
+              <stop offset="0%" stopColor={fromColor} />
+              <stop offset="100%" stopColor={toColor} />
+            </linearGradient>
+          </defs>
+          <path d="M0,0 L1200,120 L1200,120 L0,120 Z" fill={`url(#${gradientId})`} />
+        </svg>
+      )
+    }
+    if (t === "wave") {
+      return (
+        <svg
+          className="w-full pointer-events-none"
+          viewBox="0 0 1200 120"
+          preserveAspectRatio="none"
+          style={{ height }}
+        >
+          <defs>
+            <linearGradient id={gradientId} x1="0%" x2="0%" y1="0%" y2="100%">
+              <stop offset="0%" stopColor={fromColor} />
+              <stop offset="100%" stopColor={toColor} />
+            </linearGradient>
+          </defs>
+          <path d="M0,30 C200,10 300,50 600,40 C900,30 1000,60 1200,30 L1200,120 L0,120 Z" fill={`url(#${gradientId})`} />
+        </svg>
+      )
+    }
+    if (t === "zigzag") {
+      return (
+        <svg className="w-full pointer-events-none" viewBox="0 0 1200 80" preserveAspectRatio="none" style={{ height }}>
+          <defs>
+            <linearGradient id={gradientId} x1="0%" x2="0%" y1="0%" y2="100%">
+              <stop offset="0%" stopColor={fromColor} />
+              <stop offset="100%" stopColor={toColor} />
+            </linearGradient>
+          </defs>
+          <path d="M0,40 L80,0 L160,80 L240,0 L320,80 L400,0 L480,80 L560,0 L640,80 L720,0 L800,80 L880,0 L960,80 L1040,0 L1120,80 L1200,40 L1200,80 L0,80 Z" fill={`url(#${gradientId})`} />
+        </svg>
+      )
+    }
+    if (t === "curve") {
+      return (
+        <svg className="w-full pointer-events-none" viewBox="0 0 1200 140" preserveAspectRatio="none" style={{ height: height + 60 }}>
+          <defs>
+            <linearGradient id={gradientId} x1="0%" x2="0%" y1="0%" y2="100%">
+              <stop offset="0%" stopColor={fromColor} />
+              <stop offset="100%" stopColor={toColor} />
+            </linearGradient>
+          </defs>
+          <path d="M0,20 Q300,120 600,30 T1200,20 L1200,140 L0,140 Z" fill={`url(#${gradientId})`} />
+        </svg>
+      )
+    }
+    if (t === "split") {
+      return (
+        <div className="w-full flex pointer-events-none" style={{ height }}>
+          <div className="flex-1" style={{ background: `linear-gradient(to bottom right, ${fromColor}, ${toColor})` }} />
+          <div className="flex-1" style={{ background: `linear-gradient(to bottom left, ${fromColor}, ${toColor})` }} />
+        </div>
+      )
+    }
+    return null
+  }
 
   const topDecoration = (t?: string) => {
     if (!t) return null
@@ -139,6 +252,11 @@ export function TransitionWrapper({
 
   const t = type
 
+  // If position is "center", render as a standalone element between sections
+  if (position === "center") {
+    return <div className="relative w-full">{centerDecoration(t)}</div>
+  }
+
   return (
     <div className="relative">
       {position === "top" || position === "both" ? topDecoration(t) : null}
@@ -170,13 +288,6 @@ export function SectionRenderer({ section, isPreview, onUpdate, wrapTransition }
     styles: section.styles,
   }
 
-  // Allow callers (like the canvas) to opt-out of wrapping since
-  // the canvas sometimes wraps pairs of sections itself. Default
-  // behavior is to wrap based on the section's `transitionFromPrev`.
-  // We accept an optional `wrapTransition` prop via `onUpdate` trick
-  // by checking a special property on the section object to avoid
-  // changing all call sites.
-
   let inner: React.ReactElement | null = null
 
   switch (section.type) {
@@ -202,16 +313,10 @@ export function SectionRenderer({ section, isPreview, onUpdate, wrapTransition }
       inner = null
   }
 
-  // If this section declares a transition from the previous section,
-  // wrap the rendered inner component with the `TransitionWrapper`.
+  // If wrapTransition is explicitly false, don't wrap
   if (wrapTransition === false) return inner
 
-  const t = section.transitionFromPrev?.type
-  if (t && t !== "none") {
-    const bgColor = (section.styles as any)?.backgroundColor || "#fafaf9"
-    return <TransitionWrapper type={t} fromColor="#ffffff" toColor={bgColor}>{inner}</TransitionWrapper>
-  }
-
+  // Otherwise just render the inner component
   return inner
 }
 
