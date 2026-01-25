@@ -288,6 +288,7 @@ export function EditorClient({ userId }: EditorClientProps) {
         <EditorCanvas
           sections={sections}
           setSections={persistSections}
+          transitions={transitions}
           isPreview={isPreview}
           selectedSectionId={selectedSectionId}
           onSectionSelect={setSelectedSectionId}

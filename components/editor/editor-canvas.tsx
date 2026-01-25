@@ -3,7 +3,7 @@
 import React, { useRef, useState } from "react"
 import { Trash2, GripVertical, ChevronUp, ChevronDown, Copy } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import type { Section, SectionType } from "@/lib/types"
+import type { Section, SectionType, Transition } from "@/lib/types"
 import { SectionRenderer } from "./section-renderer"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { createClient } from "@/lib/supabase/client"
@@ -12,6 +12,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 interface EditorCanvasProps {
   sections: Section[]
   setSections: (sections: Section[]) => void
+  transitions: Transition[]
   isPreview: boolean
   selectedSectionId: string | null
   onSectionSelect: (id: string | null) => void
@@ -23,6 +24,7 @@ interface EditorCanvasProps {
 export function EditorCanvas({
   sections,
   setSections,
+  transitions,
   isPreview,
   selectedSectionId,
   onSectionSelect,
@@ -380,6 +382,12 @@ export function EditorCanvas({
 
           {sections.map((section, i) => {
             const next = sections[i + 1]
+            const hasTransitionToNext = next && transitions.some(
+              t => t.fromSectionId === section.id && t.toSectionId === next.id && t.type !== "none"
+            )
+            const transitionToNext = hasTransitionToNext 
+              ? transitions.find(t => t.fromSectionId === section.id && t.toSectionId === next.id)
+              : null
 
             const content = (
               <React.Fragment>
@@ -486,16 +494,14 @@ export function EditorCanvas({
               </React.Fragment>
             )
 
-            // If the next section declares a transition, render an explicit
-            // visual separator between this section and the next so the
-            // transition is always visible in the editor.
-            if (next?.transitionFromPrev?.type || (section as any).transitionToNext?.type) {
-              const transType = (section as any).transitionToNext?.type || next?.transitionFromPrev?.type
+            // If there's a transition to the next section, render an explicit
+            // visual separator between this section and the next
+            if (transitionToNext && next) {
               return (
                 <React.Fragment key={section.id}>
                   {content}
                   <SectionTransition
-                    type={transType}
+                    type={transitionToNext.type}
                     from={section.styles as Record<string, unknown>}
                     to={next.styles as Record<string, unknown>}
                   />

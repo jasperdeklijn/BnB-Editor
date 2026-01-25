@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { SectionRenderer, TransitionWrapper } from "@/components/editor/section-renderer"
 import type { Section, Transition } from "@/lib/types"
-import { resolveTransitionToNext } from "@/lib/transitions/resolveTransition"
 
 interface PageLoaderOptions {
   slug: string
@@ -44,70 +43,98 @@ export async function loadPublicWebsitePage({
     toSectionId: t.to_section_id,
     type: t.transition?.type || "none",
   }))
-console.log("transitions", transitions);
 
-console.log("sections", sections);
-  const nodes: React.ReactNode[] = []
+  // Build a sequence: section, transition, section, transition, ...
+  type SequenceItem = { type: "section"; data: Section } | { type: "transition"; data: Transition }
+  const sequence: SequenceItem[] = []
 
   for (let i = 0; i < sections.length; i++) {
     const current = sections[i]
-    const next = sections[i + 1]
+    sequence.push({ type: "section", data: current })
 
-    // Find transition between current and next section
-    const transition = transitions.find(
-      t => t.fromSectionId === current.id && t.toSectionId === next?.id
-    )
-    const hasTransition = next && transition && transition.type !== "none"
-
-    if (!hasTransition) {
-      nodes.push(
-        <div key={current.id} className="relative">
-          <SectionRenderer
-            section={current}
-            isPreview={isPreview}
-            wrapTransition={false}
-          />
-        </div>
+    // Check if there's a transition to the next section
+    if (i < sections.length - 1) {
+      const next = sections[i + 1]
+      const transition = transitions.find(
+        t => t.fromSectionId === current.id && t.toSectionId === next.id
       )
-      continue
+
+      if (transition && transition.type !== "none") {
+        sequence.push({ type: "transition", data: transition })
+      }
     }
+  }
 
-    const fromColor = current.styles?.backgroundColor || "#ffffff"
-    const toColor = next.styles?.backgroundColor || "#fafaf9"
+  const nodes: React.ReactNode[] = []
 
-    nodes.push(
-      <TransitionWrapper
-        key={`${current.id}-bottom`}
-        type={transition.type}
-        position="bottom"
-        fromColor={fromColor}
-        toColor={toColor}
-      >
-        <SectionRenderer
-          section={current}
-          isPreview={isPreview}
-          wrapTransition={false}
-        />
-      </TransitionWrapper>
-    )
+  for (let i = 0; i < sequence.length; i++) {
+    const item = sequence[i]
 
-    nodes.push(
-      <TransitionWrapper
-        key={`${next.id}-top`}
-        type={transition.type}
-        position="top"
-        fromColor={fromColor}
-        toColor={toColor}
-      >
-        <SectionRenderer
-          section={next}
-          isPreview={isPreview}
-          wrapTransition={false}
-        />
-      </TransitionWrapper>
-    )
+    if (item.type === "section") {
+      const section = item.data
 
-    i++ // skip next (already rendered)
+      // Check if the previous item was a transition
+      const prevWasTransition = i > 0 && sequence[i - 1].type === "transition"
+      const nextIsTransition = i < sequence.length - 1 && sequence[i + 1].type === "transition"
+
+      if (prevWasTransition) {
+        // This section comes after a transition, wrap it with "top"
+        const transition = (sequence[i - 1].data as Transition)
+        const prevSection = sections.find(s => s.id === transition.fromSectionId)
+        const fromColor = prevSection?.styles?.backgroundColor || "#ffffff"
+        const toColor = section.styles?.backgroundColor || "#fafaf9"
+
+        nodes.push(
+          <TransitionWrapper
+            key={`${section.id}-top`}
+            type={transition.type}
+            position="top"
+            fromColor={fromColor}
+            toColor={toColor}
+          >
+            <SectionRenderer
+              section={section}
+              isPreview={isPreview}
+              wrapTransition={false}
+            />
+          </TransitionWrapper>
+        )
+      } else if (nextIsTransition) {
+        // This section has a transition to the next, wrap it with "bottom"
+        const transition = (sequence[i + 1].data as Transition)
+        const nextSection = sections.find(s => s.id === transition.toSectionId)
+        const fromColor = section.styles?.backgroundColor || "#ffffff"
+        const toColor = nextSection?.styles?.backgroundColor || "#fafaf9"
+
+        nodes.push(
+          <TransitionWrapper
+            key={`${section.id}-bottom`}
+            type={transition.type}
+            position="bottom"
+            fromColor={fromColor}
+            toColor={toColor}
+          >
+            <SectionRenderer
+              section={section}
+              isPreview={isPreview}
+              wrapTransition={false}
+            />
+          </TransitionWrapper>
+        )
+      } else {
+        // No transition before or after, render normally
+        nodes.push(
+          <div key={section.id} className="relative">
+            <SectionRenderer
+              section={section}
+              isPreview={isPreview}
+              wrapTransition={false}
+            />
+          </div>
+        )
+      }
+    }
+    // Transition items don't render themselves; they're handled by wrapping sections
   }
 
   return <div className="min-h-screen bg-background">{nodes}</div>
