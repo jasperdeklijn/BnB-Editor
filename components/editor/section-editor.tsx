@@ -1,12 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { toast } from "sonner"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import type { Section, SectionStyles } from "@/lib/types"
 import { EditableText } from "./editable-text"
+import { createClient } from "@/lib/supabase/client"
+import websiteSections from "@/lib/supabase/websiteSections"
 import {
   Trash2,
   Type,
@@ -35,6 +38,7 @@ export function SelectionEditor({ selectedSection, sections, onUpdate, onStyleUp
     Array.isArray((selectedSection as any)?.data?.rooms) ? [...(selectedSection as any).data.rooms] : [],
   )
   const [transitionType, setTransitionType] = useState<string>("none")
+  const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null)
 
   // Keep localRooms in sync when selected section changes
   useEffect(() => {
@@ -47,6 +51,51 @@ export function SelectionEditor({ selectedSection, sections, onUpdate, onStyleUp
       setTransitionType((selectedSection?.transitionToNext as any)?.type || "none")
     }
   }, [selectedSection?.id, selectedSection?.transitionToNext])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutId) clearTimeout(saveTimeoutId)
+    }
+  }, [])
+
+  // Save to database with debouncing
+  const saveToDatabase = async (updatedData: any) => {
+    if (!websiteId || !selectedSection || selectedSection.id.startsWith('section-')) return
+
+    try {
+      const supabase = createClient()
+      const payload = {
+        type: selectedSection.type,
+        content: updatedData,
+        styles: selectedSection.styles ?? {},
+        position: sections.findIndex(s => s.id === selectedSection.id) + 1,
+      }
+      
+      await websiteSections.updateSection(selectedSection.id, payload as any, supabase)
+    } catch (err) {
+      console.error('Error saving to database:', err)
+    }
+  }
+
+  // Save styles to database
+  const saveStylesToDatabase = async (styles: any) => {
+    if (!websiteId || !selectedSection || selectedSection.id.startsWith('section-')) return
+
+    try {
+      const supabase = createClient()
+      const payload = {
+        type: selectedSection.type,
+        content: selectedSection.data ?? {},
+        styles: styles,
+        position: sections.findIndex(s => s.id === selectedSection.id) + 1,
+      }
+      
+      await websiteSections.updateSection(selectedSection.id, payload as any, supabase)
+    } catch (err) {
+      console.error('Error saving styles to database:', err)
+    }
+  }
 
   if (!selectedSection) {
     return (
@@ -64,6 +113,23 @@ export function SelectionEditor({ selectedSection, sections, onUpdate, onStyleUp
 
   const updateField = (field: string, value: any) => {
     onUpdate(selectedSection.id, { [field]: value })
+    
+    // Clear existing timeout
+    if (saveTimeoutId) clearTimeout(saveTimeoutId)
+    
+    // Set new timeout for debounced save
+    const timeout = setTimeout(async () => {
+      const updatedData = { ...selectedSection.data, [field]: value }
+      await saveToDatabase(updatedData)
+      
+      toast.success("Saved to database", {
+        position: "bottom-right",
+        duration: 2000,
+        style: { background: '#10b981', color: 'white' }
+      })
+    }, 800)
+    
+    setSaveTimeoutId(timeout)
   }
 
   const handleAddRoom = () => {
@@ -71,18 +137,51 @@ export function SelectionEditor({ selectedSection, sections, onUpdate, onStyleUp
     const updated = [...localRooms, newRoom]
     setLocalRooms(updated)
     onUpdate(selectedSection.id, { rooms: updated })
+    
+    if (saveTimeoutId) clearTimeout(saveTimeoutId)
+    const timeout = setTimeout(async () => {
+      await saveToDatabase({ ...selectedSection.data, rooms: updated })
+      toast.success("Room added", {
+        position: "bottom-right",
+        duration: 2000,
+        style: { background: '#10b981', color: 'white' }
+      })
+    }, 800)
+    setSaveTimeoutId(timeout)
   }
 
   const handleUpdateRoom = (index: number, field: string, value: string) => {
     const updated = localRooms.map((r, i) => (i === index ? { ...r, [field]: value } : r))
     setLocalRooms(updated)
     onUpdate(selectedSection.id, { rooms: updated })
+    
+    if (saveTimeoutId) clearTimeout(saveTimeoutId)
+    const timeout = setTimeout(async () => {
+      await saveToDatabase({ ...selectedSection.data, rooms: updated })
+      toast.success("Room updated", {
+        position: "bottom-right",
+        duration: 2000,
+        style: { background: '#10b981', color: 'white' }
+      })
+    }, 800)
+    setSaveTimeoutId(timeout)
   }
 
   const handleRemoveRoom = (index: number) => {
     const updated = localRooms.filter((_, i) => i !== index)
     setLocalRooms(updated)
     onUpdate(selectedSection.id, { rooms: updated })
+    
+    if (saveTimeoutId) clearTimeout(saveTimeoutId)
+    const timeout = setTimeout(async () => {
+      await saveToDatabase({ ...selectedSection.data, rooms: updated })
+      toast.success("Room removed", {
+        position: "bottom-right",
+        duration: 2000,
+        style: { background: '#10b981', color: 'white' }
+      })
+    }, 800)
+    setSaveTimeoutId(timeout)
   }
 
   const handleTransitionChange = (newType: string) => {
@@ -96,6 +195,27 @@ export function SelectionEditor({ selectedSection, sections, onUpdate, onStyleUp
       onUpdate(selectedSection.id, {
         transitionToNext: newType === "none" ? null : { type: newType },
       })
+      
+      if (saveTimeoutId) clearTimeout(saveTimeoutId)
+      const timeout = setTimeout(async () => {
+        if (newType !== "none") {
+          const supabase = createClient()
+          await websiteSections.setTransition(
+            websiteId!,
+            selectedSection.id,
+            nextSection.id,
+            { type: newType },
+            supabase
+          ).catch(err => console.error('Error saving transition:', err))
+        }
+        
+        toast.success("Transition saved", {
+          position: "bottom-right",
+          duration: 2000,
+          style: { background: '#10b981', color: 'white' }
+        })
+      }, 800)
+      setSaveTimeoutId(timeout)
       
       console.log(`✓ Transition set: ${selectedSection.type} → ${newType} → ${nextSection.type}`)
     }
@@ -292,7 +412,20 @@ export function SelectionEditor({ selectedSection, sections, onUpdate, onStyleUp
               <Input
                 placeholder="e.g., font-serif"
                 value={(selectedSection.styles as any)?.fontFamily || ""}
-                onChange={(e) => onStyleUpdate({ ...(selectedSection.styles || {}), fontFamily: e.target.value })}
+                onChange={(e) => {
+                  const newStyles = { ...(selectedSection.styles || {}), fontFamily: e.target.value }
+                  onStyleUpdate(newStyles)
+                  if (saveTimeoutId) clearTimeout(saveTimeoutId)
+                  const timeout = setTimeout(async () => {
+                    await saveStylesToDatabase(newStyles)
+                    toast.success("Style saved", {
+                      position: "bottom-right",
+                      duration: 2000,
+                      style: { background: '#10b981', color: 'white' }
+                    })
+                  }, 800)
+                  setSaveTimeoutId(timeout)
+                }}
               />
             </div>
             <div className="flex gap-3">
@@ -305,7 +438,20 @@ export function SelectionEditor({ selectedSection, sections, onUpdate, onStyleUp
                   type="color"
                   aria-label="Background color"
                   value={(selectedSection.styles as any)?.backgroundColor || "#ffffff"}
-                  onChange={(e) => onStyleUpdate({ ...(selectedSection.styles || {}), backgroundColor: e.target.value })}
+                  onChange={(e) => {
+                    const newStyles = { ...(selectedSection.styles || {}), backgroundColor: e.target.value }
+                    onStyleUpdate(newStyles)
+                    if (saveTimeoutId) clearTimeout(saveTimeoutId)
+                    const timeout = setTimeout(async () => {
+                      await saveStylesToDatabase(newStyles)
+                      toast.success("Style saved", {
+                        position: "bottom-right",
+                        duration: 2000,
+                        style: { background: '#10b981', color: 'white' }
+                      })
+                    }, 800)
+                    setSaveTimeoutId(timeout)
+                  }}
                   className="h-9 w-full cursor-pointer rounded border"
                 />
               </div>
@@ -318,7 +464,20 @@ export function SelectionEditor({ selectedSection, sections, onUpdate, onStyleUp
                   type="color"
                   aria-label="Text color"
                   value={(selectedSection.styles as any)?.textColor || "#000000"}
-                  onChange={(e) => onStyleUpdate({ ...(selectedSection.styles || {}), textColor: e.target.value })}
+                  onChange={(e) => {
+                    const newStyles = { ...(selectedSection.styles || {}), textColor: e.target.value }
+                    onStyleUpdate(newStyles)
+                    if (saveTimeoutId) clearTimeout(saveTimeoutId)
+                    const timeout = setTimeout(async () => {
+                      await saveStylesToDatabase(newStyles)
+                      toast.success("Style saved", {
+                        position: "bottom-right",
+                        duration: 2000,
+                        style: { background: '#10b981', color: 'white' }
+                      })
+                    }, 800)
+                    setSaveTimeoutId(timeout)
+                  }}
                   className="h-9 w-full cursor-pointer rounded border"
                 />
               </div>
