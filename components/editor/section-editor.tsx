@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import type { Section, SectionStyles } from "@/lib/types"
+import type { Section, SectionStyles, Transition } from "@/lib/types"
 import { EditableText } from "./editable-text"
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
@@ -27,30 +27,33 @@ import {
 interface SelectionEditorProps {
   selectedSection: Section | null
   sections: Section[]
+  transitions: Transition[]
   onUpdate: (id: string, data: Record<string, unknown>) => void
   onStyleUpdate: (styles: SectionStyles) => void
   onDelete: (id: string) => void
+  onTransitionUpdate: (fromSectionId: string, toSectionId: string, transitionType: string) => void
   websiteId?: string | null
 }
 
-export function SelectionEditor({ selectedSection, sections, onUpdate, onStyleUpdate, onDelete, websiteId }: SelectionEditorProps) {
+export function SelectionEditor({ 
+  selectedSection, 
+  sections, 
+  transitions,
+  onUpdate, 
+  onStyleUpdate, 
+  onDelete, 
+  onTransitionUpdate,
+  websiteId 
+}: SelectionEditorProps) {
   const [localRooms, setLocalRooms] = useState<any[]>(() =>
     Array.isArray((selectedSection as any)?.data?.rooms) ? [...(selectedSection as any).data.rooms] : [],
   )
-  const [transitionType, setTransitionType] = useState<string>("none")
   const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null)
 
   // Keep localRooms in sync when selected section changes
   useEffect(() => {
     setLocalRooms(Array.isArray((selectedSection as any)?.data?.rooms) ? [...(selectedSection as any).data.rooms] : [])
   }, [selectedSection?.id])
-
-  // Track transition type for the next section
-  useEffect(() => {
-    if (selectedSection) {
-      setTransitionType((selectedSection?.transitionToNext as any)?.type || "none")
-    }
-  }, [selectedSection?.id, selectedSection?.transitionToNext])
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -185,30 +188,16 @@ export function SelectionEditor({ selectedSection, sections, onUpdate, onStyleUp
   }
 
   const handleTransitionChange = (newType: string) => {
-    setTransitionType(newType)
     const nextSectionIdx = sections.findIndex(s => s.id === selectedSection.id) + 1
     
     if (nextSectionIdx >= 0 && nextSectionIdx < sections.length) {
       const nextSection = sections[nextSectionIdx]
       
-      // Save transition
-      onUpdate(selectedSection.id, {
-        transitionToNext: newType === "none" ? null : { type: newType },
-      })
+      // Call parent callback to update transition
+      onTransitionUpdate(selectedSection.id, nextSection.id, newType)
       
       if (saveTimeoutId) clearTimeout(saveTimeoutId)
-      const timeout = setTimeout(async () => {
-        if (newType !== "none") {
-          const supabase = createClient()
-          await websiteSections.setTransition(
-            websiteId!,
-            selectedSection.id,
-            nextSection.id,
-            { type: newType },
-            supabase
-          ).catch(err => console.error('Error saving transition:', err))
-        }
-        
+      const timeout = setTimeout(() => {
         toast.success("Transition saved", {
           position: "bottom-right",
           duration: 2000,
@@ -495,28 +484,39 @@ export function SelectionEditor({ selectedSection, sections, onUpdate, onStyleUp
             <p className="text-xs text-muted-foreground mb-2">
               Select how this section transitions to the next one
             </p>
-            <select
-              value={transitionType}
-              onChange={(e) => handleTransitionChange(e.target.value)}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:bg-accent"
-            >
-              <option value="none">None</option>
-              <option value="fade">Fade</option>
-              <option value="gradient">Gradient</option>
-              <option value="slide">Slide</option>
-              <option value="wave">Wave</option>
-              <option value="curve">Curve</option>
-              <option value="diagonal">Diagonal</option>
-              <option value="zigzag">Zigzag</option>
-              <option value="split">Split</option>
-            </select>
-            {transitionType !== "none" && (
-              <div className="mt-3 p-2 rounded bg-amber-50 border border-amber-200">
-                <p className="text-xs text-amber-800">
-                  Preview: Check the editor canvas to see the {transitionType} transition
-                </p>
-              </div>
-            )}
+            {(() => {
+              const nextSectionIdx = sections.findIndex(s => s.id === selectedSection.id) + 1
+              const nextSection = nextSectionIdx < sections.length ? sections[nextSectionIdx] : null
+              const currentTransition = nextSection ? transitions.find(t => t.fromSectionId === selectedSection.id && t.toSectionId === nextSection.id) : null
+              const currentType = currentTransition?.type || "none"
+              
+              return (
+                <>
+                  <select
+                    value={currentType}
+                    onChange={(e) => handleTransitionChange(e.target.value)}
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:bg-accent"
+                  >
+                    <option value="none">None</option>
+                    <option value="fade">Fade</option>
+                    <option value="gradient">Gradient</option>
+                    <option value="slide">Slide</option>
+                    <option value="wave">Wave</option>
+                    <option value="curve">Curve</option>
+                    <option value="diagonal">Diagonal</option>
+                    <option value="zigzag">Zigzag</option>
+                    <option value="split">Split</option>
+                  </select>
+                  {currentType !== "none" && (
+                    <div className="mt-3 p-2 rounded bg-amber-50 border border-amber-200">
+                      <p className="text-xs text-amber-800">
+                        Preview: Check the editor canvas to see the {currentType} transition
+                      </p>
+                    </div>
+                  )}
+                </>
+              )
+            })()}
           </Card>
         )}
       </div>

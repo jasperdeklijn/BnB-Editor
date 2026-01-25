@@ -24,7 +24,10 @@ export interface SectionStyles {
   backgroundImage?: string
 }
 
-export interface SectionTransition {
+export interface Transition {
+  id: string
+  fromSectionId: string
+  toSectionId: string
   type: TransitionType
 }
 
@@ -33,16 +36,6 @@ export interface Section {
   type: SectionType
   data: Record<string, unknown>
   styles?: SectionStyles
-
-  /**
-   * Derived at runtime (never stored)
-   */
-  transitionFromPrev?: SectionTransition
-
-  /**
-   * Stored in section_transitions table / editor-controlled
-   */
-  transitionToNext?: SectionTransition
 }
 
 export interface Website {
@@ -51,6 +44,7 @@ export interface Website {
   title: string
   slug: string
   sections: Section[]
+  transitions: Transition[]
   published: boolean
   created_at: string
   updated_at: string

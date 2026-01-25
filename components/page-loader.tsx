@@ -3,7 +3,7 @@ import React from "react"
 import { createClient } from "@/lib/supabase/server"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { SectionRenderer, TransitionWrapper } from "@/components/editor/section-renderer"
-import type { Section, SectionTransition } from "@/lib/types"
+import type { Section, Transition } from "@/lib/types"
 import { resolveTransitionToNext } from "@/lib/transitions/resolveTransition"
 
 interface PageLoaderOptions {
@@ -28,42 +28,36 @@ export async function loadPublicWebsitePage({
       type: r.type,
       data: r.content || {},
       styles: r.styles || {},
-      transitionToNext: r.transition_to_next || undefined,
     })
   )
 
   // Fetch transitions from section_transitions table
-  const { data: transitions } = await supabase
+  const { data: transitionRows } = await supabase
     .from("section_transitions")
     .select("from_section_id, to_section_id, transition")
     .eq("website_id", website.id)
 
-  // Map transitions to sections
-  if (transitions) {
-    const transitionMap = new Map<string, SectionTransition>()
-    transitions.forEach((t: any) => {
-      transitionMap.set(t.from_section_id, t.transition || { type: "none" })
-    })
+  // Map transitions to Transition objects
+  const transitions: Transition[] = (transitionRows || []).map((t: any) => ({
+    id: `${t.from_section_id}-${t.to_section_id}`,
+    fromSectionId: t.from_section_id,
+    toSectionId: t.to_section_id,
+    type: t.transition?.type || "none",
+  }))
+console.log("transitions", transitions);
 
-    sections.forEach((section) => {
-      section.transitionToNext = transitionMap.get(section.id)
-    })
-  }
-
-  // Derive transitionFromPrev
-  for (let i = 1; i < sections.length; i++) {
-    sections[i].transitionFromPrev =
-      sections[i - 1].transitionToNext ?? { type: "none" }
-  }
-
+console.log("sections", sections);
   const nodes: React.ReactNode[] = []
 
   for (let i = 0; i < sections.length; i++) {
     const current = sections[i]
     const next = sections[i + 1]
 
-    const transition = resolveTransitionToNext(current, next)
-    const hasTransition = next && transition.type !== "none"
+    // Find transition between current and next section
+    const transition = transitions.find(
+      t => t.fromSectionId === current.id && t.toSectionId === next?.id
+    )
+    const hasTransition = next && transition && transition.type !== "none"
 
     if (!hasTransition) {
       nodes.push(

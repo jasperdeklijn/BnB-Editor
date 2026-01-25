@@ -5,7 +5,7 @@ import { SectionsSelector } from "./sections-selector"
 import { EditorCanvas } from "./editor-canvas"
 import { EditorHeader } from "./editor-header"
 import { SelectionEditor } from "./section-editor"
-import type { Section, SectionStyles } from "@/lib/types"
+import type { Section, SectionStyles, Transition } from "@/lib/types"
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { useRouter } from "next/navigation"
@@ -16,6 +16,7 @@ interface EditorClientProps {
 
 export function EditorClient({ userId }: EditorClientProps) {
   const [sections, setSections] = useState<Section[]>([])
+  const [transitions, setTransitions] = useState<Transition[]>([])
   const [websiteId, setWebsiteId] = useState<string | null>(null)
   const [title, setTitle] = useState("My BnB Website")
   const [slug, setSlug] = useState("")
@@ -54,22 +55,26 @@ export function EditorClient({ userId }: EditorClientProps) {
         setSections([])
       } else {
         // Load transitions from separate table
-        const { data: transitions } = await websiteSections.getTransitionsBetweenSections(website.id, supabase)
+        const { data: transitionRows } = await supabase
+          .from("section_transitions")
+          .select("from_section_id, to_section_id, transition")
+          .eq("website_id", website.id)
         
-        // Create a map of from_section_id -> transition
-        const transitionMap = new Map()
-        if (transitions && Array.isArray(transitions)) {
-          for (const t of transitions) {
-            transitionMap.set(t.from_section_id, t.transition)
-          }
-        }
+        // Map transitions to Transition objects
+        const mappedTransitions: Transition[] = (transitionRows || []).map((t: any) => ({
+          id: `${t.from_section_id}-${t.to_section_id}`,
+          fromSectionId: t.from_section_id,
+          toSectionId: t.to_section_id,
+          type: t.transition?.type || "none",
+        }))
+        setTransitions(mappedTransitions)
         
-        const mapped = (rows || []).map((r: any, idx: number) => ({
+        const mapped = (rows || []).map((r: any) => ({
           id: r.id,
           type: r.type,
           data: r.content || {},
           styles: r.styles || {},
-          transitionFromPrev: transitionMap.get(r.id) || undefined,          transitionToNext: transitions && Array.isArray(transitions) ? transitions.find(t => t.from_section_id === r.id)?.transition : undefined,        }))
+        }))
         setSections(mapped)
       }
     } else {
@@ -160,22 +165,20 @@ export function EditorClient({ userId }: EditorClientProps) {
       // Ensure DB ordering
       await websiteSections.reorderSections(websiteId, finalIds, supabase)
 
-      // Now save all transitions with their final IDs
-      for (let i = 0; i < newSections.length; i++) {
-        const section = newSections[i]
-        if (section.transitionFromPrev && section.transitionFromPrev.type !== 'none') {
-          const persistedFromId = idMapping.get(section.id) || section.id
-          const prevSection = newSections[i - 1]
-          if (prevSection) {
-            const persistedPrevId = idMapping.get(prevSection.id) || prevSection.id
-            await websiteSections.setTransition(
-              websiteId,
-              persistedPrevId,
-              persistedFromId,
-              section.transitionFromPrev,
-              supabase
-            ).catch(err => console.error('Error saving transition:', err))
-          }
+      // Save all transitions from transitions state
+      for (const transition of transitions) {
+        // Make sure both sections are persisted (not temp IDs)
+        const persistedFromId = idMapping.get(transition.fromSectionId) || transition.fromSectionId
+        const persistedToId = idMapping.get(transition.toSectionId) || transition.toSectionId
+        
+        if (!persistedFromId.startsWith('section-') && !persistedToId.startsWith('section-')) {
+          await websiteSections.setTransition(
+            websiteId,
+            persistedFromId,
+            persistedToId,
+            { type: transition.type },
+            supabase
+          ).catch(err => console.error('Error saving transition:', err))
         }
       }
     } catch (err) {
@@ -204,54 +207,60 @@ export function EditorClient({ userId }: EditorClientProps) {
   // Update section content fields (merged into `data`) or top-level metadata like transitions.
   const handleSectionUpdate = (id: string, data: Record<string, unknown>) => {
     setSections((prev) =>
-      prev.map((s, idx) => {
+      prev.map((s) => {
         if (s.id !== id) return s
-        
-        // Handle transitionToNext (transition FROM this section TO next)
-        if (Object.prototype.hasOwnProperty.call(data, "transitionToNext")) {
-          const { transitionToNext, ...rest } = data
-          const nextSection = prev[idx + 1]
-          
-          // Update local state first
-          const updatedSection = {
-            ...s,
-            transitionFromPrev: transitionToNext as any,
-            data: { ...s.data, ...rest },
-          }
-          
-          // Save to database if both sections have persisted IDs
-          if (
-            nextSection &&
-            websiteId &&
-            !s.id.startsWith('section-') &&
-            !nextSection.id.startsWith('section-')
-          ) {
-            websiteSections.setTransition(
-              websiteId,
-              id,
-              nextSection.id,
-              transitionToNext as any,
-              createClient()
-            ).catch(err => console.error('Error saving transition:', err))
-          }
-          
-          return updatedSection
-        }
-        
-        // Handle old transitionFromPrev (for backwards compatibility)
-        if (Object.prototype.hasOwnProperty.call(data, "transitionFromPrev")) {
-          const { transitionFromPrev, ...rest } = data
-          return {
-            ...s,
-            transitionFromPrev: transitionFromPrev as any,
-            data: { ...s.data, ...rest },
-          }
-        }
-        
-        // Default: merge into `data` object
         return { ...s, data: { ...s.data, ...data } }
       }),
     )
+  }
+
+  const handleTransitionUpdate = async (fromSectionId: string, toSectionId: string, transitionType: string) => {
+    // Update local state
+    setTransitions((prev) => {
+      // Remove existing transition between these sections
+      const filtered = prev.filter(
+        t => !(t.fromSectionId === fromSectionId && t.toSectionId === toSectionId)
+      )
+      
+      // Add new transition if type is not "none"
+      if (transitionType !== "none") {
+        filtered.push({
+          id: `${fromSectionId}-${toSectionId}`,
+          fromSectionId,
+          toSectionId,
+          type: transitionType as any,
+        })
+      }
+      
+      return filtered
+    })
+
+    // Save to database
+    if (!websiteId || fromSectionId.startsWith('section-') || toSectionId.startsWith('section-')) return
+
+    try {
+      const supabase = createClient()
+      if (transitionType === "none") {
+        // Delete transition
+        await supabase
+          .from("section_transitions")
+          .delete()
+          .eq("website_id", websiteId)
+          .eq("from_section_id", fromSectionId)
+          .eq("to_section_id", toSectionId)
+      } else {
+        // Create or update transition
+        await websiteSections.setTransition(
+          websiteId,
+          fromSectionId,
+          toSectionId,
+          { type: transitionType },
+          supabase
+        )
+      }
+    } catch (err) {
+      console.error('Error saving transition:', err)
+    }
   }
 
   const handleDelete = (id: string) => {
@@ -286,13 +295,15 @@ export function EditorClient({ userId }: EditorClientProps) {
         />
         {!isPreview && (
           <SelectionEditor
-              selectedSection={selectedSection}
+            selectedSection={selectedSection}
             sections={sections}
+            transitions={transitions}
             onUpdate={handleSectionUpdate}
             onStyleUpdate={handleStyleUpdate}
             onDelete={handleDelete}
+            onTransitionUpdate={handleTransitionUpdate}
             websiteId={websiteId}
-            />
+          />
         )}
       </div>
     </div>
