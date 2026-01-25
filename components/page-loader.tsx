@@ -3,7 +3,7 @@ import React from "react"
 import { createClient } from "@/lib/supabase/server"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { SectionRenderer, TransitionWrapper } from "@/components/editor/section-renderer"
-import type { Section } from "@/lib/types"
+import type { Section, SectionTransition } from "@/lib/types"
 import { resolveTransitionToNext } from "@/lib/transitions/resolveTransition"
 
 interface PageLoaderOptions {
@@ -31,6 +31,24 @@ export async function loadPublicWebsitePage({
       transitionToNext: r.transition_to_next || undefined,
     })
   )
+
+  // Fetch transitions from section_transitions table
+  const { data: transitions } = await supabase
+    .from("section_transitions")
+    .select("from_section_id, to_section_id, transition")
+    .eq("website_id", website.id)
+
+  // Map transitions to sections
+  if (transitions) {
+    const transitionMap = new Map<string, SectionTransition>()
+    transitions.forEach((t: any) => {
+      transitionMap.set(t.from_section_id, t.transition || { type: "none" })
+    })
+
+    sections.forEach((section) => {
+      section.transitionToNext = transitionMap.get(section.id)
+    })
+  }
 
   // Derive transitionFromPrev
   for (let i = 1; i < sections.length; i++) {

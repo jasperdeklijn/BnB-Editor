@@ -187,26 +187,8 @@ export function EditorClient({ userId }: EditorClientProps) {
 
   const handlePublish = async () => {
     if (!websiteId) return
-
-    setIsSaving(true)
-    const supabase = createClient()
-
-    // Ensure latest sections are persisted and ordered before publishing
-    await persistSections(sections)
-
-    const { error } = await supabase
-      .from("websites")
-      .update({
-        title,
-        published: true,
-      })
-      .eq("id", websiteId)
-
-    setIsSaving(false)
-
-    if (!error) {
       router.push(`/site/${slug}`)
-    }
+    
   }
 
   const handleStyleUpdate = (styles: SectionStyles) => {

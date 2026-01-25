@@ -40,7 +40,7 @@ export interface Section {
   transitionFromPrev?: SectionTransition
 
   /**
-   * Stored / editor-controlled
+   * Stored in section_transitions table / editor-controlled
    */
   transitionToNext?: SectionTransition
 }
