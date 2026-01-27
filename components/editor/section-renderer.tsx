@@ -21,7 +21,7 @@ interface SectionRendererProps {
 export function TransitionWrapper({
   type,
   children,
-  position = "top",
+  position = "bottom",
   fromColor = "#ffffff",
   toColor = "#fafaf9",
 }: {
