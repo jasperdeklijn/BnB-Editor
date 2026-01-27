@@ -327,4 +327,3 @@ export function SectionRenderer({ section, isPreview, onUpdate, wrapTransition }
   // Otherwise just render the inner component
   return inner
 }
-
