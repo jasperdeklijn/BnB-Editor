@@ -80,8 +80,23 @@ export async function loadPublicWebsitePage({
       // Determine wrapper ID for anchor navigation (not for nav/footer)
       const needsAnchorId = section.type !== "nav" && section.type !== "footer"
       const anchorId = needsAnchorId ? `section-${section.id}` : undefined
+      
+      // Nav sections need to be rendered without wrapper for sticky positioning
+      const isNavSection = section.type === "nav"
+      const navIsSticky = isNavSection && ((section.data?.isSticky as boolean) ?? true)
 
-      if (prevWasTransition) {
+      if (isNavSection) {
+        // Render nav directly without wrapper to preserve sticky positioning
+        nodes.push(
+          <SectionRenderer
+            key={section.id}
+            section={section}
+            isPreview={isPreview}
+            wrapTransition={false}
+            allSections={sections}
+          />
+        )
+      } else if (prevWasTransition) {
         // This section comes after a transition, wrap it with "top"
         const transition = (sequence[i - 1].data as Transition)
         const prevSection = sections.find(s => s.id === transition.fromSectionId)
