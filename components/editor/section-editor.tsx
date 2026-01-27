@@ -419,7 +419,7 @@ export function SelectionEditor({
                 <Label className="text-xs">Sticky Navigation</Label>
               </div>
               <button
-                onClick={() => updateField("isSticky", !(selectedSection.data as any).isSticky ?? false)}
+                onClick={() => updateField("isSticky", !((selectedSection.data as any).isSticky ?? true))}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                   ((selectedSection.data as any).isSticky ?? true) ? "bg-amber-500" : "bg-gray-200"
                 }`}
