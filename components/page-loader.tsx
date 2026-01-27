@@ -77,6 +77,10 @@ export async function loadPublicWebsitePage({
       const prevWasTransition = i > 0 && sequence[i - 1].type === "transition"
       const nextIsTransition = i < sequence.length - 1 && sequence[i + 1].type === "transition"
 
+      // Determine wrapper ID for anchor navigation (not for nav/footer)
+      const needsAnchorId = section.type !== "nav" && section.type !== "footer"
+      const anchorId = needsAnchorId ? `section-${section.id}` : undefined
+
       if (prevWasTransition) {
         // This section comes after a transition, wrap it with "top"
         const transition = (sequence[i - 1].data as Transition)
@@ -92,11 +96,14 @@ export async function loadPublicWebsitePage({
             fromColor={fromColor}
             toColor={toColor}
           >
-            <SectionRenderer
-              section={section}
-              isPreview={isPreview}
-              wrapTransition={false}
-            />
+            <div id={anchorId}>
+              <SectionRenderer
+                section={section}
+                isPreview={isPreview}
+                wrapTransition={false}
+                allSections={sections}
+              />
+            </div>
           </TransitionWrapper>
         )
       } else if (nextIsTransition) {
@@ -114,21 +121,25 @@ export async function loadPublicWebsitePage({
             fromColor={fromColor}
             toColor={toColor}
           >
-            <SectionRenderer
-              section={section}
-              isPreview={isPreview}
-              wrapTransition={false}
-            />
+            <div id={anchorId}>
+              <SectionRenderer
+                section={section}
+                isPreview={isPreview}
+                wrapTransition={false}
+                allSections={sections}
+              />
+            </div>
           </TransitionWrapper>
         )
       } else {
         // No transition before or after, render normally
         nodes.push(
-          <div key={section.id} className="relative">
+          <div key={section.id} id={anchorId} className="relative">
             <SectionRenderer
               section={section}
               isPreview={isPreview}
               wrapTransition={false}
+              allSections={sections}
             />
           </div>
         )
