@@ -154,6 +154,17 @@ export function EditorCanvas({
           phone: "(555) 123-4567",
           email: "info@bnb.com",
         }
+      case "nav":
+        return {
+          brandName: "My B&B",
+          isSticky: true,
+          navLinks: [],
+        }
+      case "footer":
+        return {
+          brandName: "My B&B",
+          copyright: `© ${new Date().getFullYear()} My B&B. All rights reserved.`,
+        }
       default:
         return {}
     }
@@ -456,6 +467,7 @@ export function EditorCanvas({
                   )}
 
                   <div
+                    id={isPreview && section.type !== "nav" && section.type !== "footer" ? `section-${section.id}` : undefined}
                     className={`${!isPreview ? "cursor-pointer rounded-lg border bg-background shadow-sm transition-all hover:shadow-md" : ""} ${
                       selectedSectionId === section.id && !isPreview
                         ? "ring-2 ring-amber-500 ring-offset-2 shadow-lg"
@@ -473,6 +485,7 @@ export function EditorCanvas({
                       isPreview={isPreview}
                       onUpdate={(data) => updateSection(section.id, data)}
                       wrapTransition={false}
+                      allSections={sections}
                     />
                   </div>
                 </div>

@@ -77,7 +77,26 @@ export async function loadPublicWebsitePage({
       const prevWasTransition = i > 0 && sequence[i - 1].type === "transition"
       const nextIsTransition = i < sequence.length - 1 && sequence[i + 1].type === "transition"
 
-      if (prevWasTransition) {
+      // Determine wrapper ID for anchor navigation (not for nav/footer)
+      const needsAnchorId = section.type !== "nav" && section.type !== "footer"
+      const anchorId = needsAnchorId ? `section-${section.id}` : undefined
+      
+      // Nav sections need to be rendered without wrapper for sticky positioning
+      const isNavSection = section.type === "nav"
+      const navIsSticky = isNavSection && ((section.data?.isSticky as boolean) ?? true)
+
+      if (isNavSection) {
+        // Render nav directly without wrapper to preserve sticky positioning
+        nodes.push(
+          <SectionRenderer
+            key={section.id}
+            section={section}
+            isPreview={isPreview}
+            wrapTransition={false}
+            allSections={sections}
+          />
+        )
+      } else if (prevWasTransition) {
         // This section comes after a transition, wrap it with "top"
         const transition = (sequence[i - 1].data as Transition)
         const prevSection = sections.find(s => s.id === transition.fromSectionId)
@@ -92,11 +111,14 @@ export async function loadPublicWebsitePage({
             fromColor={fromColor}
             toColor={toColor}
           >
-            <SectionRenderer
-              section={section}
-              isPreview={isPreview}
-              wrapTransition={false}
-            />
+            <div id={anchorId}>
+              <SectionRenderer
+                section={section}
+                isPreview={isPreview}
+                wrapTransition={false}
+                allSections={sections}
+              />
+            </div>
           </TransitionWrapper>
         )
       } else if (nextIsTransition) {
@@ -114,21 +136,25 @@ export async function loadPublicWebsitePage({
             fromColor={fromColor}
             toColor={toColor}
           >
-            <SectionRenderer
-              section={section}
-              isPreview={isPreview}
-              wrapTransition={false}
-            />
+            <div id={anchorId}>
+              <SectionRenderer
+                section={section}
+                isPreview={isPreview}
+                wrapTransition={false}
+                allSections={sections}
+              />
+            </div>
           </TransitionWrapper>
         )
       } else {
         // No transition before or after, render normally
         nodes.push(
-          <div key={section.id} className="relative">
+          <div key={section.id} id={anchorId} className="relative">
             <SectionRenderer
               section={section}
               isPreview={isPreview}
               wrapTransition={false}
+              allSections={sections}
             />
           </div>
         )

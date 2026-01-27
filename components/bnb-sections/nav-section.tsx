@@ -1,29 +1,95 @@
 "use client"
 
 import type React from "react"
-import Link from "next/link"
+import { useState } from "react"
 import { EditableText } from "@/components/editor/editable-text"
-import type { SectionStyles } from "@/lib/types"
+import type { Section, SectionStyles, SectionType } from "@/lib/types"
+import { Menu, X } from "lucide-react"
+
+interface NavLink {
+  sectionId: string
+  label: string
+  enabled: boolean
+}
 
 interface NavSectionProps {
   data: Record<string, unknown>
   isPreview: boolean
   onUpdate?: (newData: Record<string, unknown>) => void
   styles?: SectionStyles
+  allSections?: Section[]
 }
 
-export function NavSection({ data, isPreview, onUpdate, styles }: NavSectionProps) {
-  const brandName = (data.brandName as string) || "BnB Editor"
-  const links = (data.links as Array<{ label: string; href: string }>) || [
-    { label: "Home", href: "/" },
-    { label: "Editor", href: "/editor" },
-    { label: "Login", href: "/auth/login" },
-  ]
+// Default display names for section types
+const defaultSectionLabels: Record<SectionType, string> = {
+  hero: "Home",
+  about: "About",
+  rooms: "Rooms",
+  gallery: "Gallery",
+  amenities: "Amenities",
+  contact: "Contact",
+  nav: "Navigation",
+  footer: "Footer",
+}
+
+// Sections that can appear in navigation
+const navigableSectionTypes: SectionType[] = ["hero", "about", "rooms", "gallery", "amenities", "contact"]
+
+export function NavSection({ data, isPreview, onUpdate, styles, allSections }: NavSectionProps) {
+  const brandName = (data.brandName as string) || "My B&B"
+  const isSticky = (data.isSticky as boolean) ?? true
+  const navLinks = data.navLinks as NavLink[] | undefined
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const handleUpdate = (newData: Record<string, unknown>) => {
     if (onUpdate) {
       onUpdate(newData)
     }
+  }
+
+  // Generate navigation links from sections
+  const getNavLinks = (): Array<{ label: string; href: string; sectionId: string }> => {
+    if (!allSections) return []
+
+    const navigableSections = allSections.filter((section) =>
+      navigableSectionTypes.includes(section.type)
+    )
+
+    return navigableSections
+      .map((section) => {
+        // Check if this section has a custom config in navLinks
+        const linkConfig = navLinks?.find((nl) => nl.sectionId === section.id)
+        
+        // If navLinks exists but this section is disabled, skip it
+        if (navLinks && linkConfig && !linkConfig.enabled) {
+          return null
+        }
+
+        // Use custom label if set, otherwise fall back to section title or default
+        const label =
+          linkConfig?.label ||
+          (section.data?.title as string) ||
+          defaultSectionLabels[section.type]
+
+        return {
+          label,
+          href: `#section-${section.id}`,
+          sectionId: section.id,
+        }
+      })
+      .filter(Boolean) as Array<{ label: string; href: string; sectionId: string }>
+  }
+
+  const links = getNavLinks()
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault()
+    const targetId = href.replace("#", "")
+    const element = document.getElementById(targetId)
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" })
+    }
+    setMobileMenuOpen(false)
   }
 
   const sectionStyle: React.CSSProperties = {
@@ -32,12 +98,24 @@ export function NavSection({ data, isPreview, onUpdate, styles }: NavSectionProp
   }
 
   return (
-    <nav className="shadow-md" style={sectionStyle}>
+    <nav
+      className={`shadow-md ${isSticky ? "sticky top-0 z-50" : ""}`}
+      style={sectionStyle}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex-shrink-0">
             {isPreview ? (
-              <span className="text-2xl font-bold">{brandName}</span>
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault()
+                  window.scrollTo({ top: 0, behavior: "smooth" })
+                }}
+                className="text-2xl font-bold cursor-pointer"
+              >
+                {brandName}
+              </a>
             ) : (
               <EditableText
                 value={brandName}
@@ -48,14 +126,49 @@ export function NavSection({ data, isPreview, onUpdate, styles }: NavSectionProp
             )}
           </div>
 
+          {/* Desktop navigation */}
           <div className="hidden md:flex md:items-center md:space-x-8">
             {links.map((link, idx) => (
-              <Link key={idx} href={link.href} className="hover:opacity-75 transition">
+              <a
+                key={idx}
+                href={link.href}
+                onClick={(e) => handleNavClick(e, link.href)}
+                className="hover:opacity-75 transition font-medium"
+              >
                 {link.label}
-              </Link>
+              </a>
             ))}
           </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 rounded-md hover:bg-black/5 transition"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile navigation */}
+        {mobileMenuOpen && (
+          <div className="md:hidden pb-4">
+            <div className="flex flex-col space-y-2">
+              {links.map((link, idx) => (
+                <a
+                  key={idx}
+                  href={link.href}
+                  onClick={(e) => handleNavClick(e, link.href)}
+                  className="px-3 py-2 rounded-md hover:bg-black/5 transition font-medium"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </nav>
   )
