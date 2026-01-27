@@ -71,18 +71,16 @@ export function FooterSection({ data, isPreview, onUpdate, styles }: FooterSecti
                 />
               )}
             </h3>
-            <p className="opacity-75">
-              {isPreview ? (
-                companyDescription
-              ) : (
-                <EditableText
-                  value={companyDescription}
-                  onChange={(value) => handleUpdate({ companyDescription: value })}
-                  isPreview={isPreview}
-                  className="hover:bg-gray-700 px-2 py-1 rounded cursor-text text-sm"
-                />
-              )}
-            </p>
+            {isPreview ? (
+              <p className="opacity-75">{companyDescription}</p>
+            ) : (
+              <EditableText
+                value={companyDescription}
+                onChange={(value) => handleUpdate({ companyDescription: value })}
+                isPreview={isPreview}
+                className="hover:bg-gray-700 px-2 py-1 rounded cursor-text text-sm opacity-75"
+              />
+            )}
           </div>
 
           {columns.map((column, idx) => (

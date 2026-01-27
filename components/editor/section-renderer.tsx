@@ -40,20 +40,24 @@ export function TransitionWrapper({
     return () => cancelAnimationFrame(raf)
   }, [type, position])
 
-  // Standalone centered transition decorations (for use between sections)
-  const centerDecoration = (t?: string) => {
-    if (!t) return null
+  // Transition decoration that flows naturally in document flow (no absolute positioning)
+  const transitionDecoration = (t?: string, isTop?: boolean) => {
+    if (!t || t === "none") return null
     
-    const gradientId = `grad-${t}-${Math.random().toString(36).substr(2, 9)}`
-    const height = 80
+    const gradientId = `grad-${t}-${isTop ? "top" : "bottom"}-${Math.random().toString(36).substr(2, 9)}`
+    
+    // For top position, we want fromColor -> toColor (previous section color to current)
+    // For bottom position, we want toColor -> fromColor (current section color to next)
+    const startColor = isTop ? fromColor : toColor
+    const endColor = isTop ? toColor : fromColor
 
     if (t === "fade") {
       return (
         <div
           className="w-full pointer-events-none"
           style={{
-            height,
-            background: `linear-gradient(180deg, ${fromColor} 0%, ${toColor} 100%)`,
+            height: 80,
+            background: `linear-gradient(180deg, ${startColor} 0%, ${endColor} 100%)`,
           }}
         />
       )
@@ -63,8 +67,8 @@ export function TransitionWrapper({
         <div
           className="w-full pointer-events-none"
           style={{
-            height: height + 20,
-            background: `linear-gradient(180deg, ${fromColor} 0%, ${toColor}dd 50%, ${toColor} 100%)`,
+            height: 100,
+            background: `linear-gradient(180deg, ${startColor} 0%, ${startColor}dd 30%, ${endColor}dd 70%, ${endColor} 100%)`,
           }}
         />
       )
@@ -74,8 +78,8 @@ export function TransitionWrapper({
         <div
           className="w-full pointer-events-none"
           style={{
-            height,
-            background: `linear-gradient(180deg, ${fromColor} 0%, ${toColor}99 100%)`,
+            height: 60,
+            background: `linear-gradient(180deg, ${startColor} 0%, ${endColor} 100%)`,
           }}
         />
       )
@@ -83,169 +87,60 @@ export function TransitionWrapper({
     if (t === "diagonal") {
       return (
         <svg
-          className="w-full pointer-events-none"
+          className="w-full pointer-events-none block"
           viewBox="0 0 1200 120"
           preserveAspectRatio="none"
-          style={{ height }}
+          style={{ height: 80, display: "block" }}
         >
-          <defs>
-            <linearGradient id={gradientId} x1="0%" x2="0%" y1="0%" y2="100%">
-              <stop offset="0%" stopColor={fromColor} />
-              <stop offset="100%" stopColor={toColor} />
-            </linearGradient>
-          </defs>
-          <path d="M0,0 L1200,120 L1200,120 L0,120 Z" fill={`url(#${gradientId})`} />
+          <rect width="1200" height="120" fill={endColor} />
+          <path d="M0,0 L1200,0 L1200,120 L0,0 Z" fill={startColor} />
         </svg>
       )
     }
     if (t === "wave") {
       return (
         <svg
-          className="w-full pointer-events-none"
+          className="w-full pointer-events-none block"
           viewBox="0 0 1200 120"
           preserveAspectRatio="none"
-          style={{ height }}
+          style={{ height: 80, display: "block" }}
         >
-          <defs>
-            <linearGradient id={gradientId} x1="0%" x2="0%" y1="0%" y2="100%">
-              <stop offset="0%" stopColor={fromColor} />
-              <stop offset="100%" stopColor={toColor} />
-            </linearGradient>
-          </defs>
-          <path d="M0,30 C200,10 300,50 600,40 C900,30 1000,60 1200,30 L1200,120 L0,120 Z" fill={`url(#${gradientId})`} />
+          <rect width="1200" height="120" fill={endColor} />
+          <path d="M0,0 L1200,0 L1200,30 C1000,60 900,30 600,40 C300,50 200,10 0,30 Z" fill={startColor} />
         </svg>
       )
     }
     if (t === "zigzag") {
       return (
-        <svg className="w-full pointer-events-none" viewBox="0 0 1200 80" preserveAspectRatio="none" style={{ height }}>
-          <defs>
-            <linearGradient id={gradientId} x1="0%" x2="0%" y1="0%" y2="100%">
-              <stop offset="0%" stopColor={fromColor} />
-              <stop offset="100%" stopColor={toColor} />
-            </linearGradient>
-          </defs>
-          <path d="M0,40 L80,0 L160,80 L240,0 L320,80 L400,0 L480,80 L560,0 L640,80 L720,0 L800,80 L880,0 L960,80 L1040,0 L1120,80 L1200,40 L1200,80 L0,80 Z" fill={`url(#${gradientId})`} />
-        </svg>
-      )
-    }
-    if (t === "curve") {
-      return (
-        <svg className="w-full pointer-events-none" viewBox="0 0 1200 140" preserveAspectRatio="none" style={{ height: height + 60 }}>
-          <defs>
-            <linearGradient id={gradientId} x1="0%" x2="0%" y1="0%" y2="100%">
-              <stop offset="0%" stopColor={fromColor} />
-              <stop offset="100%" stopColor={toColor} />
-            </linearGradient>
-          </defs>
-          <path d="M0,20 Q300,120 600,30 T1200,20 L1200,140 L0,140 Z" fill={`url(#${gradientId})`} />
-        </svg>
-      )
-    }
-    if (t === "split") {
-      return (
-        <div className="w-full flex pointer-events-none" style={{ height }}>
-          <div className="flex-1" style={{ background: `linear-gradient(to bottom right, ${fromColor}, ${toColor})` }} />
-          <div className="flex-1" style={{ background: `linear-gradient(to bottom left, ${fromColor}, ${toColor})` }} />
-        </div>
-      )
-    }
-    return null
-  }
-
-  const topDecoration = (t?: string) => {
-    if (!t) return null
-    
-    const gradientId = `grad-${t}-${Math.random().toString(36).substr(2, 9)}`
-    
-    if (t === "fade") {
-      return (
-        <div
-          className="absolute inset-x-0 top-0 h-32 pointer-events-none z-10 -translate-y-32"
-          style={{
-            background: `linear-gradient(180deg, ${fromColor} 0%, ${toColor} 100%)`,
-          }}
-        />
-      )
-    }
-    if (t === "gradient") {
-      return (
-        <div
-          className="absolute inset-x-0 top-0 h-40 pointer-events-none z-10 -translate-y-40"
-          style={{
-            background: `linear-gradient(180deg, ${fromColor} 0%, ${toColor}dd 50%, ${toColor} 100%)`,
-          }}
-        />
-      )
-    }
-    if (t === "slide") {
-      return (
-        <div
-          className="absolute inset-x-0 top-0 h-24 pointer-events-none z-10 -translate-y-24"
-          style={{
-            background: `linear-gradient(180deg, ${fromColor} 0%, ${toColor}99 100%)`,
-          }}
-        />
-      )
-    }
-    if (t === "diagonal") {
-      return (
-        <div
-          className="absolute inset-x-0 top-0 h-32 pointer-events-none z-10 -translate-y-32"
-          style={{
-            background: `linear-gradient(145deg, ${fromColor} 0%, ${fromColor}88 45%, ${toColor}88 55%, ${toColor} 100%)`,
-          }}
-        />
-      )
-    }
-    if (t === "wave") {
-      return (
-        <svg
-          className="absolute inset-x-0 top-0 w-full h-28 -translate-y-28 pointer-events-none z-10"
-          viewBox="0 0 1200 120"
-          preserveAspectRatio="none"
+        <svg 
+          className="w-full pointer-events-none block" 
+          viewBox="0 0 1200 80" 
+          preserveAspectRatio="none" 
+          style={{ height: 60, display: "block" }}
         >
-          <defs>
-            <linearGradient id={gradientId} x1="0%" x2="0%" y1="0%" y2="100%">
-              <stop offset="0%" stopColor={fromColor} />
-              <stop offset="100%" stopColor={toColor} />
-            </linearGradient>
-          </defs>
-          <path d="M0,30 C200,10 300,50 600,40 C900,30 1000,60 1200,30 L1200,120 L0,120 Z" fill={`url(#${gradientId})`} />
-        </svg>
-      )
-    }
-    if (t === "zigzag") {
-      return (
-        <svg className="absolute inset-x-0 top-0 w-full h-20 -translate-y-20 pointer-events-none z-10" viewBox="0 0 1200 80" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id={gradientId} x1="0%" x2="0%" y1="0%" y2="100%">
-              <stop offset="0%" stopColor={fromColor} />
-              <stop offset="100%" stopColor={toColor} />
-            </linearGradient>
-          </defs>
-          <path d="M0,40 L80,0 L160,80 L240,0 L320,80 L400,0 L480,80 L560,0 L640,80 L720,0 L800,80 L880,0 L960,80 L1040,0 L1120,80 L1200,40 L1200,80 L0,80 Z" fill={`url(#${gradientId})`} />
+          <rect width="1200" height="80" fill={endColor} />
+          <path d="M0,0 L1200,0 L1200,40 L1120,80 L1040,0 L960,80 L880,0 L800,80 L720,0 L640,80 L560,0 L480,80 L400,0 L320,80 L240,0 L160,80 L80,0 L0,40 Z" fill={startColor} />
         </svg>
       )
     }
     if (t === "curve") {
       return (
-        <svg className="absolute inset-x-0 top-0 w-full h-36 -translate-y-36 pointer-events-none z-10" viewBox="0 0 1200 140" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id={gradientId} x1="0%" x2="0%" y1="0%" y2="100%">
-              <stop offset="0%" stopColor={fromColor} />
-              <stop offset="100%" stopColor={toColor} />
-            </linearGradient>
-          </defs>
-          <path d="M0,20 Q300,120 600,30 T1200,20 L1200,140 L0,140 Z" fill={`url(#${gradientId})`} />
+        <svg 
+          className="w-full pointer-events-none block" 
+          viewBox="0 0 1200 140" 
+          preserveAspectRatio="none" 
+          style={{ height: 100, display: "block" }}
+        >
+          <rect width="1200" height="140" fill={endColor} />
+          <path d="M0,0 L1200,0 L1200,20 Q900,120 600,30 Q300,60 0,20 Z" fill={startColor} />
         </svg>
       )
     }
     if (t === "split") {
       return (
-        <div className="absolute inset-x-0 top-0 h-24 pointer-events-none z-10 -translate-y-24 flex" style={{ background: fromColor }}>
-          <div className="flex-1" style={{ background: `linear-gradient(to bottom right, ${fromColor}, ${toColor})` }} />
-          <div className="flex-1" style={{ background: `linear-gradient(to bottom left, ${fromColor}, ${toColor})` }} />
+        <div className="w-full flex pointer-events-none" style={{ height: 60 }}>
+          <div className="flex-1" style={{ background: `linear-gradient(to bottom right, ${startColor}, ${endColor})` }} />
+          <div className="flex-1" style={{ background: `linear-gradient(to bottom left, ${startColor}, ${endColor})` }} />
         </div>
       )
     }
@@ -256,12 +151,12 @@ export function TransitionWrapper({
 
   // If position is "center", render as a standalone element between sections
   if (position === "center") {
-    return <div className="relative w-full">{centerDecoration(t)}</div>
+    return <div className="relative w-full">{transitionDecoration(t, true)}</div>
   }
 
   return (
     <div className="relative">
-      {position === "top" || position === "both" ? topDecoration(t) : null}
+      {(position === "top" || position === "both") && transitionDecoration(t, true)}
       {children ? (
         <div
           ref={wrapperRef}
@@ -270,14 +165,7 @@ export function TransitionWrapper({
           {children}
         </div>
       ) : null}
-      {position === "bottom" || position === "both" ? (
-        // reuse topDecoration but flipped vertically via transform
-        <div className="relative">
-          <div className="pointer-events-none">
-            <div className="transform rotate-180">{topDecoration(t)}</div>
-          </div>
-        </div>
-      ) : null}
+      {(position === "bottom" || position === "both") && transitionDecoration(t, false)}
     </div>
   )
 }
@@ -327,4 +215,3 @@ export function SectionRenderer({ section, isPreview, onUpdate, wrapTransition }
   // Otherwise just render the inner component
   return inner
 }
-
