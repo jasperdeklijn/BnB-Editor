@@ -157,6 +157,8 @@ export function EditorCanvas({
       case "nav":
         return {
           brandName: "My B&B",
+          isSticky: true,
+          navLinks: [],
         }
       case "footer":
         return {

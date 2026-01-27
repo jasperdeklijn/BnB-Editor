@@ -6,6 +6,12 @@ import { EditableText } from "@/components/editor/editable-text"
 import type { Section, SectionStyles, SectionType } from "@/lib/types"
 import { Menu, X } from "lucide-react"
 
+interface NavLink {
+  sectionId: string
+  label: string
+  enabled: boolean
+}
+
 interface NavSectionProps {
   data: Record<string, unknown>
   isPreview: boolean
@@ -26,11 +32,13 @@ const defaultSectionLabels: Record<SectionType, string> = {
   footer: "Footer",
 }
 
-// Sections that should appear in navigation
-const navigableSections: SectionType[] = ["hero", "about", "rooms", "gallery", "amenities", "contact"]
+// Sections that can appear in navigation
+const navigableSectionTypes: SectionType[] = ["hero", "about", "rooms", "gallery", "amenities", "contact"]
 
 export function NavSection({ data, isPreview, onUpdate, styles, allSections }: NavSectionProps) {
-  const brandName = (data.brandName as string) || "BnB Editor"
+  const brandName = (data.brandName as string) || "My B&B"
+  const isSticky = (data.isSticky as boolean) ?? true
+  const navLinks = data.navLinks as NavLink[] | undefined
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const handleUpdate = (newData: Record<string, unknown>) => {
@@ -40,18 +48,39 @@ export function NavSection({ data, isPreview, onUpdate, styles, allSections }: N
   }
 
   // Generate navigation links from sections
-  const navLinks = allSections
-    ?.filter((section) => navigableSections.includes(section.type))
-    .map((section) => {
-      const sectionTitle = (section.data?.sectionTitle as string) || 
-                          (section.data?.title as string) || 
-                          defaultSectionLabels[section.type]
-      return {
-        label: sectionTitle,
-        href: `#section-${section.id}`,
-        sectionId: section.id,
-      }
-    }) || []
+  const getNavLinks = (): Array<{ label: string; href: string; sectionId: string }> => {
+    if (!allSections) return []
+
+    const navigableSections = allSections.filter((section) =>
+      navigableSectionTypes.includes(section.type)
+    )
+
+    return navigableSections
+      .map((section) => {
+        // Check if this section has a custom config in navLinks
+        const linkConfig = navLinks?.find((nl) => nl.sectionId === section.id)
+        
+        // If navLinks exists but this section is disabled, skip it
+        if (navLinks && linkConfig && !linkConfig.enabled) {
+          return null
+        }
+
+        // Use custom label if set, otherwise fall back to section title or default
+        const label =
+          linkConfig?.label ||
+          (section.data?.title as string) ||
+          defaultSectionLabels[section.type]
+
+        return {
+          label,
+          href: `#section-${section.id}`,
+          sectionId: section.id,
+        }
+      })
+      .filter(Boolean) as Array<{ label: string; href: string; sectionId: string }>
+  }
+
+  const links = getNavLinks()
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault()
@@ -69,13 +98,16 @@ export function NavSection({ data, isPreview, onUpdate, styles, allSections }: N
   }
 
   return (
-    <nav className="shadow-md sticky top-0 z-50" style={sectionStyle}>
+    <nav
+      className={`shadow-md ${isSticky ? "sticky top-0 z-50" : ""}`}
+      style={sectionStyle}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex-shrink-0">
             {isPreview ? (
-              <a 
-                href="#" 
+              <a
+                href="#"
                 onClick={(e) => {
                   e.preventDefault()
                   window.scrollTo({ top: 0, behavior: "smooth" })
@@ -96,7 +128,7 @@ export function NavSection({ data, isPreview, onUpdate, styles, allSections }: N
 
           {/* Desktop navigation */}
           <div className="hidden md:flex md:items-center md:space-x-8">
-            {navLinks.map((link, idx) => (
+            {links.map((link, idx) => (
               <a
                 key={idx}
                 href={link.href}
@@ -124,7 +156,7 @@ export function NavSection({ data, isPreview, onUpdate, styles, allSections }: N
         {mobileMenuOpen && (
           <div className="md:hidden pb-4">
             <div className="flex flex-col space-y-2">
-              {navLinks.map((link, idx) => (
+              {links.map((link, idx) => (
                 <a
                   key={idx}
                   href={link.href}

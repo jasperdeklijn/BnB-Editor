@@ -21,8 +21,13 @@ import {
   Mail,
   MapPin,
   Phone,
-  DollarSign
+  DollarSign,
+  Navigation,
+  Pin,
+  Eye,
+  EyeOff
 } from "lucide-react"
+import type { SectionType } from "@/lib/types"
 
 interface SelectionEditorProps {
   selectedSection: Section | null
@@ -387,6 +392,143 @@ export function SelectionEditor({
               Email
             </Label>
             <Input value={(selectedSection.data as any).email || ""} onChange={(e) => updateField("email", e.target.value)} />
+          </Card>
+        )}
+
+        {selectedSection.type === "nav" && (
+          <Card className="p-4 space-y-4">
+            <Label className="flex items-center gap-2">
+              <Navigation className="h-3.5 w-3.5" />
+              Navigation Settings
+            </Label>
+            
+            {/* Brand Name */}
+            <div className="space-y-2">
+              <Label className="text-xs">Brand Name</Label>
+              <Input 
+                value={(selectedSection.data as any).brandName || "My B&B"} 
+                onChange={(e) => updateField("brandName", e.target.value)} 
+                placeholder="Your brand name"
+              />
+            </div>
+
+            {/* Sticky Toggle */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Pin className="h-3.5 w-3.5" />
+                <Label className="text-xs">Sticky Navigation</Label>
+              </div>
+              <button
+                onClick={() => updateField("isSticky", !(selectedSection.data as any).isSticky ?? false)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  ((selectedSection.data as any).isSticky ?? true) ? "bg-amber-500" : "bg-gray-200"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    ((selectedSection.data as any).isSticky ?? true) ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {((selectedSection.data as any).isSticky ?? true) ? "Navbar stays at top while scrolling" : "Navbar scrolls with page"}
+            </p>
+
+            {/* Section Links */}
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2 text-xs">
+                <Type className="h-3.5 w-3.5" />
+                Navigation Links
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Choose which sections appear in the navigation and customize their labels
+              </p>
+              
+              {(() => {
+                const navigableSectionTypes: SectionType[] = ["hero", "about", "rooms", "gallery", "amenities", "contact"]
+                const defaultLabels: Record<SectionType, string> = {
+                  hero: "Home",
+                  about: "About",
+                  rooms: "Rooms",
+                  gallery: "Gallery",
+                  amenities: "Amenities",
+                  contact: "Contact",
+                  nav: "Navigation",
+                  footer: "Footer",
+                }
+                
+                const navigableSections = sections.filter(s => navigableSectionTypes.includes(s.type))
+                const navLinks = ((selectedSection.data as any).navLinks as Array<{ sectionId: string; label: string; enabled: boolean }>) || []
+                
+                const getNavLinkConfig = (sectionId: string, sectionType: SectionType, sectionData: Record<string, unknown>) => {
+                  const existing = navLinks.find(nl => nl.sectionId === sectionId)
+                  if (existing) return existing
+                  return {
+                    sectionId,
+                    label: (sectionData?.title as string) || defaultLabels[sectionType],
+                    enabled: true
+                  }
+                }
+                
+                const updateNavLink = (sectionId: string, field: "label" | "enabled", value: string | boolean) => {
+                  const currentLinks = [...navLinks]
+                  const existingIndex = currentLinks.findIndex(nl => nl.sectionId === sectionId)
+                  const section = navigableSections.find(s => s.id === sectionId)
+                  
+                  if (existingIndex >= 0) {
+                    currentLinks[existingIndex] = { ...currentLinks[existingIndex], [field]: value }
+                  } else {
+                    currentLinks.push({
+                      sectionId,
+                      label: (section?.data?.title as string) || defaultLabels[section?.type || "hero"],
+                      enabled: true,
+                      [field]: value
+                    })
+                  }
+                  
+                  updateField("navLinks", currentLinks)
+                }
+                
+                return (
+                  <div className="space-y-2">
+                    {navigableSections.map((section) => {
+                      const config = getNavLinkConfig(section.id, section.type, section.data)
+                      return (
+                        <div key={section.id} className="flex items-center gap-2 p-2 rounded border bg-muted/20">
+                          <button
+                            onClick={() => updateNavLink(section.id, "enabled", !config.enabled)}
+                            className="flex-shrink-0"
+                            title={config.enabled ? "Hide from nav" : "Show in nav"}
+                          >
+                            {config.enabled ? (
+                              <Eye className="h-4 w-4 text-amber-500" />
+                            ) : (
+                              <EyeOff className="h-4 w-4 text-gray-400" />
+                            )}
+                          </button>
+                          <Input
+                            value={config.label}
+                            onChange={(e) => updateNavLink(section.id, "label", e.target.value)}
+                            className={`flex-1 h-8 text-sm ${!config.enabled ? "opacity-50" : ""}`}
+                            disabled={!config.enabled}
+                            placeholder={defaultLabels[section.type]}
+                          />
+                          <span className="text-xs text-muted-foreground capitalize w-16 text-right">
+                            {section.type}
+                          </span>
+                        </div>
+                      )
+                    })}
+                    {navigableSections.length === 0 && (
+                      <p className="text-xs text-muted-foreground italic">
+                        Add sections to your page to create navigation links
+                      </p>
+                    )}
+                  </div>
+                )
+              })()}
+            </div>
           </Card>
         )}
 
