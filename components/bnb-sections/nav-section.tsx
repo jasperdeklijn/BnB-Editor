@@ -153,22 +153,24 @@ export function NavSection({ data, isPreview, onUpdate, styles, allSections }: N
         </div>
 
         {/* Mobile navigation */}
-        {mobileMenuOpen && (
-          <div className="md:hidden pb-4">
-            <div className="flex flex-col space-y-2">
-              {links.map((link, idx) => (
-                <a
-                  key={idx}
-                  href={link.href}
-                  onClick={(e) => handleNavClick(e, link.href)}
-                  className="px-3 py-2 rounded-md hover:bg-black/5 transition font-medium"
-                >
-                  {link.label}
-                </a>
-              ))}
-            </div>
+        <div 
+          className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+            mobileMenuOpen ? "max-h-96 opacity-100 pb-4" : "max-h-0 opacity-0"
+          }`}
+        >
+          <div className="flex flex-col gap-1 border-t border-black/10 pt-4">
+            {links.map((link, idx) => (
+              <a
+                key={idx}
+                href={link.href}
+                onClick={(e) => handleNavClick(e, link.href)}
+                className="px-3 py-3 rounded-md hover:bg-black/5 active:bg-black/10 transition font-medium text-base"
+              >
+                {link.label}
+              </a>
+            ))}
           </div>
-        )}
+        </div>
       </div>
     </nav>
   )
