@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import Link from "next/link"
 import { ImageUploadZone } from "./image-upload-zone"
 import { ImageGrid } from "./image-grid"
+import { ArrowLeft } from "lucide-react"
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const MAX_TOTAL_SIZE = 50 * 1024 * 1024 // 50MB
@@ -164,17 +165,24 @@ export function ImagesClient({ userId }: ImagesClientProps) {
   const usagePercentage = (totalUsage / MAX_TOTAL_SIZE) * 100
 
   return (
-    <div className="min-h-svh bg-background">
-      <header className="border-b border-border">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-          <h1 className="text-xl font-semibold text-foreground">My Images</h1>
-          <Button variant="outline" asChild>
-            <Link href="/editor">Back to Editor</Link>
+    <div className="flex min-h-svh flex-col bg-background">
+      <header className="flex items-center justify-between border-b bg-background px-6 py-3">
+        <div className="flex items-center gap-4">
+          <h1 className="text-lg font-semibold">BnB Builder</h1>
+          <span className="text-muted-foreground">/</span>
+          <span className="text-sm text-muted-foreground">My Images</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/editor">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Editor
+            </Link>
           </Button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-8">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-8">
         <div className="flex flex-col gap-8">
           {/* Storage Usage */}
           <Card>
