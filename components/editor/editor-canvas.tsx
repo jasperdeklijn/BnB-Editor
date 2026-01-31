@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useRef, useState } from "react"
-import { Trash2, GripVertical, ChevronUp, ChevronDown, Copy } from "lucide-react"
+import { Trash2, GripVertical, ChevronUp, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Section, SectionType, Transition } from "@/lib/types"
 import { SectionRenderer } from "./section-renderer"
@@ -104,7 +104,7 @@ export function EditorCanvas({
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
     const sectionType = e.dataTransfer.types.includes("sectiontype")
-    e.dataTransfer.dropEffect = sectionType ? "copy" : "move"
+    e.dataTransfer.dropEffect = "move"
 
     if (sectionType) {
       setIsDraggingNewSection(true)
@@ -239,17 +239,6 @@ export function EditorCanvas({
     setHoverDropIndex(null)
     setDraggingSectionIndex(null)
     setIsDraggingNewSection(false)
-  }
-
-  const handleDuplicate = (index: number) => {
-    const section = sections[index]
-    const newSection: Section = {
-      ...section,
-      id: `section-${Date.now()}`,
-    }
-    const newSections = [...sections]
-    newSections.splice(index + 1, 0, newSection)
-    setSections(newSections)
   }
 
   /* -----------------------------
@@ -447,14 +436,6 @@ export function EditorCanvas({
                         <ChevronDown className="h-4 w-4" />
                       </Button>
                       <div className="h-6 w-px bg-border" />
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => handleDuplicate(i)}
-                        className="h-7 w-7 popup-btn"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
                       <Button
                         size="icon"
                         variant="ghost"
