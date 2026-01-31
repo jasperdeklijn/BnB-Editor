@@ -18,6 +18,7 @@ interface NavSectionProps {
   onUpdate?: (newData: Record<string, unknown>) => void
   styles?: SectionStyles
   allSections?: Section[]
+  device?: "desktop" | "tablet" | "mobile"
 }
 
 // Default display names for section types
@@ -35,11 +36,14 @@ const defaultSectionLabels: Record<SectionType, string> = {
 // Sections that can appear in navigation
 const navigableSectionTypes: SectionType[] = ["hero", "about", "rooms", "gallery", "amenities", "contact"]
 
-export function NavSection({ data, isPreview, onUpdate, styles, allSections }: NavSectionProps) {
+export function NavSection({ data, isPreview, onUpdate, styles, allSections, device }: NavSectionProps) {
   const brandName = (data.brandName as string) || "My B&B"
   const isSticky = (data.isSticky as boolean) ?? true
   const navLinks = data.navLinks as NavLink[] | undefined
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  
+  // Force mobile view when device is mobile or tablet
+  const isMobileView = device === "mobile" || device === "tablet"
 
   const handleUpdate = (newData: Record<string, unknown>) => {
     if (onUpdate) {
@@ -127,7 +131,7 @@ export function NavSection({ data, isPreview, onUpdate, styles, allSections }: N
           </div>
 
           {/* Desktop navigation */}
-          <div className="hidden md:flex md:items-center md:space-x-8">
+          <div className={`${isMobileView ? "hidden" : "hidden md:flex"} md:items-center md:space-x-8`}>
             {links.map((link, idx) => (
               <a
                 key={idx}
@@ -141,7 +145,7 @@ export function NavSection({ data, isPreview, onUpdate, styles, allSections }: N
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className={isMobileView ? "block" : "md:hidden"}>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-md hover:bg-black/5 transition"
@@ -154,7 +158,7 @@ export function NavSection({ data, isPreview, onUpdate, styles, allSections }: N
 
         {/* Mobile navigation */}
         <div 
-          className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+          className={`${isMobileView ? "block" : "md:hidden"} overflow-hidden transition-all duration-300 ease-in-out ${
             mobileMenuOpen ? "max-h-96 opacity-100 pb-4" : "max-h-0 opacity-0"
           }`}
         >

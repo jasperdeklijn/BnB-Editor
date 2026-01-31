@@ -467,6 +467,7 @@ export function EditorCanvas({
                       onUpdate={(data) => updateSection(section.id, data)}
                       wrapTransition={false}
                       allSections={sections}
+                      device={device}
                     />
                   </div>
                 </div>
