@@ -2,7 +2,8 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Eye, EyeOff, Save, Upload, Monitor, Tablet, Smartphone } from "lucide-react"
+import { Eye, EyeOff, Save, Upload, Monitor, Tablet, Smartphone, ImageIcon } from "lucide-react"
+import Link from "next/link"
 
 interface EditorHeaderProps {
   title: string
@@ -65,6 +66,12 @@ export function EditorHeader({
             <Smartphone className="h-4 w-4" />
           </Button>
         </div>
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/images">
+            <ImageIcon className="mr-2 h-4 w-4" />
+            Images
+          </Link>
+        </Button>
         <Button variant="outline" size="sm" onClick={onPreviewToggle}>
           {isPreview ? (
             <>
