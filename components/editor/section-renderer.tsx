@@ -17,6 +17,7 @@ interface SectionRendererProps {
   onUpdate?: (newData: Record<string, unknown>) => void // Made onUpdate optional
   wrapTransition?: boolean
   allSections?: Section[] // All sections for nav to generate links
+  device?: "desktop" | "tablet" | "mobile" // Device mode for responsive preview
 }
 
 export function TransitionWrapper({
@@ -171,7 +172,7 @@ export function TransitionWrapper({
   )
 }
 
-export function SectionRenderer({ section, isPreview, onUpdate, wrapTransition, allSections }: SectionRendererProps) {
+export function SectionRenderer({ section, isPreview, onUpdate, wrapTransition, allSections, device }: SectionRendererProps) {
   const commonProps = {
     data: section.data,
     isPreview,
@@ -201,7 +202,7 @@ export function SectionRenderer({ section, isPreview, onUpdate, wrapTransition, 
       inner = <ContactSection {...commonProps} />
       break
     case "nav":
-      inner = <NavSection {...commonProps} allSections={allSections} />
+      inner = <NavSection {...commonProps} allSections={allSections} device={device} />
       break
     case "footer":
       inner = <FooterSection {...commonProps} />
