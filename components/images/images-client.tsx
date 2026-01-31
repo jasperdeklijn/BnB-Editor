@@ -57,19 +57,42 @@ export function ImagesClient({ userId }: ImagesClientProps) {
     const imageList: UserImage[] = []
     let usage = 0
 
-    for (const file of data) {
-      if (file.name === ".emptyFolderPlaceholder") continue
-      
-      const { data: urlData } = supabase.storage
-        .from(BUCKET_NAME)
-        .getPublicUrl(`${userId}/${file.name}`)
+    // Filter out placeholder files
+    const validFiles = data.filter(file => file.name !== ".emptyFolderPlaceholder")
+    
+    if (validFiles.length === 0) {
+      setImages([])
+      setTotalUsage(0)
+      setIsLoading(false)
+      return
+    }
 
-      imageList.push({
-        name: file.name,
-        url: urlData.publicUrl,
-        size: file.metadata?.size || 0,
-        createdAt: file.created_at || "",
-      })
+    // Get signed URLs for all images (valid for 1 hour)
+    const { data: signedUrls, error: signedUrlError } = await supabase.storage
+      .from(BUCKET_NAME)
+      .createSignedUrls(
+        validFiles.map(file => `${userId}/${file.name}`),
+        3600 // 1 hour expiry
+      )
+
+    if (signedUrlError) {
+      toast.error("Failed to load image URLs")
+      setIsLoading(false)
+      return
+    }
+
+    for (let i = 0; i < validFiles.length; i++) {
+      const file = validFiles[i]
+      const signedUrl = signedUrls?.[i]?.signedUrl
+
+      if (signedUrl) {
+        imageList.push({
+          name: file.name,
+          url: signedUrl,
+          size: file.metadata?.size || 0,
+          createdAt: file.created_at || "",
+        })
+      }
       
       usage += file.metadata?.size || 0
     }
@@ -149,9 +172,21 @@ export function ImagesClient({ userId }: ImagesClientProps) {
     }
   }
 
-  const handleCopyUrl = (url: string) => {
-    navigator.clipboard.writeText(url)
-    toast.success("URL copied to clipboard")
+  const handleCopyUrl = async (fileName: string) => {
+    const supabase = createClient()
+    
+    // Generate a long-lasting signed URL (7 days) for use in the editor
+    const { data, error } = await supabase.storage
+      .from(BUCKET_NAME)
+      .createSignedUrl(`${userId}/${fileName}`, 60 * 60 * 24 * 7) // 7 days
+    
+    if (error || !data?.signedUrl) {
+      toast.error("Failed to generate URL")
+      return
+    }
+    
+    navigator.clipboard.writeText(data.signedUrl)
+    toast.success("URL copied to clipboard (valid for 7 days)")
   }
 
   const formatBytes = (bytes: number) => {
@@ -225,7 +260,7 @@ export function ImagesClient({ userId }: ImagesClientProps) {
                 images={images}
                 isLoading={isLoading}
                 onDelete={handleDelete}
-                onCopyUrl={handleCopyUrl}
+                onCopyUrl={(fileName) => handleCopyUrl(fileName)}
                 formatBytes={formatBytes}
               />
             </CardContent>

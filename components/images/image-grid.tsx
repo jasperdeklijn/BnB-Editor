@@ -15,7 +15,7 @@ interface ImageGridProps {
   images: UserImage[]
   isLoading: boolean
   onDelete: (fileName: string) => void
-  onCopyUrl: (url: string) => void
+  onCopyUrl: (fileName: string) => void
   formatBytes: (bytes: number) => string
 }
 
@@ -120,7 +120,7 @@ export function ImageGrid({
                 variant="secondary"
                 size="sm"
                 className="w-full text-xs"
-                onClick={() => onCopyUrl(image.url)}
+                onClick={() => onCopyUrl(image.name)}
               >
                 Copy URL
               </Button>
