@@ -41,17 +41,17 @@ export function ContactSection({ data, isPreview, onUpdate, styles }: ContactSec
   }
 
   return (
-    <section className={`bg-background px-6 py-16 ${styles?.fontFamily || ""}`} style={sectionStyle}>
+    <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle}>
       <div className="mx-auto max-w-6xl">
         <EditableText
           value={title}
           onChange={(value) => handleUpdate({ title: value })} // Use safe handler
           isPreview={isPreview}
           as="h2"
-          className="mb-12 text-balance text-center text-4xl font-bold text-amber-950"
+          className="mb-8 text-balance text-center text-2xl font-bold text-amber-950 sm:mb-10 sm:text-3xl md:mb-12 md:text-4xl"
           style={textStyle}
         />
-        <div className="grid gap-12 md:grid-cols-2">
+        <div className="grid gap-8 sm:gap-10 md:grid-cols-2 md:gap-12">
           <div className="space-y-6">
             <div className="flex items-start gap-4">
               <MapPin className="mt-1 h-5 w-5 flex-shrink-0 text-amber-700" />
