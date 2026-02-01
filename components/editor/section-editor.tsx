@@ -256,10 +256,10 @@ export function SelectionEditor({
               </p>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { layout: "centered" as HeroLayout, label: "Centered", icon: AlignCenter, description: "Text centered" },
-                  { layout: "split" as HeroLayout, label: "Split", icon: LayoutPanelLeft, description: "Image + Text" },
-                  { layout: "fullwidth" as HeroLayout, label: "Full Width", icon: Maximize, description: "Full overlay" },
-                ].map(({ layout, label, icon: Icon, description }) => {
+                  { layout: "centered" as HeroLayout, label: "Simple", icon: AlignCenter },
+                  { layout: "split" as HeroLayout, label: "Split", icon: LayoutPanelLeft },
+                  { layout: "fullwidth" as HeroLayout, label: "Full Image", icon: Maximize },
+                ].map(({ layout, label, icon: Icon }) => {
                   const currentLayout = ((selectedSection.data as any).layout as HeroLayout) || "centered"
                   const isActive = currentLayout === layout
                   return (
@@ -279,9 +279,9 @@ export function SelectionEditor({
                 })}
               </div>
               <p className="text-[10px] text-muted-foreground text-center">
-                {((selectedSection.data as any).layout as HeroLayout) === "split" && "Image on left, content on right"}
-                {((selectedSection.data as any).layout as HeroLayout) === "fullwidth" && "Full-screen image with dark overlay"}
-                {(((selectedSection.data as any).layout as HeroLayout) === "centered" || !(selectedSection.data as any).layout) && "Centered content with subtle background"}
+                {((selectedSection.data as any).layout as HeroLayout) === "split" && "Image on left half, text on right"}
+                {((selectedSection.data as any).layout as HeroLayout) === "fullwidth" && "Full background image with overlay"}
+                {(((selectedSection.data as any).layout as HeroLayout) === "centered" || !(selectedSection.data as any).layout) && "Clean text-focused design"}
               </p>
             </Card>
 

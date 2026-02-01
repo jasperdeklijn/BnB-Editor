@@ -2,15 +2,15 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
-import { ImageIcon, Home, Bed, Mail, Sparkles, Info, ChevronLeft, ChevronRight, Plus, Menu, Layout, AlignCenter, LayoutPanelLeft, Maximize, X } from "lucide-react"
+import { ImageIcon, Home, Bed, Mail, Sparkles, Info, ChevronLeft, ChevronRight, Plus, Menu, Layout, Type, LayoutPanelLeft, Image, X } from "lucide-react"
 import type { SectionType } from "@/lib/types"
 import type { HeroLayout } from "@/components/bnb-sections/hero-section"
 
-// Hero layout options
-const heroLayouts: { layout: HeroLayout; label: string; icon: React.ReactNode; description: string }[] = [
-  { layout: "centered", label: "Centered", icon: <AlignCenter className="h-4 w-4" />, description: "Text centered with background" },
-  { layout: "split", label: "Split", icon: <LayoutPanelLeft className="h-4 w-4" />, description: "Image left, text right" },
-  { layout: "fullwidth", label: "Full Width", icon: <Maximize className="h-4 w-4" />, description: "Full image with overlay" },
+// Hero layout options with visual previews
+const heroLayouts: { layout: HeroLayout; label: string; description: string }[] = [
+  { layout: "centered", label: "Simple", description: "Clean text-focused design" },
+  { layout: "split", label: "Split", description: "Image left, text right" },
+  { layout: "fullwidth", label: "Full Image", description: "Full background image" },
 ]
 
 const sectionTypes: { type: SectionType; label: string; icon: React.ReactNode; description: string }[] = [
@@ -32,7 +32,6 @@ export function SectionsSelector({ className = "" }: SectionsSelectorProps) {
   const [collapsed, setCollapsed] = useState(false)
   const [draggingType, setDraggingType] = useState<SectionType | null>(null)
   const [showHeroLayouts, setShowHeroLayouts] = useState(false)
-  const [heroPopupPosition, setHeroPopupPosition] = useState<{ top: number } | null>(null)
   const heroItemRef = useRef<HTMLDivElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
 
@@ -68,13 +67,6 @@ export function SectionsSelector({ className = "" }: SectionsSelectorProps) {
   }
 
   const handleHeroClick = () => {
-    if (heroItemRef.current) {
-      const rect = heroItemRef.current.getBoundingClientRect()
-      const parentRect = heroItemRef.current.closest("aside")?.getBoundingClientRect()
-      if (parentRect) {
-        setHeroPopupPosition({ top: rect.top - parentRect.top })
-      }
-    }
     setShowHeroLayouts(!showHeroLayouts)
   }
 
@@ -144,46 +136,84 @@ export function SectionsSelector({ className = "" }: SectionsSelectorProps) {
         })}
       </div>
 
-      {/* Hero Layout Popup */}
+      {/* Hero Layout Popup - Fixed position portal-like */}
       {showHeroLayouts && !collapsed && (
         <div
           ref={popupRef}
-          className="absolute left-full top-0 z-50 ml-2 w-56 animate-in fade-in slide-in-from-left-2 duration-200"
-          style={{ top: heroPopupPosition?.top ?? 0 }}
+          className="fixed z-[100] w-72 animate-in fade-in slide-in-from-left-2 duration-200"
+          style={{
+            left: heroItemRef.current 
+              ? heroItemRef.current.getBoundingClientRect().right + 8 
+              : 280,
+            top: heroItemRef.current 
+              ? heroItemRef.current.getBoundingClientRect().top 
+              : 100,
+          }}
         >
-          <div className="rounded-lg border bg-card p-3 shadow-lg">
-            <div className="mb-3 flex items-center justify-between">
+          <div className="rounded-xl border bg-card p-4 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
               <h4 className="text-sm font-semibold">Choose Hero Layout</h4>
               <button
                 onClick={() => setShowHeroLayouts(false)}
-                className="rounded-md p-1 hover:bg-muted"
+                className="rounded-md p-1 hover:bg-muted transition-colors"
               >
-                <X className="h-3 w-3" />
+                <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="space-y-2">
-              {heroLayouts.map(({ layout, label, icon, description }) => (
+            <div className="space-y-3">
+              {heroLayouts.map(({ layout, label, description }) => (
                 <div
                   key={layout}
                   draggable
                   onDragStart={(e) => handleDragStart(e, "hero", layout)}
                   onDragEnd={handleDragEnd}
-                  className="group flex cursor-move items-center gap-3 rounded-md border bg-background p-2 transition-all hover:scale-[1.02] hover:border-amber-400 hover:shadow-sm active:scale-95"
+                  className="group cursor-move rounded-lg border bg-background p-3 transition-all hover:border-amber-400 hover:shadow-md active:scale-[0.98]"
                 >
-                  <div className="flex-shrink-0 rounded bg-amber-50 p-1.5 text-amber-700 group-hover:bg-amber-100">
-                    {icon}
+                  {/* Visual Preview */}
+                  <div className="mb-2 h-16 w-full overflow-hidden rounded-md border bg-muted/50">
+                    {layout === "centered" && (
+                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-amber-50 to-orange-100">
+                        <div className="text-center">
+                          <div className="mx-auto mb-1 h-2 w-16 rounded bg-amber-900/60" />
+                          <div className="mx-auto mb-1 h-1 w-12 rounded bg-amber-700/40" />
+                          <div className="mx-auto h-1.5 w-8 rounded bg-amber-600" />
+                        </div>
+                      </div>
+                    )}
+                    {layout === "split" && (
+                      <div className="flex h-full w-full">
+                        <div className="h-full w-1/2 bg-gradient-to-br from-amber-200 to-amber-300">
+                          <Image className="m-auto mt-5 h-6 w-6 text-amber-700/50" />
+                        </div>
+                        <div className="flex h-full w-1/2 flex-col justify-center bg-amber-50 px-2">
+                          <div className="mb-1 h-1.5 w-10 rounded bg-amber-900/60" />
+                          <div className="mb-1 h-1 w-8 rounded bg-amber-700/40" />
+                          <div className="h-1 w-5 rounded bg-amber-600" />
+                        </div>
+                      </div>
+                    )}
+                    {layout === "fullwidth" && (
+                      <div className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-stone-600 to-stone-800">
+                        <Image className="absolute h-8 w-8 text-white/20" />
+                        <div className="relative z-10 text-center">
+                          <div className="mx-auto mb-1 h-2 w-16 rounded bg-white/80" />
+                          <div className="mx-auto mb-1 h-1 w-12 rounded bg-white/60" />
+                          <div className="mx-auto h-1.5 w-8 rounded bg-white" />
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs font-medium">{label}</span>
-                      <Plus className="h-2.5 w-2.5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-sm font-medium">{label}</span>
+                      <p className="text-[11px] text-muted-foreground">{description}</p>
                     </div>
-                    <p className="text-[10px] text-muted-foreground truncate">{description}</p>
+                    <Plus className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
                   </div>
                 </div>
               ))}
             </div>
-            <p className="mt-2 text-[10px] text-muted-foreground text-center">
+            <p className="mt-3 text-[11px] text-muted-foreground text-center">
               Drag a layout to the canvas
             </p>
           </div>

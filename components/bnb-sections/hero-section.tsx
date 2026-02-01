@@ -38,16 +38,20 @@ export function HeroSection({ data, isPreview, onUpdate, styles }: HeroSectionPr
     color: styles?.textColor,
   }
 
-  // Layout: Centered (default)
+  // Layout: Simple/Centered (clean, text-focused, no image)
   if (layout === "centered") {
     return (
       <section
-        className={`relative flex min-h-[400px] items-center justify-center overflow-hidden bg-gradient-to-br from-amber-50 to-orange-100 px-4 py-12 sm:min-h-[500px] sm:px-6 sm:py-16 md:min-h-[600px] md:py-24 ${styles?.fontFamily || ""}`}
-        style={sectionStyle}
+        className={`relative flex min-h-[400px] items-center justify-center overflow-hidden px-4 py-12 sm:min-h-[500px] sm:px-6 sm:py-16 md:min-h-[600px] md:py-24 ${styles?.fontFamily || ""}`}
+        style={{
+          backgroundColor: styles?.backgroundColor || "#fffbeb",
+          backgroundImage: styles?.backgroundImage ? `linear-gradient(to bottom right, rgba(255,251,235,0.9), rgba(254,243,199,0.9)), url(${styles.backgroundImage})` : undefined,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
       >
-        {!styles?.backgroundImage && (
-          <div className="absolute inset-0 bg-[url('/placeholder.svg?height=600&width=1200')] bg-cover bg-center opacity-20" />
-        )}
+        {/* Subtle decorative element */}
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-50 to-orange-100 opacity-80" />
         <div className="relative z-10 max-w-3xl px-2 text-center">
           <EditableText
             value={title}
@@ -79,30 +83,33 @@ export function HeroSection({ data, isPreview, onUpdate, styles }: HeroSectionPr
     )
   }
 
-  // Layout: Split (image left, text right)
+  // Layout: Split (image on left half, text on right half)
   if (layout === "split") {
     return (
       <section
-        className={`relative min-h-[400px] overflow-hidden bg-gradient-to-br from-amber-50 to-orange-100 sm:min-h-[500px] md:min-h-[600px] ${styles?.fontFamily || ""}`}
-        style={{ backgroundColor: styles?.backgroundColor }}
+        className={`relative min-h-[400px] overflow-hidden sm:min-h-[500px] md:min-h-[600px] ${styles?.fontFamily || ""}`}
       >
         <div className="flex min-h-[inherit] flex-col md:flex-row">
-          {/* Image Side */}
+          {/* Image Side - Full left half */}
           <div 
-            className="relative min-h-[200px] w-full md:min-h-[inherit] md:w-1/2"
+            className="relative min-h-[280px] w-full md:min-h-[600px] md:w-1/2"
             style={{
               backgroundImage: styles?.backgroundImage 
                 ? `url(${styles.backgroundImage})` 
-                : "url('/placeholder.svg?height=600&width=800')",
+                : "url('/placeholder.svg?height=800&width=800')",
               backgroundSize: "cover",
               backgroundPosition: "center",
             }}
           >
-            <div className="absolute inset-0 bg-amber-900/10" />
+            {/* Subtle overlay for depth */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/5" />
           </div>
           
-          {/* Text Side */}
-          <div className="flex w-full flex-col justify-center px-6 py-12 md:w-1/2 md:px-12 lg:px-16">
+          {/* Text Side - Clean background */}
+          <div 
+            className="flex w-full flex-col justify-center px-8 py-12 md:w-1/2 md:px-12 lg:px-16"
+            style={{ backgroundColor: styles?.backgroundColor || "#fffbeb" }}
+          >
             <EditableText
               value={title}
               onChange={(value) => handleUpdate({ title: value })}
@@ -116,7 +123,7 @@ export function HeroSection({ data, isPreview, onUpdate, styles }: HeroSectionPr
               onChange={(value) => handleUpdate({ subtitle: value })}
               isPreview={isPreview}
               as="p"
-              className="mb-6 text-pretty text-base text-amber-900 sm:text-lg md:text-xl"
+              className="mb-6 text-pretty text-base text-amber-800 sm:text-lg md:text-xl"
               style={textStyle}
             />
             <div>
@@ -136,7 +143,7 @@ export function HeroSection({ data, isPreview, onUpdate, styles }: HeroSectionPr
     )
   }
 
-  // Layout: Full-width with dark overlay
+  // Layout: Full Image (full background with elegant overlay)
   if (layout === "fullwidth") {
     return (
       <section
@@ -144,13 +151,13 @@ export function HeroSection({ data, isPreview, onUpdate, styles }: HeroSectionPr
         style={{
           backgroundImage: styles?.backgroundImage 
             ? `url(${styles.backgroundImage})` 
-            : "url('/placeholder.svg?height=800&width=1600')",
+            : "url('/placeholder.svg?height=900&width=1600')",
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       >
-        {/* Dark Overlay */}
-        <div className="absolute inset-0 bg-black/50" />
+        {/* Gradient Overlay for readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-black/60" />
         
         {/* Content */}
         <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
@@ -159,7 +166,7 @@ export function HeroSection({ data, isPreview, onUpdate, styles }: HeroSectionPr
             onChange={(value) => handleUpdate({ title: value })}
             isPreview={isPreview}
             as="h1"
-            className="mb-6 text-balance text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl"
+            className="mb-6 text-balance text-4xl font-bold tracking-tight text-white drop-shadow-lg sm:text-5xl md:text-6xl lg:text-7xl"
             style={styles?.textColor ? textStyle : undefined}
           />
           <EditableText
@@ -167,10 +174,10 @@ export function HeroSection({ data, isPreview, onUpdate, styles }: HeroSectionPr
             onChange={(value) => handleUpdate({ subtitle: value })}
             isPreview={isPreview}
             as="p"
-            className="mb-8 text-pretty text-lg text-white/90 sm:text-xl md:text-2xl"
+            className="mb-8 text-pretty text-lg text-white/90 drop-shadow-md sm:text-xl md:text-2xl"
             style={styles?.textColor ? textStyle : undefined}
           />
-          <Button size="lg" className="bg-white text-amber-900 hover:bg-white/90">
+          <Button size="lg" className="bg-white text-amber-900 shadow-lg hover:bg-white/95 hover:shadow-xl transition-all">
             <EditableText
               value={ctaText}
               onChange={(value) => handleUpdate({ ctaText: value })}
