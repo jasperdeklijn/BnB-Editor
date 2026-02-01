@@ -174,12 +174,21 @@ export function EditorCanvas({
     e.preventDefault()
 
     const sectionType = e.dataTransfer.getData("sectionType") as SectionType
+    const heroLayout = e.dataTransfer.getData("heroLayout") as string | undefined
+    
     if (sectionType) {
       const tempId = `section-${Date.now()}`
+      const defaultData = getDefaultSectionData(sectionType)
+      
+      // If it's a hero section with a specific layout, include it in the data
+      if (sectionType === "hero" && heroLayout) {
+        defaultData.layout = heroLayout
+      }
+      
       const newSection: Section = {
         id: tempId,
         type: sectionType,
-        data: getDefaultSectionData(sectionType),
+        data: defaultData,
         styles: {},
       }
 
