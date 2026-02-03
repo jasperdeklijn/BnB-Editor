@@ -284,7 +284,7 @@ export function EditorClient({ userId }: EditorClientProps) {
         onDeviceChange={setDevice}
       />
       <div className="flex flex-1 overflow-hidden">
-        {!isPreview && <SectionsSelector />}
+        {!isPreview && <SectionsSelector userId={userId} />}
         <EditorCanvas
           sections={sections}
           setSections={persistSections}
