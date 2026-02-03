@@ -92,6 +92,7 @@ export function EditorCanvas({
   const handleDragStart = (e: React.DragEvent, index: number) => {
     e.dataTransfer.setData("text/plain", index.toString())
     e.dataTransfer.effectAllowed = "move"
+    console.log("drag start - index:", index)
     setDraggingSectionIndex(index)
   }
 
@@ -104,7 +105,8 @@ export function EditorCanvas({
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
     const sectionType = e.dataTransfer.types.includes("sectiontype")
-    e.dataTransfer.dropEffect = "move"
+    e.dataTransfer.dropEffect = sectionType ? "copy" : "move"
+    console.log("drag over - sectionType:", sectionType)
 
     if (sectionType) {
       setIsDraggingNewSection(true)

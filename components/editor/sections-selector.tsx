@@ -26,6 +26,7 @@ export function SectionsSelector({ className = "" }: SectionsSelectorProps) {
 
   const handleDragStart = (e: React.DragEvent, type: SectionType) => {
     e.dataTransfer.setData("sectionType", type)
+    console.log("drag start - sectionType:", type)
     e.dataTransfer.effectAllowed = "copy"
     setDraggingType(type)
   }
