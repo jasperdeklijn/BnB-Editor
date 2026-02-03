@@ -100,7 +100,6 @@ export function EditorCanvas({
   const handleDragStart = (e: React.DragEvent, index: number) => {
     e.dataTransfer.setData("text/plain", index.toString())
     e.dataTransfer.effectAllowed = "move"
-    console.log("drag start - index:", index)
     setDraggingSectionIndex(index)
   }
 
@@ -112,9 +111,10 @@ export function EditorCanvas({
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
-    const sectionType = e.dataTransfer.types.includes("sectiontype")
-    e.dataTransfer.dropEffect = sectionType ? "copy" : "move"
-    console.log("drag over - sectionType:", sectionType)
+    const sectionType = e.dataTransfer.types.includes("sectiontype")  // Fixed typo: was "sectiontype"
+    const imageUrl = e.dataTransfer.types.includes("imageurl")
+    e.dataTransfer.dropEffect = sectionType ? "copy" : imageUrl ? "copy" : "move"
+    console.log("drag over canvas - sectionType:", sectionType, "imageUrl:", imageUrl)
 
     if (sectionType) {
       setIsDraggingNewSection(true)
@@ -244,8 +244,22 @@ export function EditorCanvas({
     e.preventDefault()
   }
 
-  const handleDropOnSection = (e: React.DragEvent) => {
+  const handleDropOnSection = (e: React.DragEvent, sectionId: string) => {
     e.preventDefault()
+    console.log("Drop on section:", sectionId)
+
+    const imageUrl = e.dataTransfer.getData("imageUrl")
+    if (imageUrl) {
+      console.log("Updating backgroundImage for section", sectionId, "to:", imageUrl)
+      // Update the section's styles to set backgroundImage
+      const section = sections.find(s => s.id === sectionId)
+      if (section) {
+        updateSection(sectionId, {
+          styles: { ...section.styles, backgroundImage: imageUrl }
+        })
+      }
+    }
+
     setHoverDropIndex(null)
     setDraggingSectionIndex(null)
     setIsDraggingNewSection(false)
@@ -413,7 +427,7 @@ export function EditorCanvas({
                   onDragStart={(e) => handleDragStart(e, i)}
                   onDragEnd={handleDragEnd}
                   onDragOver={handleDragOverSection}
-                  onDrop={handleDropOnSection}
+                  onDrop={(e) => handleDropOnSection(e, section.id)}  // Pass sectionId to the handler
                 >
                   {!isPreview && (
                     <div

@@ -29,6 +29,7 @@ export function SectionsSelector({ className = "", userId }: SectionsSelectorPro
   const [tab, setTab] = useState("sections")
   const [images, setImages] = useState<{ name: string; url: string }[]>([])
   const [isLoadingImages, setIsLoadingImages] = useState(false)
+  const [draggingImage, setDraggingImage] = useState<string | null>(null)
 
   // Fetch images from Supabase when switching to images tab
   useEffect(() => {
@@ -88,8 +89,15 @@ export function SectionsSelector({ className = "", userId }: SectionsSelectorPro
   }
 
   const handleImageDragStart = (e: React.DragEvent, url: string) => {
+    console.log("Image drag started for URL:", url)  // Debug log
     e.dataTransfer.setData("imageUrl", url)
     e.dataTransfer.effectAllowed = "copy"
+    setDraggingImage(url)
+  }
+
+  const handleImageDragEnd = () => {
+    console.log("Image drag ended")  // Debug log
+    setDraggingImage(null)
   }
 
   return (
@@ -180,7 +188,10 @@ export function SectionsSelector({ className = "", userId }: SectionsSelectorPro
                   key={img.name}
                   draggable
                   onDragStart={e => handleImageDragStart(e, img.url)}
-                  className="rounded-lg border bg-card p-1 shadow-sm cursor-move hover:border-amber-400 transition-all"
+                  onDragEnd={handleImageDragEnd}
+                  className={`rounded-lg border bg-card p-1 shadow-sm cursor-move hover:border-amber-400 transition-all duration-200 ${
+                    draggingImage === img.url ? "ring-4 ring-amber-500 shadow-xl scale-105 bg-amber-50" : ""  // Stronger "light up" with scale, ring, and background
+                  }`}
                   title={img.name}
                 >
                   <img src={img.url} alt={img.name} className="w-full h-16 object-cover rounded" />
