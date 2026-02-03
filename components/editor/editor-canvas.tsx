@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useRef, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { Trash2, GripVertical, ChevronUp, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Section, SectionType, Transition } from "@/lib/types"
@@ -84,6 +84,14 @@ export function EditorCanvas({
   const [hoverDropIndex, setHoverDropIndex] = useState<number | null>(null)
   const [draggingSectionIndex, setDraggingSectionIndex] = useState<number | null>(null)
   const [isDraggingNewSection, setIsDraggingNewSection] = useState(false)
+
+  useEffect(() => {
+    const handleGlobalDragEnd = () => {
+      setIsDraggingNewSection(false)
+    }
+    document.addEventListener('dragend', handleGlobalDragEnd)
+    return () => document.removeEventListener('dragend', handleGlobalDragEnd)
+  }, [])
 
   /* -----------------------------
      Drag & Drop helpers
