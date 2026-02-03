@@ -369,7 +369,6 @@ export function EditorCanvas({
   return (
     <main
       className="flex-1 overflow-auto bg-gradient-to-br from-muted/20 to-muted/40"
-      onDrop={handleDropOnSection}
       onDragOver={handleDragOver}
     >
       <div className={isPreview ? "" : "p-8"}>
