@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { ImageIcon, Home, Bed, Mail, Sparkles, Info, ChevronLeft, ChevronRight, Plus, Menu, Layout  } from "lucide-react"
+import { ImageIcon, Home, Bed, Mail, Sparkles, Info, ChevronLeft, ChevronRight, Plus, Menu, Layout } from "lucide-react"
 import type { SectionType } from "@/lib/types"
 
 const sectionTypes: { type: SectionType; label: string; icon: React.ReactNode; description: string }[] = [
@@ -26,6 +26,7 @@ export function SectionsSelector({ className = "" }: SectionsSelectorProps) {
 
   const handleDragStart = (e: React.DragEvent, type: SectionType) => {
     e.dataTransfer.setData("sectionType", type)
+    console.log("drag start - sectionType:", type)
     e.dataTransfer.effectAllowed = "copy"
     setDraggingType(type)
   }

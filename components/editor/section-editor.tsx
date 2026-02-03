@@ -25,8 +25,13 @@ import {
   Navigation,
   Pin,
   Eye,
-  EyeOff
+  EyeOff,
+  AlignCenter,
+  LayoutPanelLeft,
+  Maximize,
+  LayoutGrid
 } from "lucide-react"
+import type { HeroLayout } from "@/components/bnb-sections/hero-section"
 import type { SectionType } from "@/lib/types"
 
 interface SelectionEditorProps {
@@ -239,33 +244,79 @@ export function SelectionEditor({
 
       <div className="space-y-4">
         {selectedSection.type === "hero" && (
-          <Card className="p-4 space-y-3">
-            <Label className="flex items-center gap-2">
-              <Type className="h-3.5 w-3.5" />
-              Title
-            </Label>
-            <EditableText
-              value={(selectedSection.data as any).title || ""}
-              onChange={(v) => updateField("title", v)}
-              isPreview={false}
-              as="h1"
-            />
-            <Label className="flex items-center gap-2">
-              <Type className="h-3.5 w-3.5" />
-              Subtitle
-            </Label>
-            <EditableText
-              value={(selectedSection.data as any).subtitle || ""}
-              onChange={(v) => updateField("subtitle", v)}
-              isPreview={false}
-              as="p"
-            />
-            <Label className="flex items-center gap-2">
-              <Type className="h-3.5 w-3.5" />
-              CTA Button Text
-            </Label>
-            <Input placeholder="e.g., Book Now" value={(selectedSection.data as any).ctaText || ""} onChange={(e) => updateField("ctaText", e.target.value)} />
-          </Card>
+          <>
+            {/* Hero Layout Selector */}
+            <Card className="p-4 space-y-3">
+              <Label className="flex items-center gap-2">
+                <LayoutGrid className="h-3.5 w-3.5" />
+                Layout Style
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Choose how your hero section is displayed
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { layout: "centered" as HeroLayout, label: "Simple", icon: AlignCenter },
+                  { layout: "split" as HeroLayout, label: "Split", icon: LayoutPanelLeft },
+                  { layout: "fullwidth" as HeroLayout, label: "Full Image", icon: Maximize },
+                ].map(({ layout, label, icon: Icon }) => {
+                  const currentLayout = ((selectedSection.data as any).layout as HeroLayout) || "centered"
+                  const isActive = currentLayout === layout
+                  return (
+                    <button
+                      key={layout}
+                      onClick={() => updateField("layout", layout)}
+                      className={`flex flex-col items-center gap-1 rounded-lg border p-3 transition-all hover:scale-105 ${
+                        isActive 
+                          ? "border-amber-500 bg-amber-50 text-amber-700 ring-2 ring-amber-200" 
+                          : "border-muted bg-background hover:border-amber-300 hover:bg-amber-50/50"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span className="text-xs font-medium">{label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="text-[10px] text-muted-foreground text-center">
+                {((selectedSection.data as any).layout as HeroLayout) === "split" && "Image on left half, text on right"}
+                {((selectedSection.data as any).layout as HeroLayout) === "fullwidth" && "Full background image with overlay"}
+                {(((selectedSection.data as any).layout as HeroLayout) === "centered" || !(selectedSection.data as any).layout) && "Clean text-focused design"}
+              </p>
+            </Card>
+
+            {/* Hero Content */}
+            <Card className="p-4 space-y-3">
+              <Label className="flex items-center gap-2">
+                <Type className="h-3.5 w-3.5" />
+                Content
+              </Label>
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-xs mb-1.5 block">Title</Label>
+                  <EditableText
+                    value={(selectedSection.data as any).title || ""}
+                    onChange={(v) => updateField("title", v)}
+                    isPreview={false}
+                    as="h1"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs mb-1.5 block">Subtitle</Label>
+                  <EditableText
+                    value={(selectedSection.data as any).subtitle || ""}
+                    onChange={(v) => updateField("subtitle", v)}
+                    isPreview={false}
+                    as="p"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs mb-1.5 block">CTA Button Text</Label>
+                  <Input placeholder="e.g., Book Now" value={(selectedSection.data as any).ctaText || ""} onChange={(e) => updateField("ctaText", e.target.value)} />
+                </div>
+              </div>
+            </Card>
+          </>
         )}
 
         {selectedSection.type === "about" && (

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useRef, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { Trash2, GripVertical, ChevronUp, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Section, SectionType, Transition } from "@/lib/types"
@@ -85,6 +85,14 @@ export function EditorCanvas({
   const [draggingSectionIndex, setDraggingSectionIndex] = useState<number | null>(null)
   const [isDraggingNewSection, setIsDraggingNewSection] = useState(false)
 
+  useEffect(() => {
+    const handleGlobalDragEnd = () => {
+      setIsDraggingNewSection(false)
+    }
+    document.addEventListener('dragend', handleGlobalDragEnd)
+    return () => document.removeEventListener('dragend', handleGlobalDragEnd)
+  }, [])
+
   /* -----------------------------
      Drag & Drop helpers
   ------------------------------ */
@@ -92,6 +100,7 @@ export function EditorCanvas({
   const handleDragStart = (e: React.DragEvent, index: number) => {
     e.dataTransfer.setData("text/plain", index.toString())
     e.dataTransfer.effectAllowed = "move"
+    console.log("drag start - index:", index)
     setDraggingSectionIndex(index)
   }
 
@@ -104,7 +113,8 @@ export function EditorCanvas({
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
     const sectionType = e.dataTransfer.types.includes("sectiontype")
-    e.dataTransfer.dropEffect = "move"
+    e.dataTransfer.dropEffect = sectionType ? "copy" : "move"
+    console.log("drag over - sectionType:", sectionType)
 
     if (sectionType) {
       setIsDraggingNewSection(true)
@@ -352,7 +362,7 @@ export function EditorCanvas({
         <div className={`mx-auto ${getDeviceWidth()} transition-all duration-300`}>
           {!isPreview && sections.length === 0 && (
             <div
-              className="flex min-h-[500px] items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 bg-background/50 animate-in fade-in slide-in-from-bottom-4 duration-500"
+              className={`flex ${isDraggingNewSection ? "min-h-[600px]" : "min-h-[500px]"} items-center justify-center rounded-lg border-2 border-dashed ${isDraggingNewSection ? "border-amber-400 bg-amber-50/50" : "border-muted-foreground/30 bg-background/50"} animate-in fade-in slide-in-from-bottom-4 duration-500 transition-all`}
               onDragOver={(e) => handleDragOverGap(e, 0)}
               onDragLeave={handleDragLeaveGap}
               onDrop={(e) => handleDropOnGap(e, 0)}
@@ -368,7 +378,7 @@ export function EditorCanvas({
           {!isPreview && (
             <div
               className={`mb-4 transition-all duration-200 ${
-                hoverDropIndex === 0 ? "h-16 opacity-100" : "h-2 opacity-0"
+                hoverDropIndex === 0 || isDraggingNewSection ? "h-16 opacity-100" : "h-2 opacity-0"
               }`}
               onDragOver={(e) => handleDragOverGap(e, 0)}
               onDragLeave={handleDragLeaveGap}
@@ -475,7 +485,7 @@ export function EditorCanvas({
                 {!isPreview && (
                   <div
                     className={`transition-all duration-200 ${
-                      hoverDropIndex === i + 1 ? "h-16 mb-4 opacity-100" : "h-2 mb-4 opacity-0"
+                      hoverDropIndex === i + 1 || isDraggingNewSection ? "h-16 mb-4 opacity-100" : "h-2 mb-4 opacity-0"
                     }`}
                     onDragOver={(e) => handleDragOverGap(e, i + 1)}
                     onDragLeave={handleDragLeaveGap}
