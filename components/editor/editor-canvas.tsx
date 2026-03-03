@@ -368,14 +368,14 @@ export function EditorCanvas({
 
   return (
     <main
-      className="flex-1 overflow-auto bg-gradient-to-br from-muted/20 to-muted/40"
+      className="flex-1 overflow-auto bg-muted/30"
       onDragOver={handleDragOver}
     >
       <div className={isPreview ? "" : "p-8"}>
         <div className={`mx-auto ${getDeviceWidth()} transition-all duration-300`}>
           {!isPreview && sections.length === 0 && (
             <div
-              className={`flex ${isDraggingNewSection ? "min-h-[600px]" : "min-h-[500px]"} items-center justify-center rounded-lg border-2 border-dashed ${isDraggingNewSection ? "border-amber-400 bg-amber-50/50" : "border-muted-foreground/30 bg-background/50"} animate-in fade-in slide-in-from-bottom-4 duration-500 transition-all`}
+              className={`flex ${isDraggingNewSection ? "min-h-[600px]" : "min-h-[500px]"} items-center justify-center rounded-lg border-2 border-dashed ${isDraggingNewSection ? "border-primary bg-primary/5" : "border-muted-foreground/30 bg-background/50"} animate-in fade-in slide-in-from-bottom-4 duration-500 transition-all`}
               onDragOver={(e) => handleDragOverGap(e, 0)}
               onDragLeave={handleDragLeaveGap}
               onDrop={(e) => handleDropOnGap(e, 0)}
@@ -397,8 +397,8 @@ export function EditorCanvas({
               onDragLeave={handleDragLeaveGap}
               onDrop={(e) => handleDropOnGap(e, 0)}
             >
-              <div className="h-full rounded-lg border-2 border-dashed border-amber-400 bg-amber-50/50 flex items-center justify-center">
-                <span className="text-xs font-medium text-amber-700">Drop here</span>
+              <div className="h-full rounded-lg border-2 border-dashed border-primary bg-primary/5 flex items-center justify-center">
+                <span className="text-xs font-medium text-primary">Drop here</span>
               </div>
             </div>
           )}
@@ -474,7 +474,7 @@ export function EditorCanvas({
                     id={isPreview && section.type !== "nav" && section.type !== "footer" ? `section-${section.id}` : undefined}
                     className={`${!isPreview ? "cursor-pointer rounded-lg border bg-background shadow-sm transition-all hover:shadow-md" : ""} ${
                       selectedSectionId === section.id && !isPreview
-                        ? "ring-2 ring-amber-500 ring-offset-2 shadow-lg"
+                        ? "ring-2 ring-primary ring-offset-2 shadow-lg"
                         : ""
                     }`}
                     onClick={() =>
@@ -504,8 +504,8 @@ export function EditorCanvas({
                     onDragLeave={handleDragLeaveGap}
                     onDrop={(e) => handleDropOnGap(e, i + 1)}
                   >
-                    <div className="h-full rounded-lg border-2 border-dashed border-amber-400 bg-amber-50/50 flex items-center justify-center">
-                      <span className="text-xs font-medium text-amber-700">Drop here</span>
+ <div className="h-full rounded-lg border-2 border-dashed border-primary bg-primary/5 flex items-center justify-center">
+ <span className="text-xs font-medium text-primary">Drop here</span>
                     </div>
                   </div>
                 )}

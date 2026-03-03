@@ -194,6 +194,12 @@ export function EditorClient({ userId }: EditorClientProps) {
     
   }
 
+  const handleLogout = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push("/auth/login")
+  }
+
   const handleStyleUpdate = (styles: SectionStyles) => {
     if (!selectedSectionId) return
 
@@ -279,6 +285,7 @@ export function EditorClient({ userId }: EditorClientProps) {
         onPreviewToggle={() => setIsPreview(!isPreview)}
         onSave={handleSave}
         onPublish={handlePublish}
+        onLogout={handleLogout}
         isSaving={isSaving}
         device={device}
         onDeviceChange={setDevice}

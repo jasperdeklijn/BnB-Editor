@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Eye, EyeOff, Save, Upload, Monitor, Tablet, Smartphone, ImageIcon } from "lucide-react"
+import { Eye, EyeOff, Save, Upload, Monitor, Tablet, Smartphone, ImageIcon, LogOut } from "lucide-react"
 import Link from "next/link"
 
 interface EditorHeaderProps {
@@ -12,6 +12,7 @@ interface EditorHeaderProps {
   onPreviewToggle: () => void
   onSave: () => void
   onPublish: () => void
+  onLogout: () => void
   isSaving: boolean
   device: "desktop" | "tablet" | "mobile"
   onDeviceChange: (device: "desktop" | "tablet" | "mobile") => void
@@ -24,14 +25,15 @@ export function EditorHeader({
   onPreviewToggle,
   onSave,
   onPublish,
+  onLogout,
   isSaving,
   device,
   onDeviceChange,
 }: EditorHeaderProps) {
   return (
-    <header className="flex items-center justify-between border-b bg-background px-6 py-3">
+    <header className="flex items-center justify-between border-b border-border bg-background px-6 py-3">
       <div className="flex items-center gap-4">
-        <h1 className="text-lg font-semibold">BnB Builder</h1>
+        <h1 className="text-lg font-semibold text-foreground">BnB Builder</h1>
         <Input
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
@@ -40,7 +42,7 @@ export function EditorHeader({
         />
       </div>
       <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1 rounded-md border p-1">
+        <div className="flex items-center gap-1 rounded-md border border-border p-1">
           <Button
             variant={device === "desktop" ? "secondary" : "ghost"}
             size="sm"
@@ -92,6 +94,11 @@ export function EditorHeader({
         <Button size="sm" onClick={onPublish} disabled={isSaving}>
           <Upload className="mr-2 h-4 w-4" />
           Publish
+        </Button>
+        <div className="ml-2 h-6 w-px bg-border" />
+        <Button variant="ghost" size="sm" onClick={onLogout} className="text-muted-foreground hover:text-foreground">
+          <LogOut className="mr-2 h-4 w-4" />
+          Logout
         </Button>
       </div>
     </header>

@@ -102,7 +102,7 @@ export function SectionsSelector({ className = "", userId }: SectionsSelectorPro
 
   return (
     <aside
-      className={`relative flex-shrink-0 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"} border-r bg-gradient-to-b from-background to-muted/20 p-4 ${className}`}
+      className={`relative flex-shrink-0 transition-all duration-300 ease-in-out ${collapsed ? "w-16" : "w-64"} border-r border-border bg-background p-4 ${className}`}
     >
       <button
         aria-label={collapsed ? "Expand sections" : "Collapse sections"}
@@ -137,12 +137,12 @@ export function SectionsSelector({ className = "", userId }: SectionsSelectorPro
                 draggable
                 onDragStart={(e) => handleDragStart(e, type)}
                 onDragEnd={handleDragEnd}
-                className={`group relative flex cursor-move items-center gap-3 rounded-lg border bg-card p-3 shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md hover:border-amber-400 active:scale-95 ${
+                className={`group relative flex cursor-move items-center gap-3 rounded-lg border border-border bg-card p-3 shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md hover:border-primary active:scale-95 ${
                   collapsed ? "justify-center px-2 py-3" : ""
                 } ${draggingType === type ? "opacity-50 scale-95" : ""}`}
                 title={collapsed ? `${label}: ${description}` : label}
               >
-                <div className="flex-shrink-0 rounded-md bg-amber-50 p-2 text-amber-700 transition-colors group-hover:bg-amber-100">
+                <div className="flex-shrink-0 rounded-md bg-secondary p-2 text-secondary-foreground transition-colors group-hover:bg-accent">
                   {icon}
                 </div>
                 {!collapsed && (
@@ -154,7 +154,7 @@ export function SectionsSelector({ className = "", userId }: SectionsSelectorPro
                     <p className="text-xs text-muted-foreground truncate">{description}</p>
                   </div>
                 )}
-                <div className={`absolute inset-0 rounded-lg bg-gradient-to-r from-amber-400/0 via-amber-400/10 to-amber-400/0 opacity-0 transition-opacity group-hover:opacity-100 ${collapsed ? "hidden" : ""}`} />
+                <div className={`absolute inset-0 rounded-lg bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 transition-opacity group-hover:opacity-100 ${collapsed ? "hidden" : ""}`} />
               </div>
             ))}
           </div>
@@ -189,8 +189,8 @@ export function SectionsSelector({ className = "", userId }: SectionsSelectorPro
                   draggable
                   onDragStart={e => handleImageDragStart(e, img.url)}
                   onDragEnd={handleImageDragEnd}
-                  className={`rounded-lg border bg-card p-1 shadow-sm cursor-move hover:border-amber-400 transition-all duration-200 ${
-                    draggingImage === img.url ? "ring-4 ring-amber-500 shadow-xl scale-105 bg-amber-50" : ""  // Stronger "light up" with scale, ring, and background
+                  className={`rounded-lg border border-border bg-card p-1 shadow-sm cursor-move hover:border-primary transition-all duration-200 ${
+                    draggingImage === img.url ? "ring-4 ring-primary shadow-xl scale-105 bg-accent" : ""
                   }`}
                   title={img.name}
                 >
