@@ -8,8 +8,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'BnB Editor — Testing Demo',
-  description: 'Build your B&B website in minutes with our visual editor. This is a testing demo.',
+  title: 'BnB Editor — Testdemo',
+  description: 'Bouw jouw B&B website in enkele minuten met onze visuele editor. Dit is een testdemo.',
   generator: 'v0.app',
 }
 
@@ -19,7 +19,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="nl">
       <body className={`font-sans antialiased`}>
         {children}
         <Analytics />

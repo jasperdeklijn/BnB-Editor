@@ -8,11 +8,11 @@ export function LandingNav() {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-[var(--hero-bg)]/90 backdrop-blur border-b border-white/10">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-[var(--hero-bg)]/90 backdrop-blur border-b border-[var(--brand-blue)]/20">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--brand-blue)]">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--brand-blue)] to-[var(--brand-purple)]">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <rect x="1" y="4" width="14" height="9" rx="2" stroke="white" strokeWidth="1.5" />
               <path d="M5 4V3a3 3 0 016 0v1" stroke="white" strokeWidth="1.5" />
@@ -20,38 +20,38 @@ export function LandingNav() {
             </svg>
           </div>
           <span className="font-semibold text-white text-lg tracking-tight">BnB Editor</span>
-          <span className="ml-1 rounded-full bg-[var(--brand-purple)]/30 px-2 py-0.5 text-xs font-medium text-[var(--brand-purple)] border border-[var(--brand-purple)]/40">
+          <span className="ml-1 rounded-full bg-[var(--brand-purple)]/20 px-2 py-0.5 text-xs font-medium text-[var(--brand-purple)] border border-[var(--brand-purple)]/30">
             Demo
           </span>
         </div>
 
         {/* Desktop nav */}
-        <nav className="hidden items-center gap-8 md:flex" aria-label="Main navigation">
-          <Link href="#features" className="text-sm text-white/70 hover:text-white transition-colors">
-            Features
+        <nav className="hidden items-center gap-8 md:flex" aria-label="Hoofdnavigatie">
+          <Link href="#functies" className="text-sm text-white/70 hover:text-[var(--brand-blue)] transition-colors">
+            Functies
           </Link>
-          <Link href="#how-it-works" className="text-sm text-white/70 hover:text-white transition-colors">
-            How it works
+          <Link href="#hoe-het-werkt" className="text-sm text-white/70 hover:text-[var(--brand-blue)] transition-colors">
+            Hoe het werkt
           </Link>
-          <Link href="#demo" className="text-sm text-white/70 hover:text-white transition-colors">
-            Demo
+          <Link href="#voorbeeld" className="text-sm text-white/70 hover:text-[var(--brand-blue)] transition-colors">
+            Voorbeeld
           </Link>
         </nav>
 
         {/* CTA */}
         <div className="hidden items-center gap-3 md:flex">
           <Button asChild variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10">
-            <Link href="/auth/login">Sign in</Link>
+            <Link href="/auth/login">Inloggen</Link>
           </Button>
-          <Button asChild className="bg-[var(--brand-blue)] text-white hover:bg-[var(--brand-blue)]/90">
-            <Link href="/auth/sign-up">Try for free</Link>
+          <Button asChild className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] text-white hover:opacity-90">
+            <Link href="/auth/sign-up">Gratis proberen</Link>
           </Button>
         </div>
 
         {/* Mobile hamburger */}
         <button
           className="flex items-center justify-center rounded-md p-2 text-white/70 hover:text-white md:hidden"
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          aria-label={menuOpen ? "Menu sluiten" : "Menu openen"}
           onClick={() => setMenuOpen((v) => !v)}
         >
           {menuOpen ? (
@@ -68,17 +68,17 @@ export function LandingNav() {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="border-t border-white/10 bg-[var(--hero-bg)] px-6 py-4 md:hidden">
-          <nav className="flex flex-col gap-4" aria-label="Mobile navigation">
-            <Link href="#features" className="text-sm text-white/80 hover:text-white" onClick={() => setMenuOpen(false)}>Features</Link>
-            <Link href="#how-it-works" className="text-sm text-white/80 hover:text-white" onClick={() => setMenuOpen(false)}>How it works</Link>
-            <Link href="#demo" className="text-sm text-white/80 hover:text-white" onClick={() => setMenuOpen(false)}>Demo</Link>
+        <div className="border-t border-[var(--brand-blue)]/20 bg-[var(--hero-bg)] px-6 py-4 md:hidden">
+          <nav className="flex flex-col gap-4" aria-label="Mobiele navigatie">
+            <Link href="#functies" className="text-sm text-white/80 hover:text-[var(--brand-blue)]" onClick={() => setMenuOpen(false)}>Functies</Link>
+            <Link href="#hoe-het-werkt" className="text-sm text-white/80 hover:text-[var(--brand-blue)]" onClick={() => setMenuOpen(false)}>Hoe het werkt</Link>
+            <Link href="#voorbeeld" className="text-sm text-white/80 hover:text-[var(--brand-blue)]" onClick={() => setMenuOpen(false)}>Voorbeeld</Link>
             <div className="flex gap-3 pt-2">
               <Button asChild variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10 flex-1">
-                <Link href="/auth/login">Sign in</Link>
+                <Link href="/auth/login">Inloggen</Link>
               </Button>
-              <Button asChild className="bg-[var(--brand-blue)] text-white flex-1">
-                <Link href="/auth/sign-up">Try for free</Link>
+              <Button asChild className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] text-white flex-1">
+                <Link href="/auth/sign-up">Gratis proberen</Link>
               </Button>
             </div>
           </nav>

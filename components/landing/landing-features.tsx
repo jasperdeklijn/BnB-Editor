@@ -1,85 +1,61 @@
+import Image from "next/image"
+
 const features = [
   {
-    title: "Visual drag-and-drop editor",
+    title: "Visuele drag-and-drop editor",
     description:
-      "Rearrange sections, update text and images directly on the page. No code or design knowledge needed.",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-        <rect x="2" y="2" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-        <rect x="11" y="2" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-        <rect x="2" y="11" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-        <rect x="11" y="11" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
-      </svg>
-    ),
+      "Versleep secties, pas tekst en afbeeldingen direct op de pagina aan. Geen code of designkennis nodig.",
+    image: "/placeholder.svg?height=200&width=400",
+    alt: "Schermafbeelding van de drag-and-drop editor interface",
   },
   {
-    title: "Ready-made B&B sections",
+    title: "Kant-en-klare B&B secties",
     description:
-      "Hero banners, room listings, amenities, photo galleries, contact forms and more — all built for B&Bs.",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-        <path d="M3 5h14M3 10h14M3 15h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-    ),
+      "Hero banners, kameroverzichten, voorzieningen, fotogalerijen, contactformulieren en meer — allemaal speciaal voor B&B's gemaakt.",
+    image: "/placeholder.svg?height=200&width=400",
+    alt: "Voorbeeld van kant-en-klare website secties voor een bed and breakfast",
   },
   {
-    title: "Custom colours & fonts",
+    title: "Eigen kleuren & lettertypen",
     description:
-      "Match your brand with a full colour picker and font selector. Your website, your identity.",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-        <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5" />
-        <circle cx="10" cy="10" r="3" fill="currentColor" />
-      </svg>
-    ),
+      "Pas alles aan op jouw huisstijl met een kleurenpalet en lettertype-kiezer. Jouw website, jouw identiteit.",
+    image: "/placeholder.svg?height=200&width=400",
+    alt: "Kleurenpalet en lettertype aanpassingen in de editor",
   },
   {
-    title: "Image library",
+    title: "Afbeeldingenbibliotheek",
     description:
-      "Upload your own property photos and manage them from a central library that's always within reach.",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-        <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
-        <circle cx="7" cy="9" r="1.5" stroke="currentColor" strokeWidth="1.25" />
-        <path d="M2 14l4-4 3 3 2-2 5 5" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
+      "Upload je eigen foto's van het pand en beheer ze vanuit een centrale bibliotheek die altijd binnen handbereik is.",
+    image: "/placeholder.svg?height=200&width=400",
+    alt: "Afbeeldingenbibliotheek met foto's van een B&B",
   },
   {
-    title: "Instant publish",
+    title: "Direct publiceren",
     description:
-      "Publish your changes with a single click. Your guests see the updates immediately, no deploy pipeline required.",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-        <path d="M10 13V4m-4 5l4-5 4 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M4 16h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-    ),
+      "Publiceer je wijzigingen met een klik. Je gasten zien de updates meteen, geen deploy pipeline nodig.",
+    image: "/placeholder.svg?height=200&width=400",
+    alt: "Publiceerknop en live preview van de website",
   },
   {
-    title: "Secure & always on",
+    title: "Veilig & altijd online",
     description:
-      "Powered by Supabase and Vercel. Your data is safe and your site is fast, wherever your guests are.",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-        <path d="M10 2l6 3v5c0 3.866-2.686 7.5-6 8.5C7.686 17.5 4 13.866 4 10V5l6-3z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-        <path d="M7 10l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
+      "Gebouwd op Supabase en Vercel. Je data is veilig en je site is snel, waar je gasten ook zijn.",
+    image: "/placeholder.svg?height=200&width=400",
+    alt: "Beveiligingspictogrammen en uptime statistieken",
   },
 ]
 
 export function LandingFeatures() {
   return (
-    <section id="features" className="bg-[var(--surface-dim)] px-6 py-24">
+    <section id="functies" className="bg-[var(--surface-dim)] px-6 py-24">
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
-          <p className="mb-3 text-sm font-medium uppercase tracking-widest text-[var(--brand-blue)]">Features</p>
+          <p className="mb-3 text-sm font-medium uppercase tracking-widest text-[var(--brand-purple)]">Functies</p>
           <h2 className="text-balance text-4xl font-bold text-[var(--foreground)] md:text-5xl">
-            Everything your B&B website needs
+            Alles wat jouw B&B website nodig heeft
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-pretty text-lg leading-relaxed text-[var(--muted-foreground)]">
-            A focused set of tools built specifically for bed and breakfast owners — not a bloated website builder.
+            Een gerichte set tools speciaal voor bed & breakfast eigenaren — geen opgeblazen website bouwer.
           </p>
         </div>
 
@@ -87,13 +63,22 @@ export function LandingFeatures() {
           {features.map((feature) => (
             <article
               key={feature.title}
-              className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-6 transition-shadow hover:shadow-md"
+              className="group overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] transition-all hover:shadow-lg hover:shadow-[var(--brand-blue)]/5 hover:border-[var(--brand-blue)]/30"
             >
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--brand-blue)]/10 text-[var(--brand-blue)]">
-                {feature.icon}
+              {/* Feature image */}
+              <div className="relative h-40 w-full overflow-hidden bg-gradient-to-br from-[var(--brand-blue)]/10 to-[var(--brand-purple)]/10">
+                <Image
+                  src={feature.image}
+                  alt={feature.alt}
+                  width={400}
+                  height={200}
+                  className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                />
               </div>
-              <h3 className="mb-2 font-semibold text-[var(--foreground)]">{feature.title}</h3>
-              <p className="text-sm leading-relaxed text-[var(--muted-foreground)]">{feature.description}</p>
+              <div className="p-6">
+                <h3 className="mb-2 font-semibold text-[var(--foreground)]">{feature.title}</h3>
+                <p className="text-sm leading-relaxed text-[var(--muted-foreground)]">{feature.description}</p>
+              </div>
             </article>
           ))}
         </div>

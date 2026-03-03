@@ -1,50 +1,63 @@
+import Image from "next/image"
+
 const steps = [
   {
     step: "01",
-    title: "Create your account",
-    description: "Sign up for free. No credit card required for the testing demo.",
+    title: "Maak een account aan",
+    description: "Registreer gratis. Geen creditcard nodig voor de testdemo.",
+    image: "/placeholder.svg?height=160&width=280",
+    alt: "Registratieformulier voor de BnB Editor",
   },
   {
     step: "02",
-    title: "Choose your sections",
-    description: "Pick from pre-built sections designed for B&Bs: hero, rooms, gallery, contact and more.",
+    title: "Kies je secties",
+    description: "Kies uit kant-en-klare secties voor B&B's: hero, kamers, galerij, contact en meer.",
+    image: "/placeholder.svg?height=160&width=280",
+    alt: "Overzicht van beschikbare website secties",
   },
   {
     step: "03",
-    title: "Customise content",
-    description: "Click any text or image to edit it directly on the page. Style colours and fonts to match your brand.",
+    title: "Pas de inhoud aan",
+    description: "Klik op tekst of afbeeldingen om direct op de pagina te bewerken. Stel kleuren en lettertypen in.",
+    image: "/placeholder.svg?height=160&width=280",
+    alt: "Editor met tekst en afbeelding aanpassingen",
   },
   {
     step: "04",
-    title: "Publish instantly",
-    description: "Hit publish and your B&B website is live under your own URL for guests to find and book.",
+    title: "Publiceer direct",
+    description: "Druk op publiceren en je B&B website staat live met een eigen URL voor je gasten.",
+    image: "/placeholder.svg?height=160&width=280",
+    alt: "Gepubliceerde website met eigen URL",
   },
 ]
 
 export function LandingHowItWorks() {
   return (
-    <section id="how-it-works" className="bg-[var(--hero-bg)] px-6 py-24">
+    <section id="hoe-het-werkt" className="bg-[var(--hero-bg)] px-6 py-24">
       <div className="mx-auto max-w-6xl">
         <div className="mb-16 text-center">
-          <p className="mb-3 text-sm font-medium uppercase tracking-widest text-[var(--brand-purple)]">How it works</p>
+          <p className="mb-3 text-sm font-medium uppercase tracking-widest text-[var(--brand-blue)]">Hoe het werkt</p>
           <h2 className="text-balance text-4xl font-bold text-white md:text-5xl">
-            From sign-up to live in four steps
+            Van registratie tot <span className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] bg-clip-text text-transparent">live</span> in vier stappen
           </h2>
         </div>
 
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {steps.map((s, i) => (
-            <div key={s.step} className="relative flex flex-col">
-              {/* Connector line */}
-              {i < steps.length - 1 && (
-                <div
-                  className="absolute top-5 left-full hidden h-px w-8 bg-white/10 lg:block"
-                  style={{ transform: "translateX(-50%)" }}
-                  aria-hidden="true"
+          {steps.map((s) => (
+            <div key={s.step} className="group flex flex-col">
+              {/* Step image */}
+              <div className="mb-4 overflow-hidden rounded-xl border border-[var(--brand-blue)]/20 bg-[var(--hero-surface)]">
+                <Image
+                  src={s.image}
+                  alt={s.alt}
+                  width={280}
+                  height={160}
+                  className="h-36 w-full object-cover transition-transform group-hover:scale-105"
                 />
-              )}
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--brand-blue)]/40 bg-[var(--brand-blue)]/10">
-                <span className="text-sm font-bold text-[var(--brand-blue)]">{s.step}</span>
+              </div>
+              {/* Step number */}
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--brand-blue)]/20 to-[var(--brand-purple)]/20 border border-[var(--brand-blue)]/30">
+                <span className="text-sm font-bold bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] bg-clip-text text-transparent">{s.step}</span>
               </div>
               <h3 className="mb-2 font-semibold text-white">{s.title}</h3>
               <p className="text-sm leading-relaxed text-white/50">{s.description}</p>
