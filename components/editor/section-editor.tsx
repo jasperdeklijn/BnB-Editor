@@ -112,7 +112,7 @@ export function SelectionEditor({
 
   if (!selectedSection) {
     return (
-      <div className="w-80 border-l bg-gradient-to-b from-background to-muted/20 p-6">
+      <div className="w-80 border-l border-border bg-background p-6">
         <div className="flex h-full flex-col items-center justify-center text-center">
           <div className="mb-4 rounded-full bg-muted p-4">
             <Wand2 className="h-8 w-8 text-muted-foreground" />
@@ -221,11 +221,11 @@ export function SelectionEditor({
   }
 
   return (
-    <div className="w-80 border-l bg-gradient-to-b from-background to-muted/20 p-6 overflow-auto animate-in slide-in-from-right duration-300">
+    <div className="w-80 border-l border-border bg-background p-6 overflow-auto animate-in slide-in-from-right duration-300">
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <div className="rounded-md bg-amber-100 p-1.5 text-amber-700">
+            <div className="rounded-md bg-secondary p-1.5 text-secondary-foreground">
               <Type className="h-4 w-4" />
             </div>
             <h2 className="text-lg font-semibold capitalize">{selectedSection.type}</h2>
@@ -268,8 +268,8 @@ export function SelectionEditor({
                       onClick={() => updateField("layout", layout)}
                       className={`flex flex-col items-center gap-1 rounded-lg border p-3 transition-all hover:scale-105 ${
                         isActive 
-                          ? "border-amber-500 bg-amber-50 text-amber-700 ring-2 ring-amber-200" 
-                          : "border-muted bg-background hover:border-amber-300 hover:bg-amber-50/50"
+                          ? "border-primary bg-primary/10 text-primary ring-2 ring-ring/30" 
+                          : "border-border bg-background hover:border-primary/50 hover:bg-accent"
                       }`}
                     >
                       <Icon className="h-5 w-5" />
@@ -472,7 +472,7 @@ export function SelectionEditor({
               <button
                 onClick={() => updateField("isSticky", !((selectedSection.data as any).isSticky ?? true))}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  ((selectedSection.data as any).isSticky ?? true) ? "bg-amber-500" : "bg-gray-200"
+                  ((selectedSection.data as any).isSticky ?? true) ? "bg-primary" : "bg-muted"
                 }`}
               >
                 <span
@@ -553,7 +553,7 @@ export function SelectionEditor({
                             title={config.enabled ? "Hide from nav" : "Show in nav"}
                           >
                             {config.enabled ? (
-                              <Eye className="h-4 w-4 text-amber-500" />
+                              <Eye className="h-4 w-4 text-primary" />
                             ) : (
                               <EyeOff className="h-4 w-4 text-gray-400" />
                             )}
@@ -701,8 +701,8 @@ export function SelectionEditor({
                     <option value="split">Split</option>
                   </select>
                   {currentType !== "none" && (
-                    <div className="mt-3 p-2 rounded bg-amber-50 border border-amber-200">
-                      <p className="text-xs text-amber-800">
+            <div className="mt-3 p-2 rounded bg-muted border border-border">
+            <p className="text-xs text-muted-foreground">
                         Preview: Check the editor canvas to see the {currentType} transition
                       </p>
                     </div>
