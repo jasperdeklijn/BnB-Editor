@@ -1,17 +1,15 @@
 "use client"
 
 import type React from "react"
-
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 
-export default function Page() {
+export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -32,59 +30,153 @@ export default function Page() {
       if (error) throw error
       router.push("/editor")
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred")
+      setError(error instanceof Error ? error.message : "Er is een fout opgetreden")
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-      <div className="w-full max-w-sm">
-        <div className="flex flex-col gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">Login</CardTitle>
-              <CardDescription>Enter your email below to login to your account</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleLogin}>
-                <div className="flex flex-col gap-6">
-                  <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="m@example.com"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                  </div>
-                  {error && <p className="text-sm text-red-500">{error}</p>}
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Logging in..." : "Login"}
-                  </Button>
-                </div>
-                <div className="mt-4 text-center text-sm">
-                  Don&apos;t have an account?{" "}
-                  <Link href="/auth/sign-up" className="underline underline-offset-4">
-                    Sign up
-                  </Link>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+    <div className="flex min-h-svh w-full" style={{ background: "var(--hero-bg)" }}>
+      {/* Left panel - decorative */}
+      <div className="hidden lg:flex lg:w-1/2 flex-col items-center justify-center relative overflow-hidden p-12">
+        <div
+          className="absolute top-1/4 left-1/4 h-72 w-72 rounded-full opacity-30 blur-3xl"
+          style={{ background: "var(--brand-blue)" }}
+          aria-hidden="true"
+        />
+        <div
+          className="absolute bottom-1/4 right-1/4 h-64 w-64 rounded-full opacity-25 blur-3xl"
+          style={{ background: "var(--brand-purple)" }}
+          aria-hidden="true"
+        />
+
+        <div className="relative z-10 max-w-md text-center">
+          <div className="mx-auto mb-8 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--brand-blue)] to-[var(--brand-purple)]">
+            <svg width="32" height="32" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <rect x="1" y="4" width="14" height="9" rx="2" stroke="white" strokeWidth="1.5" />
+              <path d="M5 4V3a3 3 0 016 0v1" stroke="white" strokeWidth="1.5" />
+              <circle cx="8" cy="8.5" r="1.5" fill="white" />
+            </svg>
+          </div>
+          <h1 className="mb-4 text-3xl font-bold text-white text-balance">
+            {"Welkom terug bij "}
+            <span className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] bg-clip-text text-transparent">
+              BnB Editor
+            </span>
+          </h1>
+          <p className="text-white/60 leading-relaxed">
+            Bouw prachtige websites voor jouw bed & breakfast. Bewerk, publiceer en beheer alles vanuit één plek.
+          </p>
+
+          <div className="mt-10 rounded-xl border border-[var(--brand-blue)]/20 overflow-hidden shadow-2xl shadow-[var(--brand-blue)]/10">
+            <img
+              src="/placeholder.svg?height=300&width=500"
+              alt="BnB Editor voorbeeld dashboard"
+              className="w-full"
+              width={500}
+              height={300}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Right panel - form */}
+      <div className="flex w-full items-center justify-center p-6 lg:w-1/2 lg:p-12">
+        <div className="w-full max-w-md">
+          {/* Mobile logo */}
+          <div className="mb-8 flex items-center gap-3 lg:hidden">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--brand-blue)] to-[var(--brand-purple)]">
+              <svg width="20" height="20" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <rect x="1" y="4" width="14" height="9" rx="2" stroke="white" strokeWidth="1.5" />
+                <path d="M5 4V3a3 3 0 016 0v1" stroke="white" strokeWidth="1.5" />
+                <circle cx="8" cy="8.5" r="1.5" fill="white" />
+              </svg>
+            </div>
+            <span className="text-xl font-semibold text-white">BnB Editor</span>
+            <span
+              className="rounded-full px-2 py-0.5 text-xs font-medium border border-[var(--brand-purple)]/30 text-[var(--brand-purple)]"
+              style={{ background: "rgba(168,85,247,0.15)" }}
+            >
+              Demo
+            </span>
+          </div>
+
+          <div
+            className="rounded-2xl border p-8"
+            style={{
+              background: "var(--hero-surface)",
+              borderColor: "rgba(99,102,241,0.2)",
+            }}
+          >
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-white">Inloggen</h2>
+              <p className="mt-1 text-sm text-white/50">
+                Vul je e-mailadres en wachtwoord in om door te gaan
+              </p>
+            </div>
+
+            <form onSubmit={handleLogin} className="flex flex-col gap-5">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="email" className="text-sm font-medium text-white/80">
+                  E-mailadres
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="naam@voorbeeld.nl"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="border-[var(--brand-blue)]/20 bg-[var(--hero-bg)] text-white placeholder:text-white/30 focus-visible:ring-[var(--brand-purple)]"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="password" className="text-sm font-medium text-white/80">
+                  Wachtwoord
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="border-[var(--brand-blue)]/20 bg-[var(--hero-bg)] text-white placeholder:text-white/30 focus-visible:ring-[var(--brand-purple)]"
+                />
+              </div>
+
+              {error && (
+                <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+                  {error}
+                </p>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] text-white font-semibold hover:opacity-90 transition-opacity"
+                disabled={isLoading}
+              >
+                {isLoading ? "Bezig met inloggen..." : "Inloggen"}
+              </Button>
+            </form>
+
+            <p className="mt-6 text-center text-sm text-white/50">
+              {"Nog geen account? "}
+              <Link
+                href="/auth/sign-up"
+                className="font-medium text-[var(--brand-purple)] hover:text-[var(--brand-blue)] transition-colors underline underline-offset-4"
+              >
+                Account aanmaken
+              </Link>
+            </p>
+          </div>
+
+          <p className="mt-6 text-center text-xs text-white/30">
+            <Link href="/" className="hover:text-white/60 transition-colors">
+              Terug naar de homepage
+            </Link>
+          </p>
         </div>
       </div>
     </div>
