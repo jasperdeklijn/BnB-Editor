@@ -8,8 +8,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
+  title: 'BnB Editor — Testing Demo',
+  description: 'Build your B&B website in minutes with our visual editor. This is a testing demo.',
   generator: 'v0.app',
 }
 
