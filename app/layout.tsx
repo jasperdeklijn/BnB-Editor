@@ -11,6 +11,9 @@ export const metadata: Metadata = {
   title: 'BnB Website Maken',
   description: 'Bouw eenvoudig een professionele website voor jouw bed & breakfast. Geen code nodig, direct online.',
   generator: 'v0.app',
+  icons: [
+    { rel: 'icon', url: '/favicon_48x48.png', sizes: '48x48' },
+  ],
 }
 
 export default function RootLayout({
