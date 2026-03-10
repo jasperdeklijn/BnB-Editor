@@ -42,7 +42,7 @@ export function LandingHero() {
         {/* Demo badge */}
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--brand-purple)]/40 bg-[var(--brand-purple)]/10 px-4 py-1.5">
           <span className="h-2 w-2 rounded-full bg-[var(--brand-purple)] animate-pulse" aria-hidden="true" />
-          <span className="text-sm font-medium text-[var(--brand-purple)]">Testdemo — niet voor productie</span>
+          <span className="text-sm font-medium text-[var(--brand-purple)]">Professionele B&B websites maken</span>
         </div>
 
         <h1 className="mb-6 text-balance text-5xl font-bold leading-tight tracking-tight text-white md:text-6xl lg:text-7xl">
@@ -51,8 +51,8 @@ export function LandingHero() {
         </h1>
 
         <p className="mx-auto mb-10 max-w-2xl text-pretty text-xl leading-relaxed text-white/60">
-          Met de BnB Editor maak je in enkele minuten een professionele website voor jouw bed & breakfast. 
-          Secties slepen, content aanpassen en direct publiceren.
+          Met BnB Website Maken bouw je eenvoudig een professionele website voor jouw bed & breakfast. 
+          Kies secties, pas content aan en publiceer direct online.
         </p>
 
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
@@ -74,7 +74,7 @@ export function LandingHero() {
         </div>
 
         <p className="mt-5 text-sm text-white/30">
-          Dit is een testomgeving. Data kan op elk moment worden gereset.
+          Start vandaag nog met het maken van jouw professionele B&B website.
         </p>
       </div>
 
@@ -87,13 +87,13 @@ export function LandingHero() {
             <div className="h-3 w-3 rounded-full bg-yellow-400/60" aria-hidden="true" />
             <div className="h-3 w-3 rounded-full bg-green-400/60" aria-hidden="true" />
             <div className="mx-3 flex-1 rounded-md bg-white/10 px-3 py-1 text-xs text-white/40">
-              bnb-editor.demo / editor
+              bnbwebsitemaken.nl / voorbeeld
             </div>
           </div>
           {/* Screenshot image */}
           <Image
             src="/placeholder.svg?height=600&width=1200"
-            alt="Voorbeeld van de BnB Editor — visuele website bouwer voor bed & breakfast"
+            alt="Voorbeeld van BnB Website Maken — professionele website bouwer voor bed & breakfast"
             width={1200}
             height={600}
             className="w-full"

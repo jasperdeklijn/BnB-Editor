@@ -4,9 +4,9 @@ const steps = [
   {
     step: "01",
     title: "Maak een account aan",
-    description: "Registreer gratis. Geen creditcard nodig voor de testdemo.",
+    description: "Registreer gratis en begin direct met het maken van jouw website.",
     image: "/placeholder.svg?height=160&width=280",
-    alt: "Registratieformulier voor de BnB Editor",
+    alt: "Registratieformulier voor BnB Website Maken",
   },
   {
     step: "02",

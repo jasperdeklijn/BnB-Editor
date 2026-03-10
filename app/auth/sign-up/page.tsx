@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 
@@ -116,13 +117,13 @@ export default function SignUpPage() {
                 <path d="M2 12l10 5 10-5" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
               </svg>
             </div>
-            <span className="text-xl font-semibold text-white">BnB Editor</span>
-            <span
-              className="rounded-full px-2 py-0.5 text-xs font-medium border border-[var(--brand-purple)]/30 text-[var(--brand-purple)]"
-              style={{ background: "rgba(168,85,247,0.15)" }}
-            >
-              Demo
-            </span>
+            <Image
+              src="/logo.png"
+              alt="BnB Website Maken"
+              width={180}
+              height={50}
+              className="h-12 w-auto"
+            />
           </div>
 
           <div

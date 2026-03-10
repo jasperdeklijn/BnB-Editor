@@ -13,7 +13,7 @@ interface FooterSectionProps {
 }
 
 export function FooterSection({ data, isPreview, onUpdate, styles }: FooterSectionProps) {
-  const companyName = (data.companyName as string) || "BnB Editor"
+  const companyName = (data.companyName as string) || "BnB Website Maken"
   const companyDescription =
     (data.companyDescription as string) ||
     "A modern website editor for bed and breakfast properties."

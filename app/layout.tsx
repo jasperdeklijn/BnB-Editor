@@ -8,8 +8,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'BnB Editor — Testdemo',
-  description: 'Bouw jouw B&B website in enkele minuten met onze visuele editor. Dit is een testdemo.',
+  title: 'BnB Website Maken',
+  description: 'Bouw eenvoudig een professionele website voor jouw bed & breakfast. Geen code nodig, direct online.',
   generator: 'v0.app',
 }
 

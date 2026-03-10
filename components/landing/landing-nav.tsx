@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 
@@ -11,18 +12,14 @@ export function LandingNav() {
     <header className="fixed top-0 left-0 right-0 z-50 bg-[var(--hero-bg)]/90 backdrop-blur border-b border-[var(--brand-blue)]/20">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         {/* Logo */}
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[var(--brand-blue)] to-[var(--brand-purple)]">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <rect x="1" y="4" width="14" height="9" rx="2" stroke="white" strokeWidth="1.5" />
-              <path d="M5 4V3a3 3 0 016 0v1" stroke="white" strokeWidth="1.5" />
-              <circle cx="8" cy="8.5" r="1.5" fill="white" />
-            </svg>
-          </div>
-          <span className="font-semibold text-white text-lg tracking-tight">BnB Editor</span>
-          <span className="ml-1 rounded-full bg-[var(--brand-purple)]/20 px-2 py-0.5 text-xs font-medium text-[var(--brand-purple)] border border-[var(--brand-purple)]/30">
-            Demo
-          </span>
+        <div className="flex items-center">
+          <Image
+            src="/logo.png"
+            alt="BnB Website Maken"
+            width={160}
+            height={48}
+            className="h-12 w-auto"
+          />
         </div>
 
         {/* Desktop nav */}

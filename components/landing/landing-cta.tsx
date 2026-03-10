@@ -18,7 +18,7 @@ export function LandingCta() {
           <div className="overflow-hidden rounded-2xl border border-[var(--brand-blue)]/20">
             <Image
               src="/placeholder.svg?height=400&width=500"
-              alt="Voorbeeld van een afgeronde B&B website gemaakt met de editor"
+              alt="Voorbeeld van een professionele B&B website gemaakt met BnB Website Maken"
               width={500}
               height={400}
               className="h-full w-full object-cover"
@@ -29,18 +29,18 @@ export function LandingCta() {
           <div className="text-center md:text-left">
             {/* Demo badge */}
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--brand-purple)]/30 bg-[var(--brand-purple)]/10 px-3 py-1 text-xs font-medium text-[var(--brand-purple)]">
-              Testdemo
+              Professioneel
             </div>
             <h2 className="mb-4 text-balance text-4xl font-bold text-white">
-              Klaar om de BnB Editor te{" "}
+              Klaar om jouw B&B website te{" "}
               <span className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] bg-clip-text text-transparent">
-                proberen
+                maken
               </span>
               ?
             </h2>
             <p className="mb-8 text-pretty text-lg leading-relaxed text-white/55">
-              Dit is een testdemo-omgeving. Maak een account aan, verken de editor, bouw een voorbeeldwebsite
-              en geef feedback. Jouw input helpt het eindproduct te vormen.
+              Maak een account aan en begin direct met het ontwerpen van jouw professionele B&B website.
+              Kies uit kant-en-klare secties, upload je eigen foto's en publiceer binnen minuten.
             </p>
             <div className="flex flex-col items-center gap-4 sm:flex-row md:justify-start">
               <Button
@@ -60,7 +60,7 @@ export function LandingCta() {
               </Button>
             </div>
             <p className="mt-6 text-xs text-white/25">
-              Testomgeving — data kan zonder vooraankondiging worden gereset.
+              Gratis account — geen creditcard vereist.
             </p>
           </div>
         </div>

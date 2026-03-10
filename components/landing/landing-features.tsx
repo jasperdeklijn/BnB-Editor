@@ -55,7 +55,7 @@ export function LandingFeatures() {
             Alles wat jouw B&B website nodig heeft
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-pretty text-lg leading-relaxed text-[var(--muted-foreground)]">
-            Een gerichte set tools speciaal voor bed & breakfast eigenaren — geen opgeblazen website bouwer.
+            Een gerichte set tools speciaal voor bed & breakfast eigenaren — eenvoudig en effectief.
           </p>
         </div>
 

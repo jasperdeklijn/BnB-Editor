@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 
@@ -62,7 +63,7 @@ export default function LoginPage() {
           <h1 className="mb-4 text-3xl font-bold text-white text-balance">
             {"Welkom terug bij "}
             <span className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] bg-clip-text text-transparent">
-              BnB Editor
+              BnB Website Maken
             </span>
           </h1>
           <p className="text-white/60 leading-relaxed">
@@ -72,7 +73,7 @@ export default function LoginPage() {
           <div className="mt-10 rounded-xl border border-[var(--brand-blue)]/20 overflow-hidden shadow-2xl shadow-[var(--brand-blue)]/10">
             <img
               src="/placeholder.svg?height=300&width=500"
-              alt="BnB Editor voorbeeld dashboard"
+              alt="BnB Website Maken voorbeeld dashboard"
               className="w-full"
               width={500}
               height={300}
@@ -85,21 +86,14 @@ export default function LoginPage() {
       <div className="flex w-full items-center justify-center p-6 lg:w-1/2 lg:p-12">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
-          <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--brand-blue)] to-[var(--brand-purple)]">
-              <svg width="20" height="20" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                <rect x="1" y="4" width="14" height="9" rx="2" stroke="white" strokeWidth="1.5" />
-                <path d="M5 4V3a3 3 0 016 0v1" stroke="white" strokeWidth="1.5" />
-                <circle cx="8" cy="8.5" r="1.5" fill="white" />
-              </svg>
-            </div>
-            <span className="text-xl font-semibold text-white">BnB Editor</span>
-            <span
-              className="rounded-full px-2 py-0.5 text-xs font-medium border border-[var(--brand-purple)]/30 text-[var(--brand-purple)]"
-              style={{ background: "rgba(168,85,247,0.15)" }}
-            >
-              Demo
-            </span>
+          <div className="mb-8 flex items-center lg:hidden">
+            <Image
+              src="/logo.png"
+              alt="BnB Website Maken"
+              width={180}
+              height={50}
+              className="h-12 w-auto"
+            />
           </div>
 
           <div
