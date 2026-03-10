@@ -8,6 +8,17 @@ import { useState } from "react"
 export function LandingNav() {
   const [menuOpen, setMenuOpen] = useState(false)
 
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault()
+    const href = e.currentTarget.getAttribute("href") || ""
+    const targetId = href.replace("#", "")
+    const element = document.getElementById(targetId)
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" })
+    }
+    setMenuOpen(false)
+  }
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[var(--hero-bg)]/90 backdrop-blur border-b border-[var(--brand-blue)]/20">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
@@ -24,13 +35,13 @@ export function LandingNav() {
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-8 md:flex" aria-label="Hoofdnavigatie">
-          <Link href="#functies" className="text-sm text-white/70 hover:text-[var(--brand-blue)] transition-colors">
+          <Link href="#functies" onClick={handleNavClick} className="text-sm text-white/70 hover:text-[var(--brand-blue)] transition-colors">
             Functies
           </Link>
-          <Link href="#hoe-het-werkt" className="text-sm text-white/70 hover:text-[var(--brand-blue)] transition-colors">
+          <Link href="#hoe-het-werkt" onClick={handleNavClick} className="text-sm text-white/70 hover:text-[var(--brand-blue)] transition-colors">
             Hoe het werkt
           </Link>
-          <Link href="#voorbeeld" className="text-sm text-white/70 hover:text-[var(--brand-blue)] transition-colors">
+          <Link href="#voorbeeld" onClick={handleNavClick} className="text-sm text-white/70 hover:text-[var(--brand-blue)] transition-colors">
             Voorbeeld
           </Link>
         </nav>
@@ -67,9 +78,9 @@ export function LandingNav() {
       {menuOpen && (
         <div className="border-t border-[var(--brand-blue)]/20 bg-[var(--hero-bg)] px-6 py-4 md:hidden">
           <nav className="flex flex-col gap-4" aria-label="Mobiele navigatie">
-            <Link href="#functies" className="text-sm text-white/80 hover:text-[var(--brand-blue)]" onClick={() => setMenuOpen(false)}>Functies</Link>
-            <Link href="#hoe-het-werkt" className="text-sm text-white/80 hover:text-[var(--brand-blue)]" onClick={() => setMenuOpen(false)}>Hoe het werkt</Link>
-            <Link href="#voorbeeld" className="text-sm text-white/80 hover:text-[var(--brand-blue)]" onClick={() => setMenuOpen(false)}>Voorbeeld</Link>
+            <Link href="#functies" onClick={handleNavClick} className="text-sm text-white/80 hover:text-[var(--brand-blue)]">Functies</Link>
+            <Link href="#hoe-het-werkt" onClick={handleNavClick} className="text-sm text-white/80 hover:text-[var(--brand-blue)]">Hoe het werkt</Link>
+            <Link href="#voorbeeld" onClick={handleNavClick} className="text-sm text-white/80 hover:text-[var(--brand-blue)]">Voorbeeld</Link>
             <div className="flex gap-3 pt-2">
               <Button asChild variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10 flex-1">
                 <Link href="/auth/login">Inloggen</Link>

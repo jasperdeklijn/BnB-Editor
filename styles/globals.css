@@ -124,6 +124,13 @@
   }
 }
 
+/* smoothly animate in-page anchor jumps, match landing nav behavior */
+html {
+  scroll-behavior: smooth;
+  /* keep target content visible under sticky headers */
+  scroll-padding-top: 5rem;
+}
+
 /* Popup button animations */
 @keyframes pop-in {
   from {
