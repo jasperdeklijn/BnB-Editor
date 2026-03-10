@@ -35,14 +35,14 @@ export function LandingNav() {
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-8 md:flex" aria-label="Hoofdnavigatie">
+          <Link href="#voorbeeld" onClick={handleNavClick} className="text-sm text-white/70 hover:text-[var(--brand-blue)] transition-colors">
+            Voorbeeld
+          </Link>
           <Link href="#functies" onClick={handleNavClick} className="text-sm text-white/70 hover:text-[var(--brand-blue)] transition-colors">
             Functies
           </Link>
           <Link href="#hoe-het-werkt" onClick={handleNavClick} className="text-sm text-white/70 hover:text-[var(--brand-blue)] transition-colors">
             Hoe het werkt
-          </Link>
-          <Link href="#voorbeeld" onClick={handleNavClick} className="text-sm text-white/70 hover:text-[var(--brand-blue)] transition-colors">
-            Voorbeeld
           </Link>
         </nav>
 
