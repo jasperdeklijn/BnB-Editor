@@ -56,23 +56,22 @@ export function SectionsSelector({ className = "", userId }: SectionsSelectorPro
             setIsLoadingImages(false)
             return
           }
-          supabase.storage
-            .from("user-images")
-            .createSignedUrls(validFiles.map(file => `${userId}/${file.name}`), 3600)
-            .then(({ data: signedUrls, error: signedUrlError }) => {
-              if (signedUrlError) {
-                setImages([])
-                setIsLoadingImages(false)
-                return
+
+          // bucket is public; compute permanent public urls synchronously
+          const pics = validFiles
+            .map(file => {
+              const { data: urlData } = supabase.storage
+                .from("user-images")
+                .getPublicUrl(`${userId}/${file.name}`)
+              return {
+                name: file.name,
+                url: urlData.publicUrl || "",
               }
-              setImages(
-                validFiles.map((file, i) => ({
-                  name: file.name,
-                  url: signedUrls?.[i]?.signedUrl || "",
-                })).filter(img => img.url) // Filter out empty URLs
-              )
-              setIsLoadingImages(false)
             })
+            .filter(img => img.url)
+
+          setImages(pics)
+          setIsLoadingImages(false)
         })
     }
   }, [tab, userId])
