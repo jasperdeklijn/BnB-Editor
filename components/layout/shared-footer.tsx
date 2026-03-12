@@ -9,10 +9,10 @@ export function SharedFooter() {
           {/* Brand */}
           <div className="flex flex-col gap-2">
             <Image
-              src="/logo.png"
+              src="/logo_klein.png"
               alt="BnB Website Maken"
-              width={140}
-              height={40}
+              width={120}
+              height={60}
               className="h-10 w-auto"
             />
             <p className="text-xs text-white/50">
