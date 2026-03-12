@@ -5,15 +5,13 @@ import { LandingHero } from "@/components/landing/landing-hero"
 import { LandingFeatures } from "@/components/landing/landing-features"
 import { LandingHowItWorks } from "@/components/landing/landing-how-it-works"
 import { LandingCta } from "@/components/landing/landing-cta"
-import { LandingFooter } from "@/components/landing/landing-footer"
+import { SharedFooter } from "@/components/layout/shared-footer"
 
 export default async function HomePage() {
   const supabase = await createClient()
   const { data } = await supabase.auth.getUser()
 
-  if (data?.user) {
-    redirect("/editor")
-  }
+  
 
   return (
     <main>
@@ -22,7 +20,7 @@ export default async function HomePage() {
       <LandingFeatures />
       <LandingHowItWorks />
       <LandingCta />
-      <LandingFooter />
+      <SharedFooter />
     </main>
   )
 }

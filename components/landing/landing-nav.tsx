@@ -3,10 +3,52 @@
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
 
 export function LandingNav() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
+  const supabase = createClient()
+
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const { data } = await supabase.auth.getSession()
+        setIsLoggedIn(!!data.session)
+      } catch (error) {
+        console.error("Error checking session:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    checkSession()
+
+    // Subscribe to auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsLoggedIn(!!session)
+    })
+
+    return () => {
+      subscription?.unsubscribe()
+    }
+  }, [supabase])
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut()
+      setIsLoggedIn(false)
+      router.push("/")
+    } catch (error) {
+      console.error("Error logging out:", error)
+    }
+  }
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
@@ -48,12 +90,34 @@ export function LandingNav() {
 
         {/* CTA */}
         <div className="hidden items-center gap-3 md:flex">
-          <Button asChild variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10">
-            <Link href="/auth/login">Inloggen</Link>
-          </Button>
-          <Button asChild className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] text-white hover:opacity-90">
-            <Link href="/auth/sign-up">Gratis proberen</Link>
-          </Button>
+          {!isLoading && (
+            <>
+              {isLoggedIn ? (
+                <>
+                
+                  <Button
+                    onClick={handleLogout}
+                    variant="ghost"
+                    className="text-white/80 hover:text-white hover:bg-white/10"
+                  >
+                    Uitloggen
+                  </Button>
+                    <Button asChild className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] text-white hover:opacity-90">
+                    <Link href="/editor">Editor</Link>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button asChild variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10">
+                    <Link href="/auth/login">Inloggen</Link>
+                  </Button>
+                  <Button asChild className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] text-white hover:opacity-90">
+                    <Link href="/auth/sign-up">Gratis proberen</Link>
+                  </Button>
+                </>
+              )}
+            </>
+          )}
         </div>
 
         {/* Mobile hamburger */}
@@ -82,12 +146,33 @@ export function LandingNav() {
             <Link href="#hoe-het-werkt" onClick={handleNavClick} className="text-sm text-white/80 hover:text-[var(--brand-blue)]">Hoe het werkt</Link>
             <Link href="#voorbeeld" onClick={handleNavClick} className="text-sm text-white/80 hover:text-[var(--brand-blue)]">Voorbeeld</Link>
             <div className="flex gap-3 pt-2">
-              <Button asChild variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10 flex-1">
-                <Link href="/auth/login">Inloggen</Link>
-              </Button>
-              <Button asChild className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] text-white flex-1">
-                <Link href="/auth/sign-up">Gratis proberen</Link>
-              </Button>
+              {!isLoading && (
+                <>
+                  {isLoggedIn ? (
+                    <>
+                      <Button asChild className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] text-white flex-1">
+                        <Link href="/editor">Editor</Link>
+                      </Button>
+                      <Button
+                        onClick={handleLogout}
+                        variant="ghost"
+                        className="text-white/80 hover:text-white hover:bg-white/10 flex-1"
+                      >
+                        Uitloggen
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button asChild variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10 flex-1">
+                        <Link href="/auth/login">Inloggen</Link>
+                      </Button>
+                      <Button asChild className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] text-white flex-1">
+                        <Link href="/auth/sign-up">Gratis proberen</Link>
+                      </Button>
+                    </>
+                  )}
+                </>
+              )}
             </div>
           </nav>
         </div>
