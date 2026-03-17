@@ -29,7 +29,10 @@ import {
   AlignCenter,
   LayoutPanelLeft,
   Maximize,
-  LayoutGrid
+  LayoutGrid,
+  Minimize,
+  Square,
+  PanelRight
 } from "lucide-react"
 import type { HeroLayout } from "@/components/bnb-sections/hero-section"
 import type { SectionType } from "@/lib/types"
@@ -259,6 +262,9 @@ export function SelectionEditor({
                   { layout: "centered" as HeroLayout, label: "Simple", icon: AlignCenter },
                   { layout: "split" as HeroLayout, label: "Split", icon: LayoutPanelLeft },
                   { layout: "fullwidth" as HeroLayout, label: "Full Image", icon: Maximize },
+                  { layout: "minimal" as HeroLayout, label: "Minimal", icon: Minimize },
+                  { layout: "card" as HeroLayout, label: "Card", icon: Square },
+                  { layout: "split-reverse" as HeroLayout, label: "Split Reverse", icon: PanelRight },
                 ].map(({ layout, label, icon: Icon }) => {
                   const currentLayout = ((selectedSection.data as any).layout as HeroLayout) || "centered"
                   const isActive = currentLayout === layout
@@ -281,7 +287,10 @@ export function SelectionEditor({
               <p className="text-[10px] text-muted-foreground text-center">
                 {((selectedSection.data as any).layout as HeroLayout) === "split" && "Image on left half, text on right"}
                 {((selectedSection.data as any).layout as HeroLayout) === "fullwidth" && "Full background image with overlay"}
-                {(((selectedSection.data as any).layout as HeroLayout) === "centered" || !(selectedSection.data as any).layout) && "Clean text-focused design"}
+                {((selectedSection.data as any).layout as HeroLayout) === "centered" && "Clean text-focused design"}
+                {((selectedSection.data as any).layout as HeroLayout) === "minimal" && "Minimal text-only design"}
+                {((selectedSection.data as any).layout as HeroLayout) === "card" && "Image background with text card"}
+                {((selectedSection.data as any).layout as HeroLayout) === "split-reverse" && "Text on left, image on right"}
               </p>
             </Card>
 
