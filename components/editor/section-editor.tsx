@@ -452,8 +452,8 @@ export function SelectionEditor({
                     type="number"
                     min="1"
                     max="12"
-                    value={(selectedSection.data as any).images || 6}
-                    onChange={(e) => updateField("images", Number(e.target.value))}
+                    value={(selectedSection.data as any).image_count || 6}
+                    onChange={(e) => updateField("image_count", Number(e.target.value))}
                   />
                 </div>
               </div>
