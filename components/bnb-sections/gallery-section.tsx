@@ -61,6 +61,8 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
     // Prevent section-level drag reordering from interfering with image reordering
     e.stopPropagation()
 
+    if (isPreview) return
+
     setDraggedIndex(index)
     // Allow both copy and move, and ensure the browser allows dropping where possible
     e.dataTransfer.effectAllowed = "all"
@@ -190,7 +192,8 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
                 <img
                   src={image}
                   alt={`Gallery image ${index + 1}`}
-                  className="h-full w-full object-cover cursor-move"
+                  draggable={!isPreview}
+                  className={`h-full w-full object-cover ${!isPreview ? "cursor-move" : "cursor-default"}`}
                 />
               </div>
             ))}
@@ -242,7 +245,8 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
                       <img
                         src={image}
                         alt={`Gallery image ${index + 1}`}
-                        className="h-full w-full object-cover cursor-move"
+                        draggable={!isPreview}
+                        className={`h-full w-full object-cover ${!isPreview ? "cursor-move" : "cursor-default"}`}
                       />
                     </div>
                   ))}
@@ -283,7 +287,8 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
                   <img
                     src={image}
                     alt={`Gallery image ${index + 1}`}
-                    className="h-full w-full object-cover cursor-move"
+                    draggable={!isPreview}
+                    className={`h-full w-full object-cover ${!isPreview ? "cursor-move" : "cursor-default"}`}
                   />
                 </div>
               ))}
@@ -321,7 +326,8 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
                 <img
                   src={image}
                   alt={`Gallery image ${index + 1}`}
-                  className="w-full object-cover cursor-move h-auto"
+                  draggable={!isPreview}
+                  className={`w-full object-cover h-auto ${!isPreview ? "cursor-move" : "cursor-default"}`}
                 />
               </div>
             ))}
@@ -348,14 +354,15 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
               className={`aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 transition-all duration-200 ${
                 dragOverIndex === activeIndex ? "ring-2 ring-amber-600 shadow-lg" : ""
               }`}
-              onDragOver={(e) => handleDragOver(e, activeIndex)}
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, activeIndex)}
+              onDragOver={!isPreview ? (e) => handleDragOver(e, activeIndex) : undefined}
+              onDragLeave={!isPreview ? handleDragLeave : undefined}
+              onDrop={!isPreview ? (e) => handleDrop(e, activeIndex) : undefined}
             >
               <img
                 src={images[activeIndex]}
                 alt={`Gallery image ${activeIndex + 1}`}
-                className="h-full w-full object-cover"
+                draggable={!isPreview}
+                className={`h-full w-full object-cover ${!isPreview ? "cursor-move" : "cursor-default"}`}
               />
             </div>
             {/* Thumbnails */}
@@ -369,16 +376,16 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
                     draggedIndex === index ? "opacity-50" : ""
                   }`}
                   onClick={() => setActiveIndex(index)}
-                  onDragOver={(e) => handleDragOver(e, index)}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, index)}
+                  onDragOver={!isPreview ? (e) => handleDragOver(e, index) : undefined}
+                  onDragLeave={!isPreview ? handleDragLeave : undefined}
+                  onDrop={!isPreview ? (e) => handleDrop(e, index) : undefined}
                 >
                   <img
                     src={image}
                     alt={`Thumbnail ${index + 1}`}
-                    className="h-full w-full object-cover cursor-move"
                     draggable={!isPreview}
-                    onDragStart={(e) => handleDragStart(e, index)}
+                    className={`h-full w-full object-cover ${!isPreview ? "cursor-move" : "cursor-default"}`}
+                    onDragStart={!isPreview ? (e) => handleDragStart(e, index) : undefined}
                   />
                 </div>
               ))}
@@ -404,7 +411,8 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
               <img
                 src={image}
                 alt={`Gallery image ${index + 1}`}
-                className="h-full w-full object-cover"
+                draggable={!isPreview}
+                className={`h-full w-full object-cover ${!isPreview ? "cursor-move" : "cursor-default"}`}
               />
             </div>
           ))}
