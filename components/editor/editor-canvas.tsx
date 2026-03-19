@@ -8,6 +8,7 @@ import { SectionRenderer } from "./section-renderer"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { createClient } from "@/lib/supabase/client"
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { toast } from "sonner"
 
 interface EditorCanvasProps {
   sections: Section[]
@@ -84,6 +85,7 @@ export function EditorCanvas({
   const [hoverDropIndex, setHoverDropIndex] = useState<number | null>(null)
   const [draggingSectionIndex, setDraggingSectionIndex] = useState<number | null>(null)
   const [isDraggingNewSection, setIsDraggingNewSection] = useState(false)
+  const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     const handleGlobalDragEnd = () => {
@@ -92,6 +94,13 @@ export function EditorCanvas({
     document.addEventListener('dragend', handleGlobalDragEnd)
     return () => document.removeEventListener('dragend', handleGlobalDragEnd)
   }, [])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutId) clearTimeout(saveTimeoutId)
+    }
+  }, [saveTimeoutId])
 
   /* -----------------------------
      Drag & Drop helpers
@@ -354,9 +363,48 @@ export function EditorCanvas({
   }
 
   const updateSection = (id: string, newData: Partial<Section>) => {
+    // Update local state immediately
     setSections(
       sections.map((s) => (s.id === id ? { ...s, ...newData } : s)),
     )
+
+    // Save to database with debouncing
+    if (saveTimeoutId) clearTimeout(saveTimeoutId)
+
+    const timeout = setTimeout(async () => {
+      // Don't save if it's a temporary section or no websiteId
+      if (!websiteId || id.startsWith('section-')) return
+
+      try {
+        const section = sections.find(s => s.id === id)
+        if (!section) return
+
+        const updatedSection = { ...section, ...newData }
+        const payload = {
+          type: updatedSection.type,
+          content: updatedSection.data,
+          styles: updatedSection.styles ?? {},
+          position: sections.findIndex(s => s.id === id) + 1,
+        }
+
+        const client = supabase || createClient()
+        await websiteSections.updateSection(id, payload as any, client)
+
+        toast.success("Saved to database", {
+          position: "bottom-right",
+          duration: 2000,
+          style: { background: '#10b981', color: 'white' }
+        })
+      } catch (err) {
+        console.error('Error saving section to database:', err)
+        toast.error("Failed to save", {
+          position: "bottom-right",
+          duration: 2000,
+        })
+      }
+    }, 800)
+
+    setSaveTimeoutId(timeout)
   }
 
   /* -----------------------------
@@ -499,7 +547,7 @@ export function EditorCanvas({
                     <SectionRenderer
                       section={section}
                       isPreview={isPreview}
-                      onUpdate={(data) => updateSection(section.id, data)}
+                      onUpdate={(data) => updateSection(section.id, { data })}
                       wrapTransition={false}
                       allSections={sections}
                       device={device}

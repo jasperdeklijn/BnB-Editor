@@ -19,15 +19,32 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
   const subtitle = data.subtitle as string
   const layout = (data.layout as GalleryLayout) || "grid"
 
-  // Handle both array of images and legacy imageCount
-  const images = Array.isArray(data.images)
-    ? (data.images as string[])
-    : Array.from({ length: (data.images as number) || 6 }, (_, index) =>
-        `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+${index + 1}`
-      )
+  // Handle different image data formats - ensure consistent rendering
+  const getImagesArray = () => {
+    if (!data) return []
+    
+    if (Array.isArray(data.images)) {
+      return data.images as string[]
+    }
+    if (typeof data.images === 'object' && data.images !== null) {
+      // Handle object format: { 0: "url1", 1: "url2", ... }
+      const imageObj = data.images as Record<string, string>
+      const count = (data.image_count as number) || Object.keys(imageObj).length
+      return Array.from({ length: count }, (_, index) => imageObj[index.toString()] || '')
+    }
+    // Handle legacy number format
+    const count = (data.images as number) || (data.image_count as number) || 6
+    return Array.from({ length: count }, (_, index) =>
+      `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+${index + 1}`
+    )
+  }
+
+  const images = getImagesArray()
 
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [currentIndex, setCurrentIndex] = useState(0)
 
   const sectionStyle: React.CSSProperties = {
     backgroundColor: styles?.backgroundColor,
@@ -41,35 +58,68 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
   }
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
+    // Prevent section-level drag reordering from interfering with image reordering
+    e.stopPropagation()
+
     setDraggedIndex(index)
-    e.dataTransfer.effectAllowed = "move"
+    // Allow both copy and move, and ensure the browser allows dropping where possible
+    e.dataTransfer.effectAllowed = "all"
+    e.dataTransfer.setData("text/plain", index.toString())
     e.dataTransfer.setData("imageIndex", index.toString())
+    e.dataTransfer.setData("imageurl", images[index] || "")
   }
 
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault()
-    e.dataTransfer.dropEffect = "move"
+    e.stopPropagation()
+    e.dataTransfer.dropEffect = "copy"
     setDragOverIndex(index)
   }
 
-  const handleDragLeave = () => {
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
     setDragOverIndex(null)
   }
 
   const handleDrop = (e: React.DragEvent, toIndex: number) => {
     e.preventDefault()
+    e.stopPropagation()
     setDragOverIndex(null)
     setDraggedIndex(null)
 
-    if (!onUpdate || draggedIndex === null) return
-    if (draggedIndex === toIndex) return
+    if (!onUpdate || draggedIndex === null) {
+      console.log('handleDrop: onUpdate not available or draggedIndex is null', { onUpdate: !!onUpdate, draggedIndex })
+      return
+    }
+    if (draggedIndex === toIndex) {
+      console.log('handleDrop: draggedIndex === toIndex, no change needed')
+      return
+    }
 
     // Reorder images
     const newImages = [...images]
     const [movedImage] = newImages.splice(draggedIndex, 1)
     newImages.splice(toIndex, 0, movedImage)
 
-    onUpdate({ images: newImages })
+    // Convert array back to object format for database
+    const imagesObject: Record<string, string> = {}
+    newImages.forEach((url, index) => {
+      imagesObject[index.toString()] = url
+    })
+
+    console.log('handleDrop: saving reordered images', {
+      draggedIndex,
+      toIndex,
+      newImages,
+      imagesObject,
+      image_count: newImages.length
+    })
+
+    onUpdate({ 
+      images: imagesObject,
+      image_count: newImages.length
+    })
   }
 
   // Layout: Grid (default)
@@ -88,7 +138,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
               <div
                 key={index}
                 className={`aspect-square overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 transition-all duration-200 ${
-                  dragOverIndex === index ? "ring-4 ring-amber-500 ring-offset-2 scale-95" : ""
+                  dragOverIndex === index ? "ring-2 ring-amber-600 shadow-lg scale-95" : ""
                 } ${draggedIndex === index ? "opacity-50" : ""}`}
                 onDragOver={(e) => handleDragOver(e, index)}
                 onDragLeave={handleDragLeave}
@@ -140,7 +190,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
                     <div
                       key={index}
                       className={`aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 transition-all duration-200 flex-shrink-0 ${
-                        dragOverIndex === index ? "ring-4 ring-amber-500 ring-offset-2 scale-95" : ""
+                        dragOverIndex === index ? "ring-2 ring-amber-600 shadow-lg scale-95" : ""
                       } ${draggedIndex === index ? "opacity-50" : ""}`}
                       onDragOver={(e) => handleDragOver(e, index)}
                       onDragLeave={handleDragLeave}
@@ -181,7 +231,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
                 <div
                   key={index}
                   className={`flex-shrink-0 w-80 aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 transition-all duration-200 ${
-                    dragOverIndex === index ? "ring-4 ring-amber-500 ring-offset-2 scale-95" : ""
+                    dragOverIndex === index ? "ring-2 ring-amber-600 shadow-lg scale-95" : ""
                   } ${draggedIndex === index ? "opacity-50" : ""}`}
                   onDragOver={(e) => handleDragOver(e, index)}
                   onDragLeave={handleDragLeave}
@@ -219,7 +269,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
               <div
                 key={index}
                 className={`mb-3 overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 break-inside-avoid transition-all duration-200 ${
-                  dragOverIndex === index ? "ring-4 ring-amber-500 ring-offset-2 scale-95" : ""
+                  dragOverIndex === index ? "ring-2 ring-amber-600 shadow-lg scale-95" : ""
                 } ${draggedIndex === index ? "opacity-50" : ""}`}
                 onDragOver={(e) => handleDragOver(e, index)}
                 onDragLeave={handleDragLeave}
@@ -242,7 +292,6 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
 
   // Layout: Single Large Image with Thumbnails
   if (layout === "single-with-thumbs") {
-    const [activeIndex, setActiveIndex] = useState(0)
     return (
       <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle}>
         <div className="mx-auto max-w-6xl">
@@ -256,7 +305,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
             {/* Main Image */}
             <div
               className={`aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 transition-all duration-200 ${
-                dragOverIndex === activeIndex ? "ring-4 ring-amber-500 ring-offset-2" : ""
+                dragOverIndex === activeIndex ? "ring-2 ring-amber-600 shadow-lg" : ""
               }`}
               onDragOver={(e) => handleDragOver(e, activeIndex)}
               onDragLeave={handleDragLeave}
@@ -275,7 +324,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
                   key={index}
                   className={`flex-shrink-0 w-20 aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 cursor-pointer transition-all duration-200 ${
                     index === activeIndex ? "ring-2 ring-amber-500" : ""
-                  } ${dragOverIndex === index ? "ring-4 ring-amber-500 ring-offset-2 scale-95" : ""} ${
+                  } ${dragOverIndex === index ? "ring-2 ring-amber-600 shadow-lg scale-95" : ""} ${
                     draggedIndex === index ? "opacity-50" : ""
                   }`}
                   onClick={() => setActiveIndex(index)}
@@ -301,7 +350,6 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
 
   // Layout: Full Width Slider
   if (layout === "full-slider") {
-    const [currentIndex, setCurrentIndex] = useState(0)
     return (
       <section className={`relative overflow-hidden ${styles?.fontFamily || ""}`} style={sectionStyle}>
         <div className="relative h-96 sm:h-[500px] md:h-[600px]">
