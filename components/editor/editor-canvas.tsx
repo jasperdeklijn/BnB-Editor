@@ -151,7 +151,19 @@ export function EditorCanvas({
           ],
         }
       case "gallery":
-        return { title: "Gallery", images: 6 }
+        return {
+          title: "Gallery",
+          subtitle: "Explore our beautiful spaces",
+          layout: "grid",
+          images: [
+            `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+1`,
+            `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+2`,
+            `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+3`,
+            `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+4`,
+            `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+5`,
+            `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+6`,
+          ],
+        }
       case "amenities":
         return {
           title: "Amenities",

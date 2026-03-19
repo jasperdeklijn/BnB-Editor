@@ -2,7 +2,6 @@
 
 import type React from "react"
 import { useState } from "react"
-import { EditableText } from "@/components/editor/editable-text"
 import type { Section, SectionStyles, SectionType } from "@/lib/types"
 import { Menu, X } from "lucide-react"
 
@@ -15,7 +14,6 @@ interface NavLink {
 interface NavSectionProps {
   data: Record<string, unknown>
   isPreview: boolean
-  onUpdate?: (newData: Record<string, unknown>) => void
   styles?: SectionStyles
   allSections?: Section[]
   device?: "desktop" | "tablet" | "mobile"
@@ -36,20 +34,14 @@ const defaultSectionLabels: Record<SectionType, string> = {
 // Sections that can appear in navigation
 const navigableSectionTypes: SectionType[] = ["hero", "about", "rooms", "gallery", "amenities", "contact"]
 
-export function NavSection({ data, isPreview, onUpdate, styles, allSections, device }: NavSectionProps) {
+export function NavSection({ data, styles, allSections, device }: NavSectionProps) {
   const brandName = (data.brandName as string) || "My B&B"
   const isSticky = (data.isSticky as boolean) ?? true
   const navLinks = data.navLinks as NavLink[] | undefined
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  
+
   // Force mobile view when device is mobile or tablet
   const isMobileView = device === "mobile" || device === "tablet"
-
-  const handleUpdate = (newData: Record<string, unknown>) => {
-    if (onUpdate) {
-      onUpdate(newData)
-    }
-  }
 
   // Generate navigation links from sections
   const getNavLinks = (): Array<{ label: string; href: string; sectionId: string }> => {
@@ -63,7 +55,7 @@ export function NavSection({ data, isPreview, onUpdate, styles, allSections, dev
       .map((section) => {
         // Check if this section has a custom config in navLinks
         const linkConfig = navLinks?.find((nl) => nl.sectionId === section.id)
-        
+
         // If navLinks exists but this section is disabled, skip it
         if (navLinks && linkConfig && !linkConfig.enabled) {
           return null
@@ -109,25 +101,16 @@ export function NavSection({ data, isPreview, onUpdate, styles, allSections, dev
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex-shrink-0">
-            {isPreview ? (
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault()
-                  window.scrollTo({ top: 0, behavior: "smooth" })
-                }}
-                className="text-2xl font-bold cursor-pointer"
-              >
-                {brandName}
-              </a>
-            ) : (
-              <EditableText
-                value={brandName}
-                onChange={(value) => handleUpdate({ brandName: value })}
-                isPreview={isPreview}
-                className="text-2xl font-bold hover:bg-gray-100 px-2 py-1 rounded cursor-text"
-              />
-            )}
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                window.scrollTo({ top: 0, behavior: "smooth" })
+              }}
+              className="text-2xl font-bold cursor-pointer"
+            >
+              {brandName}
+            </a>
           </div>
 
           {/* Desktop navigation */}
@@ -157,7 +140,7 @@ export function NavSection({ data, isPreview, onUpdate, styles, allSections, dev
         </div>
 
         {/* Mobile navigation */}
-        <div 
+        <div
           className={`${isMobileView ? "block" : "md:hidden"} overflow-hidden transition-all duration-300 ease-in-out ${
             mobileMenuOpen ? "max-h-96 opacity-100 pb-4" : "max-h-0 opacity-0"
           }`}

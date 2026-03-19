@@ -7,27 +7,19 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { EditableText } from "@/components/editor/editable-text"
 import type { SectionStyles } from "@/lib/types"
 
 interface ContactSectionProps {
   data: Record<string, unknown>
   isPreview: boolean
-  onUpdate?: (newData: Record<string, unknown>) => void // Made onUpdate optional
   styles?: SectionStyles
 }
 
-export function ContactSection({ data, isPreview, onUpdate, styles }: ContactSectionProps) {
+export function ContactSection({ data, styles }: ContactSectionProps) {
   const title = data.title as string
   const address = data.address as string
   const phone = data.phone as string
   const email = data.email as string
-
-  const handleUpdate = (newData: Record<string, unknown>) => {
-    if (onUpdate) {
-      onUpdate(newData)
-    }
-  }
 
   const sectionStyle: React.CSSProperties = {
     backgroundColor: styles?.backgroundColor,
@@ -43,14 +35,12 @@ export function ContactSection({ data, isPreview, onUpdate, styles }: ContactSec
   return (
     <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle}>
       <div className="mx-auto max-w-6xl">
-        <EditableText
-          value={title}
-          onChange={(value) => handleUpdate({ title: value })} // Use safe handler
-          isPreview={isPreview}
-          as="h2"
+        <h2
           className="mb-8 text-balance text-center text-2xl font-bold text-amber-950 sm:mb-10 sm:text-3xl md:mb-12 md:text-4xl"
           style={textStyle}
-        />
+        >
+          {title}
+        </h2>
         <div className="grid gap-8 sm:gap-10 md:grid-cols-2 md:gap-12">
           <div className="space-y-6">
             <div className="flex items-start gap-4">
@@ -59,14 +49,9 @@ export function ContactSection({ data, isPreview, onUpdate, styles }: ContactSec
                 <h3 className="mb-1 font-semibold" style={textStyle}>
                   Address
                 </h3>
-                <EditableText
-                  value={address}
-                  onChange={(value) => handleUpdate({ address: value })} // Use safe handler
-                  isPreview={isPreview}
-                  as="span"
-                  className="text-amber-800"
-                  style={textStyle}
-                />
+                <span className="text-amber-800" style={textStyle}>
+                  {address}
+                </span>
               </div>
             </div>
             <div className="flex items-start gap-4">
@@ -75,14 +60,9 @@ export function ContactSection({ data, isPreview, onUpdate, styles }: ContactSec
                 <h3 className="mb-1 font-semibold" style={textStyle}>
                   Phone
                 </h3>
-                <EditableText
-                  value={phone}
-                  onChange={(value) => handleUpdate({ phone: value })} // Use safe handler
-                  isPreview={isPreview}
-                  as="span"
-                  className="text-amber-800"
-                  style={textStyle}
-                />
+                <span className="text-amber-800" style={textStyle}>
+                  {phone}
+                </span>
               </div>
             </div>
             <div className="flex items-start gap-4">
@@ -91,14 +71,9 @@ export function ContactSection({ data, isPreview, onUpdate, styles }: ContactSec
                 <h3 className="mb-1 font-semibold" style={textStyle}>
                   Email
                 </h3>
-                <EditableText
-                  value={email}
-                  onChange={(value) => handleUpdate({ email: value })} // Use safe handler
-                  isPreview={isPreview}
-                  as="span"
-                  className="text-amber-800"
-                  style={textStyle}
-                />
+                <span className="text-amber-800" style={textStyle}>
+                  {email}
+                </span>
               </div>
             </div>
           </div>

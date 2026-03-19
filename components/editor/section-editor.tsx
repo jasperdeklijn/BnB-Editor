@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import type { Section, SectionStyles, Transition } from "@/lib/types"
-import { EditableText } from "./editable-text"
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
 import {
@@ -32,9 +31,13 @@ import {
   LayoutGrid,
   Minimize,
   Square,
-  PanelRight
+  PanelRight,
+  Grid3x3,
+  Columns,
+  Rows,
 } from "lucide-react"
 import type { HeroLayout } from "@/components/bnb-sections/hero-section"
+import type { GalleryLayout } from "@/components/bnb-sections/gallery-section"
 import type { SectionType } from "@/lib/types"
 
 interface SelectionEditorProps {
@@ -303,21 +306,11 @@ export function SelectionEditor({
               <div className="space-y-3">
                 <div>
                   <Label className="text-xs mb-1.5 block">Title</Label>
-                  <EditableText
-                    value={(selectedSection.data as any).title || ""}
-                    onChange={(v) => updateField("title", v)}
-                    isPreview={false}
-                    as="h1"
-                  />
+                  <Input placeholder="e.g., Welcome to Our B&B" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
                 </div>
                 <div>
                   <Label className="text-xs mb-1.5 block">Subtitle</Label>
-                  <EditableText
-                    value={(selectedSection.data as any).subtitle || ""}
-                    onChange={(v) => updateField("subtitle", v)}
-                    isPreview={false}
-                    as="p"
-                  />
+                  <Input placeholder="e.g., Experience comfort and hospitality" value={(selectedSection.data as any).subtitle || ""} onChange={(e) => updateField("subtitle", e.target.value)} />
                 </div>
                 <div>
                   <Label className="text-xs mb-1.5 block">CTA Button Text</Label>
@@ -334,16 +327,16 @@ export function SelectionEditor({
               <Type className="h-3.5 w-3.5" />
               Title
             </Label>
-            <EditableText value={(selectedSection.data as any).title || ""} onChange={(v) => updateField("title", v)} isPreview={false} as="h2" />
+            <Input placeholder="About Us" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
             <Label className="flex items-center gap-2">
               <Type className="h-3.5 w-3.5" />
               Description
             </Label>
-            <EditableText
+            <textarea
+              placeholder="Describe your B&B..."
               value={(selectedSection.data as any).description || ""}
-              onChange={(v) => updateField("description", v)}
-              isPreview={false}
-              as="p"
+              onChange={(e) => updateField("description", e.target.value)}
+              className="w-full min-h-24 p-2 border rounded-lg resize-none"
             />
           </Card>
         )}
@@ -354,7 +347,7 @@ export function SelectionEditor({
               <Type className="h-3.5 w-3.5" />
               Title
             </Label>
-            <EditableText value={(selectedSection.data as any).title || ""} onChange={(v) => updateField("title", v)} isPreview={false} as="h2" />
+            <Input placeholder="Our Rooms" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
             <div className="space-y-3">
               <Label className="flex items-center gap-2">
                 <ImageIcon className="h-3.5 w-3.5" />
@@ -391,24 +384,81 @@ export function SelectionEditor({
         )}
 
         {selectedSection.type === "gallery" && (
-          <Card className="p-4 space-y-3">
-            <Label className="flex items-center gap-2">
-              <Type className="h-3.5 w-3.5" />
-              Title
-            </Label>
-            <EditableText value={(selectedSection.data as any).title || ""} onChange={(v) => updateField("title", v)} isPreview={false} as="h2" />
-            <Label className="flex items-center gap-2">
-              <ImageIcon className="h-3.5 w-3.5" />
-              Image Count
-            </Label>
-            <Input
-              type="number"
-              min="1"
-              max="12"
-              value={(selectedSection.data as any).images || 0}
-              onChange={(e) => updateField("images", Number(e.target.value))}
-            />
-          </Card>
+          <>
+            {/* Gallery Layout Selector */}
+            <Card className="p-4 space-y-3">
+              <Label className="flex items-center gap-2">
+                <LayoutGrid className="h-3.5 w-3.5" />
+                Layout Style
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Choose how your gallery is displayed
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { layout: "grid" as GalleryLayout, label: "Grid", icon: LayoutGrid },
+                  { layout: "vertical-carousel" as GalleryLayout, label: "Carousel V", icon: Columns },
+                  { layout: "horizontal-carousel" as GalleryLayout, label: "Carousel H", icon: Rows },
+                  { layout: "masonry" as GalleryLayout, label: "Masonry", icon: Grid3x3 },
+                  { layout: "single-with-thumbs" as GalleryLayout, label: "Focus", icon: ImageIcon },
+                  { layout: "full-slider" as GalleryLayout, label: "Slider", icon: Maximize },
+                ].map(({ layout, label, icon: Icon }) => {
+                  const currentLayout = ((selectedSection.data as any).layout as GalleryLayout) || "grid"
+                  const isActive = currentLayout === layout
+                  return (
+                    <button
+                      key={layout}
+                      onClick={() => updateField("layout", layout)}
+                      className={`flex flex-col items-center gap-1 rounded-lg border p-3 transition-all hover:scale-105 ${
+                        isActive
+                          ? "border-primary bg-primary/10 text-primary ring-2 ring-ring/30"
+                          : "border-border bg-background hover:border-primary/50 hover:bg-accent"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span className="text-xs font-medium">{label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="text-[10px] text-muted-foreground text-center">
+                {((selectedSection.data as any).layout as GalleryLayout) === "grid" && "Classic grid layout"}
+                {((selectedSection.data as any).layout as GalleryLayout) === "vertical-carousel" && "Vertical scroll with text on left"}
+                {((selectedSection.data as any).layout as GalleryLayout) === "horizontal-carousel" && "Horizontal scrolling images"}
+                {((selectedSection.data as any).layout as GalleryLayout) === "masonry" && "Pinterest-style masonry layout"}
+                {((selectedSection.data as any).layout as GalleryLayout) === "single-with-thumbs" && "Large image with thumbnails"}
+                {((selectedSection.data as any).layout as GalleryLayout) === "full-slider" && "Full-screen image slider"}
+              </p>
+            </Card>
+
+            {/* Gallery Content */}
+            <Card className="p-4 space-y-3">
+              <Label className="flex items-center gap-2">
+                <Type className="h-3.5 w-3.5" />
+                Content
+              </Label>
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-xs mb-1.5 block">Title</Label>
+                  <Input placeholder="Gallery Title" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
+                </div>
+                <div>
+                  <Label className="text-xs mb-1.5 block">Subtitle</Label>
+                  <Input placeholder="Gallery Subtitle" value={(selectedSection.data as any).subtitle || ""} onChange={(e) => updateField("subtitle", e.target.value)} />
+                </div>
+                <div>
+                  <Label className="text-xs mb-1.5 block">Number of Images</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="12"
+                    value={(selectedSection.data as any).images || 6}
+                    onChange={(e) => updateField("images", Number(e.target.value))}
+                  />
+                </div>
+              </div>
+            </Card>
+          </>
         )}
 
         {selectedSection.type === "amenities" && (
@@ -417,7 +467,7 @@ export function SelectionEditor({
               <Type className="h-3.5 w-3.5" />
               Title
             </Label>
-            <EditableText value={(selectedSection.data as any).title || ""} onChange={(v) => updateField("title", v)} isPreview={false} as="h2" />
+            <Input placeholder="Amenities" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
             <Label className="flex items-center gap-2">
               <Plus className="h-3.5 w-3.5" />
               Amenities (comma separated)
@@ -436,7 +486,7 @@ export function SelectionEditor({
               <Type className="h-3.5 w-3.5" />
               Title
             </Label>
-            <EditableText value={(selectedSection.data as any).title || ""} onChange={(v) => updateField("title", v)} isPreview={false} as="h2" />
+            <Input placeholder="Contact Us" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
             <Label className="flex items-center gap-2">
               <MapPin className="h-3.5 w-3.5" />
               Address

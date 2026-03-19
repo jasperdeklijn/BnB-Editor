@@ -2,17 +2,15 @@
 
 import type React from "react"
 import Link from "next/link"
-import { EditableText } from "@/components/editor/editable-text"
 import type { SectionStyles } from "@/lib/types"
 
 interface FooterSectionProps {
   data: Record<string, unknown>
   isPreview: boolean
-  onUpdate?: (newData: Record<string, unknown>) => void
   styles?: SectionStyles
 }
 
-export function FooterSection({ data, isPreview, onUpdate, styles }: FooterSectionProps) {
+export function FooterSection({ data, styles }: FooterSectionProps) {
   const companyName = (data.companyName as string) || "BnB Website Maken"
   const companyDescription =
     (data.companyDescription as string) ||
@@ -41,12 +39,6 @@ export function FooterSection({ data, isPreview, onUpdate, styles }: FooterSecti
     { label: "Instagram", href: "#" },
   ]
 
-  const handleUpdate = (newData: Record<string, unknown>) => {
-    if (onUpdate) {
-      onUpdate(newData)
-    }
-  }
-
   const currentYear = new Date().getFullYear()
 
   const sectionStyle: React.CSSProperties = {
@@ -60,27 +52,9 @@ export function FooterSection({ data, isPreview, onUpdate, styles }: FooterSecti
         <div className="grid grid-cols-2 gap-6 mb-8 sm:gap-8 md:grid-cols-4">
           <div className="col-span-2 mb-4 sm:col-span-2 md:col-span-1 md:mb-0">
             <h3 className="text-base font-bold mb-3 sm:text-lg sm:mb-4">
-              {isPreview ? (
-                companyName
-              ) : (
-                <EditableText
-                  value={companyName}
-                  onChange={(value) => handleUpdate({ companyName: value })}
-                  isPreview={isPreview}
-                  className="hover:bg-gray-700 px-2 py-1 rounded cursor-text"
-                />
-              )}
+              {companyName}
             </h3>
-            {isPreview ? (
-              <p className="opacity-75">{companyDescription}</p>
-            ) : (
-              <EditableText
-                value={companyDescription}
-                onChange={(value) => handleUpdate({ companyDescription: value })}
-                isPreview={isPreview}
-                className="hover:bg-gray-700 px-2 py-1 rounded cursor-text text-sm opacity-75"
-              />
-            )}
+            <p className="opacity-75 text-sm">{companyDescription}</p>
           </div>
 
           {columns.map((column, idx) => (
