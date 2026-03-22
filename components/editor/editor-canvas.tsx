@@ -275,6 +275,9 @@ export function EditorCanvas({
       // Update the section's styles to set backgroundImage
       const section = sections.find(s => s.id === sectionId)
       if (section) {
+        // Ensure section is selected when adding image
+        onSectionSelect(sectionId)
+        
         updateSection(sectionId, {
           styles: { ...section.styles, backgroundImage: imageUrl }
         })
@@ -539,9 +542,7 @@ export function EditorCanvas({
                     }`}
                     onClick={() =>
                       !isPreview &&
-                      onSectionSelect(
-                        selectedSectionId === section.id ? null : section.id,
-                      )
+                      onSectionSelect(section.id)
                     }
                   >
                     <SectionRenderer
