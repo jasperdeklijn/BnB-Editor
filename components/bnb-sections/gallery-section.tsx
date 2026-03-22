@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
+import { toast } from "sonner"
 
 import type { SectionStyles } from "@/lib/types"
 
@@ -125,8 +126,15 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
 
       console.log('handleDrop: setting image at slot', toIndex, { draggedImageUrl })
       onUpdate?.({
+        ...data,
         images: imagesObject,
         image_count: newImages.length,
+      })
+
+      toast.success("Image updated", {
+        position: "bottom-right",
+        duration: 2000,
+        style: { background: '#10b981', color: 'white' }
       })
       return
     }
@@ -159,9 +167,16 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
       image_count: newImages.length
     })
 
-    onUpdate({ 
+    onUpdate({
+      ...data,
       images: imagesObject,
       image_count: newImages.length
+    })
+
+    toast.success("Images reordered", {
+      position: "bottom-right",
+      duration: 2000,
+      style: { background: '#10b981', color: 'white' }
     })
   }
 
