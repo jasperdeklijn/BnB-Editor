@@ -30,6 +30,17 @@ export function EditorClient({ userId }: EditorClientProps) {
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("canvas")
   const router = useRouter()
 
+  // Switch to canvas on mobile when a touch drag starts
+  useEffect(() => {
+    const onTouchDragStart = () => {
+      if (typeof window !== "undefined" && window.innerWidth < 768) {
+        setMobilePanel("canvas")
+      }
+    }
+    document.addEventListener("touchdragstart", onTouchDragStart)
+    return () => document.removeEventListener("touchdragstart", onTouchDragStart)
+  }, [])
+
   // Load or create website on mount
   useEffect(() => {
     loadWebsite()
