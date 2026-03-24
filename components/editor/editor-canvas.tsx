@@ -95,6 +95,90 @@ export function EditorCanvas({
     return () => document.removeEventListener('dragend', handleGlobalDragEnd)
   }, [])
 
+  // Listen for touch drag events fired by useTouchDrag
+  useEffect(() => {
+    const onTouchDragStart = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      if (detail?.sectionType) setIsDraggingNewSection(true)
+    }
+    const onTouchDragEnd = () => {
+      setIsDraggingNewSection(false)
+      setHoverDropIndex(null)
+      setDraggingSectionIndex(null)
+    }
+    const onTouchDrop = (e: Event) => {
+      const detail = (e as CustomEvent).detail as {
+        sectionType?: string
+        imageUrl?: string
+        sectionIndex?: number
+        clientX: number
+        clientY: number
+      }
+
+      const target = e.target as HTMLElement | null
+      if (!target) return
+
+      // Check if the target (or any ancestor) is a gap drop zone
+      const gapEl = target.closest("[data-drop-gap]") as HTMLElement | null
+      if (gapEl && detail.sectionType) {
+        const gapIndex = Number(gapEl.dataset.dropGap)
+        const sectionType = detail.sectionType as SectionType
+        const tempId = `section-${Date.now()}`
+        const newSection: Section = {
+          id: tempId,
+          type: sectionType,
+          data: getDefaultSectionData(sectionType),
+          styles: {},
+        }
+        const newSections = [...sections]
+        newSections.splice(gapIndex, 0, newSection)
+        setSections(newSections)
+        setHoverDropIndex(null)
+        setIsDraggingNewSection(false)
+        return
+      }
+
+      // Check if the target (or any ancestor) is a section container
+      const sectionEl = target.closest("[data-section-id]") as HTMLElement | null
+      if (sectionEl && detail.imageUrl) {
+        const sectionId = sectionEl.dataset.sectionId!
+        onSectionSelect(sectionId)
+        setSections(
+          sections.map((s) =>
+            s.id === sectionId
+              ? { ...s, styles: { ...(s.styles ?? {}), backgroundImage: detail.imageUrl } }
+              : s
+          )
+        )
+        return
+      }
+
+      // Fallback: if it landed inside the canvas, append to end
+      if (detail.sectionType) {
+        const sectionType = detail.sectionType as SectionType
+        const tempId = `section-${Date.now()}`
+        const newSection: Section = {
+          id: tempId,
+          type: sectionType,
+          data: getDefaultSectionData(sectionType),
+          styles: {},
+        }
+        setSections([...sections, newSection])
+        setIsDraggingNewSection(false)
+      }
+    }
+
+    document.addEventListener("touchdragstart", onTouchDragStart)
+    document.addEventListener("touchdragend", onTouchDragEnd)
+    document.addEventListener("touchdrop", onTouchDrop)
+    return () => {
+      document.removeEventListener("touchdragstart", onTouchDragStart)
+      document.removeEventListener("touchdragend", onTouchDragEnd)
+      document.removeEventListener("touchdrop", onTouchDrop)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sections, onSectionSelect])
+
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
@@ -453,6 +537,7 @@ export function EditorCanvas({
 
           {!isPreview && (
             <div
+              data-drop-gap="0"
               className={`mb-4 transition-all duration-200 ${
                 hoverDropIndex === 0 || isDraggingNewSection ? "h-16 opacity-100" : "h-2 opacity-0"
               }`}
@@ -482,6 +567,7 @@ export function EditorCanvas({
                     if (el) sectionRefs.current.set(section.id, el)
                     else sectionRefs.current.delete(section.id)
                   }}
+                  data-section-id={section.id}
                   className={`group relative ${!isPreview ? "mb-4" : ""} ${
                     draggingSectionIndex === i ? "opacity-50" : ""
                   } transition-all duration-200`}
@@ -489,7 +575,7 @@ export function EditorCanvas({
                   onDragStart={(e) => handleDragStart(e, i)}
                   onDragEnd={handleDragEnd}
                   onDragOver={handleDragOverSection}
-                  onDrop={(e) => handleDropOnSection(e, section.id)}  // Pass sectionId to the handler
+                  onDrop={(e) => handleDropOnSection(e, section.id)}
                 >
                   {!isPreview && (
                     <div
@@ -558,6 +644,7 @@ export function EditorCanvas({
 
                 {!isPreview && (
                   <div
+                    data-drop-gap={i + 1}
                     className={`transition-all duration-200 ${
                       hoverDropIndex === i + 1 || isDraggingNewSection ? "h-16 mb-4 opacity-100" : "h-2 mb-4 opacity-0"
                     }`}

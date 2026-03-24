@@ -9,6 +9,9 @@ import type { Section, SectionStyles, Transition } from "@/lib/types"
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { useRouter } from "next/navigation"
+import { Layers, Paintbrush, LayoutTemplate } from "lucide-react"
+
+type MobilePanel = "canvas" | "sections" | "style"
 
 interface EditorClientProps {
   userId: string
@@ -24,7 +27,19 @@ export function EditorClient({ userId }: EditorClientProps) {
   const [isSaving, setIsSaving] = useState(false)
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null)
   const [device, setDevice] = useState<"desktop" | "tablet" | "mobile">("desktop")
+  const [mobilePanel, setMobilePanel] = useState<MobilePanel>("canvas")
   const router = useRouter()
+
+  // Switch to canvas on mobile when a touch drag starts
+  useEffect(() => {
+    const onTouchDragStart = () => {
+      if (typeof window !== "undefined" && window.innerWidth < 768) {
+        setMobilePanel("canvas")
+      }
+    }
+    document.addEventListener("touchdragstart", onTouchDragStart)
+    return () => document.removeEventListener("touchdragstart", onTouchDragStart)
+  }, [])
 
   // Load or create website on mount
   useEffect(() => {
@@ -274,10 +289,18 @@ export function EditorClient({ userId }: EditorClientProps) {
     if (selectedSectionId === id) setSelectedSectionId(null)
   }
 
+  const handleSectionSelect = (id: string | null) => {
+    setSelectedSectionId(id)
+    // On mobile, jump to the style panel when a section is tapped
+    if (id && typeof window !== "undefined" && window.innerWidth < 768) {
+      setMobilePanel("style")
+    }
+  }
+
   const selectedSection = sections.find((s) => s.id === selectedSectionId) || null
 
   return (
-    <div className="flex h-screen flex-col bg-muted/30">
+    <div className="flex h-[100dvh] flex-col bg-muted/30">
       <EditorHeader
         title={title}
         onTitleChange={setTitle}
@@ -290,7 +313,9 @@ export function EditorClient({ userId }: EditorClientProps) {
         device={device}
         onDeviceChange={setDevice}
       />
-      <div className="flex flex-1 overflow-hidden">
+
+      {/* Desktop layout: side-by-side panels */}
+      <div className="hidden md:flex flex-1 overflow-hidden">
         {!isPreview && <SectionsSelector userId={userId} />}
         <EditorCanvas
           sections={sections}
@@ -298,7 +323,7 @@ export function EditorClient({ userId }: EditorClientProps) {
           transitions={transitions}
           isPreview={isPreview}
           selectedSectionId={selectedSectionId}
-          onSectionSelect={setSelectedSectionId}
+          onSectionSelect={handleSectionSelect}
           device={device}
         />
         {!isPreview && (
@@ -312,6 +337,85 @@ export function EditorClient({ userId }: EditorClientProps) {
             onTransitionUpdate={handleTransitionUpdate}
             websiteId={websiteId}
           />
+        )}
+      </div>
+
+      {/* Mobile layout: single panel with bottom tab bar */}
+      <div className="flex md:hidden flex-1 overflow-hidden flex-col">
+        {/* Panel content */}
+        <div className="flex-1 overflow-auto min-h-0">
+          {mobilePanel === "sections" && !isPreview && (
+            <SectionsSelector
+              userId={userId}
+              className="w-full h-full border-r-0"
+              onSectionAdded={() => setMobilePanel("canvas")}
+            />
+          )}
+          {(mobilePanel === "canvas" || isPreview) && (
+            <EditorCanvas
+              sections={sections}
+              setSections={persistSections}
+              transitions={transitions}
+              isPreview={isPreview}
+              selectedSectionId={selectedSectionId}
+              onSectionSelect={handleSectionSelect}
+              device={device}
+            />
+          )}
+          {mobilePanel === "style" && !isPreview && (
+            <SelectionEditor
+              selectedSection={selectedSection}
+              sections={sections}
+              transitions={transitions}
+              onUpdate={handleSectionUpdate}
+              onStyleUpdate={handleStyleUpdate}
+              onDelete={handleDelete}
+              onTransitionUpdate={handleTransitionUpdate}
+              websiteId={websiteId}
+            />
+          )}
+        </div>
+
+        {/* Bottom tab bar */}
+        {!isPreview && (
+          <nav className="flex border-t border-border bg-background">
+            <button
+              type="button"
+              onClick={() => setMobilePanel("sections")}
+              className={`flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
+                mobilePanel === "sections"
+                  ? "text-primary border-t-2 border-primary -mt-px"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Layers className="h-5 w-5" />
+              Sections
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobilePanel("canvas")}
+              className={`flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
+                mobilePanel === "canvas"
+                  ? "text-primary border-t-2 border-primary -mt-px"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <LayoutTemplate className="h-5 w-5" />
+              Canvas
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobilePanel("style")}
+              className={`flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
+                mobilePanel === "style"
+                  ? "text-primary border-t-2 border-primary -mt-px"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Paintbrush className="h-5 w-5" />
+              Style
+            </button>
+          </nav>
         )}
       </div>
     </div>
