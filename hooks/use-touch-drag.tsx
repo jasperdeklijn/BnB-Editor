@@ -3,15 +3,14 @@
 /**
  * useTouchDrag
  *
- * A lightweight helper that bridges HTML5 drag-and-drop semantics to touch events
- * so that the same drop zones work on both desktop (mouse) and mobile (touch).
+ * Bridges HTML5 drag-and-drop semantics to touch events so the same drop zones
+ * work on both desktop (mouse) and mobile (touch).
  *
- * Usage:
- *   const { onTouchStart, onTouchMove, onTouchEnd } = useTouchDrag()
- *
- *   Pass these handlers to any element that should be draggable on touch.
- *   The hook fires synthetic CustomEvents ("touchdragstart", "touchdrop") so the
- *   canvas can listen for them and route to the existing DnD logic.
+ * Fires three CustomEvents on `document`:
+ *   "touchdragstart"  — drag threshold crossed, payload in detail
+ *   "touchdragend"    — finger lifted (regardless of drop)
+ *   "touchdrop"       — fired on the element under the finger at release,
+ *                       bubbles up so canvas listeners can catch it
  */
 
 import { useRef } from "react"
@@ -30,6 +29,7 @@ export function useTouchDrag({ payload }: UseTouchDragOptions) {
   const ghostRef = useRef<HTMLDivElement | null>(null)
   const startPos = useRef<{ x: number; y: number } | null>(null)
   const isDragging = useRef(false)
+  const labelRef = useRef<string>("")
 
   const cleanup = () => {
     if (ghostRef.current) {
@@ -44,10 +44,8 @@ export function useTouchDrag({ payload }: UseTouchDragOptions) {
     const touch = e.touches[0]
     startPos.current = { x: touch.clientX, y: touch.clientY }
     isDragging.current = false
-
-    // We'll fire the dragstart event on first meaningful move
-    // Store label for ghost creation
-    ;(e.currentTarget as HTMLElement).dataset.touchLabel = label ?? ""
+    labelRef.current = label ?? "Section"
+    // Do NOT call preventDefault here — allow normal tap/scroll recognition
   }
 
   const onTouchMove = (e: React.TouchEvent) => {
@@ -57,46 +55,45 @@ export function useTouchDrag({ payload }: UseTouchDragOptions) {
     const dx = touch.clientX - startPos.current.x
     const dy = touch.clientY - startPos.current.y
 
-    // Start drag after 6px threshold
-    if (!isDragging.current && Math.hypot(dx, dy) < 6) return
+    // Only start dragging after a 10px threshold
+    if (!isDragging.current && Math.hypot(dx, dy) < 10) return
 
-    // Prevent page scroll while dragging
+    // We're dragging — prevent page scroll
     e.preventDefault()
 
     if (!isDragging.current) {
       isDragging.current = true
-      const label = (e.currentTarget as HTMLElement).dataset.touchLabel ?? "Section"
 
-      // Create ghost element
+      // Create ghost label that follows the finger
       const ghost = document.createElement("div")
-      ghost.style.cssText = `
-        position: fixed;
-        z-index: 9999;
-        pointer-events: none;
-        background: var(--color-primary, #4f46e5);
-        color: white;
-        padding: 8px 14px;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 600;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-        opacity: 0.92;
-        transform: scale(1.05) translateY(-4px);
-        white-space: nowrap;
-      `
-      ghost.textContent = label
+      ghost.style.cssText = [
+        "position:fixed",
+        "z-index:9999",
+        "pointer-events:none",
+        "background:var(--color-primary,#4f46e5)",
+        "color:#fff",
+        "padding:8px 14px",
+        "border-radius:8px",
+        "font-size:13px",
+        "font-weight:600",
+        "box-shadow:0 8px 24px rgba(0,0,0,0.25)",
+        "opacity:0.92",
+        "white-space:nowrap",
+        "transform:scale(1.05) translateY(-4px)",
+      ].join(";")
+      ghost.textContent = labelRef.current
       document.body.appendChild(ghost)
       ghostRef.current = ghost
 
-      // Dispatch touchdragstart on document so canvas can track state
       document.dispatchEvent(
         new CustomEvent("touchdragstart", { detail: payload })
       )
     }
 
     if (ghostRef.current) {
-      ghostRef.current.style.left = `${touch.clientX - 40}px`
-      ghostRef.current.style.top = `${touch.clientY - 36}px`
+      const g = ghostRef.current
+      g.style.left = `${touch.clientX - 40}px`
+      g.style.top  = `${touch.clientY - 36}px`
     }
   }
 
@@ -108,28 +105,27 @@ export function useTouchDrag({ payload }: UseTouchDragOptions) {
 
     const touch = e.changedTouches[0]
 
-    // Find the element at the drop position (ignore the ghost)
+    // Temporarily hide ghost so elementFromPoint lands on the real target
     if (ghostRef.current) ghostRef.current.style.display = "none"
     const target = document.elementFromPoint(touch.clientX, touch.clientY)
     if (ghostRef.current) ghostRef.current.style.display = ""
 
     cleanup()
 
+    document.dispatchEvent(new CustomEvent("touchdragend"))
+
     if (!target) return
 
-    // Fire custom drop event on the target element so canvas/drop zones pick it up
-    const dropEvent = new CustomEvent("touchdrop", {
-      bubbles: true,
-      detail: {
-        ...payload,
-        clientX: touch.clientX,
-        clientY: touch.clientY,
-      },
-    })
-    target.dispatchEvent(dropEvent)
-
-    // Dispatch touchdragend on document so canvas can reset state
-    document.dispatchEvent(new CustomEvent("touchdragend"))
+    target.dispatchEvent(
+      new CustomEvent("touchdrop", {
+        bubbles: true,
+        detail: {
+          ...payload,
+          clientX: touch.clientX,
+          clientY: touch.clientY,
+        },
+      })
+    )
   }
 
   return { onTouchStart, onTouchMove, onTouchEnd }

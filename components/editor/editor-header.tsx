@@ -45,7 +45,6 @@ export function EditorHeader({
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
-  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -57,12 +56,12 @@ export function EditorHeader({
   }, [])
 
   return (
-    <header className="flex items-center justify-between border-b border-border bg-background px-3 py-2 md:px-6 md:py-3 gap-2">
+    <header className="flex items-center justify-between border-b border-border bg-background px-3 py-2 md:px-6 md:py-3 gap-2 shrink-0">
       {/* Left: branding + title */}
       <div className="flex items-center gap-2 md:gap-4 min-w-0">
-        <h1 className="hidden sm:block text-base md:text-lg font-semibold text-foreground shrink-0">
+        <span className="hidden sm:block text-base md:text-lg font-semibold text-foreground shrink-0">
           BnB Builder
-        </h1>
+        </span>
         <Input
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
@@ -73,7 +72,7 @@ export function EditorHeader({
 
       {/* Right: actions */}
       <div className="flex items-center gap-1 md:gap-2 shrink-0">
-        {/* Device toggles — hidden on mobile, visible md+ */}
+        {/* Device toggles — hidden on mobile */}
         <div className="hidden md:flex items-center gap-1 rounded-md border border-border p-1">
           <Button
             variant={device === "desktop" ? "secondary" : "ghost"}
@@ -101,7 +100,7 @@ export function EditorHeader({
           </Button>
         </div>
 
-        {/* Images link — hidden on small mobile */}
+        {/* Images link */}
         <Button variant="outline" size="sm" asChild className="hidden sm:inline-flex">
           <Link href="/images">
             <ImageIcon className="mr-2 h-4 w-4" />
@@ -109,7 +108,7 @@ export function EditorHeader({
           </Link>
         </Button>
 
-        {/* Preview toggle — text+icon on sm+, icon-only on xs */}
+        {/* Preview toggle */}
         <Button variant="outline" size="sm" onClick={onPreviewToggle} className="hidden sm:inline-flex">
           {isPreview ? (
             <>
@@ -145,7 +144,7 @@ export function EditorHeader({
           <Upload className="h-4 w-4" />
         </Button>
 
-        {/* Overflow menu (custom, no external dependency) */}
+        {/* Overflow menu — custom, zero external deps */}
         <div className="relative" ref={menuRef}>
           <Button
             variant="ghost"
@@ -164,38 +163,27 @@ export function EditorHeader({
               role="menu"
               className="absolute right-0 top-full z-50 mt-1 w-52 rounded-md border border-border bg-background shadow-md"
             >
-              {/* Device picker — mobile only */}
+              {/* Device picker — mobile screens only */}
               <div className="md:hidden px-3 py-2 border-b border-border">
                 <p className="text-xs text-muted-foreground mb-2">Preview device</p>
                 <div className="flex gap-1">
-                  <Button
-                    variant={device === "desktop" ? "secondary" : "ghost"}
-                    size="sm"
-                    onClick={() => { onDeviceChange("desktop"); setMenuOpen(false) }}
-                    className="h-7 flex-1 px-1"
-                  >
-                    <Monitor className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant={device === "tablet" ? "secondary" : "ghost"}
-                    size="sm"
-                    onClick={() => { onDeviceChange("tablet"); setMenuOpen(false) }}
-                    className="h-7 flex-1 px-1"
-                  >
-                    <Tablet className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button
-                    variant={device === "mobile" ? "secondary" : "ghost"}
-                    size="sm"
-                    onClick={() => { onDeviceChange("mobile"); setMenuOpen(false) }}
-                    className="h-7 flex-1 px-1"
-                  >
-                    <Smartphone className="h-3.5 w-3.5" />
-                  </Button>
+                  {(["desktop", "tablet", "mobile"] as const).map((d) => (
+                    <Button
+                      key={d}
+                      variant={device === d ? "secondary" : "ghost"}
+                      size="sm"
+                      onClick={() => { onDeviceChange(d); setMenuOpen(false) }}
+                      className="h-7 flex-1 px-1"
+                    >
+                      {d === "desktop" && <Monitor className="h-3.5 w-3.5" />}
+                      {d === "tablet" && <Tablet className="h-3.5 w-3.5" />}
+                      {d === "mobile" && <Smartphone className="h-3.5 w-3.5" />}
+                    </Button>
+                  ))}
                 </div>
               </div>
 
-              {/* Images link — mobile only (sm+ shows the button) */}
+              {/* Images link — only on smallest screens where button is hidden */}
               <div className="sm:hidden border-b border-border">
                 <Link
                   href="/images"
@@ -208,9 +196,10 @@ export function EditorHeader({
                 </Link>
               </div>
 
-              {/* Logout — always visible */}
+              {/* Logout — always */}
               <button
                 role="menuitem"
+                type="button"
                 onClick={() => { onLogout(); setMenuOpen(false) }}
                 className="flex w-full items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
               >

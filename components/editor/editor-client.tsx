@@ -343,7 +343,7 @@ export function EditorClient({ userId }: EditorClientProps) {
       {/* Mobile layout: single panel with bottom tab bar */}
       <div className="flex md:hidden flex-1 overflow-hidden flex-col">
         {/* Panel content */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-auto min-h-0">
           {mobilePanel === "sections" && !isPreview && (
             <SectionsSelector
               userId={userId}
