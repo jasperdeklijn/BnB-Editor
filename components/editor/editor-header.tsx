@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -16,13 +16,6 @@ import {
   MoreVertical,
 } from "lucide-react"
 import Link from "next/link"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 
 interface EditorHeaderProps {
   title: string
@@ -49,6 +42,20 @@ export function EditorHeader({
   device,
   onDeviceChange,
 }: EditorHeaderProps) {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
   return (
     <header className="flex items-center justify-between border-b border-border bg-background px-3 py-2 md:px-6 md:py-3 gap-2">
       {/* Left: branding + title */}
@@ -66,7 +73,7 @@ export function EditorHeader({
 
       {/* Right: actions */}
       <div className="flex items-center gap-1 md:gap-2 shrink-0">
-        {/* Device toggles — hidden on small mobile, visible md+ */}
+        {/* Device toggles — hidden on mobile, visible md+ */}
         <div className="hidden md:flex items-center gap-1 rounded-md border border-border p-1">
           <Button
             variant={device === "desktop" ? "secondary" : "ghost"}
@@ -102,7 +109,7 @@ export function EditorHeader({
           </Link>
         </Button>
 
-        {/* Preview toggle */}
+        {/* Preview toggle — text+icon on sm+, icon-only on xs */}
         <Button variant="outline" size="sm" onClick={onPreviewToggle} className="hidden sm:inline-flex">
           {isPreview ? (
             <>
@@ -116,7 +123,6 @@ export function EditorHeader({
             </>
           )}
         </Button>
-        {/* Mobile-only icon-only preview toggle */}
         <Button variant="outline" size="icon" onClick={onPreviewToggle} className="sm:hidden h-8 w-8">
           {isPreview ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </Button>
@@ -139,62 +145,81 @@ export function EditorHeader({
           <Upload className="h-4 w-4" />
         </Button>
 
-        {/* Overflow menu — shown on all sizes for secondary actions */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreVertical className="h-4 w-4" />
-              <span className="sr-only">More options</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            {/* Mobile-only: device toggle section */}
-            <div className="md:hidden px-2 py-1.5">
-              <p className="text-xs text-muted-foreground mb-1.5">Preview device</p>
-              <div className="flex gap-1">
-                <Button
-                  variant={device === "desktop" ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => onDeviceChange("desktop")}
-                  className="h-7 flex-1 px-1"
-                >
-                  <Monitor className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant={device === "tablet" ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => onDeviceChange("tablet")}
-                  className="h-7 flex-1 px-1"
-                >
-                  <Tablet className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant={device === "mobile" ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => onDeviceChange("mobile")}
-                  className="h-7 flex-1 px-1"
-                >
-                  <Smartphone className="h-3.5 w-3.5" />
-                </Button>
+        {/* Overflow menu (custom, no external dependency) */}
+        <div className="relative" ref={menuRef}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+          >
+            <MoreVertical className="h-4 w-4" />
+            <span className="sr-only">More options</span>
+          </Button>
+
+          {menuOpen && (
+            <div
+              role="menu"
+              className="absolute right-0 top-full z-50 mt-1 w-52 rounded-md border border-border bg-background shadow-md"
+            >
+              {/* Device picker — mobile only */}
+              <div className="md:hidden px-3 py-2 border-b border-border">
+                <p className="text-xs text-muted-foreground mb-2">Preview device</p>
+                <div className="flex gap-1">
+                  <Button
+                    variant={device === "desktop" ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => { onDeviceChange("desktop"); setMenuOpen(false) }}
+                    className="h-7 flex-1 px-1"
+                  >
+                    <Monitor className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant={device === "tablet" ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => { onDeviceChange("tablet"); setMenuOpen(false) }}
+                    className="h-7 flex-1 px-1"
+                  >
+                    <Tablet className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant={device === "mobile" ? "secondary" : "ghost"}
+                    size="sm"
+                    onClick={() => { onDeviceChange("mobile"); setMenuOpen(false) }}
+                    className="h-7 flex-1 px-1"
+                  >
+                    <Smartphone className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
+
+              {/* Images link — mobile only (sm+ shows the button) */}
+              <div className="sm:hidden border-b border-border">
+                <Link
+                  href="/images"
+                  role="menuitem"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
+                >
+                  <ImageIcon className="h-4 w-4" />
+                  Images
+                </Link>
+              </div>
+
+              {/* Logout — always visible */}
+              <button
+                role="menuitem"
+                onClick={() => { onLogout(); setMenuOpen(false) }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </button>
             </div>
-            <DropdownMenuSeparator className="md:hidden" />
-
-            {/* Images link (mobile-only since sm+ shows the button) */}
-            <DropdownMenuItem asChild className="sm:hidden">
-              <Link href="/images" className="flex items-center gap-2 cursor-pointer">
-                <ImageIcon className="h-4 w-4" />
-                Images
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator className="sm:hidden" />
-
-            <DropdownMenuItem onClick={onLogout} className="flex items-center gap-2 text-muted-foreground">
-              <LogOut className="h-4 w-4" />
-              Logout
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          )}
+        </div>
       </div>
     </header>
   )
