@@ -7,11 +7,12 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js"
  * Only use server-side for operations that need to read/write regardless of
  * the current user (e.g. reading unpublished websites for the preview route).
  * NEVER expose this client or the service role key to the browser.
+ * SUPABASE_SERVICE_ROLE_KEY
  */
 export function createAdminClient() {
   return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       auth: {
         autoRefreshToken: false,
