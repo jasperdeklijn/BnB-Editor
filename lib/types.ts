@@ -45,6 +45,7 @@ export interface Website {
   user_id: string
   title: string
   slug: string
+  custom_domain?: string | null
   sections: Section[]
   transitions: Transition[]
   published: boolean

@@ -14,6 +14,7 @@ import {
   ImageIcon,
   LogOut,
   MoreVertical,
+  Globe,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -144,7 +145,7 @@ export function EditorHeader({
           <Upload className="h-4 w-4" />
         </Button>
 
-        {/* Overflow menu — custom, zero external deps */}
+        {/* Overflow menu */}
         <div className="relative" ref={menuRef}>
           <Button
             variant="ghost"
@@ -195,6 +196,17 @@ export function EditorHeader({
                   Images
                 </Link>
               </div>
+
+              {/* Domains link — always visible */}
+              <Link
+                href="/domains"
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border-b border-border"
+              >
+                <Globe className="h-4 w-4" />
+                Domain settings
+              </Link>
 
               {/* Logout — always */}
               <button
