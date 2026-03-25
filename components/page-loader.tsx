@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import React from "react"
 import { createClient } from "@/lib/supabase/server"
+import type { SupabaseClient } from "@supabase/supabase-js"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { SectionRenderer, TransitionWrapper } from "@/components/editor/section-renderer"
 import type { Section, Transition } from "@/lib/types"
@@ -8,13 +9,16 @@ import type { Section, Transition } from "@/lib/types"
 interface PageLoaderOptions {
   slug: string
   isPreview?: boolean
+  /** Optional pre-built client. Pass an admin client to bypass RLS (for preview). */
+  client?: SupabaseClient
 }
 
 export async function loadPublicWebsitePage({
   slug,
   isPreview = true,
+  client,
 }: PageLoaderOptions) {
-  const supabase = await createClient()
+  const supabase = client ?? (await createClient())
 
   const { data: website, error } =
     await websiteSections.fetchWebsiteWithSectionsBySlug(slug, supabase)

@@ -11,6 +11,7 @@ const PLATFORM_DOMAIN = "bnbwebsitemaken.nl"
 interface DomainDashboardProps {
   slug: string
   currentCustomDomain: string | null
+  isPublished: boolean
 }
 
 function CopyButton({ value }: { value: string }) {
@@ -73,7 +74,7 @@ function UrlCard({
 
 type VerifyStatus = "idle" | "checking" | "connected" | "error"
 
-export function DomainDashboard({ slug, currentCustomDomain }: DomainDashboardProps) {
+export function DomainDashboard({ slug, currentCustomDomain, isPublished }: DomainDashboardProps) {
   const [customDomain, setCustomDomain] = useState(currentCustomDomain || "")
   const [savedDomain, setSavedDomain] = useState(currentCustomDomain || "")
   const [verifyStatus, setVerifyStatus] = useState<VerifyStatus>("idle")
@@ -134,9 +135,15 @@ export function DomainDashboard({ slug, currentCustomDomain }: DomainDashboardPr
             icon={<Globe className="h-4 w-4" />}
             url={liveUrl}
             badge={
-              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                Published
-              </span>
+              isPublished ? (
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                  Published
+                </span>
+              ) : (
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                  Not published
+                </span>
+              )
             }
           />
         </div>

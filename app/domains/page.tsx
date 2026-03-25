@@ -42,7 +42,11 @@ export default async function DomainsPage() {
           </p>
         </div>
 
-        <DomainDashboard slug={website.slug} currentCustomDomain={website.custom_domain ?? null} />
+        <DomainDashboard
+          slug={website.slug}
+          currentCustomDomain={website.custom_domain ?? null}
+          isPublished={website.published ?? false}
+        />
       </main>
     </div>
   )
