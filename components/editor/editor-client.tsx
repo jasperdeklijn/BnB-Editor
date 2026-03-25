@@ -205,8 +205,21 @@ export function EditorClient({ userId }: EditorClientProps) {
 
   const handlePublish = async () => {
     if (!websiteId) return
-      router.push(`/site/${slug}`)
-    
+
+    setIsSaving(true)
+    const supabase = createClient()
+    const { error } = await supabase
+      .from("websites")
+      .update({ published: true })
+      .eq("id", websiteId)
+    setIsSaving(false)
+
+    if (error) {
+      console.error("Error publishing:", error)
+      return
+    }
+
+    router.push(`/domains`)
   }
 
   const handleLogout = async () => {

@@ -21,6 +21,9 @@ export async function loadPublicWebsitePage({
 
   if (error || !website) return notFound()
 
+  // Live route: only show published sites
+  if (!isPreview && !website.published) return notFound()
+
   const sections: Section[] = (website.website_sections || []).map(
     (r: any): Section => ({
       id: r.id,

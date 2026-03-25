@@ -6,5 +6,6 @@ interface PageProps {
 
 export default async function PublicSitePage({ params }: PageProps) {
   const { slug } = await params
-  return loadPublicWebsitePage({ slug })
+  // Live site shows the published version only
+  return loadPublicWebsitePage({ slug, isPreview: false })
 }

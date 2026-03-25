@@ -1,13 +1,11 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
-export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
+const PLATFORM_DOMAIN = "bnbwebsitemaken.nl"
 
-  // With Fluid compute, don't put this client in a global environment
-  // variable. Always create a new one on each request.
+export async function updateSession(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({ request })
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -18,21 +16,66 @@ export async function updateSession(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
-          })
-          cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
+          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
         },
       },
-    },
+    }
   )
 
-  // Do not run code between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
+  const host = request.headers.get("host") || ""
+  const hostname = host.split(":")[0] // strip port for local dev
 
-  // IMPORTANT: If you remove getUser() and you use server-side rendering
-  // with the Supabase client, your users may be randomly logged out.
+  // 1. Preview subdomain: preview-[slug].bnbwebsitemaken.nl
+  const previewMatch = hostname.match(
+    new RegExp(`^preview-(.+)\\.${PLATFORM_DOMAIN.replace(".", "\\.")}$`)
+  )
+  if (previewMatch) {
+    const slug = previewMatch[1]
+    const url = request.nextUrl.clone()
+    url.pathname = `/preview/${slug}`
+    return NextResponse.rewrite(url)
+  }
+
+  // 2. Live subdomain: [slug].bnbwebsitemaken.nl
+  const liveMatch = hostname.match(
+    new RegExp(`^(.+)\\.${PLATFORM_DOMAIN.replace(".", "\\.")}$`)
+  )
+  if (liveMatch) {
+    const slug = liveMatch[1]
+    // Exclude the bare platform domain itself and www
+    if (slug !== "www") {
+      const url = request.nextUrl.clone()
+      url.pathname = `/site/${slug}`
+      return NextResponse.rewrite(url)
+    }
+  }
+
+  // 3. Custom domain: look up custom_domain in websites table
+  const isCustomDomain =
+    hostname !== PLATFORM_DOMAIN &&
+    hostname !== `www.${PLATFORM_DOMAIN}` &&
+    !hostname.endsWith(`.${PLATFORM_DOMAIN}`) &&
+    !hostname.includes("localhost") &&
+    !hostname.includes("vercel.app")
+
+  if (isCustomDomain) {
+    const { data: website } = await supabase
+      .from("websites")
+      .select("slug")
+      .or(`custom_domain.eq.${hostname},custom_domain.eq.www.${hostname}`)
+      .single()
+
+    if (website?.slug) {
+      const url = request.nextUrl.clone()
+      url.pathname = `/site/${website.slug}`
+      return NextResponse.rewrite(url)
+    }
+  }
+
+  // 4. Normal app routing — enforce auth
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -43,26 +86,14 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/login") &&
     !request.nextUrl.pathname.startsWith("/auth") &&
     !request.nextUrl.pathname.startsWith("/legal") &&
+    !request.nextUrl.pathname.startsWith("/site") &&
+    !request.nextUrl.pathname.startsWith("/preview") &&
     !request.nextUrl.pathname.startsWith("/sitemap.xml")
   ) {
-    // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone()
     url.pathname = "/auth/login"
     return NextResponse.redirect(url)
   }
-
-  // IMPORTANT: You *must* return the supabaseResponse object as it is.
-  // If you're creating a new response object with NextResponse.next() make sure to:
-  // 1. Pass the request in it, like so:
-  //    const myNewResponse = NextResponse.next({ request })
-  // 2. Copy over the cookies, like so:
-  //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
-  // 3. Change the myNewResponse object to fit your needs, but avoid changing
-  //    the cookies!
-  // 4. Finally:
-  //    return myNewResponse
-  // If this is not done, you may be causing the browser and server to go out
-  // of sync and terminate the user's session prematurely!
 
   return supabaseResponse
 }
