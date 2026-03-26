@@ -24,33 +24,29 @@ export async function updateSession(request: NextRequest) {
       },
     }
   )
+const host = request.headers.get("host") || ""
+const hostname = host.split(":")[0]
 
-  const host = request.headers.get("host") || ""
-  const hostname = host.split(":")[0] // strip port for local dev
-
-  // 1. Preview subdomain: preview-[slug].bnbwebsitemaken.nl
-  const previewMatch = hostname.match(
-    new RegExp(`^preview-(.+)\\.${PLATFORM_DOMAIN.replace(".", "\\.")}$`)
-  )
-  if (previewMatch) {
-    const slug = previewMatch[1]
-    const url = request.nextUrl.clone()
-    url.pathname = `/preview/${slug}`
-    return NextResponse.rewrite(url)
-  }
-
-  // 2. Live subdomain: [slug].bnbwebsitemaken.nl
-  const liveMatch = hostname.endsWith(`.${PLATFORM_DOMAIN}`)
-  ? hostname.replace(`.${PLATFORM_DOMAIN}`, "")
-  : null
-
-if (liveMatch && liveMatch !== "www") {
-  const slug = liveMatch
+// Preview
+if (hostname.startsWith("preview-") && hostname.endsWith(`.${PLATFORM_DOMAIN}`)) {
+  const slug = hostname
+    .replace("preview-", "")
+    .replace(`.${PLATFORM_DOMAIN}`, "")
 
   const url = request.nextUrl.clone()
-  url.pathname = `/site/${slug}`
-  
+  url.pathname = `/preview/${slug}`
   return NextResponse.rewrite(url)
+}
+
+// Live
+if (hostname.endsWith(`.${PLATFORM_DOMAIN}`)) {
+  const slug = hostname.replace(`.${PLATFORM_DOMAIN}`, "")
+
+  if (slug !== "www") {
+    const url = request.nextUrl.clone()
+    url.pathname = `/site/${slug}`
+    return NextResponse.rewrite(url)
+  }
 }
 console.log("HOST:", hostname)
   // 3. Custom domain: look up custom_domain in websites table
