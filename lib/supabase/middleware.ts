@@ -40,19 +40,19 @@ export async function updateSession(request: NextRequest) {
   }
 
   // 2. Live subdomain: [slug].bnbwebsitemaken.nl
-  const liveMatch = hostname.match(
-    new RegExp(`^(.+)\\.${PLATFORM_DOMAIN.replace(".", "\\.")}$`)
-  )
-  if (liveMatch) {
-    const slug = liveMatch[1]
-    // Exclude the bare platform domain itself and www
-    if (slug !== "www") {
-      const url = request.nextUrl.clone()
-      url.pathname = `/site/${slug}`
-      return NextResponse.rewrite(url)
-    }
-  }
+  const liveMatch = hostname.endsWith(`.${PLATFORM_DOMAIN}`)
+  ? hostname.replace(`.${PLATFORM_DOMAIN}`, "")
+  : null
 
+if (liveMatch && liveMatch !== "www") {
+  const slug = liveMatch
+
+  const url = request.nextUrl.clone()
+  url.pathname = `/site/${slug}`
+  
+  return NextResponse.rewrite(url)
+}
+console.log("HOST:", hostname)
   // 3. Custom domain: look up custom_domain in websites table
   const isCustomDomain =
     hostname !== PLATFORM_DOMAIN &&
