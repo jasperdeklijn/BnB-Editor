@@ -319,7 +319,6 @@ export function EditorClient({ userId }: EditorClientProps) {
         onTitleChange={setTitle}
         isPreview={isPreview}
         onPreviewToggle={() => setIsPreview(!isPreview)}
-        onSave={handleSave}
         onPublish={handlePublish}
         onLogout={handleLogout}
         isSaving={isSaving}

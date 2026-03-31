@@ -60,7 +60,7 @@ function SectionCard({ type, label, icon, description, collapsed, isDragging, on
       } ${isDragging ? "opacity-50 scale-95" : ""}`}
       title={collapsed ? `${label}: ${description}` : label}
     >
-      <div className="flex-shrink-0 rounded-md bg-secondary p-2 text-secondary-foreground transition-colors group-hover:bg-accent">
+      <div className="flex-shrink-0 rounded-md bg-primary/10 p-2 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
         {icon}
       </div>
       {!collapsed && (
@@ -208,7 +208,7 @@ export function SectionsSelector({ className = "", userId, onSectionAdded }: Sec
     <aside
       className={`relative flex-shrink-0 transition-all duration-300 ease-in-out overflow-y-auto w-full ${
         collapsed ? "md:w-16" : "md:w-64"
-      } border-r border-border bg-background p-4 ${className}`}
+      } border-r border-border bg-[var(--editor-sidebar)] p-4 ${className}`}
     >
       {/* Collapse toggle — desktop only */}
       <button
