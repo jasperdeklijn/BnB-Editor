@@ -118,10 +118,10 @@ export function SelectionEditor({
 
   if (!selectedSection) {
     return (
-      <div className="w-full md:w-80 border-l border-border bg-background p-6">
+      <div className="w-full md:w-80 border-l border-border bg-[var(--editor-panel)] p-6">
         <div className="flex h-full flex-col items-center justify-center text-center">
-          <div className="mb-4 rounded-full bg-muted p-4">
-            <Wand2 className="h-8 w-8 text-muted-foreground" />
+          <div className="mb-4 rounded-full bg-primary/10 p-4">
+            <Wand2 className="h-8 w-8 text-primary" />
           </div>
           <p className="text-sm font-medium text-muted-foreground">No section selected</p>
           <p className="mt-2 text-xs text-muted-foreground">Click a section to customize</p>
@@ -227,11 +227,11 @@ export function SelectionEditor({
   }
 
   return (
-      <div className="w-full md:w-80 border-l border-border bg-background p-6 overflow-auto animate-in slide-in-from-right duration-300">
+      <div className="w-full md:w-80 border-l border-border bg-[var(--editor-panel)] p-6 overflow-auto animate-in slide-in-from-right duration-300">
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <div className="rounded-md bg-secondary p-1.5 text-secondary-foreground">
+            <div className="rounded-md bg-primary/15 p-1.5 text-primary">
               <Type className="h-4 w-4" />
             </div>
             <h2 className="text-lg font-semibold capitalize">{selectedSection.type}</h2>
