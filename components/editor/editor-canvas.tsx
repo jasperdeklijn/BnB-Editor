@@ -86,6 +86,7 @@ export function EditorCanvas({
   const [draggingSectionIndex, setDraggingSectionIndex] = useState<number | null>(null)
   const [isDraggingNewSection, setIsDraggingNewSection] = useState(false)
   const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null)
+  const canvasRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const handleGlobalDragEnd = () => {
@@ -95,17 +96,63 @@ export function EditorCanvas({
     return () => document.removeEventListener('dragend', handleGlobalDragEnd)
   }, [])
 
+  /**
+   * Given a Y coordinate (clientY), find the best gap index to drop into.
+   * We measure the midpoint of each section and insert before the first section
+   * whose midpoint is below the finger.
+   */
+  const getDropIndexFromY = (clientY: number): number => {
+    if (sectionRefs.current.size === 0) return 0
+    const sectionEls = Array.from(sectionRefs.current.entries())
+    for (let i = 0; i < sectionEls.length; i++) {
+      const [, el] = sectionEls[i]
+      if (!el) continue
+      const rect = el.getBoundingClientRect()
+      const midY = rect.top + rect.height / 2
+      if (clientY < midY) return i
+    }
+    return sectionEls.length
+  }
+
+  /**
+   * Given a Y coordinate, find the section whose bounding box contains the Y.
+   * Returns the section id or null.
+   */
+  const getSectionIdFromY = (clientX: number, clientY: number): string | null => {
+    for (const [id, el] of sectionRefs.current.entries()) {
+      if (!el) continue
+      const rect = el.getBoundingClientRect()
+      if (clientY >= rect.top && clientY <= rect.bottom && clientX >= rect.left && clientX <= rect.right) {
+        return id
+      }
+    }
+    return null
+  }
+
   // Listen for touch drag events fired by useTouchDrag
   useEffect(() => {
     const onTouchDragStart = (e: Event) => {
       const detail = (e as CustomEvent).detail
       if (detail?.sectionType) setIsDraggingNewSection(true)
     }
+
+    const onTouchDragMove = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { clientX: number; clientY: number; sectionType?: string }
+      if (!detail) return
+
+      // Only show hover feedback if we're dragging a new section type
+      if (detail.sectionType) {
+        const idx = getDropIndexFromY(detail.clientY)
+        setHoverDropIndex(idx)
+      }
+    }
+
     const onTouchDragEnd = () => {
       setIsDraggingNewSection(false)
       setHoverDropIndex(null)
       setDraggingSectionIndex(null)
     }
+
     const onTouchDrop = (e: Event) => {
       const detail = (e as CustomEvent).detail as {
         sectionType?: string
@@ -115,13 +162,29 @@ export function EditorCanvas({
         clientY: number
       }
 
-      const target = e.target as HTMLElement | null
-      if (!target) return
+      if (!detail) return
 
-      // Check if the target (or any ancestor) is a gap drop zone
-      const gapEl = target.closest("[data-drop-gap]") as HTMLElement | null
-      if (gapEl && detail.sectionType) {
-        const gapIndex = Number(gapEl.dataset.dropGap)
+      // ── Image drop: find section by coordinates ──
+      if (detail.imageUrl) {
+        const sectionId = getSectionIdFromY(detail.clientX, detail.clientY)
+        if (sectionId) {
+          onSectionSelect(sectionId)
+          setSections(
+            sections.map((s) =>
+              s.id === sectionId
+                ? { ...s, styles: { ...(s.styles ?? {}), backgroundImage: detail.imageUrl } }
+                : s
+            )
+          )
+        }
+        setHoverDropIndex(null)
+        setIsDraggingNewSection(false)
+        return
+      }
+
+      // ── New section drop: use coordinate-based gap detection ──
+      if (detail.sectionType) {
+        const dropIndex = getDropIndexFromY(detail.clientY)
         const sectionType = detail.sectionType as SectionType
         const tempId = `section-${Date.now()}`
         const newSection: Section = {
@@ -131,48 +194,20 @@ export function EditorCanvas({
           styles: {},
         }
         const newSections = [...sections]
-        newSections.splice(gapIndex, 0, newSection)
+        newSections.splice(dropIndex, 0, newSection)
         setSections(newSections)
         setHoverDropIndex(null)
-        setIsDraggingNewSection(false)
-        return
-      }
-
-      // Check if the target (or any ancestor) is a section container
-      const sectionEl = target.closest("[data-section-id]") as HTMLElement | null
-      if (sectionEl && detail.imageUrl) {
-        const sectionId = sectionEl.dataset.sectionId!
-        onSectionSelect(sectionId)
-        setSections(
-          sections.map((s) =>
-            s.id === sectionId
-              ? { ...s, styles: { ...(s.styles ?? {}), backgroundImage: detail.imageUrl } }
-              : s
-          )
-        )
-        return
-      }
-
-      // Fallback: if it landed inside the canvas, append to end
-      if (detail.sectionType) {
-        const sectionType = detail.sectionType as SectionType
-        const tempId = `section-${Date.now()}`
-        const newSection: Section = {
-          id: tempId,
-          type: sectionType,
-          data: getDefaultSectionData(sectionType),
-          styles: {},
-        }
-        setSections([...sections, newSection])
         setIsDraggingNewSection(false)
       }
     }
 
     document.addEventListener("touchdragstart", onTouchDragStart)
+    document.addEventListener("touchdragmove", onTouchDragMove)
     document.addEventListener("touchdragend", onTouchDragEnd)
     document.addEventListener("touchdrop", onTouchDrop)
     return () => {
       document.removeEventListener("touchdragstart", onTouchDragStart)
+      document.removeEventListener("touchdragmove", onTouchDragMove)
       document.removeEventListener("touchdragend", onTouchDragEnd)
       document.removeEventListener("touchdrop", onTouchDrop)
     }

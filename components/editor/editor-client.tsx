@@ -30,15 +30,22 @@ export function EditorClient({ userId }: EditorClientProps) {
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("canvas")
   const router = useRouter()
 
-  // Switch to canvas on mobile when a touch drag starts
+  // Switch to canvas on mobile when a touch drag starts.
+  // We listen on both "touchdragstart" (fired after the 10px threshold) AND
+  // "touchdragmove" so the canvas is guaranteed to be mounted before the
+  // coordinate-based drop detection runs.
   useEffect(() => {
-    const onTouchDragStart = () => {
+    const switchToCanvas = () => {
       if (typeof window !== "undefined" && window.innerWidth < 768) {
         setMobilePanel("canvas")
       }
     }
-    document.addEventListener("touchdragstart", onTouchDragStart)
-    return () => document.removeEventListener("touchdragstart", onTouchDragStart)
+    document.addEventListener("touchdragstart", switchToCanvas)
+    document.addEventListener("touchdragmove", switchToCanvas)
+    return () => {
+      document.removeEventListener("touchdragstart", switchToCanvas)
+      document.removeEventListener("touchdragmove", switchToCanvas)
+    }
   }, [])
 
   // Load or create website on mount
@@ -356,7 +363,7 @@ export function EditorClient({ userId }: EditorClientProps) {
       {/* Mobile layout: single panel with bottom tab bar */}
       <div className="flex md:hidden flex-1 overflow-hidden flex-col">
         {/* Panel content */}
-        <div className="flex-1 overflow-auto min-h-0">
+        <div className="flex-1 overflow-auto min-h-0 relative">
           {mobilePanel === "sections" && !isPreview && (
             <SectionsSelector
               userId={userId}
@@ -364,7 +371,10 @@ export function EditorClient({ userId }: EditorClientProps) {
               onSectionAdded={() => setMobilePanel("canvas")}
             />
           )}
-          {(mobilePanel === "canvas" || isPreview) && (
+          {/* Canvas is always rendered (but hidden when not active) so sectionRefs
+              stay populated and coordinate-based touch-drop detection works even
+              when the user is dragging from the Sections panel. */}
+          <div className={mobilePanel === "canvas" || isPreview ? "h-full" : "sr-only pointer-events-none absolute inset-0"}>
             <EditorCanvas
               sections={sections}
               setSections={persistSections}
@@ -374,7 +384,7 @@ export function EditorClient({ userId }: EditorClientProps) {
               onSectionSelect={handleSectionSelect}
               device={device}
             />
-          )}
+          </div>
           {mobilePanel === "style" && !isPreview && (
             <SelectionEditor
               selectedSection={selectedSection}

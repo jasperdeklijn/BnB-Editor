@@ -7,10 +7,11 @@
  * work on both desktop (mouse) and mobile (touch).
  *
  * Fires three CustomEvents on `document`:
- *   "touchdragstart"  — drag threshold crossed, payload in detail
- *   "touchdragend"    — finger lifted (regardless of drop)
- *   "touchdrop"       — fired on the element under the finger at release,
- *                       bubbles up so canvas listeners can catch it
+ *   "touchdragstart"     — drag threshold crossed, payload in detail
+ *   "touchdragmove"      — fires every frame during drag with { clientX, clientY }
+ *   "touchdragend"       — finger lifted (regardless of drop)
+ *   "touchdrop"          — fired on the element under the finger at release,
+ *                          bubbles up so canvas listeners can catch it
  */
 
 import { useRef } from "react"
@@ -95,6 +96,17 @@ export function useTouchDrag({ payload }: UseTouchDragOptions) {
       g.style.left = `${touch.clientX - 40}px`
       g.style.top  = `${touch.clientY - 36}px`
     }
+
+    // Emit a move event so the canvas can track hover drop index
+    document.dispatchEvent(
+      new CustomEvent("touchdragmove", {
+        detail: {
+          ...payload,
+          clientX: touch.clientX,
+          clientY: touch.clientY,
+        },
+      })
+    )
   }
 
   const onTouchEnd = (e: React.TouchEvent) => {
