@@ -101,12 +101,18 @@ function ImageCard({ name, url, collapsed, isDragging, onDragStart, onDragEnd }:
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       style={{ touchAction: "none" }}
-      className={`rounded-lg border border-border bg-card p-1 shadow-sm cursor-move hover:border-primary transition-all duration-200 select-none ${
-        isDragging ? "ring-4 ring-primary shadow-xl scale-105 bg-accent" : ""
+      className={`rounded-lg border bg-card p-1 shadow-sm cursor-move transition-all duration-200 select-none ${
+        isDragging
+          ? "border-primary ring-2 ring-primary/40 scale-95 opacity-60 shadow-none"
+          : "border-border hover:border-primary hover:shadow-md hover:scale-105"
       }`}
       title={name}
     >
-      <img src={url} alt={name} className="w-full h-16 object-cover rounded" />
+      <img
+        src={url}
+        alt={name}
+        className={`w-full h-16 object-cover rounded transition-all duration-200 ${isDragging ? "blur-[1px]" : ""}`}
+      />
       {!collapsed && (
         <div className="text-[10px] text-muted-foreground truncate text-center mt-1">{name}</div>
       )}
@@ -135,9 +141,26 @@ export function SectionsSelector({ className = "", userId, onSectionAdded }: Sec
   useEffect(() => {
     const handler = () => {
       if (onSectionAdded) onSectionAdded()
+      setDraggingImage(null)
+      setDraggingType(null)
+    }
+    const onStart = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { imageUrl?: string; sectionType?: string }
+      if (detail?.imageUrl) setDraggingImage(detail.imageUrl)
+      if (detail?.sectionType) setDraggingType(detail.sectionType as SectionType)
+    }
+    const onEnd = () => {
+      setDraggingImage(null)
+      setDraggingType(null)
     }
     document.addEventListener("touchdrop", handler)
-    return () => document.removeEventListener("touchdrop", handler)
+    document.addEventListener("touchdragstart", onStart)
+    document.addEventListener("touchdragend", onEnd)
+    return () => {
+      document.removeEventListener("touchdrop", handler)
+      document.removeEventListener("touchdragstart", onStart)
+      document.removeEventListener("touchdragend", onEnd)
+    }
   }, [onSectionAdded])
 
   // Fetch images from Supabase when switching to images tab
