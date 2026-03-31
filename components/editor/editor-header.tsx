@@ -209,18 +209,16 @@ export function EditorHeader({
                 </div>
               </div>
 
-              {/* Images link — only on smallest screens where button is hidden */}
-              <div className="sm:hidden border-b border-border">
-                <Link
-                  href="/images"
-                  role="menuitem"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
-                >
-                  <ImageIcon className="h-4 w-4 text-primary" />
-                  Images
-                </Link>
-              </div>
+              {/* Images link */}
+              <Link
+                href="/images"
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border-b border-border"
+              >
+                <ImageIcon className="h-4 w-4 text-primary" />
+                Images
+              </Link>
 
               {/* Profile link */}
               <Link

@@ -73,9 +73,9 @@ export function ImageUploadZone({ onUpload, isUploading, disabled }: ImageUpload
             disabled ? "cursor-not-allowed" : "cursor-pointer"
           }`}
         >
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <svg
-              className="h-6 w-6 text-muted-foreground"
+              className="h-6 w-6 text-primary"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

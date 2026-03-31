@@ -3,12 +3,11 @@
 import { useState, useCallback, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
 import Link from "next/link"
 import { ImageUploadZone } from "./image-upload-zone"
 import { ImageGrid } from "./image-grid"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, ImageIcon, HardDrive, Upload as UploadIcon } from "lucide-react"
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const MAX_TOTAL_SIZE = 50 * 1024 * 1024 // 50MB
@@ -200,34 +199,43 @@ export function ImagesClient({ userId }: ImagesClientProps) {
   const usagePercentage = (totalUsage / MAX_TOTAL_SIZE) * 100
 
   return (
-    <div className="flex min-h-svh flex-col bg-background">
-      <header className="flex items-center justify-between border-b bg-background px-6 py-3">
-        <div className="flex items-center gap-4">
-          <h1 className="text-lg font-semibold">BnB Builder</h1>
-          <span className="text-muted-foreground">/</span>
-          <span className="text-sm text-muted-foreground">My Images</span>
-        </div>
+    <div className="min-h-screen bg-background">
+      {/* Top bar — matches profile/bnb/rooms header style */}
+      <header className="flex items-center gap-4 border-b border-border bg-[var(--editor-header)] px-4 py-3 md:px-8">
+        <Button
+          variant="ghost"
+          size="sm"
+          asChild
+          className="text-[var(--editor-header-fg)]/80 hover:bg-[var(--editor-header-fg)]/10 hover:text-[var(--editor-header-fg)]"
+        >
+          <Link href="/editor">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Editor
+          </Link>
+        </Button>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/editor">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Editor
-            </Link>
-          </Button>
+          <ImageIcon className="h-5 w-5 text-[var(--editor-header-fg)]" />
+          <h1 className="text-lg font-semibold text-[var(--editor-header-fg)]">My Images</h1>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-8">
-        <div className="flex flex-col gap-8">
-          {/* Storage Usage */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Storage Usage</CardTitle>
-              <CardDescription>
-                {formatBytes(totalUsage)} of {formatBytes(MAX_TOTAL_SIZE)} used
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+      <main className="mx-auto w-full max-w-4xl px-4 py-10 md:px-8">
+        <div className="flex flex-col gap-6">
+
+          {/* Storage Usage card */}
+          <div className="rounded-xl border border-border bg-card shadow-sm">
+            <div className="flex items-center gap-3 border-b border-border px-6 py-4 bg-secondary/40 rounded-t-xl">
+              <div className="rounded-md bg-primary/15 p-1.5 text-primary">
+                <HardDrive className="h-4 w-4" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-foreground">Storage Usage</h2>
+                <p className="text-xs text-muted-foreground">
+                  {formatBytes(totalUsage)} of {formatBytes(MAX_TOTAL_SIZE)} used
+                </p>
+              </div>
+            </div>
+            <div className="px-6 py-4">
               <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                 <div
                   className="h-full bg-primary transition-all duration-300"
@@ -235,27 +243,45 @@ export function ImagesClient({ userId }: ImagesClientProps) {
                 />
               </div>
               <p className="mt-2 text-xs text-muted-foreground">
-                Max 5MB per file, 50MB total
+                Max 5 MB per file · 50 MB total
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          {/* Upload Zone */}
-          <ImageUploadZone
-            onUpload={handleUpload}
-            isUploading={isUploading}
-            disabled={totalUsage >= MAX_TOTAL_SIZE}
-          />
+          {/* Upload Zone card */}
+          <div className="rounded-xl border border-border bg-card shadow-sm">
+            <div className="flex items-center gap-3 border-b border-border px-6 py-4 bg-secondary/40 rounded-t-xl">
+              <div className="rounded-md bg-primary/15 p-1.5 text-primary">
+                <UploadIcon className="h-4 w-4" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-foreground">Upload Images</h2>
+                <p className="text-xs text-muted-foreground">PNG, JPG, GIF, WEBP up to 5 MB each</p>
+              </div>
+            </div>
+            <div className="p-6">
+              <ImageUploadZone
+                onUpload={handleUpload}
+                isUploading={isUploading}
+                disabled={totalUsage >= MAX_TOTAL_SIZE}
+              />
+            </div>
+          </div>
 
-          {/* Images Grid */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Your Images</CardTitle>
-              <CardDescription>
-                Click an image to copy its URL for use in the editor
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+          {/* Images Grid card */}
+          <div className="rounded-xl border border-border bg-card shadow-sm">
+            <div className="flex items-center gap-3 border-b border-border px-6 py-4 bg-secondary/40 rounded-t-xl">
+              <div className="rounded-md bg-primary/15 p-1.5 text-primary">
+                <ImageIcon className="h-4 w-4" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-foreground">Your Images</h2>
+                <p className="text-xs text-muted-foreground">
+                  Click an image to copy its URL for use in the editor
+                </p>
+              </div>
+            </div>
+            <div className="p-6">
               <ImageGrid
                 images={images}
                 isLoading={isLoading}
@@ -263,8 +289,9 @@ export function ImagesClient({ userId }: ImagesClientProps) {
                 onCopyUrl={(fileName) => handleCopyUrl(fileName)}
                 formatBytes={formatBytes}
               />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+
         </div>
       </main>
     </div>
