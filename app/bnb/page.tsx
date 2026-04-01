@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
+import { getOrCreateBnb } from "@/lib/supabase/bnb"
 import { BnbDetailsClient } from "@/components/bnb/bnb-details-client"
 
 export const metadata = {
@@ -15,10 +16,7 @@ export default async function BnbPage() {
     redirect("/auth/login")
   }
 
-  return (
-    <BnbDetailsClient
-      userId={data.user.id}
-      initialMeta={data.user.user_metadata ?? {}}
-    />
-  )
+  const bnb = await getOrCreateBnb()
+
+  return <BnbDetailsClient initialBnb={bnb} />
 }

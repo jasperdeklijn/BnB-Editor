@@ -2,6 +2,13 @@
 
 import { useState, useEffect, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
+import {
+  createRoom as apiCreateRoom,
+  updateRoom as apiUpdateRoom,
+  deleteRoom as apiDeleteRoom,
+  type Room,
+  type RoomInput,
+} from "@/lib/supabase/bnb"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -25,17 +32,9 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
-export interface Room {
-  id: string
-  name: string
-  description: string
-  price: string
-  maxGuests: number
-  images: string[]
-}
-
 interface RoomsClientProps {
   userId: string
+  bnbId: string
   initialRooms: Room[]
 }
 
@@ -73,13 +72,34 @@ function SidebarImageCard({ name, url, isDragging, onDragStart, onDragEnd }: Sid
 // ---- Room card ----
 interface RoomCardProps {
   room: Room
-  onUpdate: (id: string, field: keyof Room, value: unknown) => void
+  onUpdate: (id: string, updates: Partial<RoomInput>) => void
   onDelete: (id: string) => void
-  onRemoveImage: (roomId: string, imgUrl: string) => void
+  isSaving: boolean
 }
 
-function RoomCard({ room, onUpdate, onDelete, onRemoveImage }: RoomCardProps) {
+function RoomCard({ room, onUpdate, onDelete, isSaving }: RoomCardProps) {
   const [isDragOver, setIsDragOver] = useState(false)
+  const [localName, setLocalName] = useState(room.name)
+  const [localDescription, setLocalDescription] = useState(room.description ?? "")
+  const [localPrice, setLocalPrice] = useState(room.price ?? "")
+  const [localGuests, setLocalGuests] = useState(room.max_guests?.toString() ?? "")
+
+  // Sync local state when room prop changes (e.g., after save)
+  useEffect(() => {
+    setLocalName(room.name)
+    setLocalDescription(room.description ?? "")
+    setLocalPrice(room.price ?? "")
+    setLocalGuests(room.max_guests?.toString() ?? "")
+  }, [room])
+
+  const handleBlur = () => {
+    onUpdate(room.id, {
+      name: localName,
+      description: localDescription || null,
+      price: localPrice || null,
+      max_guests: localGuests ? parseInt(localGuests, 10) : null,
+    })
+  }
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -94,8 +114,12 @@ function RoomCard({ room, onUpdate, onDelete, onRemoveImage }: RoomCardProps) {
     setIsDragOver(false)
     const imageUrl = e.dataTransfer.getData("imageUrl")
     if (imageUrl && !room.images.includes(imageUrl)) {
-      onUpdate(room.id, "images", [...room.images, imageUrl])
+      onUpdate(room.id, { images: [...room.images, imageUrl] })
     }
+  }
+
+  const removeImage = (imgUrl: string) => {
+    onUpdate(room.id, { images: room.images.filter((u) => u !== imgUrl) })
   }
 
   // Touch drop support
@@ -107,7 +131,7 @@ function RoomCard({ room, onUpdate, onDelete, onRemoveImage }: RoomCardProps) {
       const custom = e as CustomEvent
       const imageUrl = custom.detail?.imageUrl
       if (imageUrl && !room.images.includes(imageUrl)) {
-        onUpdate(room.id, "images", [...room.images, imageUrl])
+        onUpdate(room.id, { images: [...room.images, imageUrl] })
       }
     }
     el.addEventListener("touchdrop", handler)
@@ -121,13 +145,16 @@ function RoomCard({ room, onUpdate, onDelete, onRemoveImage }: RoomCardProps) {
         <div className="flex items-center gap-2">
           <GripVertical className="h-4 w-4 text-muted-foreground/50" />
           <BedDouble className="h-4 w-4 text-primary" />
-          <span className="font-semibold text-foreground truncate max-w-[200px]">{room.name || "Unnamed Room"}</span>
+          <span className="font-semibold text-foreground truncate max-w-[200px]">
+            {room.name || "Unnamed Room"}
+          </span>
         </div>
         <Button
           variant="ghost"
           size="icon"
           onClick={() => onDelete(room.id)}
           className="h-7 w-7 text-destructive hover:bg-destructive/10 flex-shrink-0"
+          disabled={isSaving}
         >
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
@@ -136,27 +163,35 @@ function RoomCard({ room, onUpdate, onDelete, onRemoveImage }: RoomCardProps) {
       <div className="p-5 space-y-4">
         {/* Name */}
         <div className="space-y-1.5">
-          <Label htmlFor={`name-${room.id}`} className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          <Label
+            htmlFor={`name-${room.id}`}
+            className="text-xs font-medium text-muted-foreground uppercase tracking-wide"
+          >
             Room Name
           </Label>
           <Input
             id={`name-${room.id}`}
             placeholder="Deluxe Suite"
-            value={room.name}
-            onChange={(e) => onUpdate(room.id, "name", e.target.value)}
+            value={localName}
+            onChange={(e) => setLocalName(e.target.value)}
+            onBlur={handleBlur}
           />
         </div>
 
         {/* Description */}
         <div className="space-y-1.5">
-          <Label htmlFor={`desc-${room.id}`} className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          <Label
+            htmlFor={`desc-${room.id}`}
+            className="text-xs font-medium text-muted-foreground uppercase tracking-wide"
+          >
             Description
           </Label>
           <Textarea
             id={`desc-${room.id}`}
             placeholder="Spacious room with a sea view and private bathroom..."
-            value={room.description}
-            onChange={(e) => onUpdate(room.id, "description", e.target.value)}
+            value={localDescription}
+            onChange={(e) => setLocalDescription(e.target.value)}
+            onBlur={handleBlur}
             rows={3}
             className="resize-none"
           />
@@ -165,19 +200,27 @@ function RoomCard({ room, onUpdate, onDelete, onRemoveImage }: RoomCardProps) {
         {/* Price + guests row */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label htmlFor={`price-${room.id}`} className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <Label
+              htmlFor={`price-${room.id}`}
+              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide"
+            >
               <DollarSign className="h-3 w-3 text-primary" />
               Price / Night
             </Label>
             <Input
               id={`price-${room.id}`}
-              placeholder="€120"
-              value={room.price}
-              onChange={(e) => onUpdate(room.id, "price", e.target.value)}
+              type="text"
+              placeholder="120"
+              value={localPrice}
+              onChange={(e) => setLocalPrice(e.target.value)}
+              onBlur={handleBlur}
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor={`guests-${room.id}`} className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <Label
+              htmlFor={`guests-${room.id}`}
+              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide"
+            >
               <Users className="h-3 w-3 text-primary" />
               Max Guests
             </Label>
@@ -186,8 +229,9 @@ function RoomCard({ room, onUpdate, onDelete, onRemoveImage }: RoomCardProps) {
               type="number"
               min="1"
               placeholder="2"
-              value={room.maxGuests || ""}
-              onChange={(e) => onUpdate(room.id, "maxGuests", Number(e.target.value))}
+              value={localGuests}
+              onChange={(e) => setLocalGuests(e.target.value)}
+              onBlur={handleBlur}
             />
           </div>
         </div>
@@ -225,7 +269,7 @@ function RoomCard({ room, onUpdate, onDelete, onRemoveImage }: RoomCardProps) {
                     <img src={url} alt="" className="w-full h-full object-cover" />
                     <button
                       type="button"
-                      onClick={() => onRemoveImage(room.id, url)}
+                      onClick={() => removeImage(url)}
                       className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
                       aria-label="Remove image"
                     >
@@ -248,7 +292,7 @@ function RoomCard({ room, onUpdate, onDelete, onRemoveImage }: RoomCardProps) {
 }
 
 // ---- Main client component ----
-export function RoomsClient({ userId, initialRooms }: RoomsClientProps) {
+export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
   const [rooms, setRooms] = useState<Room[]>(initialRooms)
   const [images, setImages] = useState<{ name: string; url: string }[]>([])
   const [isLoadingImages, setIsLoadingImages] = useState(false)
@@ -264,7 +308,10 @@ export function RoomsClient({ userId, initialRooms }: RoomsClientProps) {
       .from("user-images")
       .list(userId, { limit: 100, sortBy: { column: "created_at", order: "desc" } })
       .then(({ data, error }) => {
-        if (error || !data) { setIsLoadingImages(false); return }
+        if (error || !data) {
+          setIsLoadingImages(false)
+          return
+        }
         const validFiles = data.filter((f) => f.name !== ".emptyFolderPlaceholder")
         const pics = validFiles
           .map((file) => {
@@ -279,46 +326,55 @@ export function RoomsClient({ userId, initialRooms }: RoomsClientProps) {
       })
   }, [userId])
 
-  const createRoom = () => {
-    const newRoom: Room = {
-      id: `room-${Date.now()}`,
-      name: "",
-      description: "",
-      price: "",
-      maxGuests: 2,
-      images: [],
-    }
-    setRooms((prev) => [...prev, newRoom])
-  }
-
-  const updateRoom = (id: string, field: keyof Room, value: unknown) => {
-    setRooms((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, [field]: value } : r))
-    )
-  }
-
-  const deleteRoom = (id: string) => {
-    setRooms((prev) => prev.filter((r) => r.id !== id))
-  }
-
-  const removeImage = (roomId: string, imgUrl: string) => {
-    setRooms((prev) =>
-      prev.map((r) =>
-        r.id === roomId ? { ...r, images: r.images.filter((u) => u !== imgUrl) } : r
-      )
-    )
-  }
-
-  const handleSave = async () => {
+  const handleCreateRoom = async () => {
     setIsSaving(true)
-    const supabase = createClient()
-    const { error } = await supabase.auth.updateUser({ data: { bnb_rooms: rooms } })
-    setIsSaving(false)
-    if (error) {
-      toast.error("Failed to save rooms")
-      return
+    try {
+      const newRoom = await apiCreateRoom(bnbId, {
+        name: "New Room",
+        description: null,
+        price: null,
+        max_guests: 2,
+        images: [],
+        position: rooms.length,
+      })
+      setRooms((prev) => [...prev, newRoom])
+      toast.success("Room created")
+    } catch (err) {
+      console.error(err)
+      toast.error("Failed to create room")
+    } finally {
+      setIsSaving(false)
     }
-    toast.success("Rooms saved successfully")
+  }
+
+  const handleUpdateRoom = async (id: string, updates: Partial<RoomInput>) => {
+    // Optimistic update
+    setRooms((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, ...updates } : r))
+    )
+
+    try {
+      const updated = await apiUpdateRoom(id, updates)
+      setRooms((prev) => prev.map((r) => (r.id === id ? updated : r)))
+    } catch (err) {
+      console.error(err)
+      toast.error("Failed to update room")
+    }
+  }
+
+  const handleDeleteRoom = async (id: string) => {
+    // Optimistic delete
+    const prev = rooms
+    setRooms((r) => r.filter((room) => room.id !== id))
+
+    try {
+      await apiDeleteRoom(id)
+      toast.success("Room deleted")
+    } catch (err) {
+      console.error(err)
+      setRooms(prev)
+      toast.error("Failed to delete room")
+    }
   }
 
   const handleImageDragStart = (e: React.DragEvent, url: string) => {
@@ -357,28 +413,25 @@ export function RoomsClient({ userId, initialRooms }: RoomsClientProps) {
           {/* auto-save indicator */}
           <span className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--editor-header-fg)]/70">
             {isSaving ? (
-              <><Loader2 className="h-3.5 w-3.5 animate-spin" />Saving…</>
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Saving…
+              </>
             ) : (
-              <><CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />Saved</>
+              <>
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />
+                Auto-saved
+              </>
             )}
           </span>
           <Button
             size="sm"
-            variant="ghost"
-            onClick={createRoom}
-            className="text-[var(--editor-header-fg)]/80 hover:bg-[var(--editor-header-fg)]/10 hover:text-[var(--editor-header-fg)] border border-[var(--editor-header-accent)]"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Room
-          </Button>
-          <Button
-            size="sm"
-            onClick={handleSave}
+            onClick={handleCreateRoom}
             disabled={isSaving}
             className="bg-[var(--editor-header-fg)] text-[var(--editor-header)] hover:bg-[var(--editor-header-fg)]/90"
           >
-            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1.5" />}
-            Save
+            <Plus className="mr-2 h-4 w-4" />
+            Add Room
           </Button>
         </div>
       </header>
@@ -453,7 +506,7 @@ export function RoomsClient({ userId, initialRooms }: RoomsClientProps) {
                   Click &ldquo;Add Room&rdquo; to create your first room
                 </p>
               </div>
-              <Button onClick={createRoom} className="mt-2">
+              <Button onClick={handleCreateRoom} disabled={isSaving} className="mt-2">
                 <Plus className="mr-2 h-4 w-4" />
                 Add First Room
               </Button>
@@ -464,17 +517,18 @@ export function RoomsClient({ userId, initialRooms }: RoomsClientProps) {
                 <RoomCard
                   key={room.id}
                   room={room}
-                  onUpdate={updateRoom}
-                  onDelete={deleteRoom}
-                  onRemoveImage={removeImage}
+                  onUpdate={handleUpdateRoom}
+                  onDelete={handleDeleteRoom}
+                  isSaving={isSaving}
                 />
               ))}
 
               {/* Add room card */}
               <button
                 type="button"
-                onClick={createRoom}
-                className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border/60 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 min-h-[200px] text-muted-foreground hover:text-primary group"
+                onClick={handleCreateRoom}
+                disabled={isSaving}
+                className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border/60 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 min-h-[200px] text-muted-foreground hover:text-primary group disabled:opacity-50"
               >
                 <div className="rounded-full bg-muted group-hover:bg-primary/10 p-3 transition-colors">
                   <Plus className="h-6 w-6" />

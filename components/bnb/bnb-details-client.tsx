@@ -1,8 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { updateBnb, type BnbDetails } from "@/lib/supabase/bnb"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -24,71 +23,53 @@ import {
 import Link from "next/link"
 
 interface BnbDetailsClientProps {
-  userId: string
-  initialMeta: Record<string, unknown>
+  initialBnb: BnbDetails
 }
 
-type BnbDetails = {
-  bnb_name: string
-  bnb_tagline: string
-  bnb_description: string
-  bnb_street: string
-  bnb_city: string
-  bnb_postal: string
-  bnb_country: string
-  bnb_checkin: string
-  bnb_checkout: string
-  bnb_max_guests: string
-  bnb_languages: string
-  bnb_website: string
-}
-
-export function BnbDetailsClient({ userId, initialMeta }: BnbDetailsClientProps) {
-  const meta = initialMeta as Partial<BnbDetails>
-
-  const [bnbName, setBnbName] = useState(meta.bnb_name ?? "")
-  const [tagline, setTagline] = useState(meta.bnb_tagline ?? "")
-  const [description, setDescription] = useState(meta.bnb_description ?? "")
-  const [street, setStreet] = useState(meta.bnb_street ?? "")
-  const [city, setCity] = useState(meta.bnb_city ?? "")
-  const [postal, setPostal] = useState(meta.bnb_postal ?? "")
-  const [country, setCountry] = useState(meta.bnb_country ?? "")
-  const [checkin, setCheckin] = useState(meta.bnb_checkin ?? "15:00")
-  const [checkout, setCheckout] = useState(meta.bnb_checkout ?? "11:00")
-  const [maxGuests, setMaxGuests] = useState(meta.bnb_max_guests ?? "")
-  const [languages, setLanguages] = useState(meta.bnb_languages ?? "")
-  const [website, setWebsite] = useState(meta.bnb_website ?? "")
+export function BnbDetailsClient({ initialBnb }: BnbDetailsClientProps) {
+  const [bnb, setBnb] = useState<BnbDetails>(initialBnb)
   const [isSaving, setIsSaving] = useState(false)
+
+  // Local form state (matching actual DB columns)
+  const [name, setName] = useState(bnb.name ?? "")
+  const [tagline, setTagline] = useState(bnb.tagline ?? "")
+  const [description, setDescription] = useState(bnb.description ?? "")
+  const [street, setStreet] = useState(bnb.street ?? "")
+  const [city, setCity] = useState(bnb.city ?? "")
+  const [postal, setPostal] = useState(bnb.postal ?? "")
+  const [country, setCountry] = useState(bnb.country ?? "")
+  const [checkinTime, setCheckinTime] = useState(bnb.checkin_time ?? "15:00")
+  const [checkoutTime, setCheckoutTime] = useState(bnb.checkout_time ?? "11:00")
+  const [maxGuests, setMaxGuests] = useState(bnb.max_guests?.toString() ?? "")
+  const [languages, setLanguages] = useState(bnb.languages ?? "")
+  const [websiteUrl, setWebsiteUrl] = useState(bnb.website_url ?? "")
 
   const handleSave = async () => {
     setIsSaving(true)
-    const supabase = createClient()
 
-    const { error } = await supabase.auth.updateUser({
-      data: {
-        bnb_name: bnbName,
-        bnb_tagline: tagline,
-        bnb_description: description,
-        bnb_street: street,
-        bnb_city: city,
-        bnb_postal: postal,
-        bnb_country: country,
-        bnb_checkin: checkin,
-        bnb_checkout: checkout,
-        bnb_max_guests: maxGuests,
-        bnb_languages: languages,
-        bnb_website: website,
-      },
-    })
-
-    setIsSaving(false)
-
-    if (error) {
+    try {
+      const updated = await updateBnb(bnb.id, {
+        name,
+        tagline: tagline || null,
+        description: description || null,
+        street: street || null,
+        city: city || null,
+        postal: postal || null,
+        country: country || null,
+        checkin_time: checkinTime || null,
+        checkout_time: checkoutTime || null,
+        max_guests: maxGuests ? parseInt(maxGuests, 10) : null,
+        languages: languages || null,
+        website_url: websiteUrl || null,
+      })
+      setBnb(updated)
+      toast.success("BnB details saved")
+    } catch (err) {
+      console.error(err)
       toast.error("Failed to save BnB details")
-      return
+    } finally {
+      setIsSaving(false)
     }
-
-    toast.success("BnB details saved")
   }
 
   return (
@@ -113,7 +94,6 @@ export function BnbDetailsClient({ userId, initialMeta }: BnbDetailsClientProps)
       </header>
 
       <main className="mx-auto max-w-2xl px-4 py-10 md:px-8 space-y-6">
-
         {/* General info card */}
         <div className="rounded-xl border border-border bg-card shadow-sm">
           <div className="flex items-center gap-3 border-b border-border px-6 py-4 bg-secondary/40 rounded-t-xl">
@@ -122,20 +102,20 @@ export function BnbDetailsClient({ userId, initialMeta }: BnbDetailsClientProps)
             </div>
             <div>
               <h2 className="font-semibold text-foreground">General Information</h2>
-              <p className="text-xs text-muted-foreground">Your property name and description</p>
+              <p className="text-xs text-muted-foreground">Your property name and tagline</p>
             </div>
           </div>
           <div className="p-6 space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="bnbName" className="flex items-center gap-2 text-sm font-medium">
+              <Label htmlFor="name" className="flex items-center gap-2 text-sm font-medium">
                 <Home className="h-3.5 w-3.5 text-primary" />
                 Property Name
               </Label>
               <Input
-                id="bnbName"
+                id="name"
                 placeholder="Sunset Villa BnB"
-                value={bnbName}
-                onChange={(e) => setBnbName(e.target.value)}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
               />
             </div>
             <div className="space-y-2">
@@ -157,11 +137,10 @@ export function BnbDetailsClient({ userId, initialMeta }: BnbDetailsClientProps)
               </Label>
               <Textarea
                 id="description"
-                placeholder="Tell guests what makes your BnB special..."
+                placeholder="Tell guests about your property..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                rows={4}
-                className="resize-none"
+                rows={3}
               />
             </div>
           </div>
@@ -180,7 +159,9 @@ export function BnbDetailsClient({ userId, initialMeta }: BnbDetailsClientProps)
           </div>
           <div className="p-6 space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="street" className="text-sm font-medium">Street Address</Label>
+              <Label htmlFor="street" className="text-sm font-medium">
+                Street Address
+              </Label>
               <Input
                 id="street"
                 placeholder="123 Harbour Lane"
@@ -190,7 +171,9 @@ export function BnbDetailsClient({ userId, initialMeta }: BnbDetailsClientProps)
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="city" className="text-sm font-medium">City</Label>
+                <Label htmlFor="city" className="text-sm font-medium">
+                  City
+                </Label>
                 <Input
                   id="city"
                   placeholder="Amsterdam"
@@ -199,7 +182,9 @@ export function BnbDetailsClient({ userId, initialMeta }: BnbDetailsClientProps)
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="postal" className="text-sm font-medium">Postal Code</Label>
+                <Label htmlFor="postal" className="text-sm font-medium">
+                  Postal Code
+                </Label>
                 <Input
                   id="postal"
                   placeholder="1234 AB"
@@ -237,27 +222,27 @@ export function BnbDetailsClient({ userId, initialMeta }: BnbDetailsClientProps)
           <div className="p-6 space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="checkin" className="flex items-center gap-2 text-sm font-medium">
+                <Label htmlFor="checkinTime" className="flex items-center gap-2 text-sm font-medium">
                   <Clock className="h-3.5 w-3.5 text-primary" />
                   Check-in Time
                 </Label>
                 <Input
-                  id="checkin"
+                  id="checkinTime"
                   type="time"
-                  value={checkin}
-                  onChange={(e) => setCheckin(e.target.value)}
+                  value={checkinTime}
+                  onChange={(e) => setCheckinTime(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="checkout" className="flex items-center gap-2 text-sm font-medium">
+                <Label htmlFor="checkoutTime" className="flex items-center gap-2 text-sm font-medium">
                   <Clock className="h-3.5 w-3.5 text-accent" />
                   Check-out Time
                 </Label>
                 <Input
-                  id="checkout"
+                  id="checkoutTime"
                   type="time"
-                  value={checkout}
-                  onChange={(e) => setCheckout(e.target.value)}
+                  value={checkoutTime}
+                  onChange={(e) => setCheckoutTime(e.target.value)}
                 />
               </div>
             </div>
@@ -305,16 +290,16 @@ export function BnbDetailsClient({ userId, initialMeta }: BnbDetailsClientProps)
               <p className="text-xs text-muted-foreground">Separate with commas</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="website" className="flex items-center gap-2 text-sm font-medium">
+              <Label htmlFor="websiteUrl" className="flex items-center gap-2 text-sm font-medium">
                 <Globe className="h-3.5 w-3.5 text-primary" />
                 Booking / Website URL
               </Label>
               <Input
-                id="website"
+                id="websiteUrl"
                 type="url"
                 placeholder="https://yourbooking.com"
-                value={website}
-                onChange={(e) => setWebsite(e.target.value)}
+                value={websiteUrl}
+                onChange={(e) => setWebsiteUrl(e.target.value)}
               />
             </div>
           </div>

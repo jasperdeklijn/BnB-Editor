@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { RoomsClient, type Room } from "@/components/rooms/rooms-client"
+import { getOrCreateBnb, getRooms } from "@/lib/supabase/bnb"
+import { RoomsClient } from "@/components/rooms/rooms-client"
 
 export const metadata = {
   title: "Rooms | BnB Builder",
@@ -15,7 +16,8 @@ export default async function RoomsPage() {
     redirect("/auth/login")
   }
 
-  const initialRooms: Room[] = (data.user.user_metadata?.bnb_rooms as Room[]) ?? []
+  const bnb = await getOrCreateBnb()
+  const rooms = await getRooms(bnb.id)
 
-  return <RoomsClient userId={data.user.id} initialRooms={initialRooms} />
+  return <RoomsClient userId={data.user.id} bnbId={bnb.id} initialRooms={rooms} />
 }
