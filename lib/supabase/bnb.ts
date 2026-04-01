@@ -94,6 +94,15 @@ export async function updateBnb(
 
 // ----- Rooms CRUD -----
 
+// Helper to ensure images is always an array
+function parseRoomImages(data: Record<string, unknown>): Room {
+  const images = data.images
+  return {
+    ...data,
+    images: Array.isArray(images) ? images : [],
+  } as Room
+}
+
 /** Get all rooms for a BnB */
 export async function getRooms(bnbId: string): Promise<Room[]> {
   const supabase = await createClient()
@@ -105,21 +114,32 @@ export async function getRooms(bnbId: string): Promise<Room[]> {
     .order("position", { ascending: true })
 
   if (error) throw error
-  return (data ?? []) as Room[]
+  return (data ?? []).map(parseRoomImages)
 }
 
 /** Create a new room */
 export async function createRoom(bnbId: string, room: RoomInput): Promise<Room> {
   const supabase = await createClient()
 
+  const payload = {
+    bnb_id: bnbId,
+    name: room.name,
+    description: room.description,
+    price: room.price,
+    max_guests: room.max_guests,
+    images: room.images ?? [],
+    position: room.position,
+  }
+
   const { data, error } = await supabase
     .from("rooms")
-    .insert({ ...room, bnb_id: bnbId })
+    .insert(payload)
     .select("*")
     .single()
 
   if (error) throw error
-  return data as Room
+  
+  return parseRoomImages(data)
 }
 
 /** Update a room */
@@ -134,7 +154,7 @@ export async function updateRoom(roomId: string, updates: Partial<RoomInput>): P
     .single()
 
   if (error) throw error
-  return data as Room
+  return parseRoomImages(data)
 }
 
 /** Delete a room */
