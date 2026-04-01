@@ -81,14 +81,14 @@ function RoomCard({ room, onUpdate, onDelete, isSaving }: RoomCardProps) {
   const [isDragOver, setIsDragOver] = useState(false)
   const [localName, setLocalName] = useState(room.name)
   const [localDescription, setLocalDescription] = useState(room.description ?? "")
-  const [localPrice, setLocalPrice] = useState(room.price_per_night?.toString() ?? "")
+  const [localPrice, setLocalPrice] = useState(room.price ?? "")
   const [localGuests, setLocalGuests] = useState(room.max_guests?.toString() ?? "")
 
   // Sync local state when room prop changes (e.g., after save)
   useEffect(() => {
     setLocalName(room.name)
     setLocalDescription(room.description ?? "")
-    setLocalPrice(room.price_per_night?.toString() ?? "")
+    setLocalPrice(room.price ?? "")
     setLocalGuests(room.max_guests?.toString() ?? "")
   }, [room])
 
@@ -96,7 +96,7 @@ function RoomCard({ room, onUpdate, onDelete, isSaving }: RoomCardProps) {
     onUpdate(room.id, {
       name: localName,
       description: localDescription || null,
-      price_per_night: localPrice ? parseFloat(localPrice) : null,
+      price: localPrice || null,
       max_guests: localGuests ? parseInt(localGuests, 10) : null,
     })
   }
@@ -209,8 +209,7 @@ function RoomCard({ room, onUpdate, onDelete, isSaving }: RoomCardProps) {
             </Label>
             <Input
               id={`price-${room.id}`}
-              type="number"
-              step="0.01"
+              type="text"
               placeholder="120"
               value={localPrice}
               onChange={(e) => setLocalPrice(e.target.value)}
@@ -333,10 +332,10 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
       const newRoom = await apiCreateRoom(bnbId, {
         name: "New Room",
         description: null,
-        price_per_night: null,
+        price: null,
         max_guests: 2,
         images: [],
-        display_order: rooms.length,
+        position: rooms.length,
       })
       setRooms((prev) => [...prev, newRoom])
       toast.success("Room created")

@@ -30,24 +30,19 @@ export function BnbDetailsClient({ initialBnb }: BnbDetailsClientProps) {
   const [bnb, setBnb] = useState<BnbDetails>(initialBnb)
   const [isSaving, setIsSaving] = useState(false)
 
-  // Local form state
+  // Local form state (matching actual DB columns)
   const [name, setName] = useState(bnb.name ?? "")
   const [tagline, setTagline] = useState(bnb.tagline ?? "")
-  const [addressLine1, setAddressLine1] = useState(bnb.address_line1 ?? "")
-  const [addressLine2, setAddressLine2] = useState(bnb.address_line2 ?? "")
+  const [description, setDescription] = useState(bnb.description ?? "")
+  const [street, setStreet] = useState(bnb.street ?? "")
   const [city, setCity] = useState(bnb.city ?? "")
-  const [state, setState] = useState(bnb.state ?? "")
-  const [postalCode, setPostalCode] = useState(bnb.postal_code ?? "")
+  const [postal, setPostal] = useState(bnb.postal ?? "")
   const [country, setCountry] = useState(bnb.country ?? "")
-  const [checkInTime, setCheckInTime] = useState(bnb.check_in_time ?? "15:00")
-  const [checkOutTime, setCheckOutTime] = useState(bnb.check_out_time ?? "11:00")
+  const [checkinTime, setCheckinTime] = useState(bnb.checkin_time ?? "15:00")
+  const [checkoutTime, setCheckoutTime] = useState(bnb.checkout_time ?? "11:00")
   const [maxGuests, setMaxGuests] = useState(bnb.max_guests?.toString() ?? "")
-  const [languages, setLanguages] = useState(() => {
-    if (!bnb.languages) return ""
-    if (Array.isArray(bnb.languages)) return bnb.languages.join(", ")
-    return String(bnb.languages)
-  })
-  const [bookingUrl, setBookingUrl] = useState(bnb.booking_url ?? "")
+  const [languages, setLanguages] = useState(bnb.languages ?? "")
+  const [websiteUrl, setWebsiteUrl] = useState(bnb.website_url ?? "")
 
   const handleSave = async () => {
     setIsSaving(true)
@@ -56,20 +51,16 @@ export function BnbDetailsClient({ initialBnb }: BnbDetailsClientProps) {
       const updated = await updateBnb(bnb.id, {
         name,
         tagline: tagline || null,
-        address_line1: addressLine1 || null,
-        address_line2: addressLine2 || null,
+        description: description || null,
+        street: street || null,
         city: city || null,
-        state: state || null,
-        postal_code: postalCode || null,
+        postal: postal || null,
         country: country || null,
-        check_in_time: checkInTime || null,
-        check_out_time: checkOutTime || null,
+        checkin_time: checkinTime || null,
+        checkout_time: checkoutTime || null,
         max_guests: maxGuests ? parseInt(maxGuests, 10) : null,
-        languages: languages
-          .split(",")
-          .map((l) => l.trim())
-          .filter(Boolean),
-        booking_url: bookingUrl || null,
+        languages: languages || null,
+        website_url: websiteUrl || null,
       })
       setBnb(updated)
       toast.success("BnB details saved")
@@ -139,6 +130,19 @@ export function BnbDetailsClient({ initialBnb }: BnbDetailsClientProps) {
                 onChange={(e) => setTagline(e.target.value)}
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="description" className="flex items-center gap-2 text-sm font-medium">
+                <FileText className="h-3.5 w-3.5 text-primary" />
+                Description
+              </Label>
+              <Textarea
+                id="description"
+                placeholder="Tell guests about your property..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+              />
+            </div>
           </div>
         </div>
 
@@ -155,25 +159,14 @@ export function BnbDetailsClient({ initialBnb }: BnbDetailsClientProps) {
           </div>
           <div className="p-6 space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="addressLine1" className="text-sm font-medium">
+              <Label htmlFor="street" className="text-sm font-medium">
                 Street Address
               </Label>
               <Input
-                id="addressLine1"
+                id="street"
                 placeholder="123 Harbour Lane"
-                value={addressLine1}
-                onChange={(e) => setAddressLine1(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="addressLine2" className="text-sm font-medium">
-                Address Line 2
-              </Label>
-              <Input
-                id="addressLine2"
-                placeholder="Apt, suite, floor (optional)"
-                value={addressLine2}
-                onChange={(e) => setAddressLine2(e.target.value)}
+                value={street}
+                onChange={(e) => setStreet(e.target.value)}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -189,41 +182,28 @@ export function BnbDetailsClient({ initialBnb }: BnbDetailsClientProps) {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="state" className="text-sm font-medium">
-                  State / Province
-                </Label>
-                <Input
-                  id="state"
-                  placeholder="North Holland"
-                  value={state}
-                  onChange={(e) => setState(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="postalCode" className="text-sm font-medium">
+                <Label htmlFor="postal" className="text-sm font-medium">
                   Postal Code
                 </Label>
                 <Input
-                  id="postalCode"
+                  id="postal"
                   placeholder="1234 AB"
-                  value={postalCode}
-                  onChange={(e) => setPostalCode(e.target.value)}
+                  value={postal}
+                  onChange={(e) => setPostal(e.target.value)}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="country" className="flex items-center gap-2 text-sm font-medium">
-                  <Globe className="h-3.5 w-3.5 text-primary" />
-                  Country
-                </Label>
-                <Input
-                  id="country"
-                  placeholder="Netherlands"
-                  value={country}
-                  onChange={(e) => setCountry(e.target.value)}
-                />
-              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="country" className="flex items-center gap-2 text-sm font-medium">
+                <Globe className="h-3.5 w-3.5 text-primary" />
+                Country
+              </Label>
+              <Input
+                id="country"
+                placeholder="Netherlands"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+              />
             </div>
           </div>
         </div>
@@ -242,27 +222,27 @@ export function BnbDetailsClient({ initialBnb }: BnbDetailsClientProps) {
           <div className="p-6 space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="checkInTime" className="flex items-center gap-2 text-sm font-medium">
+                <Label htmlFor="checkinTime" className="flex items-center gap-2 text-sm font-medium">
                   <Clock className="h-3.5 w-3.5 text-primary" />
                   Check-in Time
                 </Label>
                 <Input
-                  id="checkInTime"
+                  id="checkinTime"
                   type="time"
-                  value={checkInTime}
-                  onChange={(e) => setCheckInTime(e.target.value)}
+                  value={checkinTime}
+                  onChange={(e) => setCheckinTime(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="checkOutTime" className="flex items-center gap-2 text-sm font-medium">
+                <Label htmlFor="checkoutTime" className="flex items-center gap-2 text-sm font-medium">
                   <Clock className="h-3.5 w-3.5 text-accent" />
                   Check-out Time
                 </Label>
                 <Input
-                  id="checkOutTime"
+                  id="checkoutTime"
                   type="time"
-                  value={checkOutTime}
-                  onChange={(e) => setCheckOutTime(e.target.value)}
+                  value={checkoutTime}
+                  onChange={(e) => setCheckoutTime(e.target.value)}
                 />
               </div>
             </div>
@@ -310,16 +290,16 @@ export function BnbDetailsClient({ initialBnb }: BnbDetailsClientProps) {
               <p className="text-xs text-muted-foreground">Separate with commas</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="bookingUrl" className="flex items-center gap-2 text-sm font-medium">
+              <Label htmlFor="websiteUrl" className="flex items-center gap-2 text-sm font-medium">
                 <Globe className="h-3.5 w-3.5 text-primary" />
                 Booking / Website URL
               </Label>
               <Input
-                id="bookingUrl"
+                id="websiteUrl"
                 type="url"
                 placeholder="https://yourbooking.com"
-                value={bookingUrl}
-                onChange={(e) => setBookingUrl(e.target.value)}
+                value={websiteUrl}
+                onChange={(e) => setWebsiteUrl(e.target.value)}
               />
             </div>
           </div>

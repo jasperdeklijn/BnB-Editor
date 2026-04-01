@@ -2,24 +2,23 @@
 
 import { createClient } from "@/lib/supabase/server"
 
-// ----- Types -----
+// ----- Types (matching actual DB schema) -----
 
 export interface BnbDetails {
   id: string
   user_id: string
   name: string
   tagline: string | null
-  address_line1: string | null
-  address_line2: string | null
+  description: string | null
+  street: string | null
   city: string | null
-  state: string | null
-  postal_code: string | null
+  postal: string | null
   country: string | null
-  check_in_time: string | null
-  check_out_time: string | null
+  checkin_time: string | null
+  checkout_time: string | null
   max_guests: number | null
-  languages: string[]
-  booking_url: string | null
+  languages: string | null
+  website_url: string | null
   created_at: string
   updated_at: string
 }
@@ -29,10 +28,10 @@ export interface Room {
   bnb_id: string
   name: string
   description: string | null
-  price_per_night: number | null
+  price: string | null
   max_guests: number | null
   images: string[]
-  display_order: number
+  position: number
   created_at: string
   updated_at: string
 }
@@ -103,7 +102,7 @@ export async function getRooms(bnbId: string): Promise<Room[]> {
     .from("rooms")
     .select("*")
     .eq("bnb_id", bnbId)
-    .order("display_order", { ascending: true })
+    .order("position", { ascending: true })
 
   if (error) throw error
   return (data ?? []) as Room[]
@@ -147,17 +146,17 @@ export async function deleteRoom(roomId: string): Promise<void> {
   if (error) throw error
 }
 
-/** Reorder rooms (bulk update display_order) */
+/** Reorder rooms (bulk update position) */
 export async function reorderRooms(
-  roomOrders: { id: string; display_order: number }[]
+  roomOrders: { id: string; position: number }[]
 ): Promise<void> {
   const supabase = await createClient()
 
-  // Update each room's display_order
-  for (const { id, display_order } of roomOrders) {
+  // Update each room's position
+  for (const { id, position } of roomOrders) {
     const { error } = await supabase
       .from("rooms")
-      .update({ display_order })
+      .update({ position })
       .eq("id", id)
 
     if (error) throw error
