@@ -42,7 +42,11 @@ export function BnbDetailsClient({ initialBnb }: BnbDetailsClientProps) {
   const [checkInTime, setCheckInTime] = useState(bnb.check_in_time ?? "15:00")
   const [checkOutTime, setCheckOutTime] = useState(bnb.check_out_time ?? "11:00")
   const [maxGuests, setMaxGuests] = useState(bnb.max_guests?.toString() ?? "")
-  const [languages, setLanguages] = useState(bnb.languages?.join(", ") ?? "")
+  const [languages, setLanguages] = useState(() => {
+    if (!bnb.languages) return ""
+    if (Array.isArray(bnb.languages)) return bnb.languages.join(", ")
+    return String(bnb.languages)
+  })
   const [bookingUrl, setBookingUrl] = useState(bnb.booking_url ?? "")
 
   const handleSave = async () => {
