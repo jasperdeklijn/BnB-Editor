@@ -121,15 +121,17 @@ export async function getRooms(bnbId: string): Promise<Room[]> {
 export async function createRoom(bnbId: string, room: RoomInput): Promise<Room> {
   const supabase = await createClient()
 
-  const payload = {
+  // Only include fields that have actual values to let DB defaults apply
+  const payload: Record<string, unknown> = {
     bnb_id: bnbId,
     name: room.name,
-    description: room.description,
-    price: room.price,
-    max_guests: room.max_guests,
     images: room.images ?? [],
-    position: room.position,
+    position: room.position ?? 0,
   }
+  // Only add optional fields if they have values (avoid overriding NOT NULL defaults with null)
+  if (room.description != null) payload.description = room.description
+  if (room.price != null) payload.price = room.price
+  if (room.max_guests != null) payload.max_guests = room.max_guests
 
   const { data, error } = await supabase
     .from("rooms")
