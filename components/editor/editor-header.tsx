@@ -63,7 +63,7 @@ export function EditorHeader({
       {/* Left: branding + title */}
       <div className="flex items-center gap-2 md:gap-4 min-w-0">
         <span className="hidden sm:block text-base md:text-lg font-semibold text-[var(--editor-header-fg)] shrink-0">
-          BnB Bouwer
+          BnB Maker
         </span>
         <Input
           value={title}
@@ -110,18 +110,6 @@ export function EditorHeader({
           ))}
         </div>
 
-        {/* Images link */}
-        <Button
-          variant="ghost"
-          size="sm"
-          asChild
-          className="hidden sm:inline-flex text-[var(--editor-header-fg)]/80 hover:bg-[var(--editor-header-fg)]/10 hover:text-[var(--editor-header-fg)] border border-[var(--editor-header-accent)]"
-        >
-          <Link href="/images">
-            <ImageIcon className="mr-2 h-4 w-4" />
-            Afbeeldingen
-          </Link>
-        </Button>
 
         {/* Preview toggle */}
         <Button
@@ -138,7 +126,7 @@ export function EditorHeader({
           ) : (
             <>
               <Eye className="mr-2 h-4 w-4" />
-              Voorvertoning
+              Voorbeeld
             </>
           )}
         </Button>
