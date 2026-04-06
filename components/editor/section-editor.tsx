@@ -123,8 +123,8 @@ export function SelectionEditor({
           <div className="mb-4 rounded-full bg-primary/10 p-4">
             <Wand2 className="h-8 w-8 text-primary" />
           </div>
-          <p className="text-sm font-medium text-muted-foreground">No section selected</p>
-          <p className="mt-2 text-xs text-muted-foreground">Click a section to customize</p>
+          <p className="text-sm font-medium text-muted-foreground">Geen sectie geselecteerd</p>
+          <p className="mt-2 text-xs text-muted-foreground">Klik op een sectie om aan te passen</p>
         </div>
       </div>
     )
@@ -141,7 +141,7 @@ export function SelectionEditor({
       const updatedData = { ...selectedSection.data, [field]: value }
       await saveToDatabase(updatedData)
       
-      toast.success("Saved to database", {
+      toast.success("Opgeslagen in database", {
         position: "bottom-right",
         duration: 2000,
         style: { background: '#10b981', color: 'white' }
@@ -160,7 +160,7 @@ export function SelectionEditor({
     if (saveTimeoutId) clearTimeout(saveTimeoutId)
     const timeout = setTimeout(async () => {
       await saveToDatabase({ ...selectedSection.data, rooms: updated })
-      toast.success("Room added", {
+      toast.success("Kamer toegevoegd", {
         position: "bottom-right",
         duration: 2000,
         style: { background: '#10b981', color: 'white' }
@@ -177,7 +177,7 @@ export function SelectionEditor({
     if (saveTimeoutId) clearTimeout(saveTimeoutId)
     const timeout = setTimeout(async () => {
       await saveToDatabase({ ...selectedSection.data, rooms: updated })
-      toast.success("Room updated", {
+      toast.success("Kamer bijgewerkt", {
         position: "bottom-right",
         duration: 2000,
         style: { background: '#10b981', color: 'white' }
@@ -194,7 +194,7 @@ export function SelectionEditor({
     if (saveTimeoutId) clearTimeout(saveTimeoutId)
     const timeout = setTimeout(async () => {
       await saveToDatabase({ ...selectedSection.data, rooms: updated })
-      toast.success("Room removed", {
+      toast.success("Kamer verwijderd", {
         position: "bottom-right",
         duration: 2000,
         style: { background: '#10b981', color: 'white' }
@@ -214,7 +214,7 @@ export function SelectionEditor({
       
       if (saveTimeoutId) clearTimeout(saveTimeoutId)
       const timeout = setTimeout(() => {
-        toast.success("Transition saved", {
+        toast.success("Overgang opgeslagen", {
           position: "bottom-right",
           duration: 2000,
           style: { background: '#10b981', color: 'white' }
@@ -245,7 +245,7 @@ export function SelectionEditor({
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground">Customize content and styling</p>
+        <p className="text-xs text-muted-foreground">Inhoud en styling aanpassen</p>
       </div>
 
       <div className="space-y-4">
@@ -255,19 +255,19 @@ export function SelectionEditor({
             <Card className="p-4 space-y-3">
               <Label className="flex items-center gap-2">
                 <LayoutGrid className="h-3.5 w-3.5" />
-                Layout Style
+                Layoutstijl
               </Label>
               <p className="text-xs text-muted-foreground">
-                Choose how your hero section is displayed
+                Kies hoe je hero-sectie wordt weergegeven
               </p>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { layout: "centered" as HeroLayout, label: "Simple", icon: AlignCenter },
-                  { layout: "split" as HeroLayout, label: "Split", icon: LayoutPanelLeft },
-                  { layout: "fullwidth" as HeroLayout, label: "Full Image", icon: Maximize },
-                  { layout: "minimal" as HeroLayout, label: "Minimal", icon: Minimize },
-                  { layout: "card" as HeroLayout, label: "Card", icon: Square },
-                  { layout: "split-reverse" as HeroLayout, label: "Split Reverse", icon: PanelRight },
+                  { layout: "centered" as HeroLayout, label: "Eenvoudig", icon: AlignCenter },
+                  { layout: "split" as HeroLayout, label: "Gesplitst", icon: LayoutPanelLeft },
+                  { layout: "fullwidth" as HeroLayout, label: "Volledige afbeelding", icon: Maximize },
+                  { layout: "minimal" as HeroLayout, label: "Minimaal", icon: Minimize },
+                  { layout: "card" as HeroLayout, label: "Kaart", icon: Square },
+                  { layout: "split-reverse" as HeroLayout, label: "Gesplitst omgekeerd", icon: PanelRight },
                 ].map(({ layout, label, icon: Icon }) => {
                   const currentLayout = ((selectedSection.data as any).layout as HeroLayout) || "centered"
                   const isActive = currentLayout === layout
@@ -288,12 +288,12 @@ export function SelectionEditor({
                 })}
               </div>
               <p className="text-[10px] text-muted-foreground text-center">
-                {((selectedSection.data as any).layout as HeroLayout) === "split" && "Image on left half, text on right"}
-                {((selectedSection.data as any).layout as HeroLayout) === "fullwidth" && "Full background image with overlay"}
-                {((selectedSection.data as any).layout as HeroLayout) === "centered" && "Clean text-focused design"}
-                {((selectedSection.data as any).layout as HeroLayout) === "minimal" && "Minimal text-only design"}
-                {((selectedSection.data as any).layout as HeroLayout) === "card" && "Image background with text card"}
-                {((selectedSection.data as any).layout as HeroLayout) === "split-reverse" && "Text on left, image on right"}
+                {((selectedSection.data as any).layout as HeroLayout) === "split" && "Afbeelding aan linkerkant, tekst aan rechterkant"}
+                {((selectedSection.data as any).layout as HeroLayout) === "fullwidth" && "Volledige achtergrondafbeelding met overlay"}
+                {((selectedSection.data as any).layout as HeroLayout) === "centered" && "Schoon tekst-gecentreerd ontwerp"}
+                {((selectedSection.data as any).layout as HeroLayout) === "minimal" && "Minimaal tekst-only ontwerp"}
+                {((selectedSection.data as any).layout as HeroLayout) === "card" && "Achtergrondafbeelding met tekstkaart"}
+                {((selectedSection.data as any).layout as HeroLayout) === "split-reverse" && "Tekst aan linkerkant, afbeelding aan rechterkant"}
               </p>
             </Card>
 
@@ -301,20 +301,20 @@ export function SelectionEditor({
             <Card className="p-4 space-y-3">
               <Label className="flex items-center gap-2">
                 <Type className="h-3.5 w-3.5" />
-                Content
+                Inhoud
               </Label>
               <div className="space-y-3">
                 <div>
-                  <Label className="text-xs mb-1.5 block">Title</Label>
-                  <Input placeholder="e.g., Welcome to Our B&B" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
+                  <Label className="text-xs mb-1.5 block">Titel</Label>
+                  <Input placeholder="bijv., Welkom bij onze B&B" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
                 </div>
                 <div>
-                  <Label className="text-xs mb-1.5 block">Subtitle</Label>
-                  <Input placeholder="e.g., Experience comfort and hospitality" value={(selectedSection.data as any).subtitle || ""} onChange={(e) => updateField("subtitle", e.target.value)} />
+                  <Label className="text-xs mb-1.5 block">Ondertitel</Label>
+                  <Input placeholder="bijv., Ervaar comfort en gastvrijheid" value={(selectedSection.data as any).subtitle || ""} onChange={(e) => updateField("subtitle", e.target.value)} />
                 </div>
                 <div>
-                  <Label className="text-xs mb-1.5 block">CTA Button Text</Label>
-                  <Input placeholder="e.g., Book Now" value={(selectedSection.data as any).ctaText || ""} onChange={(e) => updateField("ctaText", e.target.value)} />
+                  <Label className="text-xs mb-1.5 block">CTA-knoptekst</Label>
+                  <Input placeholder="bijv., Nu boeken" value={(selectedSection.data as any).ctaText || ""} onChange={(e) => updateField("ctaText", e.target.value)} />
                 </div>
               </div>
             </Card>
@@ -325,15 +325,15 @@ export function SelectionEditor({
           <Card className="p-4 space-y-3">
             <Label className="flex items-center gap-2">
               <Type className="h-3.5 w-3.5" />
-              Title
+              Titel
             </Label>
-            <Input placeholder="About Us" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
+            <Input placeholder="Over Ons" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
             <Label className="flex items-center gap-2">
               <Type className="h-3.5 w-3.5" />
-              Description
+              Beschrijving
             </Label>
             <textarea
-              placeholder="Describe your B&B..."
+              placeholder="Beschrijf je B&B..."
               value={(selectedSection.data as any).description || ""}
               onChange={(e) => updateField("description", e.target.value)}
               className="w-full min-h-24 p-2 border rounded-lg resize-none"
@@ -345,18 +345,18 @@ export function SelectionEditor({
           <Card className="p-4 space-y-3">
             <Label className="flex items-center gap-2">
               <Type className="h-3.5 w-3.5" />
-              Title
+              Titel
             </Label>
-            <Input placeholder="Our Rooms" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
+            <Input placeholder="Onze Kamers" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
             <div className="space-y-3">
               <Label className="flex items-center gap-2">
                 <ImageIcon className="h-3.5 w-3.5" />
-                Rooms
+                Kamers
               </Label>
               {localRooms.map((room, idx) => (
                 <div key={idx} className="space-y-2 rounded-lg border bg-muted/20 p-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium text-muted-foreground">Room {idx + 1}</span>
+                    <span className="text-xs font-medium text-muted-foreground">Kamer {idx + 1}</span>
                     <Button
                       variant="ghost"
                       size="icon-sm"
@@ -366,18 +366,18 @@ export function SelectionEditor({
                       <Minus className="h-3 w-3" />
                     </Button>
                   </div>
-                  <Input placeholder="Room name" value={room.name} onChange={(e) => handleUpdateRoom(idx, "name", e.target.value)} />
+                  <Input placeholder="Kamernaam" value={room.name} onChange={(e) => handleUpdateRoom(idx, "name", e.target.value)} />
                   <div className="flex gap-2">
                     <div className="flex-1">
-                      <Input placeholder="Price" value={room.price} onChange={(e) => handleUpdateRoom(idx, "price", e.target.value)} />
+                      <Input placeholder="Prijs" value={room.price} onChange={(e) => handleUpdateRoom(idx, "price", e.target.value)} />
                     </div>
                   </div>
-                  <Input placeholder="Description" value={room.description} onChange={(e) => handleUpdateRoom(idx, "description", e.target.value)} />
+                  <Input placeholder="Beschrijving" value={room.description} onChange={(e) => handleUpdateRoom(idx, "description", e.target.value)} />
                 </div>
               ))}
               <Button onClick={handleAddRoom} className="w-full" variant="outline">
                 <Plus className="mr-2 h-4 w-4" />
-                Add Room
+                Kamer toevoegen
               </Button>
             </div>
           </Card>
@@ -389,19 +389,19 @@ export function SelectionEditor({
             <Card className="p-4 space-y-3">
               <Label className="flex items-center gap-2">
                 <LayoutGrid className="h-3.5 w-3.5" />
-                Layout Style
+                Layoutstijl
               </Label>
               <p className="text-xs text-muted-foreground">
-                Choose how your gallery is displayed
+                Kies hoe je galerij wordt weergegeven
               </p>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { layout: "grid" as GalleryLayout, label: "Grid", icon: LayoutGrid },
-                  { layout: "vertical-carousel" as GalleryLayout, label: "Carousel V", icon: Columns },
-                  { layout: "horizontal-carousel" as GalleryLayout, label: "Carousel H", icon: Rows },
-                  { layout: "masonry" as GalleryLayout, label: "Masonry", icon: Grid3x3 },
+                  { layout: "grid" as GalleryLayout, label: "Raster", icon: LayoutGrid },
+                  { layout: "vertical-carousel" as GalleryLayout, label: "Carrousel V", icon: Columns },
+                  { layout: "horizontal-carousel" as GalleryLayout, label: "Carrousel H", icon: Rows },
+                  { layout: "masonry" as GalleryLayout, label: "Metselwerk", icon: Grid3x3 },
                   { layout: "single-with-thumbs" as GalleryLayout, label: "Focus", icon: ImageIcon },
-                  { layout: "full-slider" as GalleryLayout, label: "Slider", icon: Maximize },
+                  { layout: "full-slider" as GalleryLayout, label: "Schuifregelaar", icon: Maximize },
                 ].map(({ layout, label, icon: Icon }) => {
                   const currentLayout = ((selectedSection.data as any).layout as GalleryLayout) || "grid"
                   const isActive = currentLayout === layout
@@ -422,12 +422,12 @@ export function SelectionEditor({
                 })}
               </div>
               <p className="text-[10px] text-muted-foreground text-center">
-                {((selectedSection.data as any).layout as GalleryLayout) === "grid" && "Classic grid layout"}
-                {((selectedSection.data as any).layout as GalleryLayout) === "vertical-carousel" && "Vertical scroll with text on left"}
-                {((selectedSection.data as any).layout as GalleryLayout) === "horizontal-carousel" && "Horizontal scrolling images"}
-                {((selectedSection.data as any).layout as GalleryLayout) === "masonry" && "Pinterest-style masonry layout"}
-                {((selectedSection.data as any).layout as GalleryLayout) === "single-with-thumbs" && "Large image with thumbnails"}
-                {((selectedSection.data as any).layout as GalleryLayout) === "full-slider" && "Full-screen image slider"}
+                {((selectedSection.data as any).layout as GalleryLayout) === "grid" && "Klassieke rasterlayout"}
+                {((selectedSection.data as any).layout as GalleryLayout) === "vertical-carousel" && "Verticale scroll met tekst aan linkerkant"}
+                {((selectedSection.data as any).layout as GalleryLayout) === "horizontal-carousel" && "Horizontaal scrollende afbeeldingen"}
+                {((selectedSection.data as any).layout as GalleryLayout) === "masonry" && "Pinterest-stijl metselwerk layout"}
+                {((selectedSection.data as any).layout as GalleryLayout) === "single-with-thumbs" && "Grote afbeelding met miniaturen"}
+                {((selectedSection.data as any).layout as GalleryLayout) === "full-slider" && "Volledig scherm afbeelding slider"}
               </p>
             </Card>
 
@@ -435,19 +435,19 @@ export function SelectionEditor({
             <Card className="p-4 space-y-3">
               <Label className="flex items-center gap-2">
                 <Type className="h-3.5 w-3.5" />
-                Content
+                Inhoud
               </Label>
               <div className="space-y-3">
                 <div>
-                  <Label className="text-xs mb-1.5 block">Title</Label>
-                  <Input placeholder="Gallery Title" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
+                  <Label className="text-xs mb-1.5 block">Titel</Label>
+                  <Input placeholder="Galerijtitel" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
                 </div>
                 <div>
-                  <Label className="text-xs mb-1.5 block">Subtitle</Label>
-                  <Input placeholder="Gallery Subtitle" value={(selectedSection.data as any).subtitle || ""} onChange={(e) => updateField("subtitle", e.target.value)} />
+                  <Label className="text-xs mb-1.5 block">Ondertitel</Label>
+                  <Input placeholder="Galerijondertitel" value={(selectedSection.data as any).subtitle || ""} onChange={(e) => updateField("subtitle", e.target.value)} />
                 </div>
                 <div>
-                  <Label className="text-xs mb-1.5 block">Number of Images</Label>
+                  <Label className="text-xs mb-1.5 block">Aantal afbeeldingen</Label>
                   <Input
                     type="number"
                     min="1"
@@ -465,15 +465,15 @@ export function SelectionEditor({
           <Card className="p-4 space-y-3">
             <Label className="flex items-center gap-2">
               <Type className="h-3.5 w-3.5" />
-              Title
+              Titel
             </Label>
-            <Input placeholder="Amenities" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
+            <Input placeholder="Voorzieningen" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
             <Label className="flex items-center gap-2">
               <Plus className="h-3.5 w-3.5" />
-              Amenities (comma separated)
+              Voorzieningen (kommagescheiden)
             </Label>
             <Input
-              placeholder="WiFi, Parking, Pool, Breakfast"
+              placeholder="WiFi, Parkeren, Zwembad, Ontbijt"
               value={((selectedSection.data as any).items || []).join(", ")}
               onChange={(e) => updateField("items", e.target.value.split(",").map((s) => s.trim()))}
             />
@@ -484,22 +484,22 @@ export function SelectionEditor({
           <Card className="p-4 space-y-3">
             <Label className="flex items-center gap-2">
               <Type className="h-3.5 w-3.5" />
-              Title
+              Titel
             </Label>
-            <Input placeholder="Contact Us" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
+            <Input placeholder="Neem Contact Op" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
             <Label className="flex items-center gap-2">
               <MapPin className="h-3.5 w-3.5" />
-              Address
+              Adres
             </Label>
             <Input value={(selectedSection.data as any).address || ""} onChange={(e) => updateField("address", e.target.value)} />
             <Label className="flex items-center gap-2">
               <Phone className="h-3.5 w-3.5" />
-              Phone
+              Telefoon
             </Label>
             <Input value={(selectedSection.data as any).phone || ""} onChange={(e) => updateField("phone", e.target.value)} />
             <Label className="flex items-center gap-2">
               <Mail className="h-3.5 w-3.5" />
-              Email
+              E-mail
             </Label>
             <Input value={(selectedSection.data as any).email || ""} onChange={(e) => updateField("email", e.target.value)} />
           </Card>
@@ -509,16 +509,16 @@ export function SelectionEditor({
           <Card className="p-4 space-y-4">
             <Label className="flex items-center gap-2">
               <Navigation className="h-3.5 w-3.5" />
-              Navigation Settings
+              Navigatie-instellingen
             </Label>
             
             {/* Brand Name */}
             <div className="space-y-2">
-              <Label className="text-xs">Brand Name</Label>
+              <Label className="text-xs">Merknaam</Label>
               <Input 
                 value={(selectedSection.data as any).brandName || "My B&B"} 
                 onChange={(e) => updateField("brandName", e.target.value)} 
-                placeholder="Your brand name"
+                placeholder="Je merknaam"
               />
             </div>
 
@@ -526,7 +526,7 @@ export function SelectionEditor({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Pin className="h-3.5 w-3.5" />
-                <Label className="text-xs">Sticky Navigation</Label>
+                <Label className="text-xs">Vaste navigatie</Label>
               </div>
               <button
                 onClick={() => updateField("isSticky", !((selectedSection.data as any).isSticky ?? true))}
@@ -542,27 +542,27 @@ export function SelectionEditor({
               </button>
             </div>
             <p className="text-xs text-muted-foreground">
-              {((selectedSection.data as any).isSticky ?? true) ? "Navbar stays at top while scrolling" : "Navbar scrolls with page"}
+              {((selectedSection.data as any).isSticky ?? true) ? "Navbar blijft bovenaan tijdens scrollen" : "Navbar scrolt met pagina"}
             </p>
 
             {/* Section Links */}
             <div className="space-y-3">
               <Label className="flex items-center gap-2 text-xs">
                 <Type className="h-3.5 w-3.5" />
-                Navigation Links
+                Navigatielinks
               </Label>
               <p className="text-xs text-muted-foreground">
-                Choose which sections appear in the navigation and customize their labels
+                Kies welke secties in de navigatie verschijnen en pas de labels aan
               </p>
               
               {(() => {
                 const navigableSectionTypes: SectionType[] = ["hero", "about", "rooms", "gallery", "amenities", "contact"]
                 const defaultLabels: Record<SectionType, string> = {
                   hero: "Home",
-                  about: "About",
-                  rooms: "Rooms",
-                  gallery: "Gallery",
-                  amenities: "Amenities",
+                  about: "Over",
+                  rooms: "Kamers",
+                  gallery: "Galerij",
+                  amenities: "Voorzieningen",
                   contact: "Contact",
                   nav: "Navigation",
                   footer: "Footer",
@@ -609,7 +609,7 @@ export function SelectionEditor({
                           <button
                             onClick={() => updateNavLink(section.id, "enabled", !config.enabled)}
                             className="flex-shrink-0"
-                            title={config.enabled ? "Hide from nav" : "Show in nav"}
+                            title={config.enabled ? "Verbergen uit nav" : "Tonen in nav"}
                           >
                             {config.enabled ? (
                               <Eye className="h-4 w-4 text-primary" />
@@ -632,7 +632,7 @@ export function SelectionEditor({
                     })}
                     {navigableSections.length === 0 && (
                       <p className="text-xs text-muted-foreground italic">
-                        Add sections to your page to create navigation links
+                        Voeg secties toe aan je pagina om navigatielinks te maken
                       </p>
                     )}
                   </div>
@@ -645,13 +645,13 @@ export function SelectionEditor({
         <Card className="p-4 space-y-3">
           <Label className="flex items-center gap-2">
             <Palette className="h-3.5 w-3.5" />
-            Styles
+            Stijlen
           </Label>
           <div className="space-y-3">
             <div>
-              <Label className="mb-2 text-xs">Font Family</Label>
+              <Label className="mb-2 text-xs">Lettertypefamilie</Label>
               <Input
-                placeholder="e.g., font-serif"
+                placeholder="bijv., font-serif"
                 value={(selectedSection.styles as any)?.fontFamily || ""}
                 onChange={(e) => {
                   const newStyles = { ...(selectedSection.styles || {}), fontFamily: e.target.value }
@@ -659,7 +659,7 @@ export function SelectionEditor({
                   if (saveTimeoutId) clearTimeout(saveTimeoutId)
                   const timeout = setTimeout(async () => {
                     await saveStylesToDatabase(newStyles)
-                    toast.success("Style saved", {
+                    toast.success("Stijl opgeslagen", {
                       position: "bottom-right",
                       duration: 2000,
                       style: { background: '#10b981', color: 'white' }
@@ -673,11 +673,11 @@ export function SelectionEditor({
               <div className="flex-1">
                 <Label className="mb-2 flex items-center gap-1 text-xs">
                   <div className="h-3 w-3 rounded border bg-muted" />
-                  Background
+                  Achtergrond
                 </Label>
                 <input
                   type="color"
-                  aria-label="Background color"
+                  aria-label="Achtergrondkleur"
                   value={(selectedSection.styles as any)?.backgroundColor || "#ffffff"}
                   onChange={(e) => {
                     const newStyles = { ...(selectedSection.styles || {}), backgroundColor: e.target.value }
@@ -685,7 +685,7 @@ export function SelectionEditor({
                     if (saveTimeoutId) clearTimeout(saveTimeoutId)
                     const timeout = setTimeout(async () => {
                       await saveStylesToDatabase(newStyles)
-                      toast.success("Style saved", {
+                      toast.success("Stijl opgeslagen", {
                         position: "bottom-right",
                         duration: 2000,
                         style: { background: '#10b981', color: 'white' }
@@ -699,11 +699,11 @@ export function SelectionEditor({
               <div className="flex-1">
                 <Label className="mb-2 flex items-center gap-1 text-xs">
                   <Type className="h-3 w-3" />
-                  Text
+                  Tekst
                 </Label>
                 <input
                   type="color"
-                  aria-label="Text color"
+                  aria-label="Tekstkleur"
                   value={(selectedSection.styles as any)?.textColor || "#000000"}
                   onChange={(e) => {
                     const newStyles = { ...(selectedSection.styles || {}), textColor: e.target.value }
@@ -711,7 +711,7 @@ export function SelectionEditor({
                     if (saveTimeoutId) clearTimeout(saveTimeoutId)
                     const timeout = setTimeout(async () => {
                       await saveStylesToDatabase(newStyles)
-                      toast.success("Style saved", {
+                      toast.success("Stijl opgeslagen", {
                         position: "bottom-right",
                         duration: 2000,
                         style: { background: '#10b981', color: 'white' }
@@ -731,10 +731,10 @@ export function SelectionEditor({
           <Card className="p-4 space-y-3">
             <Label className="flex items-center gap-2">
               <Wand2 className="h-3.5 w-3.5" />
-              Transition to Next Section
+              Overgang naar volgende sectie
             </Label>
             <p className="text-xs text-muted-foreground mb-2">
-              Select how this section transitions to the next one
+              Selecteer hoe deze sectie overgaat naar de volgende
             </p>
             {(() => {
               const nextSectionIdx = sections.findIndex(s => s.id === selectedSection.id) + 1
@@ -749,20 +749,20 @@ export function SelectionEditor({
                     onChange={(e) => handleTransitionChange(e.target.value)}
                     className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:bg-accent"
                   >
-                    <option value="none">None</option>
-                    <option value="fade">Fade</option>
-                    <option value="gradient">Gradient</option>
-                    <option value="slide">Slide</option>
-                    <option value="wave">Wave</option>
-                    <option value="curve">Curve</option>
-                    <option value="diagonal">Diagonal</option>
+                    <option value="none">Geen</option>
+                    <option value="fade">Vervagen</option>
+                    <option value="gradient">Verloop</option>
+                    <option value="slide">Schuiven</option>
+                    <option value="wave">Golf</option>
+                    <option value="curve">Kromme</option>
+                    <option value="diagonal">Diagonaal</option>
                     <option value="zigzag">Zigzag</option>
-                    <option value="split">Split</option>
+                    <option value="split">Splitsen</option>
                   </select>
                   {currentType !== "none" && (
             <div className="mt-3 p-2 rounded bg-muted border border-border">
             <p className="text-xs text-muted-foreground">
-                        Preview: Check the editor canvas to see the {currentType} transition
+                        Voorvertoning: Controleer het editorcanvas om de {currentType} overgang te zien
                       </p>
                     </div>
                   )}

@@ -21,14 +21,14 @@ import { createClient } from "@/lib/supabase/client"
 import { useTouchDrag } from "@/hooks/use-touch-drag"
 
 const sectionTypes: { type: SectionType; label: string; icon: React.ReactNode; description: string }[] = [
-  { type: "nav", label: "Navigation", icon: <Menu className="h-5 w-5" />, description: "Top navbar" },
-  { type: "hero", label: "Hero", icon: <Home className="h-5 w-5" />, description: "Main header section" },
-  { type: "about", label: "About", icon: <Info className="h-5 w-5" />, description: "Tell your story" },
-  { type: "rooms", label: "Rooms", icon: <Bed className="h-5 w-5" />, description: "Showcase rooms" },
-  { type: "gallery", label: "Gallery", icon: <ImageIcon className="h-5 w-5" />, description: "Photo gallery" },
-  { type: "amenities", label: "Amenities", icon: <Sparkles className="h-5 w-5" />, description: "List features" },
-  { type: "contact", label: "Contact", icon: <Mail className="h-5 w-5" />, description: "Contact form" },
-  { type: "footer", label: "Footer", icon: <Layout className="h-5 w-5" />, description: "Bottom footer" },
+  { type: "nav", label: "Navigatie", icon: <Menu className="h-5 w-5" />, description: "Bovenste navigatiebalk" },
+  { type: "hero", label: "Hero", icon: <Home className="h-5 w-5" />, description: "Hoofd koptekst sectie" },
+  { type: "about", label: "Over Ons", icon: <Info className="h-5 w-5" />, description: "Vertel ons verhaal" },
+  { type: "rooms", label: "Kamers", icon: <Bed className="h-5 w-5" />, description: "Toon kamers" },
+  { type: "gallery", label: "Galerij", icon: <ImageIcon className="h-5 w-5" />, description: "Fotogalerij" },
+  { type: "amenities", label: "Voorzieningen", icon: <Sparkles className="h-5 w-5" />, description: "Lijst functies" },
+  { type: "contact", label: "Contact", icon: <Mail className="h-5 w-5" />, description: "Contactformulier" },
+  { type: "footer", label: "Voettekst", icon: <Layout className="h-5 w-5" />, description: "Onderste voettekst" },
 ]
 
 // ----- Sub-components so each draggable item can call the hook independently -----
@@ -212,10 +212,10 @@ export function SectionsSelector({ className = "", userId, onSectionAdded }: Sec
     >
       {/* Collapse toggle — desktop only */}
       <button
-        aria-label={collapsed ? "Expand sections" : "Collapse sections"}
+        aria-label={collapsed ? "Secties uitvouwen" : "Secties samenvouwen"}
         onClick={() => setCollapsed((s) => !s)}
         className="hidden md:inline-flex absolute right-2 top-2 z-10 h-7 w-7 items-center justify-center rounded-md border bg-card p-0 text-sm shadow-sm transition-all hover:scale-110 hover:bg-accent"
-        title={collapsed ? "Expand" : "Collapse"}
+        title={collapsed ? "Uitvouwen" : "Samenvouwen"}
         type="button"
       >
         {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
@@ -224,18 +224,18 @@ export function SectionsSelector({ className = "", userId, onSectionAdded }: Sec
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="mb-4 w-full flex">
           <TabsTrigger value="sections" className="flex-1">
-            Sections
+            Secties
           </TabsTrigger>
           <TabsTrigger value="images" className="flex-1">
-            Images
+            Afbeeldingen
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="sections">
           <div className={`mb-4 ${collapsed ? "opacity-0" : "opacity-100 transition-opacity delay-100"}`}>
-            <h3 className={`${collapsed ? "sr-only" : "mb-1 text-sm font-semibold"}`}>Add Sections</h3>
+            <h3 className={`${collapsed ? "sr-only" : "mb-1 text-sm font-semibold"}`}>Secties Toevoegen</h3>
             <p className={`${collapsed ? "sr-only" : "text-xs text-muted-foreground"}`}>
-              Drag or tap to add
+              Sleep of tik om toe te voegen
             </p>
           </div>
 
@@ -258,7 +258,7 @@ export function SectionsSelector({ className = "", userId, onSectionAdded }: Sec
           {!collapsed && (
             <div className="mt-6 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/30 p-3 text-center animate-in fade-in slide-in-from-left-2 duration-300">
               <p className="text-xs text-muted-foreground">
-                Drag sections to the canvas to build your site
+                Sleep secties naar het canvas om uw site te bouwen
               </p>
             </div>
           )}
@@ -266,15 +266,15 @@ export function SectionsSelector({ className = "", userId, onSectionAdded }: Sec
 
         <TabsContent value="images">
           <div className={`mb-4 ${collapsed ? "opacity-0" : "opacity-100 transition-opacity delay-100"}`}>
-            <h3 className={`${collapsed ? "sr-only" : "mb-1 text-sm font-semibold"}`}>Drag Images</h3>
+            <h3 className={`${collapsed ? "sr-only" : "mb-1 text-sm font-semibold"}`}>Afbeeldingen Slepen</h3>
             <p className={`${collapsed ? "sr-only" : "text-xs text-muted-foreground"}`}>
-              Drag images to sections
+              Sleep afbeeldingen naar secties
             </p>
           </div>
           {isLoadingImages ? (
-            <div className="text-xs text-muted-foreground text-center py-8">Loading images...</div>
+            <div className="text-xs text-muted-foreground text-center py-8">Afbeeldingen laden...</div>
           ) : images.length === 0 ? (
-            <div className="text-xs text-muted-foreground text-center py-8">No images found</div>
+            <div className="text-xs text-muted-foreground text-center py-8">Geen afbeeldingen gevonden</div>
           ) : (
             <div className={`grid ${collapsed ? "grid-cols-1" : "grid-cols-2"} gap-2`}>
               {images.map((img) => (

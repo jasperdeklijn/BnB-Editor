@@ -21,7 +21,7 @@ export function EditorClient({ userId }: EditorClientProps) {
   const [sections, setSections] = useState<Section[]>([])
   const [transitions, setTransitions] = useState<Transition[]>([])
   const [websiteId, setWebsiteId] = useState<string | null>(null)
-  const [title, setTitle] = useState("My BnB Website")
+  const [title, setTitle] = useState("Mijn B&B Website")
   const [slug, setSlug] = useState("")
   const [isPreview, setIsPreview] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -99,7 +99,7 @@ export function EditorClient({ userId }: EditorClientProps) {
         .from("websites")
         .insert({
           user_id: userId,
-          title: "My BnB Website",
+          title: "Mijn B&B Website",
           slug: newSlug,
         })
         .select()
@@ -401,7 +401,7 @@ export function EditorClient({ userId }: EditorClientProps) {
               }`}
             >
               <Layers className="h-5 w-5" />
-              Sections
+              Secties
             </button>
             <button
               type="button"
@@ -413,7 +413,7 @@ export function EditorClient({ userId }: EditorClientProps) {
               }`}
             >
               <LayoutTemplate className="h-5 w-5" />
-              Canvas
+              Doek
             </button>
             <button
               type="button"
@@ -425,7 +425,7 @@ export function EditorClient({ userId }: EditorClientProps) {
               }`}
             >
               <Paintbrush className="h-5 w-5" />
-              Style
+              Stijl
             </button>
           </nav>
         )}

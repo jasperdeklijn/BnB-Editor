@@ -227,26 +227,26 @@ export function EditorCanvas({
     switch (type) {
       case "hero":
         return {
-          title: "Welcome to Our Bed & Breakfast",
-          subtitle: "Experience comfort and hospitality",
-          ctaText: "Book Now",
+          title: "Welkom bij onze Bed & Breakfast",
+          subtitle: "Ervaar comfort en gastvrijheid",
+          ctaText: "Nu boeken",
         }
       case "about":
         return {
-          title: "About Us",
-          description: "Learn about our story and what makes us special.",
+          title: "Over Ons",
+          description: "Leer ons verhaal kennen en wat ons bijzonder maakt.",
         }
       case "rooms":
         return {
-          title: "Our Rooms",
+          title: "Onze Kamers",
           rooms: [
-            { name: "Deluxe Suite", description: "Spacious room with ocean view", price: "$150/night" },
+            { name: "Deluxe Suite", description: "Ruime kamer met uitzicht op de oceaan", price: "€150/nacht" },
           ],
         }
       case "gallery":
         return {
-          title: "Gallery",
-          subtitle: "Explore our beautiful spaces",
+          title: "Galerij",
+          subtitle: "Ontdek onze mooie ruimtes",
           layout: "grid",
           images: [
             `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+1`,
@@ -259,26 +259,26 @@ export function EditorCanvas({
         }
       case "amenities":
         return {
-          title: "Amenities",
-          amenities: ["Free WiFi", "Breakfast", "Parking", "Pool"],
+          title: "Voorzieningen",
+          amenities: ["Gratis WiFi", "Ontbijt", "Parkeren", "Zwembad"],
         }
       case "contact":
         return {
-          title: "Contact Us",
-          address: "123 Main St, City, State 12345",
+          title: "Neem Contact Op",
+          address: "123 Hoofdstraat, Stad, Provincie 12345",
           phone: "(555) 123-4567",
           email: "info@bnb.com",
         }
       case "nav":
         return {
-          brandName: "My B&B",
+          brandName: "Mijn B&B",
           isSticky: true,
           navLinks: [],
         }
       case "footer":
         return {
-          brandName: "My B&B",
-          copyright: `© ${new Date().getFullYear()} My B&B. All rights reserved.`,
+          brandName: "Mijn B&B",
+          copyright: `© ${new Date().getFullYear()} Mijn B&B. Alle rechten voorbehouden.`,
         }
       default:
         return {}
@@ -477,14 +477,14 @@ export function EditorCanvas({
         const client = supabase || createClient()
         await websiteSections.updateSection(id, payload as any, client)
 
-        toast.success("Saved to database", {
+        toast.success("Opgeslagen in database", {
           position: "bottom-right",
           duration: 2000,
           style: { background: '#10b981', color: 'white' }
         })
       } catch (err) {
         console.error('Error saving section to database:', err)
-        toast.error("Failed to save", {
+        toast.error("Opslaan mislukt", {
           position: "bottom-right",
           duration: 2000,
         })
@@ -529,8 +529,8 @@ export function EditorCanvas({
             >
               <div className="text-center">
                 <div className="mb-4 text-5xl">👋</div>
-                <h3 className="mb-2 text-lg font-semibold">Start Building</h3>
-                <p className="text-sm text-muted-foreground">Drag sections from the left to begin</p>
+                <h3 className="mb-2 text-lg font-semibold">Begin met Bouwen</h3>
+                <p className="text-sm text-muted-foreground">Sleep secties van links om te beginnen</p>
               </div>
             </div>
           )}
@@ -546,7 +546,7 @@ export function EditorCanvas({
               onDrop={(e) => handleDropOnGap(e, 0)}
             >
               <div className="h-full rounded-lg border-2 border-dashed border-primary bg-primary/5 flex items-center justify-center">
-                <span className="text-xs font-medium text-primary">Drop here</span>
+                <span className="text-xs font-medium text-primary">Hier neerzetten</span>
               </div>
             </div>
           )}
@@ -653,7 +653,7 @@ export function EditorCanvas({
                     onDrop={(e) => handleDropOnGap(e, i + 1)}
                   >
  <div className="h-full rounded-lg border-2 border-dashed border-primary bg-primary/5 flex items-center justify-center">
- <span className="text-xs font-medium text-primary">Drop here</span>
+ <span className="text-xs font-medium text-primary">Hier neerzetten</span>
                     </div>
                   </div>
                 )}

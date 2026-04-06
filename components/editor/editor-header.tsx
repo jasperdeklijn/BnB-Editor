@@ -63,25 +63,25 @@ export function EditorHeader({
       {/* Left: branding + title */}
       <div className="flex items-center gap-2 md:gap-4 min-w-0">
         <span className="hidden sm:block text-base md:text-lg font-semibold text-[var(--editor-header-fg)] shrink-0">
-          BnB Builder
+          BnB Bouwer
         </span>
         <Input
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
           className="w-32 sm:w-48 md:w-64 text-sm bg-[var(--editor-header-accent)]/40 border-[var(--editor-header-accent)] text-[var(--editor-header-fg)] placeholder:text-[var(--editor-header-fg)]/50 focus-visible:ring-[var(--editor-header-fg)]/30"
-          placeholder="Website title"
+          placeholder="Website titel"
         />
         {/* Auto-save indicator */}
         <span className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--editor-header-fg)]/70">
           {isSaving ? (
             <>
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              Saving…
+              Opslaan…
             </>
           ) : (
             <>
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />
-              Saved
+              Opgeslagen
             </>
           )}
         </span>
@@ -119,7 +119,7 @@ export function EditorHeader({
         >
           <Link href="/images">
             <ImageIcon className="mr-2 h-4 w-4" />
-            Images
+            Afbeeldingen
           </Link>
         </Button>
 
@@ -133,12 +133,12 @@ export function EditorHeader({
           {isPreview ? (
             <>
               <EyeOff className="mr-2 h-4 w-4" />
-              Edit
+              Bewerken
             </>
           ) : (
             <>
               <Eye className="mr-2 h-4 w-4" />
-              Preview
+              Voorvertoning
             </>
           )}
         </Button>
@@ -159,7 +159,7 @@ export function EditorHeader({
           className="hidden sm:inline-flex bg-[var(--editor-header-fg)] text-[var(--editor-header)] hover:bg-[var(--editor-header-fg)]/90"
         >
           <Upload className="mr-2 h-4 w-4" />
-          Publish
+          Publiceren
         </Button>
         <Button
           size="icon"
@@ -181,7 +181,7 @@ export function EditorHeader({
             aria-expanded={menuOpen}
           >
             <MoreVertical className="h-4 w-4" />
-            <span className="sr-only">More options</span>
+            <span className="sr-only">Meer opties</span>
           </Button>
 
           {menuOpen && (
@@ -191,7 +191,7 @@ export function EditorHeader({
             >
               {/* Device picker — mobile screens only */}
               <div className="md:hidden px-3 py-2 border-b border-border">
-                <p className="text-xs text-muted-foreground mb-2">Preview device</p>
+                <p className="text-xs text-muted-foreground mb-2">Voorvertoningsapparaat</p>
                 <div className="flex gap-1">
                   {(["desktop", "tablet", "mobile"] as const).map((d) => (
                     <Button
@@ -217,7 +217,7 @@ export function EditorHeader({
                 className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border-b border-border"
               >
                 <ImageIcon className="h-4 w-4 text-primary" />
-                Images
+                Afbeeldingen
               </Link>
 
               {/* Profile link */}
@@ -228,7 +228,7 @@ export function EditorHeader({
                 className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border-b border-border"
               >
                 <User className="h-4 w-4 text-primary" />
-                My Profile
+                Mijn Profiel
               </Link>
 
               {/* BnB Details link */}
@@ -239,7 +239,7 @@ export function EditorHeader({
                 className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border-b border-border"
               >
                 <Home className="h-4 w-4 text-primary" />
-                BnB Details
+                B&B Details
               </Link>
 
               {/* Rooms link */}
@@ -250,7 +250,7 @@ export function EditorHeader({
                 className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border-b border-border"
               >
                 <BedDouble className="h-4 w-4 text-primary" />
-                Rooms
+                Kamers
               </Link>
 
               {/* Domains link */}
@@ -261,7 +261,7 @@ export function EditorHeader({
                 className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border-b border-border"
               >
                 <Globe className="h-4 w-4 text-muted-foreground" />
-                Domain settings
+                Domeininstellingen
               </Link>
 
               {/* Logout */}
@@ -272,7 +272,7 @@ export function EditorHeader({
                 className="flex w-full items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
               >
                 <LogOut className="h-4 w-4" />
-                Logout
+                Uitloggen
               </button>
             </div>
           )}
