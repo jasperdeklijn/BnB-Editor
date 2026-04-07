@@ -18,13 +18,35 @@ export async function GET(request: Request) {
 
   try {
     // Check A record for apex
-    const aRecords = await dns.resolve4(apex).catch(() => [] as string[])
-    if (aRecords.includes(VERCEL_IP)) {
-      return NextResponse.json({ connected: true, message: "A record is correctly pointing to Vercel." })
-    }
+    const aRecords = await dns.resolve4(domain).catch(() => [])
 
-    // Check CNAME for www
-    const wwwRecords = await dns.resolveCname(`www.${apex}`).catch(() => [] as string[])
+if (aRecords.includes(VERCEL_IP)) {
+  return NextResponse.json({
+    connected: true,
+    type: "A",
+    message: "A record is correctly pointing to Vercel.",
+  })
+}
+
+// Detect Cloudflare / proxy
+if (aRecords.length > 0 && !aRecords.includes(VERCEL_IP)) {
+  return NextResponse.json({
+    connected: false,
+    message:
+      "Domain points to another IP (possibly Cloudflare proxy). Disable proxy (DNS only) and try again.",
+  })
+}
+
+// Check CNAME
+const cnameRecords = await dns.resolveCname(domain).catch(() => [])
+
+if (cnameRecords.some((r) => r.toLowerCase() === VERCEL_CNAME)) {
+  return NextResponse.json({
+    connected: true,
+    type: "CNAME",
+    message: "CNAME is correctly pointing to Vercel.",
+  })
+}
     if (wwwRecords.some((r) => r.toLowerCase().includes("vercel"))) {
       return NextResponse.json({ connected: true, message: "CNAME record is correctly pointing to Vercel." })
     }
