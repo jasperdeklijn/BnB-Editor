@@ -38,15 +38,16 @@ if (aRecords.length > 0 && !aRecords.includes(VERCEL_IP)) {
 }
 
 // Check CNAME
-const cnameRecords = await dns.resolveCname(domain).catch(() => [])
+    const cnameRecords = await dns.resolveCname(domain).catch(() => [])
 
-if (cnameRecords.some((r) => r.toLowerCase() === VERCEL_CNAME)) {
-  return NextResponse.json({
-    connected: true,
-    type: "CNAME",
-    message: "CNAME is correctly pointing to Vercel.",
-  })
-}
+    if (cnameRecords.some((r) => r.toLowerCase() === VERCEL_CNAME)) {
+      return NextResponse.json({
+        connected: true,
+        type: "CNAME",
+        message: "CNAME is correctly pointing to Vercel.",
+      })
+    }
+     const wwwRecords = await dns.resolveCname(`www.${apex}`).catch(() => [] as string[])
     if (wwwRecords.some((r) => r.toLowerCase().includes("vercel"))) {
       return NextResponse.json({ connected: true, message: "CNAME record is correctly pointing to Vercel." })
     }

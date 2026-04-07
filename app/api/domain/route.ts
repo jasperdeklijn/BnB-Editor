@@ -26,6 +26,16 @@ export async function POST(request: Request) {
         .toLowerCase()
     : null
 
+  // Get current custom domain to see if changed
+  const { data: website } = await supabase
+    .from("websites")
+    .select("custom_domain")
+    .eq("slug", slug)
+    .eq("user_id", user.id)
+    .single()
+
+  const currentDomain = website?.custom_domain
+
   const { error } = await supabase
     .from("websites")
     .update({ custom_domain: normalized })
@@ -34,6 +44,51 @@ export async function POST(request: Request) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  // Handle Vercel domain management
+  const vercelToken = process.env.VERCEL_ACCESS_TOKEN
+  const vercelProjectId = process.env.VERCEL_PROJECT_ID
+
+  if (vercelToken && vercelProjectId) {
+    try {
+      // If adding a new domain
+      if (normalized && normalized !== currentDomain) {
+        const addResponse = await fetch(`https://api.vercel.com/v10/domains?projectId=${vercelProjectId}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${vercelToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name: normalized }),
+        })
+
+        if (!addResponse.ok) {
+          const errorData = await addResponse.json()
+          console.error('Failed to add domain to Vercel:', errorData)
+          // Don't fail the request, just log
+        }
+      }
+
+      // If removing a domain
+      if (!normalized && currentDomain) {
+        const deleteResponse = await fetch(`https://api.vercel.com/v10/domains/${currentDomain}?projectId=${vercelProjectId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${vercelToken}`,
+          },
+        })
+
+        if (!deleteResponse.ok) {
+          const errorData = await deleteResponse.json()
+          console.error('Failed to remove domain from Vercel:', errorData)
+          // Don't fail the request
+        }
+      }
+    } catch (vercelError) {
+      console.error('Vercel API error:', vercelError)
+      // Continue without failing
+    }
   }
 
   return NextResponse.json({ success: true, customDomain: normalized })

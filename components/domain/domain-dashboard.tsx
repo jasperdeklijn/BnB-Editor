@@ -223,19 +223,6 @@ export function DomainDashboard({ slug, currentCustomDomain, isPublished }: Doma
       <section>
         <h2 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wide">DNS Configuration</h2>
         <div className="space-y-4">
-          {/* Platform wildcard */}
-          <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-            <p className="text-sm font-medium text-foreground">Platform subdomains (wildcard)</p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Add this record once in your DNS provider to enable all <code className="font-mono">*.{PLATFORM_DOMAIN}</code> subdomains.
-            </p>
-            <DnsTable
-              rows={[
-                { type: "A", host: "*", value: "76.76.21.21" },
-              ]}
-            />
-          </div>
-
           {/* Custom domain */}
           <div className="rounded-lg border border-border bg-card p-4 space-y-3">
             <p className="text-sm font-medium text-foreground">Custom domain</p>
