@@ -9,6 +9,6 @@ export default async function PreviewSitePage({ params }: PageProps) {
   const { slug } = await params
   // Preview shows the latest editor version regardless of published state.
   // We use the admin client to bypass RLS so unpublished websites are readable.
-  const client = createAdminClient()
+  const client = await createAdminClient()
   return loadPublicWebsitePage({ slug, isPreview: true, client })
 }

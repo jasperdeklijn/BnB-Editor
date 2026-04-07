@@ -58,17 +58,21 @@ console.log("HOST:", hostname)
     !hostname.includes("vercel.app")
 
   if (isCustomDomain) {
-    const { data: website } = await supabase
+    console.log("CUSTOM DOMAIN DETECTED:", hostname)
+
+    const { data: website, error } = await supabase
       .from("websites")
       .select("slug")
       .or(`custom_domain.eq.${hostname},custom_domain.eq.www.${hostname}`)
       .single()
 
+    console.log("DB RESULT:", website, error)
     if (website?.slug) {
       const url = request.nextUrl.clone()
       url.pathname = `/site/${website.slug}`
       return NextResponse.rewrite(url)
     }
+    return NextResponse.redirect(new URL("/", request.url))
   }
 
   // 4. Normal app routing — enforce auth
