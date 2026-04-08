@@ -50,45 +50,107 @@ export async function POST(request: Request) {
   const vercelToken = process.env.VERCEL_ACCESS_TOKEN
   const vercelProjectId = process.env.VERCEL_PROJECT_ID
 
+  console.log('[Vercel Domain] Starting domain management', {
+    slug,
+    normalized,
+    currentDomain,
+    hasVercelToken: !!vercelToken,
+    hasVercelProjectId: !!vercelProjectId,
+    tokenLength: vercelToken?.length,
+  })
+
   if (vercelToken && vercelProjectId) {
     try {
       // If adding a new domain
       if (normalized && normalized !== currentDomain) {
-        const addResponse = await fetch(`https://api.vercel.com/v10/domains?projectId=${vercelProjectId}`, {
+        const url = `https://api.vercel.com/v7/domains?projectId=${vercelProjectId}`
+        console.log('[Vercel Domain] Adding domain to Vercel', {
+          domain: normalized,
+          url,
+        })
+
+        const addResponse = await fetch(url, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${vercelToken}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ name: normalized }),
+          body: JSON.stringify({
+            method: 'add',
+            name: normalized,
+            cdnEnabled: true,
+            zone: true,
+          }),
         })
+
+        console.log('[Vercel Domain] Add response status:', addResponse.status)
 
         if (!addResponse.ok) {
           const errorData = await addResponse.json()
-          console.error('Failed to add domain to Vercel:', errorData)
-          // Don't fail the request, just log
+          console.error('[Vercel Domain] Failed to add domain to Vercel:', {
+            status: addResponse.status,
+            statusText: addResponse.statusText,
+            error: errorData,
+          })
+        } else {
+          const successData = await addResponse.json()
+          console.log('[Vercel Domain] Successfully added domain to Vercel:', {
+            domain: normalized,
+            response: successData,
+          })
         }
+      } else if (normalized && normalized === currentDomain) {
+        console.log('[Vercel Domain] No domain change detected; current domain already matches normalized value', {
+          currentDomain,
+          normalized,
+        })
       }
 
       // If removing a domain
       if (!normalized && currentDomain) {
-        const deleteResponse = await fetch(`https://api.vercel.com/v10/domains/${currentDomain}?projectId=${vercelProjectId}`, {
+        const url = `https://api.vercel.com/v7/domains/${currentDomain}?projectId=${vercelProjectId}`
+        console.log('[Vercel Domain] Removing domain from Vercel', {
+          domain: currentDomain,
+          url,
+        })
+
+        const deleteResponse = await fetch(url, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${vercelToken}`,
           },
         })
 
+        console.log('[Vercel Domain] Delete response status:', deleteResponse.status)
+
         if (!deleteResponse.ok) {
           const errorData = await deleteResponse.json()
-          console.error('Failed to remove domain from Vercel:', errorData)
-          // Don't fail the request
+          console.error('[Vercel Domain] Failed to remove domain from Vercel:', {
+            status: deleteResponse.status,
+            statusText: deleteResponse.statusText,
+            error: errorData,
+          })
+        } else {
+          console.log('[Vercel Domain] Successfully removed domain from Vercel:', {
+            domain: currentDomain,
+          })
         }
       }
+
+      if (!normalized && !currentDomain) {
+        console.log('[Vercel Domain] No domain change - skipping Vercel API call')
+      }
     } catch (vercelError) {
-      console.error('Vercel API error:', vercelError)
-      // Continue without failing
+      console.error('[Vercel Domain] Exception during Vercel API call:', {
+        error: vercelError instanceof Error ? vercelError.message : String(vercelError),
+        stack: vercelError instanceof Error ? vercelError.stack : undefined,
+      })
     }
+  } else {
+    console.warn('[Vercel Domain] Vercel credentials not configured', {
+      hasToken: !!vercelToken,
+      hasProjectId: !!vercelProjectId,
+    })
   }
 
   return NextResponse.json({ success: true, customDomain: normalized })
