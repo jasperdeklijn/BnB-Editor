@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     try {
       // If adding a new domain
       if (normalized && normalized !== currentDomain) {
-        const url = `https://api.vercel.com/v7/domains?projectId=${vercelProjectId}`
+        const url = `https://api.vercel.com/v10/projects/${vercelProjectId}/domains`
         console.log('[Vercel Domain] Adding domain to Vercel', {
           domain: normalized,
           url,
@@ -76,10 +76,7 @@ export async function POST(request: Request) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            method: 'add',
             name: normalized,
-            cdnEnabled: true,
-            zone: true,
           }),
         })
 
@@ -108,7 +105,7 @@ export async function POST(request: Request) {
 
       // If removing a domain
       if (!normalized && currentDomain) {
-        const url = `https://api.vercel.com/v7/domains/${currentDomain}?projectId=${vercelProjectId}`
+        const url = `https://api.vercel.com/v10/projects/${vercelProjectId}/domains`
         console.log('[Vercel Domain] Removing domain from Vercel', {
           domain: currentDomain,
           url,
