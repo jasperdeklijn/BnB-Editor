@@ -87,18 +87,22 @@ export function LandingHero() {
             <div className="h-3 w-3 rounded-full bg-yellow-400/60" aria-hidden="true" />
             <div className="h-3 w-3 rounded-full bg-green-400/60" aria-hidden="true" />
             <div className="mx-3 flex-1 rounded-md bg-white/10 px-3 py-1 text-xs text-white/40">
-              bnbwebsitemaken.nl / voorbeeld
+              bnbwebsitemaken.nl / editor
             </div>
           </div>
           {/* Screenshot image */}
-          <Image
-            src="/placeholder.svg?height=600&width=1200"
-            alt="Voorbeeld van BnB Website Maken — professionele website bouwer voor bed & breakfast"
+          <video
+            aria-label="Voorbeeld van BnB Website Maken — professionele website bouwer voor bed & breakfast"
             width={1200}
-            height={600}
+            height={350}
             className="w-full"
-            priority
-          />
+            controls
+            autoPlay
+            muted
+            loop
+          >
+            <source src="/editor-demo.mp4" type="video/mp4" />
+          </video>
         </div>
         <p className="mt-3 text-center text-xs text-white/25">Visuele weergave — de werkelijke editor kan afwijken</p>
       </div>
