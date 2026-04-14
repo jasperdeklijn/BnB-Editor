@@ -95,8 +95,8 @@ function RoomCard({ room, onUpdate, onDelete, isSaving }: RoomCardProps) {
   const handleBlur = () => {
     onUpdate(room.id, {
       name: localName,
-      description: localDescription || null,
-      price: localPrice || null,
+      description: localDescription,
+      price: localPrice,
       max_guests: localGuests ? parseInt(localGuests, 10) : null,
     })
   }
@@ -139,15 +139,35 @@ function RoomCard({ room, onUpdate, onDelete, isSaving }: RoomCardProps) {
   }, [room.id, room.images, onUpdate])
 
   return (
-    <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+    <div className="rounded-xl border border-border bg-card shadow-sm">
       {/* Card header */}
       <div className="flex items-center justify-between px-5 py-4 bg-secondary/40 border-b border-border">
         <div className="flex items-center gap-2">
-          <GripVertical className="h-4 w-4 text-muted-foreground/50" />
           <BedDouble className="h-4 w-4 text-primary" />
           <span className="font-semibold text-foreground truncate max-w-[200px]">
-            {room.name || "Unnamed Room"}
+            {room.name || "Naamloze kamer"}
           </span>
+          <div className="relative group">
+            {(() => {
+              const missing = []
+              if (!room.name) missing.push("naam")
+              if (!room.description) missing.push("beschrijving")
+              if (!room.price) missing.push("prijs")
+              if (!room.max_guests) missing.push("max gasten")
+              return (
+                <>
+                  {missing.length === 0 ? (
+                    <CheckCircle2 className="h-4 w-4 text-green-500 ml-2" />
+                  ) : (
+                    <X className="h-4 w-4 text-red-500 ml-2" />
+                  )}
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-3 px-3 py-2 bg-card border border-border text-foreground text-sm rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-100">
+                    {missing.length === 0 ? "Alle velden ingevuld" : `Ontbreekt: ${missing.join(", ")}`}
+                  </div>
+                </>
+              )
+            })()}
+          </div>
         </div>
         <Button
           variant="ghost"
@@ -167,11 +187,11 @@ function RoomCard({ room, onUpdate, onDelete, isSaving }: RoomCardProps) {
             htmlFor={`name-${room.id}`}
             className="text-xs font-medium text-muted-foreground uppercase tracking-wide"
           >
-            Room Name
+            Kamernaam
           </Label>
           <Input
             id={`name-${room.id}`}
-            placeholder="Deluxe Suite"
+            placeholder="Luxe Suite"
             value={localName}
             onChange={(e) => setLocalName(e.target.value)}
             onBlur={handleBlur}
@@ -184,11 +204,11 @@ function RoomCard({ room, onUpdate, onDelete, isSaving }: RoomCardProps) {
             htmlFor={`desc-${room.id}`}
             className="text-xs font-medium text-muted-foreground uppercase tracking-wide"
           >
-            Description
+            Beschrijving
           </Label>
           <Textarea
             id={`desc-${room.id}`}
-            placeholder="Spacious room with a sea view and private bathroom..."
+            placeholder="Ruime kamer met zeezicht en eigen badkamer..."
             value={localDescription}
             onChange={(e) => setLocalDescription(e.target.value)}
             onBlur={handleBlur}
@@ -205,7 +225,7 @@ function RoomCard({ room, onUpdate, onDelete, isSaving }: RoomCardProps) {
               className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide"
             >
               <DollarSign className="h-3 w-3 text-primary" />
-              Price / Night
+              Prijs / Nacht
             </Label>
             <Input
               id={`price-${room.id}`}
@@ -222,7 +242,7 @@ function RoomCard({ room, onUpdate, onDelete, isSaving }: RoomCardProps) {
               className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide"
             >
               <Users className="h-3 w-3 text-primary" />
-              Max Guests
+              Max gasten
             </Label>
             <Input
               id={`guests-${room.id}`}
@@ -240,8 +260,8 @@ function RoomCard({ room, onUpdate, onDelete, isSaving }: RoomCardProps) {
         <div className="space-y-2">
           <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
             <ImageIcon className="h-3 w-3 text-primary" />
-            Photos
-            <span className="ml-auto text-muted-foreground/60 normal-case font-normal">drag from sidebar</span>
+            Foto's
+            <span className="ml-auto text-muted-foreground/60 normal-case font-normal">sleep van zijbalk</span>
           </Label>
 
           <div
@@ -259,7 +279,7 @@ function RoomCard({ room, onUpdate, onDelete, isSaving }: RoomCardProps) {
               <div className="flex flex-col items-center justify-center h-16 text-center gap-1">
                 <ImageIcon className={`h-5 w-5 ${isDragOver ? "text-primary" : "text-muted-foreground/40"}`} />
                 <p className={`text-xs ${isDragOver ? "text-primary font-medium" : "text-muted-foreground/60"}`}>
-                  {isDragOver ? "Drop to add photo" : "Drop images here"}
+                  {isDragOver ? "Laat los om foto toe te voegen" : "Sleep afbeeldingen hierheen"}
                 </p>
               </div>
             ) : (
@@ -271,7 +291,7 @@ function RoomCard({ room, onUpdate, onDelete, isSaving }: RoomCardProps) {
                       type="button"
                       onClick={() => removeImage(url)}
                       className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
-                      aria-label="Remove image"
+                      aria-label="Afbeelding verwijderen"
                     >
                       <X className="h-4 w-4 text-white" />
                     </button>
@@ -330,18 +350,18 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
     setIsSaving(true)
     try {
       const newRoom = await apiCreateRoom(bnbId, {
-        name: "New Room",
-        description: null,
-        price: null,
+        name: "Nieuwe kamer",
+        description: "",
+        price: "",
         max_guests: 2,
         images: [],
         position: rooms.length,
       })
       setRooms((prev) => [...prev, newRoom])
-      toast.success("Room created")
+      toast.success("Kamer aangemaakt")
     } catch (err) {
       console.error(err)
-      toast.error("Failed to create room")
+      toast.error("Mislukt om kamer aan te maken")
     } finally {
       setIsSaving(false)
     }
@@ -358,7 +378,7 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
       setRooms((prev) => prev.map((r) => (r.id === id ? updated : r)))
     } catch (err) {
       console.error(err)
-      toast.error("Failed to update room")
+      toast.error("Mislukt om kamer bij te werken")
     }
   }
 
@@ -369,11 +389,11 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
 
     try {
       await apiDeleteRoom(id)
-      toast.success("Room deleted")
+      toast.success("Kamer verwijderd")
     } catch (err) {
       console.error(err)
       setRooms(prev)
-      toast.error("Failed to delete room")
+      toast.error("Mislukt om kamer te verwijderen")
     }
   }
 
@@ -403,9 +423,9 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
           </Button>
           <div className="flex items-center gap-2">
             <BedDouble className="h-5 w-5 text-[var(--editor-header-fg)]" />
-            <h1 className="text-lg font-semibold text-[var(--editor-header-fg)]">Rooms</h1>
+            <h1 className="text-lg font-semibold text-[var(--editor-header-fg)]">Kamers</h1>
             <span className="ml-1 rounded-full bg-[var(--editor-header-fg)]/15 px-2 py-0.5 text-xs font-medium text-[var(--editor-header-fg)]">
-              {rooms.length}
+              {rooms.filter(room => room.name && room.description && room.price && room.max_guests).length}
             </span>
           </div>
         </div>
@@ -415,12 +435,12 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
             {isSaving ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Saving…
+                Opslaan…
               </>
             ) : (
               <>
                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />
-                Auto-saved
+                Automatisch opgeslagen
               </>
             )}
           </span>
@@ -431,7 +451,7 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
             className="bg-[var(--editor-header-fg)] text-[var(--editor-header)] hover:bg-[var(--editor-header-fg)]/90"
           >
             <Plus className="mr-2 h-4 w-4" />
-            Add Room
+            Kamer toevoegen
           </Button>
         </div>
       </header>
@@ -448,15 +468,15 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
           <div className="flex items-center justify-between px-3 py-3 border-b border-border sticky top-0 bg-[var(--editor-sidebar)] z-10">
             {!sidebarCollapsed && (
               <div>
-                <p className="text-xs font-semibold text-foreground">Images</p>
-                <p className="text-[10px] text-muted-foreground">Drag onto rooms</p>
+                <p className="text-xs font-semibold text-foreground">Afbeeldingen</p>
+                <p className="text-[10px] text-muted-foreground">Sleep naar kamers</p>
               </div>
             )}
             <button
               type="button"
               onClick={() => setSidebarCollapsed((c) => !c)}
               className="ml-auto flex h-7 w-7 items-center justify-center rounded-md border bg-card text-muted-foreground hover:bg-accent transition-colors flex-shrink-0"
-              aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              aria-label={sidebarCollapsed ? "Zijbalk uitvouwen" : "Zijbalk samenvouwen"}
             >
               {sidebarCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
             </button>
@@ -472,9 +492,9 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
               ) : images.length === 0 ? (
                 <div className="py-8 text-center">
                   <ImageIcon className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                  <p className="text-xs text-muted-foreground">No images yet</p>
+                  <p className="text-xs text-muted-foreground">Nog geen afbeeldingen</p>
                   <Link href="/images" className="text-xs text-primary hover:underline mt-1 block">
-                    Upload images
+                    Afbeeldingen uploaden
                   </Link>
                 </div>
               ) : (
@@ -501,14 +521,14 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
                 <BedDouble className="h-10 w-10 text-primary" />
               </div>
               <div>
-                <p className="font-semibold text-foreground text-lg">No rooms yet</p>
+                <p className="font-semibold text-foreground text-lg">Nog geen kamers</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Click &ldquo;Add Room&rdquo; to create your first room
+                  Click &ldquo;Kamer toevoegen&rdquo; to create your first room
                 </p>
               </div>
               <Button onClick={handleCreateRoom} disabled={isSaving} className="mt-2">
                 <Plus className="mr-2 h-4 w-4" />
-                Add First Room
+                Eerste kamer toevoegen
               </Button>
             </div>
           ) : (
@@ -533,7 +553,7 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
                 <div className="rounded-full bg-muted group-hover:bg-primary/10 p-3 transition-colors">
                   <Plus className="h-6 w-6" />
                 </div>
-                <span className="text-sm font-medium">Add Another Room</span>
+                <span className="text-sm font-medium">Nog een kamer toevoegen</span>
               </button>
             </div>
           )}

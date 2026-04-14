@@ -41,7 +41,7 @@ export function ImagesClient({ userId }: ImagesClientProps) {
       })
 
     if (error) {
-      toast.error("Failed to load images")
+      toast.error("Mislukt om afbeeldingen te laden")
       setIsLoading(false)
       return
     }
@@ -75,7 +75,7 @@ export function ImagesClient({ userId }: ImagesClientProps) {
       )
 
     if (signedUrlError) {
-      toast.error("Failed to load image URLs")
+      toast.error("Mislukt om afbeelding-URLs te laden")
       setIsLoading(false)
       return
     }
@@ -113,19 +113,19 @@ export function ImagesClient({ userId }: ImagesClientProps) {
       for (const file of files) {
         // Check file size
         if (file.size > MAX_FILE_SIZE) {
-          toast.error(`${file.name} exceeds 5MB limit`)
+          toast.error(`${file.name} overschrijdt 5MB limiet`)
           continue
         }
 
         // Check total usage
         if (totalUsage + file.size > MAX_TOTAL_SIZE) {
-          toast.error("Upload would exceed your 50MB storage limit")
+          toast.error("Upload zou je 50MB opslaglimiet overschrijden")
           break
         }
 
         // Check if file type is an image
         if (!file.type.startsWith("image/")) {
-          toast.error(`${file.name} is not an image`)
+          toast.error(`${file.name} is geen afbeelding`)
           continue
         }
 
@@ -140,16 +140,16 @@ export function ImagesClient({ userId }: ImagesClientProps) {
           })
 
         if (error) {
-          toast.error(`Failed to upload ${file.name}: ${error.message}`)
+          toast.error(`Mislukt om ${file.name} te uploaden: ${error.message}`)
         } else {
-          toast.success(`${file.name} uploaded successfully`)
+          toast.success(`${file.name} succesvol geüpload`)
           setTotalUsage((prev) => prev + file.size)
         }
       }
 
       await fetchImages()
     } catch {
-      toast.error("An error occurred during upload")
+      toast.error("Er is een fout opgetreden tijdens het uploaden")
     } finally {
       setIsUploading(false)
     }
@@ -164,9 +164,9 @@ export function ImagesClient({ userId }: ImagesClientProps) {
       .remove([filePath])
 
     if (error) {
-      toast.error("Failed to delete image")
+      toast.error("Mislukt om afbeelding te verwijderen")
     } else {
-      toast.success("Image deleted")
+      toast.success("Afbeelding verwijderd")
       await fetchImages()
     }
   }
@@ -180,12 +180,12 @@ export function ImagesClient({ userId }: ImagesClientProps) {
       .createSignedUrl(`${userId}/${fileName}`, 60 * 60 * 24 * 7) // 7 days
     
     if (error || !data?.signedUrl) {
-      toast.error("Failed to generate URL")
+      toast.error("Mislukt om URL te genereren")
       return
     }
     
     navigator.clipboard.writeText(data.signedUrl)
-    toast.success("URL copied to clipboard (valid for 7 days)")
+    toast.success("URL gekopieerd naar klembord (geldig voor 7 dagen)")
   }
 
   const formatBytes = (bytes: number) => {
@@ -210,12 +210,12 @@ export function ImagesClient({ userId }: ImagesClientProps) {
         >
           <Link href="/editor">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Editor
+            Terug naar Editor
           </Link>
         </Button>
         <div className="flex items-center gap-2">
           <ImageIcon className="h-5 w-5 text-[var(--editor-header-fg)]" />
-          <h1 className="text-lg font-semibold text-[var(--editor-header-fg)]">My Images</h1>
+          <h1 className="text-lg font-semibold text-[var(--editor-header-fg)]">Mijn Afbeeldingen</h1>
         </div>
       </header>
 
@@ -229,9 +229,9 @@ export function ImagesClient({ userId }: ImagesClientProps) {
                 <HardDrive className="h-4 w-4" />
               </div>
               <div>
-                <h2 className="font-semibold text-foreground">Storage Usage</h2>
+                <h2 className="font-semibold text-foreground">Opslaggebruik</h2>
                 <p className="text-xs text-muted-foreground">
-                  {formatBytes(totalUsage)} of {formatBytes(MAX_TOTAL_SIZE)} used
+                  {formatBytes(totalUsage)} van {formatBytes(MAX_TOTAL_SIZE)} gebruikt
                 </p>
               </div>
             </div>
@@ -243,7 +243,7 @@ export function ImagesClient({ userId }: ImagesClientProps) {
                 />
               </div>
               <p className="mt-2 text-xs text-muted-foreground">
-                Max 5 MB per file · 50 MB total
+                Max 5 MB per bestand · 50 MB totaal
               </p>
             </div>
           </div>
@@ -255,8 +255,8 @@ export function ImagesClient({ userId }: ImagesClientProps) {
                 <UploadIcon className="h-4 w-4" />
               </div>
               <div>
-                <h2 className="font-semibold text-foreground">Upload Images</h2>
-                <p className="text-xs text-muted-foreground">PNG, JPG, GIF, WEBP up to 5 MB each</p>
+                <h2 className="font-semibold text-foreground">Afbeeldingen uploaden</h2>
+                <p className="text-xs text-muted-foreground">PNG, JPG, GIF, WEBP tot 5 MB elk</p>
               </div>
             </div>
             <div className="p-6">
@@ -275,9 +275,9 @@ export function ImagesClient({ userId }: ImagesClientProps) {
                 <ImageIcon className="h-4 w-4" />
               </div>
               <div>
-                <h2 className="font-semibold text-foreground">Your Images</h2>
+                <h2 className="font-semibold text-foreground">Jouw Afbeeldingen</h2>
                 <p className="text-xs text-muted-foreground">
-                  Click an image to copy its URL for use in the editor
+                  Klik op een afbeelding om de URL te kopiëren voor gebruik in de editor
                 </p>
               </div>
             </div>

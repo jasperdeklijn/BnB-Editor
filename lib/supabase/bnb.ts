@@ -27,8 +27,8 @@ export interface Room {
   id: string
   bnb_id: string
   name: string
-  description: string | null
-  price: string | null
+  description: string
+  price: string
   max_guests: number | null
   images: string[]
   position: number
