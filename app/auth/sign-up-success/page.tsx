@@ -21,15 +21,15 @@ export default function SignUpSuccessPage() {
           <h1 className="text-2xl font-bold text-white mb-2">
             Bedankt voor het aanmelden!
           </h1>
-          <p className="text-white/50 leading-relaxed mb-6">
+          {/* <p className="text-white/50 leading-relaxed mb-6">
             We hebben een bevestigingsmail gestuurd naar jouw e-mailadres. Klik op de link in de e-mail om je account te activeren.
-          </p>
+          </p> */}
 
-          <div className="rounded-xl border border-[var(--brand-blue)]/20 bg-[var(--hero-bg)] p-4">
+          {/* <div className="rounded-xl border border-[var(--brand-blue)]/20 bg-[var(--hero-bg)] p-4">
             <p className="text-sm text-white/40">
               Geen e-mail ontvangen? Controleer je spamfolder of probeer het opnieuw.
             </p>
-          </div>
+          </div> */}
         </div>
 
         <div className="mt-6 flex items-center justify-center gap-4 text-xs text-white/30">
