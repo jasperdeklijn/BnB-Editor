@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { toast } from "sonner"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -15,12 +16,10 @@ import {
   Palette,
   Wand2,
   Plus,
-  Minus,
   ImageIcon,
   Mail,
   MapPin,
   Phone,
-  DollarSign,
   Navigation,
   Pin,
   Eye,
@@ -35,10 +34,26 @@ import {
   Grid3x3,
   Columns,
   Rows,
+  BedDouble,
+  List,
+  Newspaper,
+  GalleryHorizontal,
+  AlignJustify,
+  Loader2,
+  ExternalLink,
+  Check,
 } from "lucide-react"
 import type { HeroLayout } from "@/components/bnb-sections/hero-section"
 import type { GalleryLayout } from "@/components/bnb-sections/gallery-section"
+import type { RoomsLayout } from "@/components/bnb-sections/rooms-section"
 import type { SectionType } from "@/lib/types"
+
+interface AvailableRoom {
+  id: string
+  name: string
+  images: string[]
+  price: string | null
+}
 
 interface SelectionEditorProps {
   selectedSection: Section | null
@@ -49,27 +64,25 @@ interface SelectionEditorProps {
   onDelete: (id: string) => void
   onTransitionUpdate: (fromSectionId: string, toSectionId: string, transitionType: string) => void
   websiteId?: string | null
+  bnbId?: string | null
 }
 
-export function SelectionEditor({ 
-  selectedSection, 
-  sections, 
+export function SelectionEditor({
+  selectedSection,
+  sections,
   transitions,
-  onUpdate, 
-  onStyleUpdate, 
-  onDelete, 
+  onUpdate,
+  onStyleUpdate,
+  onDelete,
   onTransitionUpdate,
-  websiteId 
+  websiteId,
+  bnbId,
 }: SelectionEditorProps) {
-  const [localRooms, setLocalRooms] = useState<any[]>(() =>
-    Array.isArray((selectedSection as any)?.data?.rooms) ? [...(selectedSection as any).data.rooms] : [],
-  )
   const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null)
 
-  // Keep localRooms in sync when selected section changes
-  useEffect(() => {
-    setLocalRooms(Array.isArray((selectedSection as any)?.data?.rooms) ? [...(selectedSection as any).data.rooms] : [])
-  }, [selectedSection?.id])
+  // Rooms selector state
+  const [availableRooms, setAvailableRooms] = useState<AvailableRoom[]>([])
+  const [loadingRooms, setLoadingRooms] = useState(false)
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -78,9 +91,65 @@ export function SelectionEditor({
     }
   }, [])
 
+  // Fetch available rooms whenever a rooms section is selected
+  useEffect(() => {
+    if (selectedSection?.type !== "rooms") return
+
+    let cancelled = false
+    setLoadingRooms(true)
+
+    const fetchRooms = async () => {
+      try {
+        const supabase = createClient()
+
+        // Use bnbId prop if available; otherwise fall back to user→bnb lookup
+        let resolvedBnbId: string | null = bnbId ?? null
+
+        if (!resolvedBnbId) {
+          const {
+            data: { user },
+          } = await supabase.auth.getUser()
+          if (!user || cancelled) { setLoadingRooms(false); return }
+
+          const { data: bnb } = await supabase
+            .from("bnbs")
+            .select("id")
+            .eq("user_id", user.id)
+            .maybeSingle()
+
+          if (!bnb || cancelled) { setLoadingRooms(false); return }
+          resolvedBnbId = bnb.id
+        }
+
+        if (cancelled) return
+
+        const { data: roomRows } = await supabase
+          .from("rooms")
+          .select("id, name, images, price")
+          .eq("bnb_id", resolvedBnbId)
+          .order("position", { ascending: true })
+
+        if (!cancelled) {
+          setAvailableRooms(
+            (roomRows ?? []).map((r) => ({
+              ...r,
+              images: Array.isArray(r.images) ? r.images : [],
+            }))
+          )
+        }
+      } catch {
+        // ignore
+      }
+      if (!cancelled) setLoadingRooms(false)
+    }
+
+    fetchRooms()
+    return () => { cancelled = true }
+  }, [bnbId, selectedSection?.id, selectedSection?.type])
+
   // Save to database with debouncing
   const saveToDatabase = async (updatedData: any) => {
-    if (!websiteId || !selectedSection || selectedSection.id.startsWith('section-')) return
+    if (!websiteId || !selectedSection || selectedSection.id.startsWith("section-")) return
 
     try {
       const supabase = createClient()
@@ -88,18 +157,18 @@ export function SelectionEditor({
         type: selectedSection.type,
         content: updatedData,
         styles: selectedSection.styles ?? {},
-        position: sections.findIndex(s => s.id === selectedSection.id) + 1,
+        position: sections.findIndex((s) => s.id === selectedSection.id) + 1,
       }
-      
+
       await websiteSections.updateSection(selectedSection.id, payload as any, supabase)
     } catch (err) {
-      console.error('Error saving to database:', err)
+      console.error("Error saving to database:", err)
     }
   }
 
   // Save styles to database
   const saveStylesToDatabase = async (styles: any) => {
-    if (!websiteId || !selectedSection || selectedSection.id.startsWith('section-')) return
+    if (!websiteId || !selectedSection || selectedSection.id.startsWith("section-")) return
 
     try {
       const supabase = createClient()
@@ -107,12 +176,12 @@ export function SelectionEditor({
         type: selectedSection.type,
         content: selectedSection.data ?? {},
         styles: styles,
-        position: sections.findIndex(s => s.id === selectedSection.id) + 1,
+        position: sections.findIndex((s) => s.id === selectedSection.id) + 1,
       }
-      
+
       await websiteSections.updateSection(selectedSection.id, payload as any, supabase)
     } catch (err) {
-      console.error('Error saving styles to database:', err)
+      console.error("Error saving styles to database:", err)
     }
   }
 
@@ -132,102 +201,54 @@ export function SelectionEditor({
 
   const updateField = (field: string, value: any) => {
     onUpdate(selectedSection.id, { [field]: value })
-    
-    // Clear existing timeout
+
     if (saveTimeoutId) clearTimeout(saveTimeoutId)
-    
-    // Set new timeout for debounced save
+
     const timeout = setTimeout(async () => {
       const updatedData = { ...selectedSection.data, [field]: value }
       await saveToDatabase(updatedData)
-      
+
       toast.success("Opgeslagen in database", {
         position: "bottom-right",
         duration: 2000,
-        style: { background: '#10b981', color: 'white' }
+        style: { background: "#10b981", color: "white" },
       })
     }, 800)
-    
-    setSaveTimeoutId(timeout)
-  }
 
-  const handleAddRoom = () => {
-    const newRoom = { name: "New Room", description: "", price: "$0/night" }
-    const updated = [...localRooms, newRoom]
-    setLocalRooms(updated)
-    onUpdate(selectedSection.id, { rooms: updated })
-    
-    if (saveTimeoutId) clearTimeout(saveTimeoutId)
-    const timeout = setTimeout(async () => {
-      await saveToDatabase({ ...selectedSection.data, rooms: updated })
-      toast.success("Kamer toegevoegd", {
-        position: "bottom-right",
-        duration: 2000,
-        style: { background: '#10b981', color: 'white' }
-      })
-    }, 800)
-    setSaveTimeoutId(timeout)
-  }
-
-  const handleUpdateRoom = (index: number, field: string, value: string) => {
-    const updated = localRooms.map((r, i) => (i === index ? { ...r, [field]: value } : r))
-    setLocalRooms(updated)
-    onUpdate(selectedSection.id, { rooms: updated })
-    
-    if (saveTimeoutId) clearTimeout(saveTimeoutId)
-    const timeout = setTimeout(async () => {
-      await saveToDatabase({ ...selectedSection.data, rooms: updated })
-      toast.success("Kamer bijgewerkt", {
-        position: "bottom-right",
-        duration: 2000,
-        style: { background: '#10b981', color: 'white' }
-      })
-    }, 800)
-    setSaveTimeoutId(timeout)
-  }
-
-  const handleRemoveRoom = (index: number) => {
-    const updated = localRooms.filter((_, i) => i !== index)
-    setLocalRooms(updated)
-    onUpdate(selectedSection.id, { rooms: updated })
-    
-    if (saveTimeoutId) clearTimeout(saveTimeoutId)
-    const timeout = setTimeout(async () => {
-      await saveToDatabase({ ...selectedSection.data, rooms: updated })
-      toast.success("Kamer verwijderd", {
-        position: "bottom-right",
-        duration: 2000,
-        style: { background: '#10b981', color: 'white' }
-      })
-    }, 800)
     setSaveTimeoutId(timeout)
   }
 
   const handleTransitionChange = (newType: string) => {
-    const nextSectionIdx = sections.findIndex(s => s.id === selectedSection.id) + 1
-    
+    const nextSectionIdx = sections.findIndex((s) => s.id === selectedSection.id) + 1
+
     if (nextSectionIdx >= 0 && nextSectionIdx < sections.length) {
       const nextSection = sections[nextSectionIdx]
-      
-      // Call parent callback to update transition
+
       onTransitionUpdate(selectedSection.id, nextSection.id, newType)
-      
+
       if (saveTimeoutId) clearTimeout(saveTimeoutId)
       const timeout = setTimeout(() => {
         toast.success("Overgang opgeslagen", {
           position: "bottom-right",
           duration: 2000,
-          style: { background: '#10b981', color: 'white' }
+          style: { background: "#10b981", color: "white" },
         })
       }, 800)
       setSaveTimeoutId(timeout)
-      
-      console.log(`✓ Transition set: ${selectedSection.type} → ${newType} → ${nextSection.type}`)
     }
   }
 
+  // Toggle a room in the roomIds selection
+  const toggleRoomId = (roomId: string) => {
+    const current = ((selectedSection.data as any).roomIds as string[]) ?? []
+    const next = current.includes(roomId)
+      ? current.filter((id) => id !== roomId)
+      : [...current, roomId]
+    updateField("roomIds", next)
+  }
+
   return (
-      <div className="w-full md:w-80 border-l border-border bg-[var(--editor-panel)] p-6 overflow-auto animate-in slide-in-from-right duration-300">
+    <div className="w-full md:w-80 border-l border-border bg-[var(--editor-panel)] p-6 overflow-auto animate-in slide-in-from-right duration-300">
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
@@ -269,141 +290,8 @@ export function SelectionEditor({
                   { layout: "card" as HeroLayout, label: "Kaart", icon: Square },
                   { layout: "split-reverse" as HeroLayout, label: "Gesplitst omgekeerd", icon: PanelRight },
                 ].map(({ layout, label, icon: Icon }) => {
-                  const currentLayout = ((selectedSection.data as any).layout as HeroLayout) || "centered"
-                  const isActive = currentLayout === layout
-                  return (
-                    <button
-                      key={layout}
-                      onClick={() => updateField("layout", layout)}
-                      className={`flex flex-col items-center gap-1 rounded-lg border p-3 transition-all hover:scale-105 ${
-                        isActive 
-                          ? "border-primary bg-primary/10 text-primary ring-2 ring-ring/30" 
-                          : "border-border bg-background hover:border-primary/50 hover:bg-accent"
-                      }`}
-                    >
-                      <Icon className="h-5 w-5" />
-                      <span className="text-xs font-medium">{label}</span>
-                    </button>
-                  )
-                })}
-              </div>
-              <p className="text-[10px] text-muted-foreground text-center">
-                {((selectedSection.data as any).layout as HeroLayout) === "split" && "Afbeelding aan linkerkant, tekst aan rechterkant"}
-                {((selectedSection.data as any).layout as HeroLayout) === "fullwidth" && "Volledige achtergrondafbeelding met overlay"}
-                {((selectedSection.data as any).layout as HeroLayout) === "centered" && "Schoon tekst-gecentreerd ontwerp"}
-                {((selectedSection.data as any).layout as HeroLayout) === "minimal" && "Minimaal tekst-only ontwerp"}
-                {((selectedSection.data as any).layout as HeroLayout) === "card" && "Achtergrondafbeelding met tekstkaart"}
-                {((selectedSection.data as any).layout as HeroLayout) === "split-reverse" && "Tekst aan linkerkant, afbeelding aan rechterkant"}
-              </p>
-            </Card>
-
-            {/* Hero Content */}
-            <Card className="p-4 space-y-3">
-              <Label className="flex items-center gap-2">
-                <Type className="h-3.5 w-3.5" />
-                Inhoud
-              </Label>
-              <div className="space-y-3">
-                <div>
-                  <Label className="text-xs mb-1.5 block">Titel</Label>
-                  <Input placeholder="bijv., Welkom bij onze B&B" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
-                </div>
-                <div>
-                  <Label className="text-xs mb-1.5 block">Ondertitel</Label>
-                  <Input placeholder="bijv., Ervaar comfort en gastvrijheid" value={(selectedSection.data as any).subtitle || ""} onChange={(e) => updateField("subtitle", e.target.value)} />
-                </div>
-                <div>
-                  <Label className="text-xs mb-1.5 block">CTA-knoptekst</Label>
-                  <Input placeholder="bijv., Nu boeken" value={(selectedSection.data as any).ctaText || ""} onChange={(e) => updateField("ctaText", e.target.value)} />
-                </div>
-              </div>
-            </Card>
-          </>
-        )}
-
-        {selectedSection.type === "about" && (
-          <Card className="p-4 space-y-3">
-            <Label className="flex items-center gap-2">
-              <Type className="h-3.5 w-3.5" />
-              Titel
-            </Label>
-            <Input placeholder="Over Ons" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
-            <Label className="flex items-center gap-2">
-              <Type className="h-3.5 w-3.5" />
-              Beschrijving
-            </Label>
-            <textarea
-              placeholder="Beschrijf je B&B..."
-              value={(selectedSection.data as any).description || ""}
-              onChange={(e) => updateField("description", e.target.value)}
-              className="w-full min-h-24 p-2 border rounded-lg resize-none"
-            />
-          </Card>
-        )}
-
-        {selectedSection.type === "rooms" && (
-          <Card className="p-4 space-y-3">
-            <Label className="flex items-center gap-2">
-              <Type className="h-3.5 w-3.5" />
-              Titel
-            </Label>
-            <Input placeholder="Onze Kamers" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2">
-                <ImageIcon className="h-3.5 w-3.5" />
-                Kamers
-              </Label>
-              {localRooms.map((room, idx) => (
-                <div key={idx} className="space-y-2 rounded-lg border bg-muted/20 p-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium text-muted-foreground">Kamer {idx + 1}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => handleRemoveRoom(idx)}
-                      className="h-6 w-6 text-destructive hover:bg-destructive/10"
-                    >
-                      <Minus className="h-3 w-3" />
-                    </Button>
-                  </div>
-                  <Input placeholder="Kamernaam" value={room.name} onChange={(e) => handleUpdateRoom(idx, "name", e.target.value)} />
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <Input placeholder="Prijs" value={room.price} onChange={(e) => handleUpdateRoom(idx, "price", e.target.value)} />
-                    </div>
-                  </div>
-                  <Input placeholder="Beschrijving" value={room.description} onChange={(e) => handleUpdateRoom(idx, "description", e.target.value)} />
-                </div>
-              ))}
-              <Button onClick={handleAddRoom} className="w-full" variant="outline">
-                <Plus className="mr-2 h-4 w-4" />
-                Kamer toevoegen
-              </Button>
-            </div>
-          </Card>
-        )}
-
-        {selectedSection.type === "gallery" && (
-          <>
-            {/* Gallery Layout Selector */}
-            <Card className="p-4 space-y-3">
-              <Label className="flex items-center gap-2">
-                <LayoutGrid className="h-3.5 w-3.5" />
-                Layoutstijl
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Kies hoe je galerij wordt weergegeven
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { layout: "grid" as GalleryLayout, label: "Raster", icon: LayoutGrid },
-                  { layout: "vertical-carousel" as GalleryLayout, label: "Carrousel V", icon: Columns },
-                  { layout: "horizontal-carousel" as GalleryLayout, label: "Carrousel H", icon: Rows },
-                  { layout: "masonry" as GalleryLayout, label: "Metselwerk", icon: Grid3x3 },
-                  { layout: "single-with-thumbs" as GalleryLayout, label: "Focus", icon: ImageIcon },
-                  { layout: "full-slider" as GalleryLayout, label: "Schuifregelaar", icon: Maximize },
-                ].map(({ layout, label, icon: Icon }) => {
-                  const currentLayout = ((selectedSection.data as any).layout as GalleryLayout) || "grid"
+                  const currentLayout =
+                    ((selectedSection.data as any).layout as HeroLayout) || "centered"
                   const isActive = currentLayout === layout
                   return (
                     <button
@@ -422,12 +310,332 @@ export function SelectionEditor({
                 })}
               </div>
               <p className="text-[10px] text-muted-foreground text-center">
-                {((selectedSection.data as any).layout as GalleryLayout) === "grid" && "Klassieke rasterlayout"}
-                {((selectedSection.data as any).layout as GalleryLayout) === "vertical-carousel" && "Verticale scroll met tekst aan linkerkant"}
-                {((selectedSection.data as any).layout as GalleryLayout) === "horizontal-carousel" && "Horizontaal scrollende afbeeldingen"}
-                {((selectedSection.data as any).layout as GalleryLayout) === "masonry" && "Pinterest-stijl metselwerk layout"}
-                {((selectedSection.data as any).layout as GalleryLayout) === "single-with-thumbs" && "Grote afbeelding met miniaturen"}
-                {((selectedSection.data as any).layout as GalleryLayout) === "full-slider" && "Volledig scherm afbeelding slider"}
+                {((selectedSection.data as any).layout as HeroLayout) === "split" &&
+                  "Afbeelding aan linkerkant, tekst aan rechterkant"}
+                {((selectedSection.data as any).layout as HeroLayout) === "fullwidth" &&
+                  "Volledige achtergrondafbeelding met overlay"}
+                {((selectedSection.data as any).layout as HeroLayout) === "centered" &&
+                  "Schoon tekst-gecentreerd ontwerp"}
+                {((selectedSection.data as any).layout as HeroLayout) === "minimal" &&
+                  "Minimaal tekst-only ontwerp"}
+                {((selectedSection.data as any).layout as HeroLayout) === "card" &&
+                  "Achtergrondafbeelding met tekstkaart"}
+                {((selectedSection.data as any).layout as HeroLayout) === "split-reverse" &&
+                  "Tekst aan linkerkant, afbeelding aan rechterkant"}
+              </p>
+            </Card>
+
+            {/* Hero Content */}
+            <Card className="p-4 space-y-3">
+              <Label className="flex items-center gap-2">
+                <Type className="h-3.5 w-3.5" />
+                Inhoud
+              </Label>
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-xs mb-1.5 block">Titel</Label>
+                  <Input
+                    placeholder="bijv., Welkom bij onze B&B"
+                    value={(selectedSection.data as any).title || ""}
+                    onChange={(e) => updateField("title", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs mb-1.5 block">Ondertitel</Label>
+                  <Input
+                    placeholder="bijv., Ervaar comfort en gastvrijheid"
+                    value={(selectedSection.data as any).subtitle || ""}
+                    onChange={(e) => updateField("subtitle", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs mb-1.5 block">CTA-knoptekst</Label>
+                  <Input
+                    placeholder="bijv., Nu boeken"
+                    value={(selectedSection.data as any).ctaText || ""}
+                    onChange={(e) => updateField("ctaText", e.target.value)}
+                  />
+                </div>
+              </div>
+            </Card>
+          </>
+        )}
+
+        {selectedSection.type === "about" && (
+          <Card className="p-4 space-y-3">
+            <Label className="flex items-center gap-2">
+              <Type className="h-3.5 w-3.5" />
+              Titel
+            </Label>
+            <Input
+              placeholder="Over Ons"
+              value={(selectedSection.data as any).title || ""}
+              onChange={(e) => updateField("title", e.target.value)}
+            />
+            <Label className="flex items-center gap-2">
+              <Type className="h-3.5 w-3.5" />
+              Beschrijving
+            </Label>
+            <textarea
+              placeholder="Beschrijf je B&B..."
+              value={(selectedSection.data as any).description || ""}
+              onChange={(e) => updateField("description", e.target.value)}
+              className="w-full min-h-24 p-2 border rounded-lg resize-none"
+            />
+          </Card>
+        )}
+
+        {selectedSection.type === "rooms" && (
+          <>
+            {/* Rooms Layout Selector */}
+            <Card className="p-4 space-y-3">
+              <Label className="flex items-center gap-2">
+                <LayoutGrid className="h-3.5 w-3.5" />
+                Layoutstijl
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Kies hoe de kamerkaarten worden weergegeven
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { layout: "grid" as RoomsLayout, label: "Raster", icon: LayoutGrid },
+                  { layout: "list" as RoomsLayout, label: "Lijst", icon: List },
+                  { layout: "featured" as RoomsLayout, label: "Uitgelicht", icon: Maximize },
+                  { layout: "magazine" as RoomsLayout, label: "Magazine", icon: Newspaper },
+                  { layout: "minimal" as RoomsLayout, label: "Minimaal", icon: AlignJustify },
+                  { layout: "carousel" as RoomsLayout, label: "Carrousel", icon: GalleryHorizontal },
+                ].map(({ layout, label, icon: Icon }) => {
+                  const currentLayout =
+                    ((selectedSection.data as any).layout as RoomsLayout) || "grid"
+                  const isActive = currentLayout === layout
+                  return (
+                    <button
+                      key={layout}
+                      onClick={() => updateField("layout", layout)}
+                      className={`flex flex-col items-center gap-1 rounded-lg border p-3 transition-all hover:scale-105 ${
+                        isActive
+                          ? "border-primary bg-primary/10 text-primary ring-2 ring-ring/30"
+                          : "border-border bg-background hover:border-primary/50 hover:bg-accent"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span className="text-xs font-medium">{label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="text-[10px] text-muted-foreground text-center">
+                {((selectedSection.data as any).layout as RoomsLayout) === "grid" &&
+                  "Klassieke 3-koloms kaartweergave"}
+                {((selectedSection.data as any).layout as RoomsLayout) === "list" &&
+                  "Horizontale lijstkaarten met afbeelding links"}
+                {((selectedSection.data as any).layout as RoomsLayout) === "featured" &&
+                  "Eerste kamer groot uitgelicht, rest in raster"}
+                {((selectedSection.data as any).layout as RoomsLayout) === "magazine" &&
+                  "Afwisselend links/rechts met grote afbeeldingen"}
+                {((selectedSection.data as any).layout as RoomsLayout) === "minimal" &&
+                  "Strakke tekstlijst met prijs"}
+                {((selectedSection.data as any).layout as RoomsLayout) === "carousel" &&
+                  "Horizontaal schuivende kaarten"}
+              </p>
+            </Card>
+
+            {/* Rooms Title + selector */}
+            <Card className="p-4 space-y-3">
+              <Label className="flex items-center gap-2">
+                <Type className="h-3.5 w-3.5" />
+                Titel
+              </Label>
+              <Input
+                placeholder="Onze Kamers"
+                value={(selectedSection.data as any).title || ""}
+                onChange={(e) => updateField("title", e.target.value)}
+              />
+
+              <div className="pt-1 border-t border-border space-y-2">
+                <Label className="flex items-center gap-2">
+                  <BedDouble className="h-3.5 w-3.5" />
+                  Kamers selecteren
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Laat leeg om alle kamers te tonen, of selecteer specifieke kamers.
+                </p>
+
+                {loadingRooms ? (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : availableRooms.length === 0 ? (
+                  <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border py-6 text-center">
+                    <BedDouble className="h-8 w-8 text-muted-foreground/40" />
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">
+                        Nog geen kamers aangemaakt
+                      </p>
+                      <p className="text-xs text-muted-foreground/70 mt-0.5">
+                        Maak kamers aan en keer hier terug
+                      </p>
+                    </div>
+                    <Link
+                      href="/rooms"
+                      className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Ga naar Kamers
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {availableRooms.map((room) => {
+                      const selectedIds =
+                        ((selectedSection.data as any).roomIds as string[]) ?? []
+                      const isSelected =
+                        selectedIds.length === 0 || selectedIds.includes(room.id)
+                      const isExplicitlySelected = selectedIds.includes(room.id)
+
+                      return (
+                        <button
+                          key={room.id}
+                          type="button"
+                          onClick={() => toggleRoomId(room.id)}
+                          className={`w-full flex items-center gap-3 rounded-lg border p-2.5 text-left transition-all hover:scale-[1.01] ${
+                            isExplicitlySelected
+                              ? "border-primary bg-primary/5"
+                              : selectedIds.length === 0
+                              ? "border-border bg-muted/30"
+                              : "border-border bg-background opacity-50"
+                          }`}
+                        >
+                          {/* Thumbnail */}
+                          <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-md bg-amber-100">
+                            {room.images.length > 0 ? (
+                              <img
+                                src={room.images[0]}
+                                alt={room.name}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center">
+                                <BedDouble className="h-4 w-4 text-amber-400" />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Name + price */}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium truncate">{room.name}</p>
+                            {room.price && (
+                              <p className="text-[10px] text-muted-foreground">{room.price}</p>
+                            )}
+                          </div>
+
+                          {/* Check indicator */}
+                          <div
+                            className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded border transition-colors ${
+                              isExplicitlySelected
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border bg-background"
+                            }`}
+                          >
+                            {isExplicitlySelected && <Check className="h-3 w-3" />}
+                          </div>
+                        </button>
+                      )
+                    })}
+
+                    {/* Show "all rooms" reset option */}
+                    {((selectedSection.data as any).roomIds as string[] | undefined)?.length ? (
+                      <button
+                        type="button"
+                        onClick={() => updateField("roomIds", [])}
+                        className="w-full rounded-lg border border-dashed border-border py-2 text-xs text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors"
+                      >
+                        Selectie wissen (alle kamers tonen)
+                      </button>
+                    ) : null}
+
+                    <Link
+                      href="/rooms"
+                      className="flex items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Kamers beheren
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </Card>
+          </>
+        )}
+
+        {selectedSection.type === "gallery" && (
+          <>
+            {/* Gallery Layout Selector */}
+            <Card className="p-4 space-y-3">
+              <Label className="flex items-center gap-2">
+                <LayoutGrid className="h-3.5 w-3.5" />
+                Layoutstijl
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Kies hoe je galerij wordt weergegeven
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { layout: "grid" as GalleryLayout, label: "Raster", icon: LayoutGrid },
+                  {
+                    layout: "vertical-carousel" as GalleryLayout,
+                    label: "Carrousel V",
+                    icon: Columns,
+                  },
+                  {
+                    layout: "horizontal-carousel" as GalleryLayout,
+                    label: "Carrousel H",
+                    icon: Rows,
+                  },
+                  { layout: "masonry" as GalleryLayout, label: "Metselwerk", icon: Grid3x3 },
+                  {
+                    layout: "single-with-thumbs" as GalleryLayout,
+                    label: "Focus",
+                    icon: ImageIcon,
+                  },
+                  {
+                    layout: "full-slider" as GalleryLayout,
+                    label: "Schuifregelaar",
+                    icon: Maximize,
+                  },
+                ].map(({ layout, label, icon: Icon }) => {
+                  const currentLayout =
+                    ((selectedSection.data as any).layout as GalleryLayout) || "grid"
+                  const isActive = currentLayout === layout
+                  return (
+                    <button
+                      key={layout}
+                      onClick={() => updateField("layout", layout)}
+                      className={`flex flex-col items-center gap-1 rounded-lg border p-3 transition-all hover:scale-105 ${
+                        isActive
+                          ? "border-primary bg-primary/10 text-primary ring-2 ring-ring/30"
+                          : "border-border bg-background hover:border-primary/50 hover:bg-accent"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span className="text-xs font-medium">{label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="text-[10px] text-muted-foreground text-center">
+                {((selectedSection.data as any).layout as GalleryLayout) === "grid" &&
+                  "Klassieke rasterlayout"}
+                {((selectedSection.data as any).layout as GalleryLayout) ===
+                  "vertical-carousel" && "Verticale scroll met tekst aan linkerkant"}
+                {((selectedSection.data as any).layout as GalleryLayout) ===
+                  "horizontal-carousel" && "Horizontaal scrollende afbeeldingen"}
+                {((selectedSection.data as any).layout as GalleryLayout) === "masonry" &&
+                  "Pinterest-stijl metselwerk layout"}
+                {((selectedSection.data as any).layout as GalleryLayout) ===
+                  "single-with-thumbs" && "Grote afbeelding met miniaturen"}
+                {((selectedSection.data as any).layout as GalleryLayout) === "full-slider" &&
+                  "Volledig scherm afbeelding slider"}
               </p>
             </Card>
 
@@ -440,11 +648,19 @@ export function SelectionEditor({
               <div className="space-y-3">
                 <div>
                   <Label className="text-xs mb-1.5 block">Titel</Label>
-                  <Input placeholder="Galerijtitel" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
+                  <Input
+                    placeholder="Galerijtitel"
+                    value={(selectedSection.data as any).title || ""}
+                    onChange={(e) => updateField("title", e.target.value)}
+                  />
                 </div>
                 <div>
                   <Label className="text-xs mb-1.5 block">Ondertitel</Label>
-                  <Input placeholder="Galerijondertitel" value={(selectedSection.data as any).subtitle || ""} onChange={(e) => updateField("subtitle", e.target.value)} />
+                  <Input
+                    placeholder="Galerijondertitel"
+                    value={(selectedSection.data as any).subtitle || ""}
+                    onChange={(e) => updateField("subtitle", e.target.value)}
+                  />
                 </div>
                 <div>
                   <Label className="text-xs mb-1.5 block">Aantal afbeeldingen</Label>
@@ -467,7 +683,11 @@ export function SelectionEditor({
               <Type className="h-3.5 w-3.5" />
               Titel
             </Label>
-            <Input placeholder="Voorzieningen" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
+            <Input
+              placeholder="Voorzieningen"
+              value={(selectedSection.data as any).title || ""}
+              onChange={(e) => updateField("title", e.target.value)}
+            />
             <Label className="flex items-center gap-2">
               <Plus className="h-3.5 w-3.5" />
               Voorzieningen (kommagescheiden)
@@ -475,7 +695,12 @@ export function SelectionEditor({
             <Input
               placeholder="WiFi, Parkeren, Zwembad, Ontbijt"
               value={((selectedSection.data as any).items || []).join(", ")}
-              onChange={(e) => updateField("items", e.target.value.split(",").map((s) => s.trim()))}
+              onChange={(e) =>
+                updateField(
+                  "items",
+                  e.target.value.split(",").map((s) => s.trim())
+                )
+              }
             />
           </Card>
         )}
@@ -486,22 +711,35 @@ export function SelectionEditor({
               <Type className="h-3.5 w-3.5" />
               Titel
             </Label>
-            <Input placeholder="Neem Contact Op" value={(selectedSection.data as any).title || ""} onChange={(e) => updateField("title", e.target.value)} />
+            <Input
+              placeholder="Neem Contact Op"
+              value={(selectedSection.data as any).title || ""}
+              onChange={(e) => updateField("title", e.target.value)}
+            />
             <Label className="flex items-center gap-2">
               <MapPin className="h-3.5 w-3.5" />
               Adres
             </Label>
-            <Input value={(selectedSection.data as any).address || ""} onChange={(e) => updateField("address", e.target.value)} />
+            <Input
+              value={(selectedSection.data as any).address || ""}
+              onChange={(e) => updateField("address", e.target.value)}
+            />
             <Label className="flex items-center gap-2">
               <Phone className="h-3.5 w-3.5" />
               Telefoon
             </Label>
-            <Input value={(selectedSection.data as any).phone || ""} onChange={(e) => updateField("phone", e.target.value)} />
+            <Input
+              value={(selectedSection.data as any).phone || ""}
+              onChange={(e) => updateField("phone", e.target.value)}
+            />
             <Label className="flex items-center gap-2">
               <Mail className="h-3.5 w-3.5" />
               E-mail
             </Label>
-            <Input value={(selectedSection.data as any).email || ""} onChange={(e) => updateField("email", e.target.value)} />
+            <Input
+              value={(selectedSection.data as any).email || ""}
+              onChange={(e) => updateField("email", e.target.value)}
+            />
           </Card>
         )}
 
@@ -511,13 +749,13 @@ export function SelectionEditor({
               <Navigation className="h-3.5 w-3.5" />
               Navigatie-instellingen
             </Label>
-            
+
             {/* Brand Name */}
             <div className="space-y-2">
               <Label className="text-xs">Merknaam</Label>
-              <Input 
-                value={(selectedSection.data as any).brandName || "My B&B"} 
-                onChange={(e) => updateField("brandName", e.target.value)} 
+              <Input
+                value={(selectedSection.data as any).brandName || "My B&B"}
+                onChange={(e) => updateField("brandName", e.target.value)}
                 placeholder="Je merknaam"
               />
             </div>
@@ -529,20 +767,29 @@ export function SelectionEditor({
                 <Label className="text-xs">Vaste navigatie</Label>
               </div>
               <button
-                onClick={() => updateField("isSticky", !((selectedSection.data as any).isSticky ?? true))}
+                onClick={() =>
+                  updateField(
+                    "isSticky",
+                    !((selectedSection.data as any).isSticky ?? true)
+                  )
+                }
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                   ((selectedSection.data as any).isSticky ?? true) ? "bg-primary" : "bg-muted"
                 }`}
               >
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    ((selectedSection.data as any).isSticky ?? true) ? "translate-x-6" : "translate-x-1"
+                    ((selectedSection.data as any).isSticky ?? true)
+                      ? "translate-x-6"
+                      : "translate-x-1"
                   }`}
                 />
               </button>
             </div>
             <p className="text-xs text-muted-foreground">
-              {((selectedSection.data as any).isSticky ?? true) ? "Navbar blijft bovenaan tijdens scrollen" : "Navbar scrolt met pagina"}
+              {((selectedSection.data as any).isSticky ?? true)
+                ? "Navbar blijft bovenaan tijdens scrollen"
+                : "Navbar scrolt met pagina"}
             </p>
 
             {/* Section Links */}
@@ -554,9 +801,16 @@ export function SelectionEditor({
               <p className="text-xs text-muted-foreground">
                 Kies welke secties in de navigatie verschijnen en pas de labels aan
               </p>
-              
+
               {(() => {
-                const navigableSectionTypes: SectionType[] = ["hero", "about", "rooms", "gallery", "amenities", "contact"]
+                const navigableSectionTypes: SectionType[] = [
+                  "hero",
+                  "about",
+                  "rooms",
+                  "gallery",
+                  "amenities",
+                  "contact",
+                ]
                 const defaultLabels: Record<SectionType, string> = {
                   hero: "Home",
                   about: "Over",
@@ -567,49 +821,82 @@ export function SelectionEditor({
                   nav: "Navigation",
                   footer: "Footer",
                 }
-                
-                const navigableSections = sections.filter(s => navigableSectionTypes.includes(s.type))
-                const navLinks = ((selectedSection.data as any).navLinks as Array<{ sectionId: string; label: string; enabled: boolean }>) || []
-                
-                const getNavLinkConfig = (sectionId: string, sectionType: SectionType, sectionData: Record<string, unknown>) => {
-                  const existing = navLinks.find(nl => nl.sectionId === sectionId)
+
+                const navigableSections = sections.filter((s) =>
+                  navigableSectionTypes.includes(s.type)
+                )
+                const navLinks =
+                  ((selectedSection.data as any).navLinks as Array<{
+                    sectionId: string
+                    label: string
+                    enabled: boolean
+                  }>) || []
+
+                const getNavLinkConfig = (
+                  sectionId: string,
+                  sectionType: SectionType,
+                  sectionData: Record<string, unknown>
+                ) => {
+                  const existing = navLinks.find((nl) => nl.sectionId === sectionId)
                   if (existing) return existing
                   return {
                     sectionId,
                     label: (sectionData?.title as string) || defaultLabels[sectionType],
-                    enabled: true
+                    enabled: true,
                   }
                 }
-                
-                const updateNavLink = (sectionId: string, field: "label" | "enabled", value: string | boolean) => {
+
+                const updateNavLink = (
+                  sectionId: string,
+                  field: "label" | "enabled",
+                  value: string | boolean
+                ) => {
                   const currentLinks = [...navLinks]
-                  const existingIndex = currentLinks.findIndex(nl => nl.sectionId === sectionId)
-                  const section = navigableSections.find(s => s.id === sectionId)
-                  
+                  const existingIndex = currentLinks.findIndex(
+                    (nl) => nl.sectionId === sectionId
+                  )
+                  const section = navigableSections.find((s) => s.id === sectionId)
+
                   if (existingIndex >= 0) {
-                    currentLinks[existingIndex] = { ...currentLinks[existingIndex], [field]: value }
+                    currentLinks[existingIndex] = {
+                      ...currentLinks[existingIndex],
+                      [field]: value,
+                    }
                   } else {
                     currentLinks.push({
                       sectionId,
-                      label: (section?.data?.title as string) || defaultLabels[section?.type || "hero"],
+                      label:
+                        (section?.data?.title as string) ||
+                        defaultLabels[section?.type || "hero"],
                       enabled: true,
-                      [field]: value
+                      [field]: value,
                     })
                   }
-                  
+
                   updateField("navLinks", currentLinks)
                 }
-                
+
                 return (
                   <div className="space-y-2">
                     {navigableSections.map((section) => {
-                      const config = getNavLinkConfig(section.id, section.type, section.data)
+                      const config = getNavLinkConfig(
+                        section.id,
+                        section.type,
+                        section.data
+                      )
                       return (
-                        <div key={section.id} className="flex items-center gap-2 p-2 rounded border bg-muted/20">
+                        <div
+                          key={section.id}
+                          className="flex items-center gap-2 p-2 rounded border bg-muted/20"
+                        >
                           <button
-                            onClick={() => updateNavLink(section.id, "enabled", !config.enabled)}
+                            onClick={() =>
+                              updateNavLink(section.id, "enabled", !config.enabled)
+                            }
                             className="flex-shrink-0"
-                            title={config.enabled ? "Verbergen uit nav" : "Tonen in nav"}
+                            title={
+                              config.enabled ? "Verbergen uit nav" : "Tonen in nav"
+                            }
                           >
                             {config.enabled ? (
                               <Eye className="h-4 w-4 text-primary" />
@@ -619,8 +906,12 @@ export function SelectionEditor({
                           </button>
                           <Input
                             value={config.label}
-                            onChange={(e) => updateNavLink(section.id, "label", e.target.value)}
-                            className={`flex-1 h-8 text-sm ${!config.enabled ? "opacity-50" : ""}`}
+                            onChange={(e) =>
+                              updateNavLink(section.id, "label", e.target.value)
+                            }
+                            className={`flex-1 h-8 text-sm ${
+                              !config.enabled ? "opacity-50" : ""
+                            }`}
                             disabled={!config.enabled}
                             placeholder={defaultLabels[section.type]}
                           />
@@ -654,7 +945,10 @@ export function SelectionEditor({
                 placeholder="bijv., font-serif"
                 value={(selectedSection.styles as any)?.fontFamily || ""}
                 onChange={(e) => {
-                  const newStyles = { ...(selectedSection.styles || {}), fontFamily: e.target.value }
+                  const newStyles = {
+                    ...(selectedSection.styles || {}),
+                    fontFamily: e.target.value,
+                  }
                   onStyleUpdate(newStyles)
                   if (saveTimeoutId) clearTimeout(saveTimeoutId)
                   const timeout = setTimeout(async () => {
@@ -662,7 +956,7 @@ export function SelectionEditor({
                     toast.success("Stijl opgeslagen", {
                       position: "bottom-right",
                       duration: 2000,
-                      style: { background: '#10b981', color: 'white' }
+                      style: { background: "#10b981", color: "white" },
                     })
                   }, 800)
                   setSaveTimeoutId(timeout)
@@ -680,7 +974,10 @@ export function SelectionEditor({
                   aria-label="Achtergrondkleur"
                   value={(selectedSection.styles as any)?.backgroundColor || "#ffffff"}
                   onChange={(e) => {
-                    const newStyles = { ...(selectedSection.styles || {}), backgroundColor: e.target.value }
+                    const newStyles = {
+                      ...(selectedSection.styles || {}),
+                      backgroundColor: e.target.value,
+                    }
                     onStyleUpdate(newStyles)
                     if (saveTimeoutId) clearTimeout(saveTimeoutId)
                     const timeout = setTimeout(async () => {
@@ -688,7 +985,7 @@ export function SelectionEditor({
                       toast.success("Stijl opgeslagen", {
                         position: "bottom-right",
                         duration: 2000,
-                        style: { background: '#10b981', color: 'white' }
+                        style: { background: "#10b981", color: "white" },
                       })
                     }, 800)
                     setSaveTimeoutId(timeout)
@@ -706,7 +1003,10 @@ export function SelectionEditor({
                   aria-label="Tekstkleur"
                   value={(selectedSection.styles as any)?.textColor || "#000000"}
                   onChange={(e) => {
-                    const newStyles = { ...(selectedSection.styles || {}), textColor: e.target.value }
+                    const newStyles = {
+                      ...(selectedSection.styles || {}),
+                      textColor: e.target.value,
+                    }
                     onStyleUpdate(newStyles)
                     if (saveTimeoutId) clearTimeout(saveTimeoutId)
                     const timeout = setTimeout(async () => {
@@ -714,7 +1014,7 @@ export function SelectionEditor({
                       toast.success("Stijl opgeslagen", {
                         position: "bottom-right",
                         duration: 2000,
-                        style: { background: '#10b981', color: 'white' }
+                        style: { background: "#10b981", color: "white" },
                       })
                     }, 800)
                     setSaveTimeoutId(timeout)
@@ -725,52 +1025,62 @@ export function SelectionEditor({
             </div>
           </div>
         </Card>
-        
+
         {/* Transition Editor */}
-        {sections.length > 1 && sections.findIndex(s => s.id === selectedSection.id) < sections.length - 1 && (
-          <Card className="p-4 space-y-3">
-            <Label className="flex items-center gap-2">
-              <Wand2 className="h-3.5 w-3.5" />
-              Overgang naar volgende sectie
-            </Label>
-            <p className="text-xs text-muted-foreground mb-2">
-              Selecteer hoe deze sectie overgaat naar de volgende
-            </p>
-            {(() => {
-              const nextSectionIdx = sections.findIndex(s => s.id === selectedSection.id) + 1
-              const nextSection = nextSectionIdx < sections.length ? sections[nextSectionIdx] : null
-              const currentTransition = nextSection ? transitions.find(t => t.fromSectionId === selectedSection.id && t.toSectionId === nextSection.id) : null
-              const currentType = currentTransition?.type || "none"
-              
-              return (
-                <>
-                  <select
-                    value={currentType}
-                    onChange={(e) => handleTransitionChange(e.target.value)}
-                    className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:bg-accent"
-                  >
-                    <option value="none">Geen</option>
-                    <option value="fade">Vervagen</option>
-                    <option value="gradient">Verloop</option>
-                    <option value="slide">Schuiven</option>
-                    <option value="wave">Golf</option>
-                    <option value="curve">Kromme</option>
-                    <option value="diagonal">Diagonaal</option>
-                    <option value="zigzag">Zigzag</option>
-                    <option value="split">Splitsen</option>
-                  </select>
-                  {currentType !== "none" && (
-            <div className="mt-3 p-2 rounded bg-muted border border-border">
-            <p className="text-xs text-muted-foreground">
-                        Voorvertoning: Controleer het editorcanvas om de {currentType} overgang te zien
-                      </p>
-                    </div>
-                  )}
-                </>
-              )
-            })()}
-          </Card>
-        )}
+        {sections.length > 1 &&
+          sections.findIndex((s) => s.id === selectedSection.id) < sections.length - 1 && (
+            <Card className="p-4 space-y-3">
+              <Label className="flex items-center gap-2">
+                <Wand2 className="h-3.5 w-3.5" />
+                Overgang naar volgende sectie
+              </Label>
+              <p className="text-xs text-muted-foreground mb-2">
+                Selecteer hoe deze sectie overgaat naar de volgende
+              </p>
+              {(() => {
+                const nextSectionIdx =
+                  sections.findIndex((s) => s.id === selectedSection.id) + 1
+                const nextSection =
+                  nextSectionIdx < sections.length ? sections[nextSectionIdx] : null
+                const currentTransition = nextSection
+                  ? transitions.find(
+                      (t) =>
+                        t.fromSectionId === selectedSection.id &&
+                        t.toSectionId === nextSection.id
+                    )
+                  : null
+                const currentType = currentTransition?.type || "none"
+
+                return (
+                  <>
+                    <select
+                      value={currentType}
+                      onChange={(e) => handleTransitionChange(e.target.value)}
+                      className="w-full rounded-md border bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:bg-accent"
+                    >
+                      <option value="none">Geen</option>
+                      <option value="fade">Vervagen</option>
+                      <option value="gradient">Verloop</option>
+                      <option value="slide">Schuiven</option>
+                      <option value="wave">Golf</option>
+                      <option value="curve">Kromme</option>
+                      <option value="diagonal">Diagonaal</option>
+                      <option value="zigzag">Zigzag</option>
+                      <option value="split">Splitsen</option>
+                    </select>
+                    {currentType !== "none" && (
+                      <div className="mt-3 p-2 rounded bg-muted border border-border">
+                        <p className="text-xs text-muted-foreground">
+                          Voorvertoning: Controleer het editorcanvas om de {currentType}{" "}
+                          overgang te zien
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
+            </Card>
+          )}
       </div>
     </div>
   )

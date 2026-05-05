@@ -19,6 +19,7 @@ interface EditorCanvasProps {
   onSectionSelect: (id: string | null) => void
   device: "desktop" | "tablet" | "mobile"
   websiteId?: string | null
+  bnbId?: string | null
   supabase?: SupabaseClient
 }
 
@@ -31,6 +32,7 @@ export function EditorCanvas({
   onSectionSelect,
   device,
   websiteId,
+  bnbId,
   supabase,
 }: EditorCanvasProps) {
   function SectionTransition({
@@ -239,9 +241,9 @@ export function EditorCanvas({
       case "rooms":
         return {
           title: "Onze Kamers",
-          rooms: [
-            { name: "Deluxe Suite", description: "Ruime kamer met uitzicht op de oceaan", price: "€150/nacht" },
-          ],
+          layout: "grid",
+          bnbId: bnbId ?? null,
+          roomIds: [],
         }
       case "gallery":
         return {
