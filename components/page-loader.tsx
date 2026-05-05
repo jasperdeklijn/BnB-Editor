@@ -6,6 +6,8 @@ import websiteSections from "@/lib/supabase/websiteSections"
 import { SectionRenderer, TransitionWrapper } from "@/components/editor/section-renderer"
 import type { Section, Transition } from "@/lib/types"
 
+const PLATFORM_BASE_URL = "https://bnbwebsitemaken.nl"
+
 interface PageLoaderOptions {
   slug: string
   isPreview?: boolean
@@ -28,7 +30,7 @@ export async function loadPublicWebsitePage({
   // Live route: only show published sites
   if (!isPreview && !website.published) return notFound()
 
-  const sections: Section[] = (website.website_sections || []).map(
+  const rawSections: Section[] = (website.website_sections || []).map(
     (r: any): Section => ({
       id: r.id,
       type: r.type,
@@ -36,6 +38,57 @@ export async function loadPublicWebsitePage({
       styles: r.styles || {},
     })
   )
+
+  // --- Server-side data enrichment for rooms & contact sections ---
+
+  // Pre-fetch all rooms for any rooms section so the live site doesn't need
+  // client-side Supabase access (which would fail for anonymous visitors).
+  const roomsSections = rawSections.filter((s) => s.type === "rooms")
+  const bnbIdSet = new Set<string>()
+  for (const s of roomsSections) {
+    const bnbId = s.data.bnbId as string | null | undefined
+    if (bnbId) bnbIdSet.add(bnbId)
+  }
+
+  // Build a map of bnbId -> rooms[]
+  const roomsByBnbId: Record<string, unknown[]> = {}
+  for (const bnbId of bnbIdSet) {
+    const { data: roomRows } = await supabase
+      .from("rooms")
+      .select("*")
+      .eq("bnb_id", bnbId)
+      .order("position", { ascending: true })
+
+    roomsByBnbId[bnbId] = (roomRows ?? []).map((r: any) => ({
+      ...r,
+      images: Array.isArray(r.images) ? r.images : [],
+    }))
+  }
+
+  // Enrich each section with server-fetched data
+  const sections: Section[] = rawSections.map((s) => {
+    if (s.type === "rooms") {
+      const bnbId = s.data.bnbId as string | null | undefined
+      let rooms = bnbId ? (roomsByBnbId[bnbId] ?? []) : []
+
+      // Filter by roomIds if specified
+      const roomIds = s.data.roomIds as string[] | undefined
+      if (roomIds && roomIds.length > 0) {
+        rooms = rooms.filter((r: any) => roomIds.includes(r.id))
+      }
+
+      return { ...s, data: { ...s.data, preloadedRooms: rooms } }
+    }
+
+    if (s.type === "contact") {
+      // Ensure the contact form always posts to the platform API,
+      // even when the live site is served from a custom domain.
+      return { ...s, data: { ...s.data, apiUrl: `${PLATFORM_BASE_URL}/api/contact` } }
+    }
+
+    return s
+  })
+  // --- end enrichment ---
 
   // Fetch transitions from section_transitions table
   const { data: transitionRows } = await supabase

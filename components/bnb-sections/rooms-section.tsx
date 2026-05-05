@@ -488,13 +488,20 @@ export function RoomsSection({ data, styles }: RoomsSectionProps) {
   const layout = (data.layout as RoomsLayout) || "grid"
   const roomIds = data.roomIds as string[] | undefined
 
-  const [rooms, setRooms] = useState<Room[]>([])
-  const [loading, setLoading] = useState(true)
+  // When the page-loader pre-fetches rooms server-side (live site), they are
+  // injected as `data.preloadedRooms` so no client-side Supabase call is needed.
+  const preloadedRooms = data.preloadedRooms as Room[] | undefined
+
+  const [rooms, setRooms] = useState<Room[]>(preloadedRooms ?? [])
+  const [loading, setLoading] = useState(preloadedRooms === undefined)
 
   const bnbId = data.bnbId as string | null | undefined
   const roomIdsKey = (roomIds ?? []).join(",")
 
   useEffect(() => {
+    // Skip client-side fetch when rooms were already pre-loaded server-side
+    if (preloadedRooms !== undefined) return
+
     let cancelled = false
 
     const fetchRooms = async () => {
@@ -558,7 +565,7 @@ export function RoomsSection({ data, styles }: RoomsSectionProps) {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bnbId, roomIdsKey])
+  }, [bnbId, roomIdsKey, preloadedRooms])
 
   const sectionStyle: React.CSSProperties = {
     backgroundColor: styles?.backgroundColor,

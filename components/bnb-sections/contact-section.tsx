@@ -30,7 +30,7 @@ interface FormState {
   message: string
 }
 
-function useContactForm(recipientEmail?: string) {
+function useContactForm(recipientEmail?: string, apiUrl?: string) {
   const [form, setForm] = useState<FormState>({ name: "", email: "", phone: "", message: "" })
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [errorMsg, setErrorMsg] = useState("")
@@ -42,8 +42,11 @@ function useContactForm(recipientEmail?: string) {
     e.preventDefault()
     setStatus("loading")
     setErrorMsg("")
+    // Use the absolute platform URL when provided (e.g. live site on custom domain),
+    // fall back to relative /api/contact for the editor and platform-domain previews.
+    const endpoint = apiUrl ?? "/api/contact"
     try {
-      const res = await fetch("/api/contact", {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, recipientEmail }),
@@ -69,13 +72,14 @@ function useContactForm(recipientEmail?: string) {
 
 interface ContactFormProps {
   recipientEmail?: string
+  apiUrl?: string
   accentColor?: string
   buttonLabel?: string
   compact?: boolean
 }
 
-function ContactForm({ recipientEmail, accentColor, buttonLabel = "Verstuur bericht", compact }: ContactFormProps) {
-  const { form, update, submit, status, errorMsg } = useContactForm(recipientEmail)
+function ContactForm({ recipientEmail, apiUrl, accentColor, buttonLabel = "Verstuur bericht", compact }: ContactFormProps) {
+  const { form, update, submit, status, errorMsg } = useContactForm(recipientEmail, apiUrl)
 
   if (status === "success") {
     return (
@@ -227,7 +231,7 @@ function ClassicLayout({ data, styles }: { data: Record<string, unknown>; styles
             </p>
             <InfoBlock address={data.address as string} phone={data.phone as string} email={data.email as string} textStyle={textStyle} />
           </div>
-          <ContactForm recipientEmail={data.recipientEmail as string} />
+          <ContactForm recipientEmail={data.recipientEmail as string} apiUrl={data.apiUrl as string | undefined} />
         </div>
       </div>
     </section>
@@ -275,7 +279,7 @@ function SplitLayout({ data, styles }: { data: Record<string, unknown>; styles?:
         {/* Right form */}
         <div className="flex flex-1 flex-col justify-center bg-white px-8 py-12 md:px-12">
           <h3 className="mb-6 text-xl font-semibold text-gray-900">Stuur een bericht</h3>
-          <ContactForm recipientEmail={data.recipientEmail as string} />
+          <ContactForm recipientEmail={data.recipientEmail as string} apiUrl={data.apiUrl as string | undefined} />
         </div>
       </div>
     </section>
@@ -325,7 +329,7 @@ function MinimalLayout({ data, styles }: { data: Record<string, unknown>; styles
           )}
         </div>
         <div className="rounded-2xl border border-border bg-white/80 p-6 text-left shadow-sm backdrop-blur">
-          <ContactForm recipientEmail={data.recipientEmail as string} compact />
+          <ContactForm recipientEmail={data.recipientEmail as string} apiUrl={data.apiUrl as string | undefined} compact />
         </div>
       </div>
     </section>
@@ -386,7 +390,7 @@ function CardLayout({ data, styles }: { data: Record<string, unknown>; styles?: 
             {/* Form */}
             <div className="px-8 py-10 md:col-span-3">
               <h3 className="mb-6 text-lg font-semibold text-gray-900">Stuur ons een bericht</h3>
-              <ContactForm recipientEmail={data.recipientEmail as string} accentColor="#b45309" />
+              <ContactForm recipientEmail={data.recipientEmail as string} apiUrl={data.apiUrl as string | undefined} accentColor="#b45309" />
             </div>
           </div>
         </div>
@@ -439,7 +443,7 @@ function FullwidthLayout({ data, styles }: { data: Record<string, unknown>; styl
       {/* Form below */}
       <div className="bg-white px-4 py-12 sm:px-6">
         <div className="mx-auto max-w-2xl">
-          <ContactForm recipientEmail={data.recipientEmail as string} />
+          <ContactForm recipientEmail={data.recipientEmail as string} apiUrl={data.apiUrl as string | undefined} />
         </div>
       </div>
     </section>
@@ -493,6 +497,8 @@ function CenteredLayout({ data, styles }: { data: Record<string, unknown>; style
         </div>
         {/* Form */}
         <div className="mx-auto max-w-xl rounded-2xl border border-border bg-white/80 p-8 shadow-sm backdrop-blur">
+          <ContactForm recipientEmail={data.recipientEmail as string} apiUrl={data.apiUrl as string | undefined} />
+        </div>op-blur">
           <ContactForm recipientEmail={data.recipientEmail as string} />
         </div>
       </div>
