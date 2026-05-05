@@ -21,6 +21,7 @@ export function EditorClient({ userId }: EditorClientProps) {
   const [sections, setSections] = useState<Section[]>([])
   const [transitions, setTransitions] = useState<Transition[]>([])
   const [websiteId, setWebsiteId] = useState<string | null>(null)
+  const [bnbId, setBnbId] = useState<string | null>(null)
   const [title, setTitle] = useState("Mijn B&B Website")
   const [slug, setSlug] = useState("")
   const [isPreview, setIsPreview] = useState(false)
@@ -48,6 +49,17 @@ export function EditorClient({ userId }: EditorClientProps) {
 
   const loadWebsite = async () => {
     const supabase = createClient()
+
+    // Fetch the user's BnB id for the rooms editor
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: bnb } = await supabase
+        .from("bnbs")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle()
+      if (bnb) setBnbId(bnb.id)
+    }
 
     // Try to load existing website
     const { data: websites } = await supabase
@@ -337,6 +349,7 @@ export function EditorClient({ userId }: EditorClientProps) {
           selectedSectionId={selectedSectionId}
           onSectionSelect={handleSectionSelect}
           device={device}
+          bnbId={bnbId}
         />
         {!isPreview && (
           <SelectionEditor
@@ -348,6 +361,7 @@ export function EditorClient({ userId }: EditorClientProps) {
             onDelete={handleDelete}
             onTransitionUpdate={handleTransitionUpdate}
             websiteId={websiteId}
+            bnbId={bnbId}
           />
         )}
       </div>
@@ -372,6 +386,7 @@ export function EditorClient({ userId }: EditorClientProps) {
               selectedSectionId={selectedSectionId}
               onSectionSelect={handleSectionSelect}
               device={device}
+              bnbId={bnbId}
             />
           )}
           {mobilePanel === "style" && !isPreview && (
@@ -384,6 +399,7 @@ export function EditorClient({ userId }: EditorClientProps) {
               onDelete={handleDelete}
               onTransitionUpdate={handleTransitionUpdate}
               websiteId={websiteId}
+              bnbId={bnbId}
             />
           )}
         </div>
