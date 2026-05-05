@@ -3,10 +3,9 @@ import nodemailer from "nodemailer"
 
 const FROM_EMAIL = "info@bnbwebsitemaken.nl"
 
-// Create a reusable transporter using SMTP credentials from env
 function createTransporter() {
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT) || 587,
     secure: process.env.SMTP_SECURE === "true",
     auth: {
@@ -28,20 +27,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const to = recipientEmail || FROM_EMAIL
+    const to = recipientEmail?.trim() || FROM_EMAIL
 
     const transporter = createTransporter()
 
     await transporter.sendMail({
-      from: `BnB Contactformulier <${process.env.SMTP_USER || FROM_EMAIL}>`,
+      from: `BnB Website <${FROM_EMAIL}>`,
       to,
-      replyTo: email,
+      replyTo: `${name} <${email}>`,
       subject: `Nieuw contactbericht van ${name}`,
       html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #fffbf5; border-radius: 12px;">
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #fffbf5; border-radius: 12px; border: 1px solid #fde68a;">
           <div style="border-bottom: 2px solid #d97706; padding-bottom: 16px; margin-bottom: 20px;">
-            <h2 style="color: #92400e; margin: 0;">Nieuw contactbericht</h2>
-            <p style="color: #6b7280; font-size: 13px; margin: 4px 0 0 0;">
+            <h2 style="color: #92400e; margin: 0 0 4px 0;">Nieuw contactbericht</h2>
+            <p style="color: #9ca3af; font-size: 13px; margin: 0;">
               Verzonden via het contactformulier op uw BnB-website
             </p>
           </div>
@@ -52,7 +51,7 @@ export async function POST(request: NextRequest) {
             </tr>
             <tr>
               <td style="padding: 8px 12px 8px 0; font-weight: 600; color: #374151; vertical-align: top;">E-mail:</td>
-              <td style="padding: 8px 0; color: #6b7280;">
+              <td style="padding: 8px 0;">
                 <a href="mailto:${email}" style="color: #d97706; text-decoration: none;">${email}</a>
               </td>
             </tr>
@@ -80,6 +79,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true })
   } catch (err) {
     console.error("[contact] Nodemailer error:", err)
-    return NextResponse.json({ error: "E-mail kon niet worden verzonden." }, { status: 500 })
+    return NextResponse.json(
+      { error: "E-mail kon niet worden verzonden. Probeer het later opnieuw." },
+      { status: 500 }
+    )
   }
 }
