@@ -46,6 +46,7 @@ import {
 import type { HeroLayout } from "@/components/bnb-sections/hero-section"
 import type { GalleryLayout } from "@/components/bnb-sections/gallery-section"
 import type { RoomsLayout } from "@/components/bnb-sections/rooms-section"
+import type { ContactLayout } from "@/components/bnb-sections/contact-section"
 import type { SectionType } from "@/lib/types"
 
 interface AvailableRoom {
@@ -706,41 +707,139 @@ export function SelectionEditor({
         )}
 
         {selectedSection.type === "contact" && (
-          <Card className="p-4 space-y-3">
-            <Label className="flex items-center gap-2">
-              <Type className="h-3.5 w-3.5" />
-              Titel
-            </Label>
-            <Input
-              placeholder="Neem Contact Op"
-              value={(selectedSection.data as any).title || ""}
-              onChange={(e) => updateField("title", e.target.value)}
-            />
-            <Label className="flex items-center gap-2">
-              <MapPin className="h-3.5 w-3.5" />
-              Adres
-            </Label>
-            <Input
-              value={(selectedSection.data as any).address || ""}
-              onChange={(e) => updateField("address", e.target.value)}
-            />
-            <Label className="flex items-center gap-2">
-              <Phone className="h-3.5 w-3.5" />
-              Telefoon
-            </Label>
-            <Input
-              value={(selectedSection.data as any).phone || ""}
-              onChange={(e) => updateField("phone", e.target.value)}
-            />
-            <Label className="flex items-center gap-2">
-              <Mail className="h-3.5 w-3.5" />
-              E-mail
-            </Label>
-            <Input
-              value={(selectedSection.data as any).email || ""}
-              onChange={(e) => updateField("email", e.target.value)}
-            />
-          </Card>
+          <>
+            {/* Contact Layout Selector */}
+            <Card className="p-4 space-y-3">
+              <Label className="flex items-center gap-2">
+                <LayoutGrid className="h-3.5 w-3.5" />
+                Layoutstijl
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Kies hoe je contactsectie wordt weergegeven
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { layout: "classic" as ContactLayout, label: "Klassiek", icon: AlignCenter },
+                  { layout: "split" as ContactLayout, label: "Gesplitst", icon: LayoutPanelLeft },
+                  { layout: "minimal" as ContactLayout, label: "Minimaal", icon: Minimize },
+                  { layout: "card" as ContactLayout, label: "Kaart", icon: Square },
+                  { layout: "fullwidth" as ContactLayout, label: "Volledig", icon: Maximize },
+                  { layout: "centered" as ContactLayout, label: "Gecentreerd", icon: PanelRight },
+                ].map(({ layout, label, icon: Icon }) => {
+                  const currentLayout =
+                    ((selectedSection.data as any).layout as ContactLayout) || "classic"
+                  const isActive = currentLayout === layout
+                  return (
+                    <button
+                      key={layout}
+                      onClick={() => updateField("layout", layout)}
+                      className={`flex flex-col items-center gap-1 rounded-lg border p-3 transition-all hover:scale-105 ${
+                        isActive
+                          ? "border-primary bg-primary/10 text-primary ring-2 ring-ring/30"
+                          : "border-border bg-background hover:border-primary/50 hover:bg-accent"
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span className="text-xs font-medium">{label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="text-[10px] text-muted-foreground text-center">
+                {((selectedSection.data as any).layout as ContactLayout) === "classic" &&
+                  "Info links, formulier rechts"}
+                {((selectedSection.data as any).layout as ContactLayout) === "split" &&
+                  "Donker paneel links, formulier rechts"}
+                {((selectedSection.data as any).layout as ContactLayout) === "minimal" &&
+                  "Tekst-gecentreerd met compact formulier"}
+                {((selectedSection.data as any).layout as ContactLayout) === "card" &&
+                  "Kaartontwerp met gekleurde sidebar"}
+                {((selectedSection.data as any).layout as ContactLayout) === "fullwidth" &&
+                  "Hero-banner met formulier eronder"}
+                {((selectedSection.data as any).layout as ContactLayout) === "centered" &&
+                  "Symmetrisch met info-kaarten bovenaan"}
+                {!((selectedSection.data as any).layout as ContactLayout) &&
+                  "Info links, formulier rechts"}
+              </p>
+            </Card>
+
+            {/* Contact Content */}
+            <Card className="p-4 space-y-3">
+              <Label className="flex items-center gap-2">
+                <Type className="h-3.5 w-3.5" />
+                Inhoud
+              </Label>
+              <div>
+                <Label className="text-xs mb-1.5 block">Titel</Label>
+                <Input
+                  placeholder="Neem Contact Op"
+                  value={(selectedSection.data as any).title || ""}
+                  onChange={(e) => updateField("title", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="text-xs mb-1.5 block">Ondertitel</Label>
+                <Input
+                  placeholder="Neem gerust contact met ons op."
+                  value={(selectedSection.data as any).subtitle || ""}
+                  onChange={(e) => updateField("subtitle", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="flex items-center gap-2 text-xs mb-1.5">
+                  <MapPin className="h-3 w-3" />
+                  Adres
+                </Label>
+                <Input
+                  placeholder="Dorpsstraat 1, 1234 AB Amsterdam"
+                  value={(selectedSection.data as any).address || ""}
+                  onChange={(e) => updateField("address", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="flex items-center gap-2 text-xs mb-1.5">
+                  <Phone className="h-3 w-3" />
+                  Telefoon
+                </Label>
+                <Input
+                  placeholder="+31 6 00000000"
+                  value={(selectedSection.data as any).phone || ""}
+                  onChange={(e) => updateField("phone", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="flex items-center gap-2 text-xs mb-1.5">
+                  <Mail className="h-3 w-3" />
+                  E-mail (weergave)
+                </Label>
+                <Input
+                  placeholder="info@mijnbnb.nl"
+                  value={(selectedSection.data as any).email || ""}
+                  onChange={(e) => updateField("email", e.target.value)}
+                />
+              </div>
+            </Card>
+
+            {/* Recipient Email */}
+            <Card className="p-4 space-y-3">
+              <Label className="flex items-center gap-2">
+                <Mail className="h-3.5 w-3.5" />
+                Formulier ontvanger
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Contactformulieren worden verzonden naar dit e-mailadres. Laat leeg om naar het standaard adres te sturen.
+              </p>
+              <Input
+                type="email"
+                placeholder="jouw@email.nl"
+                value={(selectedSection.data as any).recipientEmail || ""}
+                onChange={(e) => updateField("recipientEmail", e.target.value)}
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Verzonden vanaf: info@bnbwebsitemaken.nl
+              </p>
+            </Card>
+          </>
         )}
 
         {selectedSection.type === "nav" && (
