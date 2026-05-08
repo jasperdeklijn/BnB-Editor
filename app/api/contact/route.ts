@@ -33,13 +33,16 @@ export async function POST(request: NextRequest) {
 
     const to = recipientEmail?.trim() || FROM_EMAIL
 
+    const fromAddress = process.env.SMTP_FROM?.trim() || process.env.SMTP_USER || FROM_EMAIL
+
+    console.log("[contact] Sending email to:", to, "from:", fromAddress)
+
     const transporter = createTransporter()
     await transporter.verify()
 
-    const fromAddress = process.env.SMTP_FROM?.trim() || process.env.SMTP_USER || FROM_EMAIL
     const logoPath = `${process.cwd()}/public/logo_klein.png`
 
-    await transporter.sendMail({
+    const result = await transporter.sendMail({
       from: `BnB Website <${fromAddress}>`,
       to,
       replyTo: `${name} <${email}>`,

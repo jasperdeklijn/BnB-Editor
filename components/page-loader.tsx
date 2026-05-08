@@ -42,6 +42,10 @@ export async function loadPublicWebsitePage({
     return bnb?.id ?? null
   })()
 
+  // Get user email for contact form default recipient
+  const { data: userData } = await adminSupabase.auth.admin.getUserById(website.user_id)
+  const userEmail = userData?.user?.email
+
   const sections: Section[] = (website.website_sections || []).map(
     (r: any): Section => ({
       id: r.id,
@@ -49,6 +53,8 @@ export async function loadPublicWebsitePage({
       data: {
         ...(r.content ?? {}),
         bnbId: websiteBnbId,
+        // Set default recipientEmail if not already set
+        recipientEmail: r.content?.recipientEmail || userEmail,
       },
       styles: r.styles || {},
     })

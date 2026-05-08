@@ -60,6 +60,19 @@ console.log("HOST:", hostname)
   if (isCustomDomain) {
     console.log("CUSTOM DOMAIN DETECTED:", hostname)
 
+    // Don't rewrite API routes, static assets, or other non-page requests
+    if (
+      request.nextUrl.pathname.startsWith("/api/") ||
+      request.nextUrl.pathname.startsWith("/_next/") ||
+      request.nextUrl.pathname.includes(".") || // static files
+      request.nextUrl.pathname === "/favicon.ico" ||
+      request.nextUrl.pathname === "/robots.txt" ||
+      request.nextUrl.pathname === "/sitemap.xml"
+    ) {
+      // Let these requests pass through normally
+      return supabaseResponse
+    }
+
     const { data: website, error } = await supabase
       .from("websites")
       .select("slug")
@@ -69,7 +82,7 @@ console.log("HOST:", hostname)
     console.log("DB RESULT:", website, error)
     if (website?.slug) {
       const url = request.nextUrl.clone()
-      url.pathname = `/site/${website.slug}`
+      url.pathname = `/site/${website.slug}${request.nextUrl.pathname}`
       return NextResponse.rewrite(url)
     }
     return NextResponse.redirect(new URL("/", request.url))
