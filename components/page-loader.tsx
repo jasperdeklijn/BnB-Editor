@@ -28,26 +28,37 @@ export async function loadPublicWebsitePage({
   // Live route: only show published sites
   if (!isPreview && !website.published) return notFound()
 
+  const websiteBnbId = await (async () => {
+    const { data: bnb, error: bnbError } = await supabase
+      .from('bnbs')
+      .select('id')
+      .eq('user_id', website.user_id)
+      .maybeSingle()
+
+    if (bnbError) return null
+    return bnb?.id ?? null
+  })()
+
   const sections: Section[] = (website.website_sections || []).map(
     (r: any): Section => ({
       id: r.id,
       type: r.type,
       data: {
         ...r.content,
-        bnbId: website.bnbs?.id,
+        bnbId: websiteBnbId,
       },
       styles: r.styles || {},
     })
   )
 
   // For public sites, fetch rooms data for rooms sections to bypass RLS
-  if (!isPreview && website.bnbs?.id) {
+  if (!isPreview && websiteBnbId) {
     const roomsSections = sections.filter(s => s.type === 'rooms')
     if (roomsSections.length > 0) {
       const { data: roomsData } = await supabase
         .from("rooms")
         .select("*")
-        .eq("bnb_id", website.bnbs.id)
+        .eq("bnb_id", websiteBnbId)
         .order("position", { ascending: true })
 
       const rooms = (roomsData ?? []).map((r) => ({

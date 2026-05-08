@@ -34,11 +34,6 @@ export async function fetchWebsiteWithSectionsBySlug(slug: string, supabase?: Su
     .from('websites')
     .select(`
       *,
-      bnbs (
-        id,
-        user_id,
-        name
-      ),
       website_sections (
         id,
         website_id,
