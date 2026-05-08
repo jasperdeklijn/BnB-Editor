@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import React from "react"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { SectionRenderer, TransitionWrapper } from "@/components/editor/section-renderer"
@@ -28,8 +29,10 @@ export async function loadPublicWebsitePage({
   // Live route: only show published sites
   if (!isPreview && !website.published) return notFound()
 
+  const adminSupabase = await createAdminClient()
+
   const websiteBnbId = await (async () => {
-    const { data: bnb, error: bnbError } = await supabase
+    const { data: bnb, error: bnbError } = await adminSupabase
       .from('bnbs')
       .select('id')
       .eq('user_id', website.user_id)
@@ -44,7 +47,7 @@ export async function loadPublicWebsitePage({
       id: r.id,
       type: r.type,
       data: {
-        ...r.content,
+        ...(r.content ?? {}),
         bnbId: websiteBnbId,
       },
       styles: r.styles || {},
@@ -55,7 +58,7 @@ export async function loadPublicWebsitePage({
   if (!isPreview && websiteBnbId) {
     const roomsSections = sections.filter(s => s.type === 'rooms')
     if (roomsSections.length > 0) {
-      const { data: roomsData } = await supabase
+      const { data: roomsData } = await adminSupabase
         .from("rooms")
         .select("*")
         .eq("bnb_id", websiteBnbId)

@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import nodemailer from "nodemailer"
 
-const FROM_EMAIL = "info@bnbwebsitemaken.nl"
+const FROM_EMAIL = process.env.SMTP_FROM?.trim() || "info@bnbwebsitemaken.nl"
 
 function createTransporter() {
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    throw new Error("SMTP credentials are not configured.")
+  }
+
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT) || 465,
@@ -30,13 +34,17 @@ export async function POST(request: NextRequest) {
     const to = recipientEmail?.trim() || FROM_EMAIL
 
     const transporter = createTransporter()
+    await transporter.verify()
 
- await transporter.sendMail({
-  from: `BnB Website <${FROM_EMAIL}>`,
-  to,
-  replyTo: `${name} <${email}>`,
-  subject: `Nieuw contactbericht van ${name}`,
-  html: `
+    const fromAddress = process.env.SMTP_FROM?.trim() || process.env.SMTP_USER || FROM_EMAIL
+    const logoPath = `${process.cwd()}/public/logo_klein.png`
+
+    await transporter.sendMail({
+      from: `BnB Website <${fromAddress}>`,
+      to,
+      replyTo: `${name} <${email}>`,
+      subject: `Nieuw contactbericht van ${name}`,
+      html: `
     <div style="
       margin:0;
       padding:40px 20px;
@@ -303,7 +311,7 @@ export async function POST(request: NextRequest) {
   attachments: [
     {
       filename: "logo_klein.png",
-      path: "./public/logo_klein.png",
+      path: logoPath,
       cid: "bnb-logo",
     },
   ],
