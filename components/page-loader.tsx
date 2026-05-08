@@ -35,7 +35,7 @@ export async function loadPublicWebsitePage({
       data: {
         ...r.content,
         bnbId: website.bnbs?.id,
-      } || { bnbId: website.bnbs?.id },
+      },
       styles: r.styles || {},
     })
   )
