@@ -31,50 +31,290 @@ export async function POST(request: NextRequest) {
 
     const transporter = createTransporter()
 
-    await transporter.sendMail({
-      from: `BnB Website <${FROM_EMAIL}>`,
-      to,
-      replyTo: `${name} <${email}>`,
-      subject: `Nieuw contactbericht van ${name}`,
-      html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background: #fffbf5; border-radius: 12px; border: 1px solid #fde68a;">
-          <div style="border-bottom: 2px solid #d97706; padding-bottom: 16px; margin-bottom: 20px;">
-            <h2 style="color: #92400e; margin: 0 0 4px 0;">Nieuw contactbericht</h2>
-            <p style="color: #9ca3af; font-size: 13px; margin: 0;">
-              Verzonden via het contactformulier op uw BnB-website
-            </p>
+ await transporter.sendMail({
+  from: `BnB Website <${FROM_EMAIL}>`,
+  to,
+  replyTo: `${name} <${email}>`,
+  subject: `Nieuw contactbericht van ${name}`,
+  html: `
+    <div style="
+      margin:0;
+      padding:40px 20px;
+      background:#020617;
+      font-family:Arial, Helvetica, sans-serif;
+      color:#ffffff;
+    ">
+
+      <div style="
+        max-width:640px;
+        margin:0 auto;
+        background:#050b2c;
+        border:1px solid rgba(99,102,241,0.18);
+        border-radius:28px;
+        overflow:hidden;
+        box-shadow:0 25px 80px rgba(0,0,0,0.45);
+      ">
+
+        <!-- HERO -->
+        <div style="
+          padding:42px 38px 34px 38px;
+          background:
+            linear-gradient(
+              135deg,
+              rgba(37,99,235,0.18) 0%,
+              rgba(139,92,246,0.18) 50%,
+              rgba(217,70,239,0.12) 100%
+            ),
+            #050b2c;
+          text-align:center;
+          border-bottom:1px solid rgba(99,102,241,0.15);
+        ">
+
+          <img
+            src="cid:bnb-logo"
+            alt="BnB Website Maken"
+            style="
+              width:72px;
+              height:auto;
+              margin-bottom:20px;
+            "
+          />
+
+          <div style="
+            display:inline-block;
+            padding:8px 16px;
+            border-radius:999px;
+            background:rgba(124,58,237,0.15);
+            border:1px solid rgba(168,85,247,0.3);
+            color:#a855f7;
+            font-size:13px;
+            font-weight:600;
+            margin-bottom:22px;
+          ">
+            Nieuw contactbericht
           </div>
-          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-            <tr>
-              <td style="padding: 8px 12px 8px 0; font-weight: 600; color: #374151; width: 120px; vertical-align: top;">Naam:</td>
-              <td style="padding: 8px 0; color: #6b7280;">${name}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 12px 8px 0; font-weight: 600; color: #374151; vertical-align: top;">E-mail:</td>
-              <td style="padding: 8px 0;">
-                <a href="mailto:${email}" style="color: #d97706; text-decoration: none;">${email}</a>
-              </td>
-            </tr>
-            ${
-              phone
-                ? `<tr>
-              <td style="padding: 8px 12px 8px 0; font-weight: 600; color: #374151; vertical-align: top;">Telefoon:</td>
-              <td style="padding: 8px 0; color: #6b7280;">${phone}</td>
-            </tr>`
-                : ""
-            }
-          </table>
-          <div style="padding: 16px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #d97706;">
-            <p style="font-weight: 600; color: #374151; margin: 0 0 8px 0;">Bericht:</p>
-            <p style="color: #6b7280; margin: 0; white-space: pre-wrap; line-height: 1.6;">${message}</p>
-          </div>
-          <p style="margin-top: 24px; font-size: 11px; color: #9ca3af; text-align: center;">
-            Ontvangen door: ${to} &bull; Verzonden vanaf: ${FROM_EMAIL}
+
+          <h1 style="
+            margin:0;
+            font-size:42px;
+            line-height:1.1;
+            font-weight:800;
+            letter-spacing:-1px;
+            color:#ffffff;
+          ">
+            Nieuwe aanvraag
+            <span style="
+              background:linear-gradient(90deg,#2563eb 0%, #7c3aed 55%, #a855f7 100%);
+              -webkit-background-clip:text;
+              -webkit-text-fill-color:transparent;
+              background-clip:text;
+              color:transparent;
+            ">
+              ontvangen
+            </span>
+          </h1>
+
+          <p style="
+            margin:18px auto 0 auto;
+            max-width:460px;
+            color:rgba(255,255,255,0.7);
+            font-size:16px;
+            line-height:1.7;
+          ">
+            Er is een nieuw bericht verzonden via het contactformulier van jouw BnB website.
           </p>
         </div>
-      `,
-      text: `Nieuw contactbericht\n\nNaam: ${name}\nE-mail: ${email}${phone ? `\nTelefoon: ${phone}` : ""}\n\nBericht:\n${message}`,
-    })
+
+        <!-- CONTENT -->
+        <div style="padding:38px;">
+
+          <div style="
+            background:rgba(15,23,42,0.95);
+            border:1px solid rgba(99,102,241,0.14);
+            border-radius:22px;
+            padding:28px;
+            margin-bottom:28px;
+          ">
+
+            <table style="
+              width:100%;
+              border-collapse:collapse;
+            ">
+
+              <tr>
+                <td style="
+                  padding:14px 0;
+                  width:130px;
+                  color:#a5b4fc;
+                  font-weight:700;
+                  vertical-align:top;
+                ">
+                  Naam
+                </td>
+
+                <td style="
+                  padding:14px 0;
+                  color:#ffffff;
+                  font-size:15px;
+                ">
+                  ${name}
+                </td>
+              </tr>
+
+              <tr>
+                <td style="
+                  padding:14px 0;
+                  color:#a5b4fc;
+                  font-weight:700;
+                  vertical-align:top;
+                ">
+                  E-mail
+                </td>
+
+                <td style="
+                  padding:14px 0;
+                  font-size:15px;
+                ">
+                  <a
+                    href="mailto:${email}"
+                    style="
+                      color:#8b5cf6;
+                      text-decoration:none;
+                      font-weight:600;
+                    "
+                  >
+                    ${email}
+                  </a>
+                </td>
+              </tr>
+
+              ${
+                phone
+                  ? `
+              <tr>
+                <td style="
+                  padding:14px 0;
+                  color:#a5b4fc;
+                  font-weight:700;
+                  vertical-align:top;
+                ">
+                  Telefoon
+                </td>
+
+                <td style="
+                  padding:14px 0;
+                  color:#ffffff;
+                  font-size:15px;
+                ">
+                  ${phone}
+                </td>
+              </tr>
+              `
+                  : ""
+              }
+
+            </table>
+          </div>
+
+          <!-- MESSAGE -->
+          <div style="
+            position:relative;
+            background:
+              linear-gradient(
+                135deg,
+                rgba(37,99,235,0.08) 0%,
+                rgba(124,58,237,0.10) 100%
+              );
+            border:1px solid rgba(99,102,241,0.16);
+            border-radius:24px;
+            padding:30px;
+          ">
+
+            <div style="
+              font-size:14px;
+              font-weight:700;
+              letter-spacing:0.4px;
+              text-transform:uppercase;
+              color:#a855f7;
+              margin-bottom:18px;
+            ">
+              Bericht
+            </div>
+
+            <div style="
+              color:rgba(255,255,255,0.82);
+              font-size:16px;
+              line-height:1.9;
+              white-space:pre-wrap;
+            ">
+              ${message}
+            </div>
+          </div>
+
+          <!-- CTA -->
+          <div style="
+            margin-top:30px;
+            text-align:center;
+          ">
+            <a
+              href="mailto:${email}"
+              style="
+                display:inline-block;
+                padding:16px 28px;
+                border-radius:14px;
+                background:linear-gradient(
+                  90deg,
+                  #2563eb 0%,
+                  #7c3aed 55%,
+                  #a855f7 100%
+                );
+                color:#ffffff;
+                font-weight:700;
+                font-size:15px;
+                text-decoration:none;
+              "
+            >
+              Direct beantwoorden
+            </a>
+          </div>
+
+          <!-- FOOTER -->
+          <div style="
+            margin-top:34px;
+            padding-top:24px;
+            border-top:1px solid rgba(99,102,241,0.14);
+            text-align:center;
+          ">
+            <p style="
+              margin:0;
+              color:rgba(255,255,255,0.38);
+              font-size:12px;
+              line-height:1.8;
+            ">
+              Ontvangen door: ${to}<br />
+              Verzonden vanaf: ${FROM_EMAIL}
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  `,
+  attachments: [
+    {
+      filename: "logo_klein.png",
+      path: "./public/logo_klein.png",
+      cid: "bnb-logo",
+    },
+  ],
+  text: `Nieuw contactbericht
+
+Naam: ${name}
+E-mail: ${email}${phone ? `\nTelefoon: ${phone}` : ""}
+
+Bericht:
+${message}`,
+});
 
     return NextResponse.json({ success: true })
   } catch (err) {
