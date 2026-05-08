@@ -40,7 +40,6 @@ export async function POST(request: NextRequest) {
     const transporter = createTransporter()
     await transporter.verify()
 
-    const logoPath = `${process.cwd()}/public/logo_klein.png`
 
     const result = await transporter.sendMail({
       from: `BnB Website <${fromAddress}>`,
@@ -80,16 +79,6 @@ export async function POST(request: NextRequest) {
           text-align:center;
           border-bottom:1px solid rgba(99,102,241,0.15);
         ">
-
-          <img
-            src="cid:bnb-logo"
-            alt="BnB Website Maken"
-            style="
-              width:72px;
-              height:auto;
-              margin-bottom:20px;
-            "
-          />
 
           <div style="
             display:inline-block;
@@ -312,11 +301,6 @@ export async function POST(request: NextRequest) {
     </div>
   `,
   attachments: [
-    {
-      filename: "logo_klein.png",
-      path: logoPath,
-      cid: "bnb-logo",
-    },
   ],
   text: `Nieuw contactbericht
 
