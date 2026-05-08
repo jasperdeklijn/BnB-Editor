@@ -500,6 +500,22 @@ export function RoomsSection({ data, styles }: RoomsSectionProps) {
     const fetchRooms = async () => {
       setLoading(true)
       try {
+        // If rooms data is already provided (from server-side fetch), use it
+        if (data.rooms) {
+          let result = (data.rooms as Room[]).map((r) => ({
+            ...r,
+            images: Array.isArray(r.images) ? r.images : [],
+          }))
+
+          if (roomIds && roomIds.length > 0) {
+            result = result.filter((r) => roomIds.includes(r.id))
+          }
+
+          setRooms(result)
+          setLoading(false)
+          return
+        }
+
         const supabase = createClient()
 
         // Use bnbId from section data if available; otherwise fall back to user→bnb lookup
@@ -591,30 +607,52 @@ export function RoomsSection({ data, styles }: RoomsSectionProps) {
   // Empty state — link to /rooms
   if (rooms.length === 0) {
     return (
-      <section
-        className={`bg-amber-50/50 px-4 py-16 ${styles?.fontFamily ?? ""}`}
-        style={sectionStyle}
-      >
-        <div className="mx-auto max-w-4xl text-center">
-          <h2 className="mb-6 text-3xl font-bold text-amber-950" style={textStyle}>
-            {title}
-          </h2>
-          <div className="flex flex-col items-center gap-4 rounded-2xl border-2 border-dashed border-amber-200 bg-amber-50 p-12">
-            <BedDouble className="h-12 w-12 text-amber-400" />
-            <p className="font-medium text-amber-700">Nog geen kamers aangemaakt</p>
-            <p className="text-sm text-amber-600">
-              Maak eerst kamers aan via de kamers pagina en selecteer ze daarna hier.
+     <section
+      className={`relative overflow-hidden bg-[#020617] px-4 py-20 ${styles?.fontFamily ?? ""}`}
+      style={sectionStyle}
+    >
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(124,58,237,0.18),transparent_45%)]" />
+      <div
+        className="absolute inset-0 opacity-[0.06]"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(255,255,255,0.12) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.12) 1px, transparent 1px)
+          `,
+          backgroundSize: "48px 48px",
+        }}
+      />
+      <div className="relative mx-auto max-w-4xl text-center">
+        <div className="mb-5 inline-flex items-center rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-sm font-medium text-violet-400">
+          Kamers beheren
+        </div>
+        <h2 className="mb-6 text-4xl font-extrabold tracking-tight text-white" style={textStyle}>
+          {title}
+        </h2>
+        <div className="relative overflow-hidden rounded-[32px] border border-indigo-500/20 bg-[#050b2c]/95 p-12 shadow-[0_25px_80px_rgba(0,0,0,0.45)]">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-violet-500/10 to-fuchsia-500/5 pointer-events-none" />
+          <div className="relative flex flex-col items-center">
+            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-blue-600 via-violet-600 to-fuchsia-500 shadow-lg shadow-violet-900/30">
+              <BedDouble className="h-10 w-10 text-white" />
+            </div>
+            <h3 className="mb-3 text-2xl font-bold text-white">
+              Nog geen kamers aangemaakt
+            </h3>
+            <p className="max-w-xl text-base leading-8 text-white/65">
+              Maak eerst kamers aan via de kamers pagina en selecteer ze daarna hier
+              om ze zichtbaar te maken op jouw BnB website.
             </p>
             <Link
               href="/rooms"
-              className="inline-flex items-center gap-2 rounded-lg bg-amber-800 px-5 py-2.5 text-sm font-medium text-white hover:bg-amber-700 transition-colors"
+              className="mt-10 inline-flex items-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-500 px-7 py-4 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_10px_40px_rgba(124,58,237,0.45)]"
             >
               <BedDouble className="h-4 w-4" />
               Kamers aanmaken
             </Link>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
     )
   }
 

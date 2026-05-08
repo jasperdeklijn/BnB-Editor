@@ -59,7 +59,7 @@ export function EditorHeader({
   }, [])
 
   return (
-    <header className="flex items-center justify-between border-b border-[var(--editor-header-accent)] bg-[var(--editor-header)] px-3 py-2 md:px-6 md:py-3 gap-2 shrink-0">
+    <header className="flex items-center justify-between border-b border-[var(--editor-header-accent)] bg-[var(--editor-header)] px-3 py-2 md:px-6 md:py-3 gap-2 shrink-0 z-60">
       {/* Left: branding + title */}
       <div className="flex items-center gap-2 md:gap-4 min-w-0">
         <span className="hidden sm:block text-base md:text-lg font-semibold text-[var(--editor-header-fg)] shrink-0">

@@ -32,10 +32,40 @@ export async function loadPublicWebsitePage({
     (r: any): Section => ({
       id: r.id,
       type: r.type,
-      data: r.content || {},
+      data: {
+        ...r.content,
+        bnbId: website.bnbs?.id,
+      } || { bnbId: website.bnbs?.id },
       styles: r.styles || {},
     })
   )
+
+  // For public sites, fetch rooms data for rooms sections to bypass RLS
+  if (!isPreview && website.bnbs?.id) {
+    const roomsSections = sections.filter(s => s.type === 'rooms')
+    if (roomsSections.length > 0) {
+      const { data: roomsData } = await supabase
+        .from("rooms")
+        .select("*")
+        .eq("bnb_id", website.bnbs.id)
+        .order("position", { ascending: true })
+
+      const rooms = (roomsData ?? []).map((r) => ({
+        ...r,
+        images: Array.isArray(r.images) ? r.images : [],
+      }))
+
+      // Add rooms data to each rooms section
+      sections.forEach(section => {
+        if (section.type === 'rooms') {
+          section.data = {
+            ...section.data,
+            rooms,
+          }
+        }
+      })
+    }
+  }
 
   // Fetch transitions from section_transitions table
   const { data: transitionRows } = await supabase
