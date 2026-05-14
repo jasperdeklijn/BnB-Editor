@@ -32,6 +32,8 @@ interface EditorHeaderProps {
   isSaving: boolean
   device: "desktop" | "tablet" | "mobile"
   onDeviceChange: (device: "desktop" | "tablet" | "mobile") => void
+  avatarUrl?: string | null
+  displayName?: string | null
 }
 
 export function EditorHeader({
@@ -44,6 +46,8 @@ export function EditorHeader({
   isSaving,
   device,
   onDeviceChange,
+  avatarUrl,
+  displayName,
 }: EditorHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -109,7 +113,7 @@ export function EditorHeader({
 
               {/* BnB Details link */}
               <Link
-                href="/bnb"
+                href="/editor/bnb"
                 role="menuitem"
                 onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border-b border-border"
@@ -120,7 +124,7 @@ export function EditorHeader({
 
               {/* Rooms link */}
               <Link
-                href="/rooms"
+                href="/editor/rooms"
                 role="menuitem"
                 onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border-b border-border"
@@ -131,7 +135,7 @@ export function EditorHeader({
 
               {/* Domains link */}
               <Link
-                href="/domains"
+                href="/editor/domains"
                 role="menuitem"
                 onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
@@ -148,13 +152,25 @@ export function EditorHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 rounded-md text-[var(--editor-header-fg)]/80 hover:bg-[var(--editor-header-fg)]/10 hover:text-[var(--editor-header-fg)]"
+            className="h-10 rounded-md text-[var(--editor-header-fg)]/80 hover:bg-[var(--editor-header-fg)]/10 hover:text-[var(--editor-header-fg)]"
             onClick={() => setAccountMenuOpen((o) => !o)}
             aria-haspopup="menu"
             aria-expanded={accountMenuOpen}
           >
-            <User className="mr-2 h-4 w-4" />
-            Account
+            {avatarUrl ? (
+              <span className="mr-2 inline-flex h-8 w-8 overflow-hidden rounded-full bg-muted">
+                <Image
+                  src={avatarUrl}
+                  alt="Profile avatar"
+                  width={32}
+                  height={32}
+                  className="h-full w-full object-cover"
+                />
+              </span>
+            ) : (
+              <User className="mr-2 h-5 w-5" />
+            )}
+            {displayName ? displayName : "Account"}
             <ChevronDown className="ml-2 h-4 w-4" />
           </Button>
 

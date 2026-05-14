@@ -478,7 +478,7 @@ export function SelectionEditor({
                       </p>
                     </div>
                     <Link
-                      href="/rooms"
+                      href="/editor/rooms"
                       className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
                     >
                       <ExternalLink className="h-3 w-3" />
@@ -556,7 +556,7 @@ export function SelectionEditor({
                     ) : null}
 
                     <Link
-                      href="/rooms"
+                      href="/editor/rooms"
                       className="flex items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
                     >
                       <ExternalLink className="h-3 w-3" />

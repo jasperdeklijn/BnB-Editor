@@ -643,7 +643,7 @@ export function RoomsSection({ data, styles }: RoomsSectionProps) {
               om ze zichtbaar te maken op jouw BnB website.
             </p>
             <Link
-              href="/rooms"
+              href="/editor/rooms"
               className="mt-10 inline-flex items-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-500 px-7 py-4 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_10px_40px_rgba(124,58,237,0.45)]"
             >
               <BedDouble className="h-4 w-4" />

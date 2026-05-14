@@ -29,6 +29,8 @@ export function EditorClient({ userId }: EditorClientProps) {
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null)
   const [device, setDevice] = useState<"desktop" | "tablet" | "mobile">("desktop")
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("canvas")
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [displayName, setDisplayName] = useState<string | null>(null)
   const router = useRouter()
 
   // Switch to canvas on mobile when a touch drag starts
@@ -50,9 +52,14 @@ export function EditorClient({ userId }: EditorClientProps) {
   const loadWebsite = async () => {
     const supabase = createClient()
 
-    // Fetch the user's BnB id for the rooms editor
+    // Fetch the user's profile and BnB id for the rooms editor
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
+      const profileAvatar = (user.user_metadata as any)?.avatar_url as string | undefined
+      const profileName = (user.user_metadata as any)?.full_name as string | undefined
+      setAvatarUrl(profileAvatar ?? null)
+      setDisplayName(profileName ?? user.email ?? null)
+
       const { data: bnb } = await supabase
         .from("bnbs")
         .select("id")
@@ -231,7 +238,7 @@ export function EditorClient({ userId }: EditorClientProps) {
       return
     }
 
-    router.push(`/domains`)
+    router.push(`/editor/domains`)
   }
 
   const handleLogout = async () => {
@@ -336,6 +343,8 @@ export function EditorClient({ userId }: EditorClientProps) {
         isSaving={isSaving}
         device={device}
         onDeviceChange={setDevice}
+        avatarUrl={avatarUrl}
+        displayName={displayName}
       />
 
       {/* Desktop layout: side-by-side panels */}
