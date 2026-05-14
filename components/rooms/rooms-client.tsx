@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import {
   createRoom as apiCreateRoom,
@@ -14,9 +14,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
+import { useEditorLayout } from "@/components/editor/editor-layout-context"
 import { useTouchDrag } from "@/hooks/use-touch-drag"
 import {
-  ArrowLeft,
   BedDouble,
   Plus,
   Trash2,
@@ -319,6 +319,7 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [draggingImage, setDraggingImage] = useState<string | null>(null)
+  const { setIsSaving: setHeaderSaving, setActionLabel, setOnAction, setActionIcon, setActionLoading, setInfoText } = useEditorLayout()
 
   // Load images from Supabase storage on mount
   useEffect(() => {
@@ -346,7 +347,7 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
       })
   }, [userId])
 
-  const handleCreateRoom = async () => {
+  const handleCreateRoom = useCallback(async () => {
     setIsSaving(true)
     try {
       const newRoom = await apiCreateRoom(bnbId, {
@@ -365,7 +366,27 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
     } finally {
       setIsSaving(false)
     }
-  }
+  }, [bnbId, rooms.length])
+
+  useEffect(() => {
+    setHeaderSaving(isSaving)
+    setActionLoading(isSaving)
+  }, [isSaving, setHeaderSaving, setActionLoading])
+
+  useEffect(() => {
+    setActionLabel("Kamer toevoegen")
+    setActionIcon(<Plus className="mr-2 h-4 w-4" />)
+    setOnAction(() => handleCreateRoom)
+    setInfoText(`${rooms.length} kamers`)
+
+    return () => {
+      setActionLabel(undefined)
+      setActionIcon(undefined)
+      setOnAction(undefined)
+      setActionLoading(false)
+      setInfoText(undefined)
+    }
+  }, [rooms.length, handleCreateRoom, setActionLabel, setActionIcon, setActionLoading, setOnAction, setInfoText])
 
   const handleUpdateRoom = async (id: string, updates: Partial<RoomInput>) => {
     // Optimistic update
@@ -373,12 +394,15 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
       prev.map((r) => (r.id === id ? { ...r, ...updates } : r))
     )
 
+    setIsSaving(true)
     try {
       const updated = await apiUpdateRoom(id, updates)
       setRooms((prev) => prev.map((r) => (r.id === id ? updated : r)))
     } catch (err) {
       console.error(err)
       toast.error("Mislukt om kamer bij te werken")
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -387,6 +411,7 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
     const prev = rooms
     setRooms((r) => r.filter((room) => room.id !== id))
 
+    setIsSaving(true)
     try {
       await apiDeleteRoom(id)
       toast.success("Kamer verwijderd")
@@ -394,6 +419,8 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
       console.error(err)
       setRooms(prev)
       toast.error("Mislukt om kamer te verwijderen")
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -407,56 +434,6 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
 
   return (
     <div className="flex h-[100dvh] flex-col bg-background">
-      {/* Top bar */}
-      <header className="flex items-center justify-between gap-4 border-b border-[var(--editor-header-accent)] bg-[var(--editor-header)] px-4 py-3 md:px-6 shrink-0">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            asChild
-            className="text-[var(--editor-header-fg)]/80 hover:bg-[var(--editor-header-fg)]/10 hover:text-[var(--editor-header-fg)]"
-          >
-            <Link href="/editor">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Editor
-            </Link>
-          </Button>
-          <div className="flex items-center gap-2">
-            <BedDouble className="h-5 w-5 text-[var(--editor-header-fg)]" />
-            <h1 className="text-lg font-semibold text-[var(--editor-header-fg)]">Kamers</h1>
-            <span className="ml-1 rounded-full bg-[var(--editor-header-fg)]/15 px-2 py-0.5 text-xs font-medium text-[var(--editor-header-fg)]">
-              {rooms.filter(room => room.name && room.description && room.price && room.max_guests).length}
-            </span>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* auto-save indicator */}
-          <span className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--editor-header-fg)]/70">
-            {isSaving ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Opslaan…
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />
-                Automatisch opgeslagen
-              </>
-            )}
-          </span>
-          <Button
-            size="sm"
-            onClick={handleCreateRoom}
-            disabled={isSaving}
-            className="bg-[var(--editor-header-fg)] text-[var(--editor-header)] hover:bg-[var(--editor-header-fg)]/90"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Kamer toevoegen
-          </Button>
-        </div>
-      </header>
-
-      {/* Body: sidebar + main */}
       <div className="flex flex-1 overflow-hidden">
         {/* Image sidebar */}
         <aside

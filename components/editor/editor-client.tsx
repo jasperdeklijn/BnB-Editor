@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { SectionsSelector } from "./sections-selector"
 import { EditorCanvas } from "./editor-canvas"
-import { EditorHeader } from "./editor-header"
 import { SelectionEditor } from "./section-editor"
+import { useEditorLayout } from "./editor-layout-context"
 import type { Section, SectionStyles, Transition } from "@/lib/types"
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
@@ -24,14 +24,10 @@ export function EditorClient({ userId }: EditorClientProps) {
   const [bnbId, setBnbId] = useState<string | null>(null)
   const [title, setTitle] = useState("Mijn B&B Website")
   const [slug, setSlug] = useState("")
-  const [isPreview, setIsPreview] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null)
-  const [device, setDevice] = useState<"desktop" | "tablet" | "mobile">("desktop")
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("canvas")
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
-  const [displayName, setDisplayName] = useState<string | null>(null)
   const router = useRouter()
+  const { isPreview, setIsPreview, isSaving, setIsSaving, device, setDevice, setOnPublish, setOnLogout } = useEditorLayout()
 
   // Switch to canvas on mobile when a touch drag starts
   useEffect(() => {
@@ -55,11 +51,6 @@ export function EditorClient({ userId }: EditorClientProps) {
     // Fetch the user's profile and BnB id for the rooms editor
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
-      const profileAvatar = (user.user_metadata as any)?.avatar_url as string | undefined
-      const profileName = (user.user_metadata as any)?.full_name as string | undefined
-      setAvatarUrl(profileAvatar ?? null)
-      setDisplayName(profileName ?? user.email ?? null)
-
       const { data: bnb } = await supabase
         .from("bnbs")
         .select("id")
@@ -222,7 +213,7 @@ export function EditorClient({ userId }: EditorClientProps) {
     }
   }
 
-  const handlePublish = async () => {
+  const handlePublish = useCallback(async () => {
     if (!websiteId) return
 
     setIsSaving(true)
@@ -239,13 +230,18 @@ export function EditorClient({ userId }: EditorClientProps) {
     }
 
     router.push(`/editor/domains`)
-  }
+  }, [router, websiteId])
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push("/auth/login")
-  }
+  }, [router])
+
+  useEffect(() => {
+    setOnPublish(() => handlePublish)
+    setOnLogout(() => handleLogout)
+  }, [handlePublish, handleLogout, setOnPublish, setOnLogout])
 
   const handleStyleUpdate = (styles: SectionStyles) => {
     if (!selectedSectionId) return
@@ -333,20 +329,6 @@ export function EditorClient({ userId }: EditorClientProps) {
 
   return (
     <div className="flex h-[100dvh] flex-col bg-muted/30">
-      <EditorHeader
-        title={title}
-        onTitleChange={setTitle}
-        isPreview={isPreview}
-        onPreviewToggle={() => setIsPreview(!isPreview)}
-        onPublish={handlePublish}
-        onLogout={handleLogout}
-        isSaving={isSaving}
-        device={device}
-        onDeviceChange={setDevice}
-        avatarUrl={avatarUrl}
-        displayName={displayName}
-      />
-
       {/* Desktop layout: side-by-side panels */}
       <div className="hidden md:flex flex-1 overflow-hidden">
         {!isPreview && <SectionsSelector userId={userId} />}
