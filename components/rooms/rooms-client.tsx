@@ -493,7 +493,7 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
                 <div className="py-8 text-center">
                   <ImageIcon className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
                   <p className="text-xs text-muted-foreground">Nog geen afbeeldingen</p>
-                  <Link href="/images" className="text-xs text-primary hover:underline mt-1 block">
+                  <Link href="/editor/images" className="text-xs text-primary hover:underline mt-1 block">
                     Afbeeldingen uploaden
                   </Link>
                 </div>

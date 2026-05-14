@@ -86,9 +86,9 @@ export function LandingNav() {
           <Link href="#hoe-het-werkt" onClick={handleNavClick} className="text-sm text-white/70 hover:text-[var(--brand-blue)] transition-colors">
             Hoe het werkt
           </Link>
-           {/* <Link href="#prijzen" onClick={handleNavClick} className="text-sm text-white/70 hover:text-[var(--brand-blue)] transition-colors">
+          <Link href="#prijzen" onClick={handleNavClick} className="text-sm text-white/70 hover:text-[var(--brand-blue)] transition-colors">
             Prijzen
-          </Link> */}
+          </Link> 
         </nav>
 
         {/* CTA */}

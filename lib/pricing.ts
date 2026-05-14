@@ -142,11 +142,6 @@ export const PRICING_FAQ = [
       "Na je gratis proefperiode wordt je automatisch in rekening gebracht voor je gekozen plan. Je kunt je abonnement op elk moment opzeggen.",
   },
   {
-    question: "Bieden jullie refunds aan?",
-    answer:
-      "Ja, we bieden een 30-daags geld-terug-garantie. Als je niet tevreden bent, neem dan contact op met ons ondersteuningsteam.",
-  },
-  {
     question: "Hoe wordt het Add-on afgerekend?",
     answer:
       "Het Booking Add-on wordt samen met je standaardplan afgerekend op dezelfde factureringsdatum. Je kunt het op elk moment in- of uitschakelen.",
@@ -155,11 +150,6 @@ export const PRICING_FAQ = [
     question: "Kunnen kleine B&Bs het Lite plan gebruiken?",
     answer:
       "Absoluut! Het Lite plan is perfect voor kleine B&Bs die net beginnen. Je kunt later altijd upgraden naar Growth als je groeit.",
-  },
-  {
-    question: "Hoe kan ik mijn betaalmethode wijzigen?",
-    answer:
-      "Je kunt je betaalmethode op elk moment bijwerken in je accountinstellingen. Ga naar Instellingen > Facturering > Betaalmethode.",
   },
 ]
 

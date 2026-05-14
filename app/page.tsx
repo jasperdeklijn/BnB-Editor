@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server"
-import { redirect } from "next/navigation"
 import { LandingNav } from "@/components/landing/landing-nav"
 import { LandingHero } from "@/components/landing/landing-hero"
 import { LandingFeatures } from "@/components/landing/landing-features"
@@ -20,7 +19,7 @@ export default async function HomePage() {
       <LandingHero />
       <LandingFeatures />
       <LandingHowItWorks />
-      {/* <PricingSection /> */}
+      <PricingSection />
       <LandingCta />
       <SharedFooter />
     </main>

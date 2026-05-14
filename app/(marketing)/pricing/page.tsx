@@ -8,7 +8,7 @@ import { ArrowLeft } from "lucide-react"
 export const metadata = {
   title: "Pricing | BnB Website Maken",
   description:
-    "Transparente Preise für deine B&B Website. Wähle den Plan, der zu dir passt.",
+    "Transparante prijzen voor onze BnB website builder. Kies het plan dat bij jouw B&B past. Upgraden of downgraden kan altijd — geen verborgen kosten.",
 }
 
 /**
@@ -28,7 +28,7 @@ export default function PricingPage() {
             className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Zurück zur Startseite
+            Terug naar homepage
           </Link>
         </div>
       </header>
@@ -38,7 +38,7 @@ export default function PricingPage() {
         {/* Section header */}
         <div className="text-center mb-16">
           <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">
-            Transparente Preise
+            Transparante Prijzen
           </h1>
           <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
             Kies het plan dat bij jouw B&B past. Upgraden of downgraden kan altijd — geen verborgen kosten.
@@ -59,36 +59,36 @@ export default function PricingPage() {
         {/* Booking addon highlight */}
         <div className="mb-20 rounded-xl border-2 border-dashed border-amber-400/50 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-12 text-center">
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">
-            Booking Add-on — €19/Monat
+            Booking Add-on — €19/Maand
           </h2>
           <p className="text-lg text-slate-600 dark:text-slate-400 mb-6">
-            Füge Buchungsfunktionen zu jedem Plan hinzu. Verwalte Anfragen,
-            Verfügbarkeit und Reservierungen direkt im Dashboard.
+            Voeg bookingfunctionaliteiten toe aan elk plan. Beheer verzoeken,
+            beschikbaarheid en reserveringen rechtstreeks in het dashboard.
           </p>
           <ul className="inline-flex flex-col gap-3 text-left text-slate-700 dark:text-slate-300">
             <li className="flex items-center gap-2">
               <span className="inline-flex items-center justify-center w-5 h-5 bg-amber-500 text-white rounded-full text-xs">
                 ✓
               </span>
-              Buchungsanfragen verwalten
+              Bookingaanvragen beheren
             </li>
             <li className="flex items-center gap-2">
               <span className="inline-flex items-center justify-center w-5 h-5 bg-amber-500 text-white rounded-full text-xs">
                 ✓
               </span>
-              Verfügbarkeitskalender
+              Beschikbaarheidskalender
             </li>
             <li className="flex items-center gap-2">
               <span className="inline-flex items-center justify-center w-5 h-5 bg-amber-500 text-white rounded-full text-xs">
                 ✓
               </span>
-              Reservierungsverwaltung
+              Reserveringen beheren
             </li>
             <li className="flex items-center gap-2">
               <span className="inline-flex items-center justify-center w-5 h-5 bg-amber-500 text-white rounded-full text-xs">
                 ✓
               </span>
-              Gastkommunikation
+              Gast communicatie en automatische e-mails
             </li>
           </ul>
         </div>

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import Image from "next/image"
 import {
   Eye,
   EyeOff,
@@ -11,14 +11,14 @@ import {
   Tablet,
   Smartphone,
   ImageIcon,
-  LogOut,
-  MoreVertical,
   Globe,
-  User,
   Home,
   BedDouble,
   CheckCircle2,
   Loader2,
+  ChevronDown,
+  CreditCard,
+  User,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -47,11 +47,16 @@ export function EditorHeader({
 }: EditorHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
+  const accountMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpen(false)
+      }
+      if (accountMenuRef.current && !accountMenuRef.current.contains(e.target as Node)) {
+        setAccountMenuOpen(false)
       }
     }
     document.addEventListener("mousedown", handleClickOutside)
@@ -62,15 +67,126 @@ export function EditorHeader({
     <header className="flex items-center justify-between border-b border-[var(--editor-header-accent)] bg-[var(--editor-header)] px-3 py-2 md:px-6 md:py-3 gap-2 shrink-0 z-60">
       {/* Left: branding + title */}
       <div className="flex items-center gap-2 md:gap-4 min-w-0">
-        <span className="hidden sm:block text-base md:text-lg font-semibold text-[var(--editor-header-fg)] shrink-0">
-          BnB Maker
-        </span>
-        <Input
-          value={title}
-          onChange={(e) => onTitleChange(e.target.value)}
-          className="w-32 sm:w-48 md:w-64 text-sm bg-[var(--editor-header-accent)]/40 border-[var(--editor-header-accent)] text-[var(--editor-header-fg)] placeholder:text-[var(--editor-header-fg)]/50 focus-visible:ring-[var(--editor-header-fg)]/30"
-          placeholder="Website titel"
-        />
+         <div className="flex items-center">
+              <Image
+                src="/logo.png"
+                alt="BnB Website Maken"
+                width={160}
+                height={48}
+                className="h-12 w-auto"
+              />
+          </div>
+         {/* Mijn BnB pulldown */}
+        <div className="relative" ref={menuRef}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 rounded-md bg-purple-600 text-white hover:bg-purple-700"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+          >
+            <Home className="mr-2 h-4 w-4" />
+            Mijn BnB
+            <ChevronDown className="ml-2 h-4 w-4" />
+          </Button>
+
+          {menuOpen && (
+            <div
+              role="menu"
+              className="absolute right-0 top-full z-50 mt-1 w-56 rounded-md border border-border bg-card shadow-lg"
+            >
+              {/* Images link */}
+              <Link
+                href="/editor/images"
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border-b border-border"
+              >
+                <ImageIcon className="h-4 w-4 text-primary" />
+                Afbeeldingen
+              </Link>
+
+              {/* BnB Details link */}
+              <Link
+                href="/bnb"
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border-b border-border"
+              >
+                <Home className="h-4 w-4 text-primary" />
+                B&B Details
+              </Link>
+
+              {/* Rooms link */}
+              <Link
+                href="/rooms"
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border-b border-border"
+              >
+                <BedDouble className="h-4 w-4 text-primary" />
+                Kamers
+              </Link>
+
+              {/* Domains link */}
+              <Link
+                href="/domains"
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <Globe className="h-4 w-4 text-muted-foreground" />
+                Domeininstellingen
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Account pulldown */}
+        <div className="relative" ref={accountMenuRef}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 rounded-md text-[var(--editor-header-fg)]/80 hover:bg-[var(--editor-header-fg)]/10 hover:text-[var(--editor-header-fg)]"
+            onClick={() => setAccountMenuOpen((o) => !o)}
+            aria-haspopup="menu"
+            aria-expanded={accountMenuOpen}
+          >
+            <User className="mr-2 h-4 w-4" />
+            Account
+            <ChevronDown className="ml-2 h-4 w-4" />
+          </Button>
+
+          {accountMenuOpen && (
+            <div
+              role="menu"
+              className="absolute right-0 top-full z-50 mt-1 w-56 rounded-md border border-border bg-card shadow-lg"
+            >
+              {/* Billing link */}
+              <Link
+                href="/account/billing"
+                role="menuitem"
+                onClick={() => setAccountMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border-b border-border"
+              >
+                <CreditCard className="h-4 w-4 text-primary" />
+                Billing
+              </Link>
+
+              {/* Profile link */}
+              <Link
+                href="/account/profile"
+                role="menuitem"
+                onClick={() => setAccountMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <User className="h-4 w-4 text-primary" />
+                Profile
+              </Link>
+            </div>
+          )}
+        </div>
         {/* Auto-save indicator */}
         <span className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--editor-header-fg)]/70">
           {isSaving ? (
@@ -157,114 +273,6 @@ export function EditorHeader({
         >
           <Upload className="h-4 w-4" />
         </Button>
-
-        {/* Overflow menu */}
-        <div className="relative" ref={menuRef}>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-[var(--editor-header-fg)]/80 hover:bg-[var(--editor-header-fg)]/10 hover:text-[var(--editor-header-fg)]"
-            onClick={() => setMenuOpen((o) => !o)}
-            aria-haspopup="menu"
-            aria-expanded={menuOpen}
-          >
-            <MoreVertical className="h-4 w-4" />
-            <span className="sr-only">Meer opties</span>
-          </Button>
-
-          {menuOpen && (
-            <div
-              role="menu"
-              className="absolute right-0 top-full z-50 mt-1 w-56 rounded-md border border-border bg-card shadow-lg"
-            >
-              {/* Device picker — mobile screens only */}
-              <div className="md:hidden px-3 py-2 border-b border-border">
-                <p className="text-xs text-muted-foreground mb-2">Voorvertoningsapparaat</p>
-                <div className="flex gap-1">
-                  {(["desktop", "tablet", "mobile"] as const).map((d) => (
-                    <Button
-                      key={d}
-                      variant={device === d ? "secondary" : "ghost"}
-                      size="sm"
-                      onClick={() => { onDeviceChange(d); setMenuOpen(false) }}
-                      className="h-7 flex-1 px-1"
-                    >
-                      {d === "desktop" && <Monitor className="h-3.5 w-3.5" />}
-                      {d === "tablet" && <Tablet className="h-3.5 w-3.5" />}
-                      {d === "mobile" && <Smartphone className="h-3.5 w-3.5" />}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Images link */}
-              <Link
-                href="/images"
-                role="menuitem"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border-b border-border"
-              >
-                <ImageIcon className="h-4 w-4 text-primary" />
-                Afbeeldingen
-              </Link>
-
-              {/* Profile link */}
-              <Link
-                href="/profile"
-                role="menuitem"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border-b border-border"
-              >
-                <User className="h-4 w-4 text-primary" />
-                Mijn Profiel
-              </Link>
-
-              {/* BnB Details link */}
-              <Link
-                href="/bnb"
-                role="menuitem"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border-b border-border"
-              >
-                <Home className="h-4 w-4 text-primary" />
-                B&B Details
-              </Link>
-
-              {/* Rooms link */}
-              <Link
-                href="/rooms"
-                role="menuitem"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border-b border-border"
-              >
-                <BedDouble className="h-4 w-4 text-primary" />
-                Kamers
-              </Link>
-
-              {/* Domains link */}
-              <Link
-                href="/domains"
-                role="menuitem"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border-b border-border"
-              >
-                <Globe className="h-4 w-4 text-muted-foreground" />
-                Domeininstellingen
-              </Link>
-
-              {/* Logout */}
-              <button
-                role="menuitem"
-                type="button"
-                onClick={() => { onLogout(); setMenuOpen(false) }}
-                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-              >
-                <LogOut className="h-4 w-4" />
-                Uitloggen
-              </button>
-            </div>
-          )}
-        </div>
       </div>
     </header>
   )

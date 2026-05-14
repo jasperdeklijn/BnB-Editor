@@ -14,7 +14,10 @@ import {
   Plus,
   Menu,
   Layout,
+  Link as LinkIcon,
+  ExternalLink,
 } from "lucide-react"
+import Link from "next/link"
 import type { SectionType } from "@/lib/types"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { createClient } from "@/lib/supabase/client"
@@ -271,6 +274,13 @@ export function SectionsSelector({ className = "", userId, onSectionAdded }: Sec
               Sleep afbeeldingen naar secties
             </p>
           </div>
+          <Link
+            href="/editor/images"
+            className="flex items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+          >
+            <ExternalLink className="h-3 w-3" />
+            Afbeeldingen beheren
+          </Link>
           {isLoadingImages ? (
             <div className="text-xs text-muted-foreground text-center py-8">Afbeeldingen laden...</div>
           ) : images.length === 0 ? (
