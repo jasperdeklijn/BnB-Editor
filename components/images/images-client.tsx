@@ -200,24 +200,7 @@ export function ImagesClient({ userId }: ImagesClientProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top bar — matches profile/bnb/rooms header style */}
-      <header className="flex items-center gap-4 border-b border-border bg-[var(--editor-header)] px-4 py-3 md:px-8">
-        <Button
-          variant="ghost"
-          size="sm"
-          asChild
-          className="text-[var(--editor-header-fg)]/80 hover:bg-[var(--editor-header-fg)]/10 hover:text-[var(--editor-header-fg)]"
-        >
-          <Link href="/editor">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Terug naar Editor
-          </Link>
-        </Button>
-        <div className="flex items-center gap-2">
-          <ImageIcon className="h-5 w-5 text-[var(--editor-header-fg)]" />
-          <h1 className="text-lg font-semibold text-[var(--editor-header-fg)]">Mijn Afbeeldingen</h1>
-        </div>
-      </header>
+ 
 
       <main className="mx-auto w-full max-w-4xl px-4 py-10 md:px-8">
         <div className="flex flex-col gap-6">

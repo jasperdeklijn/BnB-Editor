@@ -107,13 +107,24 @@ export function EditorHeader({
             <span className="hidden sm:inline">Terug</span>
           </Link>
           </div>
-        ) :  <Image
-                src="/logo_klein.png"
-                alt="BnB Website Maken"
-                width={160}
-                height={48}
-                className="h-10 md:h-12 w-auto"
-              />}
+        ) : (
+          <div className="flex items-center gap-2">
+            <Image
+              src="/favicon.png"
+              alt="BnB Website Maken"
+              width={32}
+              height={32}
+              className="h-7 w-7 md:hidden"
+            />
+            <Image
+              src="/logo_klein.png"
+              alt="BnB Website Maken"
+              width={160}
+              height={32}
+              className="hidden md:block h-10 md:h-12 w-auto"
+            />
+          </div>
+        )}
         <div className="relative" ref={menuRef}>
           <Button
             variant="ghost"
@@ -131,7 +142,7 @@ export function EditorHeader({
           {menuOpen && (
             <div
               role="menu"
-              className="absolute right-0 top-full z-50 mt-1 w-48 md:w-56 rounded-md border border-border bg-card shadow-lg text-sm"
+              className="absolute left-0 top-full z-50 mt-1 min-w-[12rem] max-w-[calc(100vw-1rem)] md:w-56 rounded-md border border-border bg-card shadow-lg text-sm"
             >
               {/* Images link */}
               <Link
