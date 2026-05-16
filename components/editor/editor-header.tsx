@@ -101,7 +101,7 @@ export function EditorHeader({
           />
           <Link
             href="/editor"
-            className="hidden md:inline-flex items-center gap-2 rounded-md border border-[var(--editor-header-accent)] bg-[var(--editor-header)] px-3 py-2 text-xs md:text-sm font-medium text-[var(--editor-header-fg)] transition-colors hover:bg-[var(--editor-header-fg)]/10"
+            className="hidden md:inline-flex items-center gap-2 rounded-md border border-[var(--editor-header-accent)] bg-[var(--editor-header)] px-3 py-2 text-xs md:text-sm font-medium text-[var(--editor-header-fg)] transition-colors hover:bg-violet-500/10"
           >
             <ArrowLeft className="h-3 w-3 md:h-4 md:w-4" />
             <span className="hidden sm:inline">Terug</span>
@@ -142,14 +142,14 @@ export function EditorHeader({
           {menuOpen && (
             <div
               role="menu"
-              className="absolute left-0 top-full z-50 mt-1 min-w-[12rem] max-w-[calc(100vw-1rem)] md:w-56 rounded-md border border-border bg-card shadow-lg text-sm"
+              className="absolute left-0 top-full z-50 mt-1 min-w-[12rem] max-w-[calc(100vw-1rem)] md:w-56 rounded-md border border-slate-200 bg-white shadow-lg text-sm"
             >
               {/* Images link */}
               <Link
                 href="/editor/images"
                 role="menuitem"
                 onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border-b border-border"
+                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-slate-700 hover:bg-violet-50 hover:text-violet-900 transition-colors border-b border-slate-200"
               >
                 <ImageIcon className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
                 Afbeeldingen
@@ -160,7 +160,7 @@ export function EditorHeader({
                 href="/editor/bnb"
                 role="menuitem"
                 onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border-b border-border"
+                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-slate-700 hover:bg-violet-50 hover:text-violet-900 transition-colors border-b border-slate-200"
               >
                 <Home className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
                 B&B Details
@@ -171,7 +171,7 @@ export function EditorHeader({
                 href="/editor/rooms"
                 role="menuitem"
                 onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border-b border-border"
+                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-slate-700 hover:bg-violet-50 hover:text-violet-900 transition-colors border-b border-slate-200"
               >
                 <BedDouble className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
                 Kamers
@@ -182,9 +182,9 @@ export function EditorHeader({
                 href="/editor/domains"
                 role="menuitem"
                 onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-slate-700 hover:bg-violet-50 hover:text-violet-900 transition-colors"
               >
-                <Globe className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground flex-shrink-0" />
+                <Globe className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
                 Domeininstellingen
               </Link>
             </div>
@@ -221,7 +221,29 @@ export function EditorHeader({
       </div>
 
       {/* Right: actions */}
-      <div className="flex items-center gap-1 md:gap-3 shrink-0">
+      <div className="flex items-center gap-1 md:gap-2 shrink-0">
+        {/* Device toggles — hidden on mobile */}
+        {showEditorActions ? (
+          <div className="hidden md:flex items-center gap-1 rounded-md border border-[var(--editor-header-accent)] p-1">
+            {(["desktop", "tablet", "mobile"] as const).map((d) => (
+              <Button
+                key={d}
+                variant="ghost"
+                size="sm"
+                onClick={() => onDeviceChange(d)}
+                className={`h-8 px-2 transition-colors ${
+                  device === d
+                    ? "bg-[var(--editor-header-fg)]/15 text-[var(--editor-header-fg)]"
+                    : "text-[var(--editor-header-fg)]/60 hover:bg-[var(--editor-header-fg)]/10 hover:text-[var(--editor-header-fg)]"
+                }`}
+              >
+                {d === "desktop" && <Monitor className="h-4 w-4" />}
+                {d === "tablet" && <Tablet className="h-4 w-4" />}
+                {d === "mobile" && <Smartphone className="h-4 w-4" />}
+              </Button>
+            ))}
+          </div>
+        ) : null}
         {onAction && actionLabel ? (
           <Button
             variant="secondary"
@@ -239,7 +261,7 @@ export function EditorHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 md:h-10 rounded-md text-[var(--editor-header-fg)]/80 hover:bg-[var(--editor-header-fg)]/10 hover:text-[var(--editor-header-fg)] px-2 md:px-3"
+            className="h-8 md:h-10 rounded-md text-[var(--editor-header-fg)]/80 hover:bg-violet-500/10 hover:text-violet-100 px-2 md:px-3"
             onClick={() => setAccountMenuOpen((o) => !o)}
             aria-haspopup="menu"
             aria-expanded={accountMenuOpen}
@@ -264,13 +286,13 @@ export function EditorHeader({
           {accountMenuOpen && (
             <div
               role="menu"
-              className="absolute right-0 top-full z-50 mt-1 w-48 rounded-md border border-border bg-card shadow-lg text-sm"
+              className="absolute right-0 top-full z-50 mt-1 w-48 rounded-md border border-slate-200 bg-white shadow-lg text-sm"
             >
               <Link
                 href="/account/profile"
                 role="menuitem"
                 onClick={() => setAccountMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border-b border-border"
+                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-slate-700 hover:bg-violet-50 hover:text-violet-900 transition-colors border-b border-slate-200"
               >
                 <User className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
                 Profile
@@ -279,7 +301,7 @@ export function EditorHeader({
                 href="/account/billing"
                 role="menuitem"
                 onClick={() => setAccountMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors border-b border-border"
+                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-slate-700 hover:bg-violet-50 hover:text-violet-900 transition-colors border-b border-slate-200"
               >
                 <CreditCard className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
                 Billing
@@ -290,7 +312,7 @@ export function EditorHeader({
                   setAccountMenuOpen(false)
                   onLogout()
                 }}
-                className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-slate-700 hover:bg-violet-50 hover:text-violet-900 transition-colors"
               >
                 <ArrowLeft className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
                 Logout
