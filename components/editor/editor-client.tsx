@@ -264,12 +264,18 @@ export function EditorClient({ userId }: EditorClientProps) {
       await websiteSections.reorderSections(websiteId, finalIds, supabase)
 
       // Save all transitions from transitions state
+      const persistedSectionIds = new Set(finalIds)
       for (const transition of transitions) {
         // Make sure both sections are persisted (not temp IDs)
         const persistedFromId = idMapping.get(transition.fromSectionId) || transition.fromSectionId
         const persistedToId = idMapping.get(transition.toSectionId) || transition.toSectionId
         
-        if (!persistedFromId.startsWith('section-') && !persistedToId.startsWith('section-')) {
+        if (
+          persistedSectionIds.has(persistedFromId) &&
+          persistedSectionIds.has(persistedToId) &&
+          !persistedFromId.startsWith('section-') &&
+          !persistedToId.startsWith('section-')
+        ) {
           await websiteSections.setTransition(
             websiteId,
             persistedFromId,
@@ -386,8 +392,13 @@ export function EditorClient({ userId }: EditorClientProps) {
   }
 
   const handleDelete = (id: string) => {
-    setSections((prev) => prev.filter((s) => s.id !== id))
+    const nextSections = sections.filter((s) => s.id !== id)
+    persistSections(nextSections)
+    setTransitions((prev) =>
+      prev.filter((t) => t.fromSectionId !== id && t.toSectionId !== id),
+    )
     if (selectedSectionId === id) setSelectedSectionId(null)
+    setMobilePanel("canvas")
   }
 
   const handleAddSection = (type: SectionType) => {
