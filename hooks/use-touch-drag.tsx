@@ -61,22 +61,45 @@ export function useTouchDrag({ payload }: UseTouchDragOptions) {
       isDragging.current = true
 
       const ghost = document.createElement("div")
-      ghost.style.cssText = [
-        "position:fixed",
-        "z-index:9999",
-        "pointer-events:none",
-        "background:var(--color-primary,#4f46e5)",
-        "color:#fff",
-        "padding:8px 14px",
-        "border-radius:8px",
-        "font-size:13px",
-        "font-weight:600",
-        "box-shadow:0 8px 24px rgba(0,0,0,0.25)",
-        "opacity:0.92",
-        "white-space:nowrap",
-        "transform:scale(1.05) translateY(-4px)",
-      ].join(";")
-      ghost.textContent = labelRef.current
+      if (payload.imageUrl) {
+        ghost.style.cssText = [
+          "position:fixed",
+          "z-index:2147483647",
+          "pointer-events:none",
+          "width:56px",
+          "height:42px",
+          "overflow:hidden",
+          "border-radius:8px",
+          "border:2px solid #fff",
+          "box-shadow:0 8px 24px rgba(0,0,0,0.28)",
+          "opacity:0.95",
+          "transform:scale(1.05) translateY(-4px)",
+          "background:#fff",
+        ].join(";")
+
+        const image = document.createElement("img")
+        image.src = payload.imageUrl
+        image.alt = labelRef.current
+        image.style.cssText = "width:100%;height:100%;object-fit:cover;display:block"
+        ghost.appendChild(image)
+      } else {
+        ghost.style.cssText = [
+          "position:fixed",
+          "z-index:2147483647",
+          "pointer-events:none",
+          "background:var(--color-primary,#4f46e5)",
+          "color:#fff",
+          "padding:8px 14px",
+          "border-radius:8px",
+          "font-size:13px",
+          "font-weight:600",
+          "box-shadow:0 8px 24px rgba(0,0,0,0.25)",
+          "opacity:0.92",
+          "white-space:nowrap",
+          "transform:scale(1.05) translateY(-4px)",
+        ].join(";")
+        ghost.textContent = labelRef.current
+      }
       document.body.appendChild(ghost)
       ghostRef.current = ghost
 
@@ -84,8 +107,8 @@ export function useTouchDrag({ payload }: UseTouchDragOptions) {
     }
 
     if (ghostRef.current) {
-      ghostRef.current.style.left = `${touch.clientX - 40}px`
-      ghostRef.current.style.top = `${touch.clientY - 36}px`
+      ghostRef.current.style.left = `${touch.clientX - (payload.imageUrl ? 28 : 40)}px`
+      ghostRef.current.style.top = `${touch.clientY - (payload.imageUrl ? 36 : 36)}px`
     }
   }
 

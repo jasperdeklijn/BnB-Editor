@@ -22,6 +22,7 @@ interface EditorCanvasProps {
   bnbId?: string | null
   supabase?: SupabaseClient
   isDraggingNewSectionExternal?: boolean
+  isDraggingImageExternal?: boolean
 }
 
 export function EditorCanvas({
@@ -36,6 +37,7 @@ export function EditorCanvas({
   bnbId,
   supabase,
   isDraggingNewSectionExternal = false,
+  isDraggingImageExternal = false,
 }: EditorCanvasProps) {
   function SectionTransition({
     type,
@@ -87,15 +89,19 @@ export function EditorCanvas({
   }
   const sectionRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const canvasRef = useRef<HTMLElement | null>(null)
+  const suppressNextSectionClickRef = useRef(false)
   const [hoverDropIndex, setHoverDropIndex] = useState<number | null>(null)
   const [draggingSectionIndex, setDraggingSectionIndex] = useState<number | null>(null)
   const [isDraggingNewSection, setIsDraggingNewSection] = useState(false)
+  const [isDraggingImage, setIsDraggingImage] = useState(false)
   const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null)
   const showNewSectionDropTargets = isDraggingNewSection || isDraggingNewSectionExternal
+  const showImageDropTargets = isDraggingImage || isDraggingImageExternal
 
   useEffect(() => {
     const handleGlobalDragEnd = () => {
       setIsDraggingNewSection(false)
+      setIsDraggingImage(false)
     }
     document.addEventListener('dragend', handleGlobalDragEnd)
     return () => document.removeEventListener('dragend', handleGlobalDragEnd)
@@ -106,9 +112,11 @@ export function EditorCanvas({
     const onTouchDragStart = (e: Event) => {
       const detail = (e as CustomEvent).detail
       if (detail?.sectionType) setIsDraggingNewSection(true)
+      if (detail?.imageUrl) setIsDraggingImage(true)
     }
     const onTouchDragEnd = () => {
       setIsDraggingNewSection(false)
+      setIsDraggingImage(false)
       setHoverDropIndex(null)
       setDraggingSectionIndex(null)
     }
@@ -149,14 +157,30 @@ export function EditorCanvas({
       const sectionEl = target.closest("[data-section-id]") as HTMLElement | null
       if (sectionEl && detail.imageUrl) {
         const sectionId = sectionEl.dataset.sectionId!
-        onSectionSelect(sectionId)
-        setSections(
-          sections.map((s) =>
-            s.id === sectionId
-              ? { ...s, styles: { ...(s.styles ?? {}), backgroundImage: detail.imageUrl } }
-              : s
-          )
-        )
+        const section = sections.find((s) => s.id === sectionId)
+        if (section) {
+          suppressNextSectionClickRef.current = true
+          const galleryImageEl = target.closest("[data-gallery-image-index]") as HTMLElement | null
+          const galleryImageIndex = galleryImageEl
+            ? Number(galleryImageEl.dataset.galleryImageIndex)
+            : undefined
+
+          if (section.type === "gallery") {
+            updateGalleryImage(
+              section,
+              detail.imageUrl,
+              Number.isFinite(galleryImageIndex) ? galleryImageIndex : undefined,
+            )
+          } else {
+            updateSection(sectionId, {
+              styles: { ...(section.styles ?? {}), backgroundImage: detail.imageUrl },
+            })
+          }
+          window.setTimeout(() => {
+            suppressNextSectionClickRef.current = false
+          }, 350)
+        }
+        setIsDraggingImage(false)
         return
       }
 
@@ -217,6 +241,9 @@ export function EditorCanvas({
     if (sectionType) {
       setIsDraggingNewSection(true)
     }
+    if (imageUrl) {
+      setIsDraggingImage(true)
+    }
   }
 
   const handleDragOverGap = (e: React.DragEvent, index: number) => {
@@ -226,6 +253,43 @@ export function EditorCanvas({
 
   const handleDragLeaveGap = () => {
     setHoverDropIndex(null)
+  }
+
+  const getGalleryImages = (section: Section) => {
+    const images = section.data?.images
+    if (Array.isArray(images)) return [...images] as string[]
+    if (images && typeof images === "object") {
+      const imageObject = images as Record<string, string>
+      const count = (section.data.image_count as number) || Object.keys(imageObject).length
+      return Array.from({ length: count }, (_, index) => imageObject[index.toString()] || "")
+    }
+
+    const count = (section.data?.image_count as number) || 6
+    return Array.from(
+      { length: count },
+      (_, index) => `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+${index + 1}`,
+    )
+  }
+
+  const updateGalleryImage = (section: Section, imageUrl: string, targetIndex?: number) => {
+    const images = getGalleryImages(section)
+    const fallbackIndex = images.findIndex((image) => !image || image.includes("/placeholder.svg"))
+    const index = typeof targetIndex === "number" && targetIndex >= 0
+      ? targetIndex
+      : fallbackIndex >= 0
+        ? fallbackIndex
+        : images.length
+
+    const nextImages = [...images]
+    nextImages[index] = imageUrl
+
+    updateSection(section.id, {
+      data: {
+        ...section.data,
+        images: nextImages,
+        image_count: nextImages.length,
+      },
+    })
   }
 
   const getDefaultSectionData = (type: SectionType): Record<string, unknown> => {
@@ -362,18 +426,24 @@ export function EditorCanvas({
       // Update the section's styles to set backgroundImage
       const section = sections.find(s => s.id === sectionId)
       if (section) {
-        // Ensure section is selected when adding image
-        onSectionSelect(sectionId)
-        
-        updateSection(sectionId, {
-          styles: { ...section.styles, backgroundImage: imageUrl }
-        })
+        suppressNextSectionClickRef.current = true
+        if (section.type === "gallery") {
+          updateGalleryImage(section, imageUrl)
+        } else {
+          updateSection(sectionId, {
+            styles: { ...section.styles, backgroundImage: imageUrl }
+          })
+        }
+        window.setTimeout(() => {
+          suppressNextSectionClickRef.current = false
+        }, 350)
       }
     }
 
     setHoverDropIndex(null)
     setDraggingSectionIndex(null)
     setIsDraggingNewSection(false)
+    setIsDraggingImage(false)
   }
 
   /* -----------------------------
@@ -574,6 +644,7 @@ export function EditorCanvas({
                   data-section-id={section.id}
                   className={`group relative ${!isPreview ? "mb-4" : ""} ${
                     draggingSectionIndex === i ? "opacity-50" : ""
+                  } ${showImageDropTargets ? "rounded-lg ring-2 ring-primary/50 ring-offset-2" : ""
                   } transition-all duration-200`}
                   draggable={!isPreview}
                   onDragStart={(e) => handleDragStart(e, i)}
@@ -626,13 +697,19 @@ export function EditorCanvas({
                   <div
                     id={isPreview && section.type !== "nav" && section.type !== "footer" ? `section-${section.id}` : undefined}
                     className={`${!isPreview ? "cursor-pointer rounded-lg border bg-background shadow-sm transition-all hover:shadow-md" : ""} ${
+                      showImageDropTargets && !isPreview
+                        ? "border-primary bg-primary/5 shadow-lg"
+                        : ""
+                    } ${
                       selectedSectionId === section.id && !isPreview
                         ? "ring-2 ring-primary ring-offset-2 shadow-lg"
                         : ""
                     }`}
                     onClick={() =>
                       !isPreview &&
-                      onSectionSelect(section.id)
+                      (suppressNextSectionClickRef.current
+                        ? (suppressNextSectionClickRef.current = false)
+                        : onSectionSelect(section.id))
                     }
                   >
                     <SectionRenderer

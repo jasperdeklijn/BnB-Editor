@@ -71,11 +71,6 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
     e.dataTransfer.setData("imageIndex", index.toString())
     e.dataTransfer.setData("imageurl", images[index] || "")
 
-    console.log("handleDragStart", { index, types: Array.from(e.dataTransfer.types), data: {
-      text: e.dataTransfer.getData("text/plain"),
-      imageIndex: e.dataTransfer.getData("imageIndex"),
-      imageurl: e.dataTransfer.getData("imageurl"),
-    }})
   }
 
   const handleDragOver = (e: React.DragEvent, index: number) => {
@@ -104,16 +99,6 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
     // Clear state after reading it
     setDraggedIndex(null)
 
-    console.log("handleDrop dataTransfer", {
-      draggedIndexRaw,
-      draggedFromIndex,
-      draggedImageUrl,
-      types: Array.from(e.dataTransfer.types),
-      text: e.dataTransfer.getData("text/plain"),
-      imageIndex: e.dataTransfer.getData("imageIndex"),
-      imageurl: e.dataTransfer.getData("imageurl"),
-    })
-
     // If we're dragging from outside (no index), but have an image URL, set the target slot
     if ((draggedFromIndex === null || Number.isNaN(draggedFromIndex)) && draggedImageUrl) {
       const newImages = [...images]
@@ -124,7 +109,6 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
         imagesObject[index.toString()] = url
       })
 
-      console.log('handleDrop: setting image at slot', toIndex, { draggedImageUrl })
       onUpdate?.({
         ...data,
         images: imagesObject,
@@ -140,11 +124,9 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
     }
 
     if (!onUpdate || draggedFromIndex === null || Number.isNaN(draggedFromIndex)) {
-      console.log('handleDrop: onUpdate not available or dragged index missing', { onUpdate: !!onUpdate, draggedFromIndex })
       return
     }
     if (draggedFromIndex === toIndex) {
-      console.log('handleDrop: dragged index equals drop target, no change needed')
       return
     }
 
@@ -157,14 +139,6 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
     const imagesObject: Record<string, string> = {}
     newImages.forEach((url, index) => {
       imagesObject[index.toString()] = url
-    })
-
-    console.log('handleDrop: saving reordered images', {
-      draggedFromIndex,
-      toIndex,
-      newImages,
-      imagesObject,
-      image_count: newImages.length
     })
 
     onUpdate({
@@ -195,6 +169,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
             {images.map((image, index) => (
               <div
                 key={index}
+                data-gallery-image-index={index}
                 className={`aspect-square overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 transition-all duration-200 ${
                   dragOverIndex === index ? "ring-2 ring-amber-600 shadow-lg scale-95" : ""
                 } ${draggedIndex === index ? "opacity-50" : ""}`}
@@ -248,6 +223,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
                   {images.map((image, index) => (
                     <div
                       key={index}
+                      data-gallery-image-index={index}
                       className={`aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 transition-all duration-200 flex-shrink-0 ${
                         dragOverIndex === index ? "ring-2 ring-amber-600 shadow-lg scale-95" : ""
                       } ${draggedIndex === index ? "opacity-50" : ""}`}
@@ -290,6 +266,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
               {images.map((image, index) => (
                 <div
                   key={index}
+                  data-gallery-image-index={index}
                   className={`flex-shrink-0 w-80 aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 transition-all duration-200 ${
                     dragOverIndex === index ? "ring-2 ring-amber-600 shadow-lg scale-95" : ""
                   } ${draggedIndex === index ? "opacity-50" : ""}`}
@@ -329,6 +306,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
             {images.map((image, index) => (
               <div
                 key={index}
+                data-gallery-image-index={index}
                 className={`mb-3 overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 break-inside-avoid transition-all duration-200 ${
                   dragOverIndex === index ? "ring-2 ring-amber-600 shadow-lg scale-95" : ""
                 } ${draggedIndex === index ? "opacity-50" : ""}`}
@@ -366,6 +344,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
           <div className="space-y-4">
             {/* Main Image */}
             <div
+              data-gallery-image-index={activeIndex}
               className={`aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 transition-all duration-200 ${
                 dragOverIndex === activeIndex ? "ring-2 ring-amber-600 shadow-lg" : ""
               }`}
@@ -385,6 +364,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
               {images.map((image, index) => (
                 <div
                   key={index}
+                  data-gallery-image-index={index}
                   className={`flex-shrink-0 w-20 aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 cursor-pointer transition-all duration-200 ${
                     index === activeIndex ? "ring-2 ring-amber-500" : ""
                   } ${dragOverIndex === index ? "ring-2 ring-amber-600 shadow-lg scale-95" : ""} ${
@@ -419,6 +399,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
           {images.map((image, index) => (
             <div
               key={index}
+              data-gallery-image-index={index}
               className={`absolute inset-0 transition-opacity duration-500 ${
                 index === currentIndex ? "opacity-100" : "opacity-0"
               }`}

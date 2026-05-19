@@ -111,7 +111,7 @@ function ImageCard({ name, url, collapsed, isDragging, onDragStart, onDragEnd }:
       }`}
       title={name}
     >
-      <img src={url} alt={name} className="w-full h-16 object-cover rounded" />
+      <img src={url} alt={name} className="w-full h-12 object-cover rounded" />
       {!collapsed && (
         <div className="text-[10px] text-muted-foreground truncate text-center mt-1">{name}</div>
       )}
@@ -209,6 +209,26 @@ export function SectionsSelector({ className = "", userId, onAddSection, onSecti
   const handleImageDragStart = (e: React.DragEvent, url: string) => {
     e.dataTransfer.setData("imageUrl", url)
     e.dataTransfer.effectAllowed = "copy"
+
+    const sourceImage = e.currentTarget.querySelector("img")
+    if (sourceImage) {
+      const dragImage = sourceImage.cloneNode(true) as HTMLImageElement
+      dragImage.style.cssText = [
+        "position:fixed",
+        "top:-1000px",
+        "left:-1000px",
+        "width:56px",
+        "height:42px",
+        "object-fit:cover",
+        "border-radius:8px",
+        "border:2px solid white",
+        "box-shadow:0 8px 24px rgba(0,0,0,0.28)",
+      ].join(";")
+      document.body.appendChild(dragImage)
+      e.dataTransfer.setDragImage(dragImage, 28, 21)
+      window.setTimeout(() => dragImage.remove(), 0)
+    }
+
     setDraggingImage(url)
   }
 

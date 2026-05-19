@@ -89,6 +89,7 @@ export function EditorClient({ userId }: EditorClientProps) {
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null)
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("canvas")
   const [isMobileDraggingNewSection, setIsMobileDraggingNewSection] = useState(false)
+  const [isMobileDraggingImage, setIsMobileDraggingImage] = useState(false)
   const router = useRouter()
   const { isPreview, setIsPreview, isSaving, setIsSaving, device, setDevice, setOnPublish, setOnLogout } = useEditorLayout()
 
@@ -98,10 +99,14 @@ export function EditorClient({ userId }: EditorClientProps) {
       const detail = (event as CustomEvent).detail
       if (typeof window !== "undefined" && window.innerWidth < 768) {
         setIsMobileDraggingNewSection(Boolean(detail?.sectionType))
+        setIsMobileDraggingImage(Boolean(detail?.imageUrl))
         setMobilePanel("canvas")
       }
     }
-    const onTouchDragEnd = () => setIsMobileDraggingNewSection(false)
+    const onTouchDragEnd = () => {
+      setIsMobileDraggingNewSection(false)
+      setIsMobileDraggingImage(false)
+    }
 
     document.addEventListener("touchdragstart", onTouchDragStart)
     document.addEventListener("touchdragend", onTouchDragEnd)
@@ -439,6 +444,7 @@ export function EditorClient({ userId }: EditorClientProps) {
           device={device}
           bnbId={bnbId}
           isDraggingNewSectionExternal={isMobileDraggingNewSection}
+          isDraggingImageExternal={isMobileDraggingImage}
         />
         {!isPreview && (
           <SelectionEditor
@@ -478,6 +484,7 @@ export function EditorClient({ userId }: EditorClientProps) {
               device={device}
               bnbId={bnbId}
               isDraggingNewSectionExternal={isMobileDraggingNewSection}
+              isDraggingImageExternal={isMobileDraggingImage}
             />
           )}
           {mobilePanel === "style" && !isPreview && (
