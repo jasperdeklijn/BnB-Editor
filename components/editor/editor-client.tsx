@@ -5,13 +5,75 @@ import { SectionsSelector } from "./sections-selector"
 import { EditorCanvas } from "./editor-canvas"
 import { SelectionEditor } from "./section-editor"
 import { useEditorLayout } from "./editor-layout-context"
-import type { Section, SectionStyles, Transition } from "@/lib/types"
+import type { Section, SectionStyles, SectionType, Transition } from "@/lib/types"
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { useRouter } from "next/navigation"
 import { Layers, Paintbrush, LayoutTemplate } from "lucide-react"
 
 type MobilePanel = "canvas" | "sections" | "style"
+
+const getDefaultSectionData = (type: SectionType, bnbId?: string | null): Record<string, unknown> => {
+  switch (type) {
+    case "hero":
+      return {
+        title: "Welkom bij onze Bed & Breakfast",
+        subtitle: "Ervaar comfort en gastvrijheid",
+        ctaText: "Nu boeken",
+      }
+    case "about":
+      return {
+        title: "Over Ons",
+        description: "Leer ons verhaal kennen en wat ons bijzonder maakt.",
+      }
+    case "rooms":
+      return {
+        title: "Onze Kamers",
+        layout: "grid",
+        bnbId: bnbId ?? null,
+        roomIds: [],
+      }
+    case "gallery":
+      return {
+        title: "Galerij",
+        subtitle: "Ontdek onze mooie ruimtes",
+        layout: "grid",
+        images: [
+          `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+1`,
+          `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+2`,
+          `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+3`,
+          `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+4`,
+          `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+5`,
+          `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+6`,
+        ],
+      }
+    case "amenities":
+      return {
+        title: "Voorzieningen",
+        amenities: ["Gratis WiFi", "Ontbijt", "Parkeren", "Zwembad"],
+      }
+    case "contact":
+      return {
+        title: "Neem Contact Op",
+        address: "123 Hoofdstraat, Stad, Provincie 12345",
+        phone: "(555) 123-4567",
+        email: "info@bnb.com",
+      }
+    case "nav":
+      return {
+        brandName: "Mijn B&B",
+        isSticky: true,
+        navLinks: [],
+      }
+    case "footer":
+      return {
+        brandName: "Mijn B&B",
+        copyright: `© ${new Date().getFullYear()} Mijn B&B. Alle rechten voorbehouden.`,
+      }
+    default:
+      return {}
+  }
+}
 
 interface EditorClientProps {
   userId: string
@@ -26,18 +88,29 @@ export function EditorClient({ userId }: EditorClientProps) {
   const [slug, setSlug] = useState("")
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null)
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("canvas")
+  const [isMobileDraggingNewSection, setIsMobileDraggingNewSection] = useState(false)
   const router = useRouter()
   const { isPreview, setIsPreview, isSaving, setIsSaving, device, setDevice, setOnPublish, setOnLogout } = useEditorLayout()
 
   // Switch to canvas on mobile when a touch drag starts
   useEffect(() => {
-    const onTouchDragStart = () => {
+    const onTouchDragStart = (event: Event) => {
+      const detail = (event as CustomEvent).detail
       if (typeof window !== "undefined" && window.innerWidth < 768) {
+        setIsMobileDraggingNewSection(Boolean(detail?.sectionType))
         setMobilePanel("canvas")
       }
     }
+    const onTouchDragEnd = () => setIsMobileDraggingNewSection(false)
+
     document.addEventListener("touchdragstart", onTouchDragStart)
-    return () => document.removeEventListener("touchdragstart", onTouchDragStart)
+    document.addEventListener("touchdragend", onTouchDragEnd)
+    document.addEventListener("touchdrop", onTouchDragEnd)
+    return () => {
+      document.removeEventListener("touchdragstart", onTouchDragStart)
+      document.removeEventListener("touchdragend", onTouchDragEnd)
+      document.removeEventListener("touchdrop", onTouchDragEnd)
+    }
   }, [])
 
   // Load or create website on mount
@@ -317,6 +390,19 @@ export function EditorClient({ userId }: EditorClientProps) {
     if (selectedSectionId === id) setSelectedSectionId(null)
   }
 
+  const handleAddSection = (type: SectionType) => {
+    const section: Section = {
+      id: `section-${Date.now()}`,
+      type,
+      data: getDefaultSectionData(type, bnbId),
+      styles: {},
+    }
+
+    persistSections([...sections, section])
+    setSelectedSectionId(section.id)
+    setMobilePanel("canvas")
+  }
+
   const handleSectionSelect = (id: string | null) => {
     setSelectedSectionId(id)
     // On mobile, jump to the style panel when a section is tapped
@@ -328,7 +414,7 @@ export function EditorClient({ userId }: EditorClientProps) {
   const selectedSection = sections.find((s) => s.id === selectedSectionId) || null
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-muted/30">
+    <div className="flex h-full min-h-0 flex-col bg-muted/30">
       {/* Desktop layout: side-by-side panels */}
       <div className="hidden md:flex flex-1 overflow-hidden">
         {!isPreview && <SectionsSelector userId={userId} />}
@@ -341,6 +427,7 @@ export function EditorClient({ userId }: EditorClientProps) {
           onSectionSelect={handleSectionSelect}
           device={device}
           bnbId={bnbId}
+          isDraggingNewSectionExternal={isMobileDraggingNewSection}
         />
         {!isPreview && (
           <SelectionEditor
@@ -360,11 +447,12 @@ export function EditorClient({ userId }: EditorClientProps) {
       {/* Mobile layout: single panel with bottom tab bar */}
       <div className="flex md:hidden flex-1 overflow-hidden flex-col">
         {/* Panel content */}
-        <div className="flex-1 overflow-auto min-h-0">
+        <div className="flex min-h-0 flex-1 overflow-hidden pb-[calc(4.5rem+env(safe-area-inset-bottom))]">
           {mobilePanel === "sections" && !isPreview && (
             <SectionsSelector
               userId={userId}
               className="w-full h-full border-r-0"
+              onAddSection={handleAddSection}
               onSectionAdded={() => setMobilePanel("canvas")}
             />
           )}
@@ -378,6 +466,7 @@ export function EditorClient({ userId }: EditorClientProps) {
               onSectionSelect={handleSectionSelect}
               device={device}
               bnbId={bnbId}
+              isDraggingNewSectionExternal={isMobileDraggingNewSection}
             />
           )}
           {mobilePanel === "style" && !isPreview && (
@@ -397,7 +486,7 @@ export function EditorClient({ userId }: EditorClientProps) {
 
         {/* Bottom tab bar */}
         {!isPreview && (
-          <nav className="flex border-t border-border bg-background">
+          <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-border bg-background pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] md:hidden">
             <button
               type="button"
               onClick={() => setMobilePanel("sections")}

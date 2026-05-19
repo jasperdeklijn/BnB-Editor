@@ -109,7 +109,7 @@ export function EditorLayoutClient({
 
   return (
     <EditorLayoutProvider value={layoutValue}>
-      <div className="flex flex-col h-screen">
+      <div className="flex h-screen flex-col overflow-hidden">
         <EditorHeader
           pageTitle={pageTitle}
           titleIcon={pageIcon}
@@ -130,7 +130,7 @@ export function EditorLayoutClient({
           avatarUrl={avatarUrl}
           displayName={displayName}
         />
-        <div className="flex-1 overflow-auto">
+        <div className={`min-h-0 flex-1 ${pathname === "/editor" ? "overflow-hidden" : "overflow-auto"}`}>
           {children}
         </div>
       </div>

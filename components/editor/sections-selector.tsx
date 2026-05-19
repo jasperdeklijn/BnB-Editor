@@ -43,15 +43,17 @@ interface SectionCardProps {
   description: string
   collapsed: boolean
   isDragging: boolean
+  onAdd?: (type: SectionType) => void
   onDragStart: (e: React.DragEvent, type: SectionType) => void
   onDragEnd: () => void
 }
 
-function SectionCard({ type, label, icon, description, collapsed, isDragging, onDragStart, onDragEnd }: SectionCardProps) {
+function SectionCard({ type, label, icon, description, collapsed, isDragging, onAdd, onDragStart, onDragEnd }: SectionCardProps) {
   const { onTouchStart, onTouchMove, onTouchEnd } = useTouchDrag({ payload: { sectionType: type } })
   return (
     <div
       draggable
+      onClick={() => onAdd?.(type)}
       onDragStart={(e) => onDragStart(e, type)}
       onDragEnd={onDragEnd}
       onTouchStart={(e) => onTouchStart(e, label)}
@@ -122,11 +124,12 @@ function ImageCard({ name, url, collapsed, isDragging, onDragStart, onDragEnd }:
 interface SectionsSelectorProps {
   className?: string
   userId?: string
+  onAddSection?: (type: SectionType) => void
   /** Called on mobile after a touch-drag drop so the parent can switch back to the canvas panel */
   onSectionAdded?: () => void
 }
 
-export function SectionsSelector({ className = "", userId, onSectionAdded }: SectionsSelectorProps) {
+export function SectionsSelector({ className = "", userId, onAddSection, onSectionAdded }: SectionsSelectorProps) {
   const [collapsed, setCollapsed] = useState(false)
   const [draggingType, setDraggingType] = useState<SectionType | null>(null)
   const [tab, setTab] = useState("sections")
@@ -197,6 +200,12 @@ export function SectionsSelector({ className = "", userId, onSectionAdded }: Sec
     setDraggingType(null)
   }
 
+  const handleAddSection = (type: SectionType) => {
+    if (typeof window !== "undefined" && window.innerWidth >= 768) return
+    onAddSection?.(type)
+    onSectionAdded?.()
+  }
+
   const handleImageDragStart = (e: React.DragEvent, url: string) => {
     e.dataTransfer.setData("imageUrl", url)
     e.dataTransfer.effectAllowed = "copy"
@@ -211,7 +220,7 @@ export function SectionsSelector({ className = "", userId, onSectionAdded }: Sec
     <aside
       className={`relative flex-shrink-0 transition-all duration-300 ease-in-out overflow-y-auto w-full ${
         collapsed ? "md:w-16" : "md:w-64"
-      } border-r border-border bg-[var(--editor-sidebar)] p-4 ${className}`}
+      } border-border bg-[var(--editor-sidebar)] p-3 md:border-r md:p-4 ${className}`}
     >
       {/* Collapse toggle — desktop only */}
       <button
@@ -252,6 +261,7 @@ export function SectionsSelector({ className = "", userId, onSectionAdded }: Sec
                 description={description}
                 collapsed={collapsed}
                 isDragging={draggingType === type}
+                onAdd={handleAddSection}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
               />

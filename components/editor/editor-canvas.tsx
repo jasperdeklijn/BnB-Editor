@@ -21,6 +21,7 @@ interface EditorCanvasProps {
   websiteId?: string | null
   bnbId?: string | null
   supabase?: SupabaseClient
+  isDraggingNewSectionExternal?: boolean
 }
 
 export function EditorCanvas({
@@ -34,6 +35,7 @@ export function EditorCanvas({
   websiteId,
   bnbId,
   supabase,
+  isDraggingNewSectionExternal = false,
 }: EditorCanvasProps) {
   function SectionTransition({
     type,
@@ -84,10 +86,12 @@ export function EditorCanvas({
     return null
   }
   const sectionRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+  const canvasRef = useRef<HTMLElement | null>(null)
   const [hoverDropIndex, setHoverDropIndex] = useState<number | null>(null)
   const [draggingSectionIndex, setDraggingSectionIndex] = useState<number | null>(null)
   const [isDraggingNewSection, setIsDraggingNewSection] = useState(false)
   const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null)
+  const showNewSectionDropTargets = isDraggingNewSection || isDraggingNewSectionExternal
 
   useEffect(() => {
     const handleGlobalDragEnd = () => {
@@ -119,6 +123,7 @@ export function EditorCanvas({
 
       const target = e.target as HTMLElement | null
       if (!target) return
+      if (canvasRef.current && !canvasRef.current.contains(target)) return
 
       // Check if the target (or any ancestor) is a gap drop zone
       const gapEl = target.closest("[data-drop-gap]") as HTMLElement | null
@@ -209,8 +214,6 @@ export function EditorCanvas({
     const sectionType = e.dataTransfer.types.includes("sectiontype")  // Fixed typo: was "sectiontype"
     const imageUrl = e.dataTransfer.types.includes("imageurl")
     e.dataTransfer.dropEffect = sectionType ? "copy" : imageUrl ? "copy" : "move"
-    console.log("drag over canvas - sectionType:", sectionType, "imageUrl:", imageUrl)
-
     if (sectionType) {
       setIsDraggingNewSection(true)
     }
@@ -353,11 +356,9 @@ export function EditorCanvas({
 
   const handleDropOnSection = (e: React.DragEvent, sectionId: string) => {
     e.preventDefault()
-    console.log("Drop on section:", sectionId)
 
     const imageUrl = e.dataTransfer.getData("imageUrl")
     if (imageUrl) {
-      console.log("Updating backgroundImage for section", sectionId, "to:", imageUrl)
       // Update the section's styles to set backgroundImage
       const section = sections.find(s => s.id === sectionId)
       if (section) {
@@ -517,14 +518,15 @@ export function EditorCanvas({
 
   return (
     <main
+      ref={canvasRef}
       className="flex-1 overflow-auto bg-muted/30"
       onDragOver={handleDragOver}
     >
-      <div className={isPreview ? "" : "p-8"}>
+      <div className={isPreview ? "" : "p-3 sm:p-4 md:p-8"}>
         <div className={`mx-auto ${getDeviceWidth()} transition-all duration-300`}>
           {!isPreview && sections.length === 0 && (
             <div
-              className={`flex ${isDraggingNewSection ? "min-h-[600px]" : "min-h-[500px]"} items-center justify-center rounded-lg border-2 border-dashed ${isDraggingNewSection ? "border-primary bg-primary/5" : "border-muted-foreground/30 bg-background/50"} animate-in fade-in slide-in-from-bottom-4 duration-500 transition-all`}
+              className={`flex ${showNewSectionDropTargets ? "min-h-[420px] md:min-h-[600px]" : "min-h-[360px] md:min-h-[500px]"} items-center justify-center rounded-lg border-2 border-dashed ${showNewSectionDropTargets ? "border-primary bg-primary/5" : "border-muted-foreground/30 bg-background/50"} animate-in fade-in slide-in-from-bottom-4 duration-500 transition-all`}
               onDragOver={(e) => handleDragOverGap(e, 0)}
               onDragLeave={handleDragLeaveGap}
               onDrop={(e) => handleDropOnGap(e, 0)}
@@ -541,7 +543,7 @@ export function EditorCanvas({
             <div
               data-drop-gap="0"
               className={`mb-4 transition-all duration-200 ${
-                hoverDropIndex === 0 || isDraggingNewSection ? "h-16 opacity-100" : "h-2 opacity-0"
+                hoverDropIndex === 0 || showNewSectionDropTargets ? "h-16 opacity-100" : "h-2 opacity-0"
               }`}
               onDragOver={(e) => handleDragOverGap(e, 0)}
               onDragLeave={handleDragLeaveGap}
@@ -648,7 +650,7 @@ export function EditorCanvas({
                   <div
                     data-drop-gap={i + 1}
                     className={`transition-all duration-200 ${
-                      hoverDropIndex === i + 1 || isDraggingNewSection ? "h-16 mb-4 opacity-100" : "h-2 mb-4 opacity-0"
+                      hoverDropIndex === i + 1 || showNewSectionDropTargets ? "h-16 mb-4 opacity-100" : "h-2 mb-4 opacity-0"
                     }`}
                     onDragOver={(e) => handleDragOverGap(e, i + 1)}
                     onDragLeave={handleDragLeaveGap}

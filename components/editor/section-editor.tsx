@@ -188,7 +188,7 @@ export function SelectionEditor({
 
   if (!selectedSection) {
     return (
-      <div className="w-full md:w-80 border-l border-border bg-[var(--editor-panel)] p-6">
+      <div className="w-full md:w-80 border-border bg-[var(--editor-panel)] p-4 md:border-l md:p-6">
         <div className="flex h-full flex-col items-center justify-center text-center">
           <div className="mb-4 rounded-full bg-primary/10 p-4">
             <Wand2 className="h-8 w-8 text-primary" />
@@ -249,7 +249,7 @@ export function SelectionEditor({
   }
 
   return (
-    <div className="w-full md:w-80 border-l border-border bg-[var(--editor-panel)] p-6 overflow-auto animate-in slide-in-from-right duration-300">
+    <div className="w-full md:w-80 border-border bg-[var(--editor-panel)] p-4 md:border-l md:p-6 overflow-auto animate-in slide-in-from-right duration-300">
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
@@ -282,7 +282,7 @@ export function SelectionEditor({
               <p className="text-xs text-muted-foreground">
                 Kies hoe je hero-sectie wordt weergegeven
               </p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {[
                   { layout: "centered" as HeroLayout, label: "Eenvoudig", icon: AlignCenter },
                   { layout: "split" as HeroLayout, label: "Gesplitst", icon: LayoutPanelLeft },
@@ -397,7 +397,7 @@ export function SelectionEditor({
               <p className="text-xs text-muted-foreground">
                 Kies hoe de kamerkaarten worden weergegeven
               </p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {[
                   { layout: "grid" as RoomsLayout, label: "Raster", icon: LayoutGrid },
                   { layout: "list" as RoomsLayout, label: "Lijst", icon: List },
@@ -580,7 +580,7 @@ export function SelectionEditor({
               <p className="text-xs text-muted-foreground">
                 Kies hoe je galerij wordt weergegeven
               </p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {[
                   { layout: "grid" as GalleryLayout, label: "Raster", icon: LayoutGrid },
                   {
@@ -717,7 +717,7 @@ export function SelectionEditor({
               <p className="text-xs text-muted-foreground">
                 Kies hoe je contactsectie wordt weergegeven
               </p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {[
                   { layout: "classic" as ContactLayout, label: "Klassiek", icon: AlignCenter },
                   { layout: "split" as ContactLayout, label: "Gesplitst", icon: LayoutPanelLeft },

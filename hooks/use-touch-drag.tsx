@@ -7,13 +7,14 @@
  * work on both desktop (mouse) and mobile (touch).
  *
  * Fires three CustomEvents on `document`:
- *   "touchdragstart"  — drag threshold crossed, payload in detail
- *   "touchdragend"    — finger lifted (regardless of drop)
- *   "touchdrop"       — fired on the element under the finger at release,
- *                       bubbles up so canvas listeners can catch it
+ *   "touchdragstart" - drag threshold crossed, payload in detail
+ *   "touchdragend"   - finger lifted (regardless of drop)
+ *   "touchdrop"      - fired on the element under the finger at release,
+ *                      bubbles up so canvas listeners can catch it
  */
 
 import { useRef } from "react"
+import type { TouchEvent as ReactTouchEvent } from "react"
 
 export interface TouchDragPayload {
   sectionType?: string
@@ -30,41 +31,35 @@ export function useTouchDrag({ payload }: UseTouchDragOptions) {
   const startPos = useRef<{ x: number; y: number } | null>(null)
   const isDragging = useRef(false)
   const labelRef = useRef<string>("")
+  const removeDocumentListenersRef = useRef<(() => void) | null>(null)
 
   const cleanup = () => {
     if (ghostRef.current) {
       ghostRef.current.remove()
       ghostRef.current = null
     }
+    removeDocumentListenersRef.current?.()
+    removeDocumentListenersRef.current = null
     isDragging.current = false
     startPos.current = null
   }
 
-  const onTouchStart = (e: React.TouchEvent, label?: string) => {
-    const touch = e.touches[0]
-    startPos.current = { x: touch.clientX, y: touch.clientY }
-    isDragging.current = false
-    labelRef.current = label ?? "Section"
-    // Do NOT call preventDefault here — allow normal tap/scroll recognition
-  }
-
-  const onTouchMove = (e: React.TouchEvent) => {
+  const onTouchMove = (e: TouchEvent | ReactTouchEvent) => {
     if (!startPos.current) return
 
     const touch = e.touches[0]
+    if (!touch) return
+
     const dx = touch.clientX - startPos.current.x
     const dy = touch.clientY - startPos.current.y
 
-    // Only start dragging after a 10px threshold
     if (!isDragging.current && Math.hypot(dx, dy) < 10) return
 
-    // We're dragging — prevent page scroll
     e.preventDefault()
 
     if (!isDragging.current) {
       isDragging.current = true
 
-      // Create ghost label that follows the finger
       const ghost = document.createElement("div")
       ghost.style.cssText = [
         "position:fixed",
@@ -85,27 +80,27 @@ export function useTouchDrag({ payload }: UseTouchDragOptions) {
       document.body.appendChild(ghost)
       ghostRef.current = ghost
 
-      document.dispatchEvent(
-        new CustomEvent("touchdragstart", { detail: payload })
-      )
+      document.dispatchEvent(new CustomEvent("touchdragstart", { detail: payload }))
     }
 
     if (ghostRef.current) {
-      const g = ghostRef.current
-      g.style.left = `${touch.clientX - 40}px`
-      g.style.top  = `${touch.clientY - 36}px`
+      ghostRef.current.style.left = `${touch.clientX - 40}px`
+      ghostRef.current.style.top = `${touch.clientY - 36}px`
     }
   }
 
-  const onTouchEnd = (e: React.TouchEvent) => {
+  const onTouchEnd = (e: TouchEvent | ReactTouchEvent) => {
     if (!isDragging.current) {
       cleanup()
       return
     }
 
     const touch = e.changedTouches[0]
+    if (!touch) {
+      cleanup()
+      return
+    }
 
-    // Temporarily hide ghost so elementFromPoint lands on the real target
     if (ghostRef.current) ghostRef.current.style.display = "none"
     const target = document.elementFromPoint(touch.clientX, touch.clientY)
     if (ghostRef.current) ghostRef.current.style.display = ""
@@ -124,8 +119,30 @@ export function useTouchDrag({ payload }: UseTouchDragOptions) {
           clientX: touch.clientX,
           clientY: touch.clientY,
         },
-      })
+      }),
     )
+  }
+
+  const onTouchStart = (e: ReactTouchEvent, label?: string) => {
+    const touch = e.touches[0]
+    if (!touch) return
+
+    cleanup()
+    startPos.current = { x: touch.clientX, y: touch.clientY }
+    isDragging.current = false
+    labelRef.current = label ?? "Section"
+
+    const handleDocumentTouchMove = (event: TouchEvent) => onTouchMove(event)
+    const handleDocumentTouchEnd = (event: TouchEvent) => onTouchEnd(event)
+
+    document.addEventListener("touchmove", handleDocumentTouchMove, { passive: false })
+    document.addEventListener("touchend", handleDocumentTouchEnd)
+    document.addEventListener("touchcancel", handleDocumentTouchEnd)
+    removeDocumentListenersRef.current = () => {
+      document.removeEventListener("touchmove", handleDocumentTouchMove)
+      document.removeEventListener("touchend", handleDocumentTouchEnd)
+      document.removeEventListener("touchcancel", handleDocumentTouchEnd)
+    }
   }
 
   return { onTouchStart, onTouchMove, onTouchEnd }
