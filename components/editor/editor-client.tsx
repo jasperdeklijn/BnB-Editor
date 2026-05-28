@@ -6,6 +6,14 @@ import { EditorCanvas } from "./editor-canvas"
 import { SelectionEditor } from "./section-editor"
 import { useEditorLayout } from "./editor-layout-context"
 import type { Section, SectionStyles, SectionType, Transition } from "@/lib/types"
+import {
+  DEFAULT_BUSINESS_EMAIL,
+  DEFAULT_BUSINESS_NAME,
+  DEFAULT_FEATURES,
+  DEFAULT_GALLERY_IMAGES,
+  DEFAULT_SITE_TITLE,
+  SECTION_COPY,
+} from "@/lib/business-naming"
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { useRouter } from "next/navigation"
@@ -17,58 +25,56 @@ const getDefaultSectionData = (type: SectionType, bnbId?: string | null): Record
   switch (type) {
     case "hero":
       return {
-        title: "Welkom bij onze Bed & Breakfast",
-        subtitle: "Ervaar comfort en gastvrijheid",
-        ctaText: "Nu boeken",
+        title: SECTION_COPY.hero.defaultTitle,
+        subtitle: "Professionele service, persoonlijk contact.",
+        ctaText: "Neem contact op",
       }
     case "about":
       return {
-        title: "Over Ons",
-        description: "Leer ons verhaal kennen en wat ons bijzonder maakt.",
+        title: SECTION_COPY.about.defaultTitle,
+        description: "Vertel wie je bent, wat je doet en waarom klanten voor je kiezen.",
       }
+    case "services":
     case "rooms":
       return {
-        title: "Onze Kamers",
+        title: SECTION_COPY.services.defaultTitle,
         layout: "grid",
         bnbId: bnbId ?? null,
+        businessId: bnbId ?? null,
         roomIds: [],
+        serviceIds: [],
       }
     case "gallery":
       return {
-        title: "Galerij",
-        subtitle: "Ontdek onze mooie ruimtes",
+        title: SECTION_COPY.gallery.defaultTitle,
+        subtitle: "Bekijk een selectie van ons werk",
         layout: "grid",
-        images: [
-          `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+1`,
-          `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+2`,
-          `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+3`,
-          `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+4`,
-          `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+5`,
-          `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+6`,
-        ],
+        images: DEFAULT_GALLERY_IMAGES,
       }
+    case "features":
     case "amenities":
       return {
-        title: "Voorzieningen",
-        amenities: ["Gratis WiFi", "Ontbijt", "Parkeren", "Zwembad"],
+        title: SECTION_COPY.features.defaultTitle,
+        amenities: DEFAULT_FEATURES,
+        features: DEFAULT_FEATURES,
       }
     case "contact":
       return {
-        title: "Neem Contact Op",
-        address: "123 Hoofdstraat, Stad, Provincie 12345",
-        phone: "(555) 123-4567",
-        email: "info@bnb.com",
+        title: SECTION_COPY.contact.defaultTitle,
+        address: "Straatnaam 1, 1234 AB Plaats",
+        phone: "+31 6 00000000",
+        email: DEFAULT_BUSINESS_EMAIL,
       }
     case "nav":
       return {
-        brandName: "Mijn B&B",
+        brandName: DEFAULT_BUSINESS_NAME,
         isSticky: true,
         navLinks: [],
       }
     case "footer":
       return {
-        brandName: "Mijn B&B",
-        copyright: `© ${new Date().getFullYear()} Mijn B&B. Alle rechten voorbehouden.`,
+        brandName: DEFAULT_BUSINESS_NAME,
+        copyright: `© ${new Date().getFullYear()} ${DEFAULT_BUSINESS_NAME}. Alle rechten voorbehouden.`,
       }
     default:
       return {}
@@ -84,7 +90,7 @@ export function EditorClient({ userId }: EditorClientProps) {
   const [transitions, setTransitions] = useState<Transition[]>([])
   const [websiteId, setWebsiteId] = useState<string | null>(null)
   const [bnbId, setBnbId] = useState<string | null>(null)
-  const [title, setTitle] = useState("Mijn B&B Website")
+  const [title, setTitle] = useState(DEFAULT_SITE_TITLE)
   const [slug, setSlug] = useState("")
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null)
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("canvas")
@@ -126,7 +132,7 @@ export function EditorClient({ userId }: EditorClientProps) {
   const loadWebsite = async () => {
     const supabase = createClient()
 
-    // Fetch the user's profile and BnB id for the rooms editor
+    // Fetch the user's current business id for service-backed sections.
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
       const { data: bnb } = await supabase
@@ -182,12 +188,12 @@ export function EditorClient({ userId }: EditorClientProps) {
       }
     } else {
       // Create new website
-      const newSlug = `bnb-${Date.now()}`
+      const newSlug = `site-${Date.now()}`
       const { data: newWebsite, error } = await supabase
         .from("websites")
         .insert({
           user_id: userId,
-          title: "Mijn B&B Website",
+          title: DEFAULT_SITE_TITLE,
           slug: newSlug,
         })
         .select()

@@ -14,7 +14,7 @@ import {
   ImageIcon,
   Globe,
   Home,
-  BedDouble,
+  Briefcase,
   CheckCircle2,
   Loader2,
   ChevronDown,
@@ -94,7 +94,7 @@ export function EditorHeader({
           <div className="flex items-center gap-1 md:gap-2">
           <Image
             src="/favicon.png"
-            alt="BnB Website Maken"
+            alt="Website maker"
             width={32}
             height={32}
             className="h-7 w-7 md:h-8 md:w-8"
@@ -111,14 +111,14 @@ export function EditorHeader({
           <div className="flex items-center gap-2">
             <Image
               src="/favicon.png"
-              alt="BnB Website Maken"
+              alt="Website maker"
               width={32}
               height={32}
               className="h-7 w-7 md:hidden"
             />
             <Image
               src="/logo_klein.png"
-              alt="BnB Website Maken"
+              alt="Website maker"
               width={160}
               height={32}
               className="hidden md:block h-10 md:h-12 w-auto"
@@ -135,7 +135,7 @@ export function EditorHeader({
             aria-expanded={menuOpen}
           >
             <Home className="h-3.5 w-3.5 md:h-4 md:w-4" />
-            <span className="hidden sm:inline ml-1.5">Mijn BnB</span>
+            <span className="hidden sm:inline ml-1.5">Mijn website</span>
             <ChevronDown className="h-3 w-3 md:h-4 md:w-4 ml-1" />
           </Button>
 
@@ -155,7 +155,7 @@ export function EditorHeader({
                 Afbeeldingen
               </Link>
 
-              {/* BnB Details link */}
+              {/* Business details link */}
               <Link
                 href="/editor/bnb"
                 role="menuitem"
@@ -163,18 +163,18 @@ export function EditorHeader({
                 className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-slate-700 hover:bg-violet-50 hover:text-violet-900 transition-colors border-b border-slate-200"
               >
                 <Home className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                B&B Details
+                Bedrijfsgegevens
               </Link>
 
-              {/* Rooms link */}
+              {/* Services link */}
               <Link
                 href="/editor/rooms"
                 role="menuitem"
                 onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-slate-700 hover:bg-violet-50 hover:text-violet-900 transition-colors border-b border-slate-200"
               >
-                <BedDouble className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                Kamers
+                <Briefcase className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
+                Diensten
               </Link>
 
               {/* Domains link */}

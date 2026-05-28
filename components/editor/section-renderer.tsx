@@ -189,12 +189,14 @@ export function SectionRenderer({ section, isPreview, onUpdate, wrapTransition, 
     case "about":
       inner = <AboutSection {...commonProps} />
       break
+    case "services":
     case "rooms":
       inner = <RoomsSection {...commonProps} />
       break
     case "gallery":
       inner = <GallerySection {...commonProps} />
       break
+    case "features":
     case "amenities":
       inner = <AmenitiesSection {...commonProps} />
       break

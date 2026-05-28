@@ -1,0 +1,18 @@
+BnB-Editor
+
+This project is a Next.js web application for building and managing short-term rental (BnB) websites.
+
+Key features:
+- A page editor experience under `/editor` for managing BnB listings, rooms, images, and custom site sections.
+- Preview and site rendering routes for published BnB pages.
+- User account areas including billing, profile, contact, domain management, and authentication.
+- Support for legal pages such as terms, privacy, disclaimer, and takedown.
+- Uses React, Tailwind CSS, Supabase, and a modern component-driven architecture.
+
+Project structure highlights:
+- `app/` contains routing and page entry points.
+- `components/` contains reusable UI, editor, BnB sections, and domain/account components.
+- `lib/` includes utilities, mock data, types, and Supabase helpers.
+- `supabase/` contains database migrations and policies.
+
+The application is designed to help hosts create, customize, and deploy BnB landing pages with a clean editor UI and integrated account management.

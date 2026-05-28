@@ -1,8 +1,10 @@
 export type SectionType =
   | "hero"
   | "gallery"
+  | "services"
   | "rooms"
   | "contact"
+  | "features"
   | "amenities"
   | "about"
   | "nav"

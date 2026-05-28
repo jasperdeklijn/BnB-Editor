@@ -22,20 +22,31 @@ interface NavSectionProps {
 // Default display names for section types
 const defaultSectionLabels: Record<SectionType, string> = {
   hero: "Home",
-  about: "About",
-  rooms: "Rooms",
-  gallery: "Gallery",
-  amenities: "Amenities",
+  about: "Over",
+  services: "Diensten",
+  rooms: "Diensten",
+  gallery: "Galerij",
+  features: "Kenmerken",
+  amenities: "Kenmerken",
   contact: "Contact",
-  nav: "Navigation",
+  nav: "Navigatie",
   footer: "Footer",
 }
 
 // Sections that can appear in navigation
-const navigableSectionTypes: SectionType[] = ["hero", "about", "rooms", "gallery", "amenities", "contact"]
+const navigableSectionTypes: SectionType[] = [
+  "hero",
+  "about",
+  "services",
+  "rooms",
+  "gallery",
+  "features",
+  "amenities",
+  "contact",
+]
 
 export function NavSection({ data, styles, allSections, device }: NavSectionProps) {
-  const brandName = (data.brandName as string) || "My B&B"
+  const brandName = (data.brandName as string) || "Mijn bedrijf"
   const isSticky = (data.isSticky as boolean) ?? true
   const navLinks = data.navLinks as NavLink[] | undefined
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)

@@ -4,7 +4,8 @@ import { useCallback, useMemo, useState } from "react"
 import { EditorHeader } from "./editor-header"
 import { usePathname, useRouter } from "next/navigation"
 import { EditorLayoutProvider } from "./editor-layout-context"
-import { ImageIcon, Globe, Home, BedDouble, LayoutTemplate } from "lucide-react"
+import { ImageIcon, Globe, Home, Briefcase, LayoutTemplate } from "lucide-react"
+import { DEFAULT_SITE_TITLE } from "@/lib/business-naming"
 
 interface EditorLayoutClientProps {
   children: React.ReactNode
@@ -22,9 +23,9 @@ export function EditorLayoutClient({
 
   const pageTitles: Record<string, string> = {
     "/editor": "Website Maker",
-    "/editor/bnb": "B&B Details",
+    "/editor/bnb": "Bedrijfsgegevens",
     "/editor/images": "Afbeeldingen",
-    "/editor/rooms": "Kamers",
+    "/editor/rooms": "Diensten",
     "/editor/domains": "Domain instellingen",
   }
 
@@ -32,7 +33,7 @@ export function EditorLayoutClient({
     "/editor": <LayoutTemplate className="h-4 w-4" />,
     "/editor/bnb": <Home className="h-4 w-4" />,
     "/editor/images": <ImageIcon className="h-4 w-4" />,
-    "/editor/rooms": <BedDouble className="h-4 w-4" />,
+    "/editor/rooms": <Briefcase className="h-4 w-4" />,
     "/editor/domains": <Globe className="h-4 w-4" />,
   }
 
@@ -42,7 +43,7 @@ export function EditorLayoutClient({
   const showBackButton = pathname !== "/editor" && pathname?.startsWith("/editor")
 
   const noop = useCallback(() => {}, [])
-  const [headerTitle, setHeaderTitle] = useState("Mijn B&B Website")
+  const [headerTitle, setHeaderTitle] = useState(DEFAULT_SITE_TITLE)
   const [isPreview, setIsPreview] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [device, setDevice] = useState<"desktop" | "tablet" | "mobile">("desktop")

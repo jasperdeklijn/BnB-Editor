@@ -484,7 +484,8 @@ function CarouselLayout({
 // ---- Main section component ----
 
 export function RoomsSection({ data, styles }: RoomsSectionProps) {
-  const title = (data.title as string) || "Onze Kamers"
+  const isServicesSection = Array.isArray(data.serviceIds)
+  const title = (data.title as string) || (isServicesSection ? "Onze diensten" : "Onze Kamers")
   const layout = (data.layout as RoomsLayout) || "grid"
   const roomIds = data.roomIds as string[] | undefined
 
@@ -604,7 +605,7 @@ export function RoomsSection({ data, styles }: RoomsSectionProps) {
     )
   }
 
-  // Empty state — link to /rooms
+  // Empty state - link to the offerings manager.
   if (rooms.length === 0) {
     return (
      <section
@@ -624,7 +625,7 @@ export function RoomsSection({ data, styles }: RoomsSectionProps) {
       />
       <div className="relative mx-auto max-w-4xl text-center">
         <div className="mb-5 inline-flex items-center rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-sm font-medium text-violet-400">
-          Kamers beheren
+          {isServicesSection ? "Diensten beheren" : "Kamers beheren"}
         </div>
         <h2 className="mb-6 text-4xl font-extrabold tracking-tight text-white" style={textStyle}>
           {title}
@@ -636,18 +637,19 @@ export function RoomsSection({ data, styles }: RoomsSectionProps) {
               <BedDouble className="h-10 w-10 text-white" />
             </div>
             <h3 className="mb-3 text-2xl font-bold text-white">
-              Nog geen kamers aangemaakt
+              {isServicesSection ? "Nog geen diensten aangemaakt" : "Nog geen kamers aangemaakt"}
             </h3>
             <p className="max-w-xl text-base leading-8 text-white/65">
-              Maak eerst kamers aan via de kamers pagina en selecteer ze daarna hier
-              om ze zichtbaar te maken op jouw BnB website.
+              {isServicesSection
+                ? "Maak eerst diensten aan en selecteer ze daarna hier om ze zichtbaar te maken op je website."
+                : "Maak eerst kamers aan via de kamers pagina en selecteer ze daarna hier om ze zichtbaar te maken op je website."}
             </p>
             <Link
               href="/editor/rooms"
               className="mt-10 inline-flex items-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-500 px-7 py-4 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_10px_40px_rgba(124,58,237,0.45)]"
             >
               <BedDouble className="h-4 w-4" />
-              Kamers aanmaken
+              {isServicesSection ? "Diensten aanmaken" : "Kamers aanmaken"}
             </Link>
           </div>
         </div>

@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import {
   ImageIcon,
   Home,
-  Bed,
+  Briefcase,
   Mail,
   Sparkles,
   Info,
@@ -19,19 +19,20 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import type { SectionType } from "@/lib/types"
+import { SECTION_COPY } from "@/lib/business-naming"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { createClient } from "@/lib/supabase/client"
 import { useTouchDrag } from "@/hooks/use-touch-drag"
 
 const sectionTypes: { type: SectionType; label: string; icon: React.ReactNode; description: string }[] = [
-  { type: "nav", label: "Navigatie", icon: <Menu className="h-5 w-5" />, description: "Bovenste navigatiebalk" },
-  { type: "hero", label: "Hero", icon: <Home className="h-5 w-5" />, description: "Hoofd koptekst sectie" },
-  { type: "about", label: "Over Ons", icon: <Info className="h-5 w-5" />, description: "Vertel ons verhaal" },
-  { type: "rooms", label: "Kamers", icon: <Bed className="h-5 w-5" />, description: "Toon kamers" },
-  { type: "gallery", label: "Galerij", icon: <ImageIcon className="h-5 w-5" />, description: "Fotogalerij" },
-  { type: "amenities", label: "Voorzieningen", icon: <Sparkles className="h-5 w-5" />, description: "Lijst functies" },
-  { type: "contact", label: "Contact", icon: <Mail className="h-5 w-5" />, description: "Contactformulier" },
-  { type: "footer", label: "Voettekst", icon: <Layout className="h-5 w-5" />, description: "Onderste voettekst" },
+  { type: "nav", label: SECTION_COPY.nav.label, icon: <Menu className="h-5 w-5" />, description: SECTION_COPY.nav.description },
+  { type: "hero", label: SECTION_COPY.hero.label, icon: <Home className="h-5 w-5" />, description: SECTION_COPY.hero.description },
+  { type: "about", label: SECTION_COPY.about.label, icon: <Info className="h-5 w-5" />, description: SECTION_COPY.about.description },
+  { type: "services", label: SECTION_COPY.services.label, icon: <Briefcase className="h-5 w-5" />, description: SECTION_COPY.services.description },
+  { type: "gallery", label: SECTION_COPY.gallery.label, icon: <ImageIcon className="h-5 w-5" />, description: SECTION_COPY.gallery.description },
+  { type: "features", label: SECTION_COPY.features.label, icon: <Sparkles className="h-5 w-5" />, description: SECTION_COPY.features.description },
+  { type: "contact", label: SECTION_COPY.contact.label, icon: <Mail className="h-5 w-5" />, description: SECTION_COPY.contact.description },
+  { type: "footer", label: SECTION_COPY.footer.label, icon: <Layout className="h-5 w-5" />, description: SECTION_COPY.footer.description },
 ]
 
 // ----- Sub-components so each draggable item can call the hook independently -----

@@ -45,7 +45,7 @@ import {
   Grid3x3,
   Columns,
   Rows,
-  BedDouble,
+  Briefcase,
   List,
   Newspaper,
   GalleryHorizontal,
@@ -103,9 +103,9 @@ export function SelectionEditor({
     }
   }, [])
 
-  // Fetch available rooms whenever a rooms section is selected
+  // Fetch available offerings whenever a services section is selected.
   useEffect(() => {
-    if (selectedSection?.type !== "rooms") return
+    if (selectedSection?.type !== "rooms" && selectedSection?.type !== "services") return
 
     let cancelled = false
     setLoadingRooms(true)
@@ -368,7 +368,7 @@ export function SelectionEditor({
                 <div>
                   <Label className="text-xs mb-1.5 block">Titel</Label>
                   <Input
-                    placeholder="bijv., Welkom bij onze B&B"
+                    placeholder="bijv., Welkom bij ons bedrijf"
                     value={(selectedSection.data as any).title || ""}
                     onChange={(e) => updateField("title", e.target.value)}
                   />
@@ -410,7 +410,7 @@ export function SelectionEditor({
               Beschrijving
             </Label>
             <textarea
-              placeholder="Beschrijf je B&B..."
+              placeholder="Beschrijf je bedrijf..."
               value={(selectedSection.data as any).description || ""}
               onChange={(e) => updateField("description", e.target.value)}
               className="w-full min-h-24 p-2 border rounded-lg resize-none"
@@ -418,7 +418,7 @@ export function SelectionEditor({
           </Card>
         )}
 
-        {selectedSection.type === "rooms" && (
+        {(selectedSection.type === "rooms" || selectedSection.type === "services") && (
           <>
             {/* Rooms Layout Selector */}
             <Card className="p-4 space-y-3">
@@ -427,7 +427,7 @@ export function SelectionEditor({
                 Layoutstijl
               </Label>
               <p className="text-xs text-muted-foreground">
-                Kies hoe de kamerkaarten worden weergegeven
+                Kies hoe de dienstkaarten worden weergegeven
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {[
@@ -463,7 +463,7 @@ export function SelectionEditor({
                 {((selectedSection.data as any).layout as RoomsLayout) === "list" &&
                   "Horizontale lijstkaarten met afbeelding links"}
                 {((selectedSection.data as any).layout as RoomsLayout) === "featured" &&
-                  "Eerste kamer groot uitgelicht, rest in raster"}
+                  "Eerste dienst groot uitgelicht, rest in raster"}
                 {((selectedSection.data as any).layout as RoomsLayout) === "magazine" &&
                   "Afwisselend links/rechts met grote afbeeldingen"}
                 {((selectedSection.data as any).layout as RoomsLayout) === "minimal" &&
@@ -480,18 +480,18 @@ export function SelectionEditor({
                 Titel
               </Label>
               <Input
-                placeholder="Onze Kamers"
+                placeholder="Onze diensten"
                 value={(selectedSection.data as any).title || ""}
                 onChange={(e) => updateField("title", e.target.value)}
               />
 
               <div className="pt-1 border-t border-border space-y-2">
                 <Label className="flex items-center gap-2">
-                  <BedDouble className="h-3.5 w-3.5" />
-                  Kamers selecteren
+                  <Briefcase className="h-3.5 w-3.5" />
+                  Diensten selecteren
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Laat leeg om alle kamers te tonen, of selecteer specifieke kamers.
+                  Laat leeg om alle diensten te tonen, of selecteer specifieke diensten.
                 </p>
 
                 {loadingRooms ? (
@@ -500,13 +500,13 @@ export function SelectionEditor({
                   </div>
                 ) : availableRooms.length === 0 ? (
                   <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border py-6 text-center">
-                    <BedDouble className="h-8 w-8 text-muted-foreground/40" />
+                    <Briefcase className="h-8 w-8 text-muted-foreground/40" />
                     <div>
                       <p className="text-xs font-medium text-muted-foreground">
-                        Nog geen kamers aangemaakt
+                        Nog geen diensten aangemaakt
                       </p>
                       <p className="text-xs text-muted-foreground/70 mt-0.5">
-                        Maak kamers aan en keer hier terug
+                        Maak diensten aan en keer hier terug
                       </p>
                     </div>
                     <Link
@@ -514,7 +514,7 @@ export function SelectionEditor({
                       className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
                     >
                       <ExternalLink className="h-3 w-3" />
-                      Ga naar Kamers
+                      Ga naar diensten
                     </Link>
                   </div>
                 ) : (
@@ -549,7 +549,7 @@ export function SelectionEditor({
                               />
                             ) : (
                               <div className="flex h-full w-full items-center justify-center">
-                                <BedDouble className="h-4 w-4 text-amber-400" />
+                                <Briefcase className="h-4 w-4 text-amber-400" />
                               </div>
                             )}
                           </div>
@@ -583,7 +583,7 @@ export function SelectionEditor({
                         onClick={() => updateField("roomIds", [])}
                         className="w-full rounded-lg border border-dashed border-border py-2 text-xs text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors"
                       >
-                        Selectie wissen (alle kamers tonen)
+                        Selectie wissen (alle diensten tonen)
                       </button>
                     ) : null}
 
@@ -592,7 +592,7 @@ export function SelectionEditor({
                       className="flex items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
                     >
                       <ExternalLink className="h-3 w-3" />
-                      Kamers beheren
+                      Diensten beheren
                     </Link>
                   </div>
                 )}
@@ -710,23 +710,23 @@ export function SelectionEditor({
           </>
         )}
 
-        {selectedSection.type === "amenities" && (
+        {(selectedSection.type === "amenities" || selectedSection.type === "features") && (
           <Card className="p-4 space-y-3">
             <Label className="flex items-center gap-2">
               <Type className="h-3.5 w-3.5" />
               Titel
             </Label>
             <Input
-              placeholder="Voorzieningen"
+              placeholder="Kenmerken"
               value={(selectedSection.data as any).title || ""}
               onChange={(e) => updateField("title", e.target.value)}
             />
             <Label className="flex items-center gap-2">
               <Plus className="h-3.5 w-3.5" />
-              Voorzieningen (kommagescheiden)
+              Kenmerken (kommagescheiden)
             </Label>
             <Input
-              placeholder="WiFi, Parkeren, Zwembad, Ontbijt"
+              placeholder="Persoonlijke service, Heldere afspraken, Vakmanschap"
               value={((selectedSection.data as any).items || []).join(", ")}
               onChange={(e) =>
                 updateField(
@@ -885,7 +885,7 @@ export function SelectionEditor({
             <div className="space-y-2">
               <Label className="text-xs">Merknaam</Label>
               <Input
-                value={(selectedSection.data as any).brandName || "My B&B"}
+                value={(selectedSection.data as any).brandName || "Mijn bedrijf"}
                 onChange={(e) => updateField("brandName", e.target.value)}
                 placeholder="Je merknaam"
               />
@@ -937,17 +937,21 @@ export function SelectionEditor({
                 const navigableSectionTypes: SectionType[] = [
                   "hero",
                   "about",
+                  "services",
                   "rooms",
                   "gallery",
+                  "features",
                   "amenities",
                   "contact",
                 ]
                 const defaultLabels: Record<SectionType, string> = {
                   hero: "Home",
                   about: "Over",
-                  rooms: "Kamers",
+                  services: "Diensten",
+                  rooms: "Diensten",
                   gallery: "Galerij",
-                  amenities: "Voorzieningen",
+                  features: "Kenmerken",
+                  amenities: "Kenmerken",
                   contact: "Contact",
                   nav: "Navigation",
                   footer: "Footer",

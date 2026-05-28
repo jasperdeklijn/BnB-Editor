@@ -4,6 +4,13 @@ import React, { useEffect, useRef, useState } from "react"
 import { Trash2, GripVertical, ChevronUp, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Section, SectionType, Transition } from "@/lib/types"
+import {
+  DEFAULT_BUSINESS_EMAIL,
+  DEFAULT_BUSINESS_NAME,
+  DEFAULT_FEATURES,
+  DEFAULT_GALLERY_IMAGES,
+  SECTION_COPY,
+} from "@/lib/business-naming"
 import { SectionRenderer } from "./section-renderer"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { createClient } from "@/lib/supabase/client"
@@ -265,10 +272,7 @@ export function EditorCanvas({
     }
 
     const count = (section.data?.image_count as number) || 6
-    return Array.from(
-      { length: count },
-      (_, index) => `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+${index + 1}`,
-    )
+    return DEFAULT_GALLERY_IMAGES.slice(0, count)
   }
 
   const updateGalleryImage = (section: Section, imageUrl: string, targetIndex?: number) => {
@@ -296,58 +300,56 @@ export function EditorCanvas({
     switch (type) {
       case "hero":
         return {
-          title: "Welkom bij onze Bed & Breakfast",
-          subtitle: "Ervaar comfort en gastvrijheid",
-          ctaText: "Nu boeken",
+          title: SECTION_COPY.hero.defaultTitle,
+          subtitle: "Professionele service, persoonlijk contact.",
+          ctaText: "Neem contact op",
         }
       case "about":
         return {
-          title: "Over Ons",
-          description: "Leer ons verhaal kennen en wat ons bijzonder maakt.",
+          title: SECTION_COPY.about.defaultTitle,
+          description: "Vertel wie je bent, wat je doet en waarom klanten voor je kiezen.",
         }
+      case "services":
       case "rooms":
         return {
-          title: "Onze Kamers",
+          title: SECTION_COPY.services.defaultTitle,
           layout: "grid",
           bnbId: bnbId ?? null,
+          businessId: bnbId ?? null,
           roomIds: [],
+          serviceIds: [],
         }
       case "gallery":
         return {
-          title: "Galerij",
-          subtitle: "Ontdek onze mooie ruimtes",
+          title: SECTION_COPY.gallery.defaultTitle,
+          subtitle: "Bekijk een selectie van ons werk",
           layout: "grid",
-          images: [
-            `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+1`,
-            `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+2`,
-            `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+3`,
-            `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+4`,
-            `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+5`,
-            `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+6`,
-          ],
+          images: DEFAULT_GALLERY_IMAGES,
         }
+      case "features":
       case "amenities":
         return {
-          title: "Voorzieningen",
-          amenities: ["Gratis WiFi", "Ontbijt", "Parkeren", "Zwembad"],
+          title: SECTION_COPY.features.defaultTitle,
+          amenities: DEFAULT_FEATURES,
+          features: DEFAULT_FEATURES,
         }
       case "contact":
         return {
-          title: "Neem Contact Op",
-          address: "123 Hoofdstraat, Stad, Provincie 12345",
-          phone: "(555) 123-4567",
-          email: "info@bnb.com",
+          title: SECTION_COPY.contact.defaultTitle,
+          address: "Straatnaam 1, 1234 AB Plaats",
+          phone: "+31 6 00000000",
+          email: DEFAULT_BUSINESS_EMAIL,
         }
       case "nav":
         return {
-          brandName: "Mijn B&B",
+          brandName: DEFAULT_BUSINESS_NAME,
           isSticky: true,
           navLinks: [],
         }
       case "footer":
         return {
-          brandName: "Mijn B&B",
-          copyright: `© ${new Date().getFullYear()} Mijn B&B. Alle rechten voorbehouden.`,
+          brandName: DEFAULT_BUSINESS_NAME,
+          copyright: `© ${new Date().getFullYear()} ${DEFAULT_BUSINESS_NAME}. Alle rechten voorbehouden.`,
         }
       default:
         return {}
