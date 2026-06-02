@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import type { SectionStyles } from "@/lib/types"
 import type { Room } from "@/lib/supabase/bnb"
 import Link from "next/link"
-import { BedDouble, Users, ChevronLeft, ChevronRight, DollarSign } from "lucide-react"
+import { Briefcase, Users, ChevronLeft, ChevronRight, DollarSign } from "lucide-react"
 
 export type RoomsLayout = "grid" | "list" | "featured" | "magazine" | "minimal" | "carousel"
 export type ServicesLayout = RoomsLayout
@@ -42,7 +42,7 @@ function RoomImage({
     <div
       className={`flex items-center justify-center bg-gradient-to-br from-amber-100 to-orange-200 ${className ?? "w-full h-full"}`}
     >
-      <BedDouble className="h-10 w-10 text-amber-400" />
+      <Briefcase className="h-10 w-10 text-amber-400" />
     </div>
   )
 }
@@ -88,7 +88,7 @@ function GridLayout({
               {room.max_guests && (
                 <span className="flex items-center gap-1 text-xs text-amber-600">
                   <Users className="h-3.5 w-3.5" />
-                  Max {room.max_guests} gasten
+                  {room.max_guests} deelnemers
                 </span>
               )}
               <Button
@@ -96,7 +96,7 @@ function GridLayout({
                 variant="outline"
                 className="border-amber-200 text-amber-800 hover:bg-amber-50 ml-auto"
               >
-                Bekijk
+                Meer info
               </Button>
             </div>
           </div>
@@ -145,13 +145,13 @@ function ListLayout({
                 {room.max_guests && (
                   <span className="flex items-center gap-1 text-xs text-amber-600">
                     <Users className="h-3.5 w-3.5" />
-                    {room.max_guests} gasten
+                    {room.max_guests} deelnemers
                   </span>
                 )}
                 {room.price && (
                   <span className="flex items-center gap-1 text-xs text-amber-600">
                     <DollarSign className="h-3.5 w-3.5" />
-                    {room.price} / nacht
+                    {room.price}
                   </span>
                 )}
               </div>
@@ -208,13 +208,12 @@ function FeaturedLayout({
               {featured.price && (
                 <span className="font-bold text-amber-900 text-xl" style={textStyle}>
                   {featured.price}
-                  <span className="text-sm font-normal text-amber-600 ml-1">/ nacht</span>
                 </span>
               )}
               {featured.max_guests && (
                 <p className="flex items-center gap-1 text-xs text-amber-600">
                   <Users className="h-3.5 w-3.5" />
-                  Max {featured.max_guests} gasten
+                  {featured.max_guests} deelnemers
                 </p>
               )}
             </div>
@@ -295,7 +294,7 @@ function MagazineLayout({
             </div>
             <div className="sm:w-1/2 p-8 sm:p-10 flex flex-col justify-center">
               <span className="text-xs font-semibold uppercase tracking-widest text-amber-600 mb-3">
-                Kamer {i + 1}
+                Dienst {i + 1}
               </span>
               <h3
                 className="text-2xl font-bold text-amber-950 mb-3 text-balance"
@@ -309,14 +308,13 @@ function MagazineLayout({
               <div className="flex items-center gap-4 flex-wrap">
                 {room.price && (
                   <span className="text-lg font-bold text-amber-900" style={textStyle}>
-                    {room.price}{" "}
-                    <span className="text-sm font-normal text-amber-600">/ nacht</span>
+                    {room.price}
                   </span>
                 )}
                 {room.max_guests && (
                   <span className="flex items-center gap-1 text-xs text-amber-600">
                     <Users className="h-3.5 w-3.5" />
-                    Max {room.max_guests} gasten
+                    {room.max_guests} deelnemers
                   </span>
                 )}
               </div>
@@ -363,7 +361,7 @@ function MinimalLayout({
               {room.max_guests && (
                 <span className="flex items-center gap-1 text-xs text-amber-500 mt-1">
                   <Users className="h-3 w-3" />
-                  {room.max_guests} gasten
+                  {room.max_guests} deelnemers
                 </span>
               )}
             </div>
@@ -454,7 +452,7 @@ function CarouselLayout({
                 {room.max_guests && (
                   <span className="flex items-center gap-1 text-xs text-amber-600">
                     <Users className="h-3.5 w-3.5" />
-                    Max {room.max_guests}
+                    {room.max_guests} pers.
                   </span>
                 )}
                 <Button
@@ -485,10 +483,10 @@ function CarouselLayout({
 // ---- Main section component ----
 
 export function RoomsSection({ data, styles }: RoomsSectionProps) {
-  const isServicesSection = Array.isArray(data.serviceIds)
-  const title = (data.title as string) || (isServicesSection ? "Onze diensten" : "Onze Kamers")
+  const title = (data.title as string) || "Onze diensten"
   const layout = (data.layout as RoomsLayout) || "grid"
-  const roomIds = data.roomIds as string[] | undefined
+  // Support both new `serviceIds` and legacy `roomIds` keys.
+  const roomIds = (data.serviceIds ?? data.roomIds) as string[] | undefined
 
   const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(true)
@@ -626,7 +624,7 @@ export function RoomsSection({ data, styles }: RoomsSectionProps) {
       />
       <div className="relative mx-auto max-w-4xl text-center">
         <div className="mb-5 inline-flex items-center rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-sm font-medium text-violet-400">
-          {isServicesSection ? "Diensten beheren" : "Kamers beheren"}
+          Diensten beheren
         </div>
         <h2 className="mb-6 text-4xl font-extrabold tracking-tight text-white" style={textStyle}>
           {title}
@@ -635,22 +633,20 @@ export function RoomsSection({ data, styles }: RoomsSectionProps) {
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-violet-500/10 to-fuchsia-500/5 pointer-events-none" />
           <div className="relative flex flex-col items-center">
             <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-blue-600 via-violet-600 to-fuchsia-500 shadow-lg shadow-violet-900/30">
-              <BedDouble className="h-10 w-10 text-white" />
+              <Briefcase className="h-10 w-10 text-white" />
             </div>
             <h3 className="mb-3 text-2xl font-bold text-white">
-              {isServicesSection ? "Nog geen diensten aangemaakt" : "Nog geen kamers aangemaakt"}
+              Nog geen diensten aangemaakt
             </h3>
             <p className="max-w-xl text-base leading-8 text-white/65">
-              {isServicesSection
-                ? "Maak eerst diensten aan en selecteer ze daarna hier om ze zichtbaar te maken op je website."
-                : "Maak eerst kamers aan via de kamers pagina en selecteer ze daarna hier om ze zichtbaar te maken op je website."}
+              Maak eerst diensten aan via de diensten pagina en selecteer ze daarna hier om ze zichtbaar te maken op je website.
             </p>
             <Link
-              href="/editor/rooms"
+              href="/editor/services"
               className="mt-10 inline-flex items-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-500 px-7 py-4 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_10px_40px_rgba(124,58,237,0.45)]"
             >
-              <BedDouble className="h-4 w-4" />
-              {isServicesSection ? "Diensten aanmaken" : "Kamers aanmaken"}
+              <Briefcase className="h-4 w-4" />
+              Diensten aanmaken
             </Link>
           </div>
         </div>

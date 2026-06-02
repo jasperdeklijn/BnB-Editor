@@ -17,7 +17,7 @@ import { toast } from "sonner"
 import { useEditorLayout } from "@/components/editor/editor-layout-context"
 import { useTouchDrag } from "@/hooks/use-touch-drag"
 import {
-  BedDouble,
+  Briefcase,
   Plus,
   Trash2,
   ImageIcon,
@@ -26,9 +26,8 @@ import {
   X,
   Loader2,
   CheckCircle2,
-  Users,
+  Clock,
   DollarSign,
-  GripVertical,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -69,27 +68,27 @@ function SidebarImageCard({ name, url, isDragging, onDragStart, onDragEnd }: Sid
   )
 }
 
-// ---- Room card ----
-interface RoomCardProps {
+// ---- Service card ----
+interface ServiceCardProps {
   room: Room
   onUpdate: (id: string, updates: Partial<RoomInput>) => void
   onDelete: (id: string) => void
   isSaving: boolean
 }
 
-function RoomCard({ room, onUpdate, onDelete, isSaving }: RoomCardProps) {
+function ServiceCard({ room, onUpdate, onDelete, isSaving }: ServiceCardProps) {
   const [isDragOver, setIsDragOver] = useState(false)
   const [localName, setLocalName] = useState(room.name)
   const [localDescription, setLocalDescription] = useState(room.description ?? "")
   const [localPrice, setLocalPrice] = useState(room.price ?? "")
-  const [localGuests, setLocalGuests] = useState(room.max_guests?.toString() ?? "")
+  const [localCapacity, setLocalCapacity] = useState(room.max_guests?.toString() ?? "")
 
   // Sync local state when room prop changes (e.g., after save)
   useEffect(() => {
     setLocalName(room.name)
     setLocalDescription(room.description ?? "")
     setLocalPrice(room.price ?? "")
-    setLocalGuests(room.max_guests?.toString() ?? "")
+    setLocalCapacity(room.max_guests?.toString() ?? "")
   }, [room])
 
   const handleBlur = () => {
@@ -97,7 +96,7 @@ function RoomCard({ room, onUpdate, onDelete, isSaving }: RoomCardProps) {
       name: localName,
       description: localDescription,
       price: localPrice,
-      max_guests: localGuests ? parseInt(localGuests, 10) : null,
+      max_guests: localCapacity ? parseInt(localCapacity, 10) : null,
     })
   }
 
@@ -143,9 +142,9 @@ function RoomCard({ room, onUpdate, onDelete, isSaving }: RoomCardProps) {
       {/* Card header */}
       <div className="flex items-center justify-between px-5 py-4 bg-secondary/40 border-b border-border">
         <div className="flex items-center gap-2">
-          <BedDouble className="h-4 w-4 text-primary" />
+          <Briefcase className="h-4 w-4 text-primary" />
           <span className="font-semibold text-foreground truncate max-w-[200px]">
-            {room.name || "Naamloze kamer"}
+            {room.name || "Naamloze dienst"}
           </span>
           <div className="relative group">
             {(() => {
@@ -153,7 +152,6 @@ function RoomCard({ room, onUpdate, onDelete, isSaving }: RoomCardProps) {
               if (!room.name) missing.push("naam")
               if (!room.description) missing.push("beschrijving")
               if (!room.price) missing.push("prijs")
-              if (!room.max_guests) missing.push("max gasten")
               return (
                 <>
                   {missing.length === 0 ? (
@@ -187,11 +185,11 @@ function RoomCard({ room, onUpdate, onDelete, isSaving }: RoomCardProps) {
             htmlFor={`name-${room.id}`}
             className="text-xs font-medium text-muted-foreground uppercase tracking-wide"
           >
-            Kamernaam
+            Dienstnaam
           </Label>
           <Input
             id={`name-${room.id}`}
-            placeholder="Luxe Suite"
+            placeholder="Knipbeurt"
             value={localName}
             onChange={(e) => setLocalName(e.target.value)}
             onBlur={handleBlur}
@@ -208,7 +206,7 @@ function RoomCard({ room, onUpdate, onDelete, isSaving }: RoomCardProps) {
           </Label>
           <Textarea
             id={`desc-${room.id}`}
-            placeholder="Ruime kamer met zeezicht en eigen badkamer..."
+            placeholder="Wat houdt deze dienst in..."
             value={localDescription}
             onChange={(e) => setLocalDescription(e.target.value)}
             onBlur={handleBlur}
@@ -217,7 +215,7 @@ function RoomCard({ room, onUpdate, onDelete, isSaving }: RoomCardProps) {
           />
         </div>
 
-        {/* Price + guests row */}
+        {/* Price + capacity row */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label
@@ -225,12 +223,12 @@ function RoomCard({ room, onUpdate, onDelete, isSaving }: RoomCardProps) {
               className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide"
             >
               <DollarSign className="h-3 w-3 text-primary" />
-              Prijs / Nacht
+              Prijs
             </Label>
             <Input
               id={`price-${room.id}`}
               type="text"
-              placeholder="120"
+              placeholder="Vanaf € 45"
               value={localPrice}
               onChange={(e) => setLocalPrice(e.target.value)}
               onBlur={handleBlur}
@@ -238,19 +236,19 @@ function RoomCard({ room, onUpdate, onDelete, isSaving }: RoomCardProps) {
           </div>
           <div className="space-y-1.5">
             <Label
-              htmlFor={`guests-${room.id}`}
+              htmlFor={`capacity-${room.id}`}
               className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide"
             >
-              <Users className="h-3 w-3 text-primary" />
-              Max gasten
+              <Clock className="h-3 w-3 text-primary" />
+              Capaciteit
             </Label>
             <Input
-              id={`guests-${room.id}`}
+              id={`capacity-${room.id}`}
               type="number"
               min="1"
-              placeholder="2"
-              value={localGuests}
-              onChange={(e) => setLocalGuests(e.target.value)}
+              placeholder="1"
+              value={localCapacity}
+              onChange={(e) => setLocalCapacity(e.target.value)}
               onBlur={handleBlur}
             />
           </div>
@@ -260,7 +258,7 @@ function RoomCard({ room, onUpdate, onDelete, isSaving }: RoomCardProps) {
         <div className="space-y-2">
           <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
             <ImageIcon className="h-3 w-3 text-primary" />
-            Foto's
+            Afbeeldingen
             <span className="ml-auto text-muted-foreground/60 normal-case font-normal">sleep van zijbalk</span>
           </Label>
 
@@ -351,18 +349,18 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
     setIsSaving(true)
     try {
       const newRoom = await apiCreateRoom(bnbId, {
-        name: "Nieuwe kamer",
+        name: "Nieuwe dienst",
         description: "",
         price: "",
-        max_guests: 2,
+        max_guests: null,
         images: [],
         position: rooms.length,
       })
       setRooms((prev) => [...prev, newRoom])
-      toast.success("Kamer aangemaakt")
+      toast.success("Dienst aangemaakt")
     } catch (err) {
       console.error(err)
-      toast.error("Mislukt om kamer aan te maken")
+      toast.error("Aanmaken mislukt")
     } finally {
       setIsSaving(false)
     }
@@ -374,10 +372,10 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
   }, [isSaving, setHeaderSaving, setActionLoading])
 
   useEffect(() => {
-    setActionLabel("Kamer toevoegen")
+    setActionLabel("Dienst toevoegen")
     setActionIcon(<Plus className="mr-2 h-4 w-4" />)
     setOnAction(() => handleCreateRoom)
-    setInfoText(`${rooms.length} kamers`)
+    setInfoText(`${rooms.length} ${rooms.length === 1 ? "dienst" : "diensten"}`)
 
     return () => {
       setActionLabel(undefined)
@@ -400,7 +398,7 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
       setRooms((prev) => prev.map((r) => (r.id === id ? updated : r)))
     } catch (err) {
       console.error(err)
-      toast.error("Mislukt om kamer bij te werken")
+      toast.error("Bijwerken mislukt")
     } finally {
       setIsSaving(false)
     }
@@ -414,11 +412,11 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
     setIsSaving(true)
     try {
       await apiDeleteRoom(id)
-      toast.success("Kamer verwijderd")
+      toast.success("Dienst verwijderd")
     } catch (err) {
       console.error(err)
       setRooms(prev)
-      toast.error("Mislukt om kamer te verwijderen")
+      toast.error("Verwijderen mislukt")
     } finally {
       setIsSaving(false)
     }
@@ -446,7 +444,7 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
             {!sidebarCollapsed && (
               <div>
                 <p className="text-xs font-semibold text-foreground">Afbeeldingen</p>
-                <p className="text-[10px] text-muted-foreground">Sleep naar kamers</p>
+                <p className="text-[10px] text-muted-foreground">Sleep naar diensten</p>
               </div>
             )}
             <button
@@ -495,23 +493,23 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
           {rooms.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-24 gap-4">
               <div className="rounded-full bg-primary/10 p-6">
-                <BedDouble className="h-10 w-10 text-primary" />
+                <Briefcase className="h-10 w-10 text-primary" />
               </div>
               <div>
-                <p className="font-semibold text-foreground text-lg">Nog geen kamers</p>
+                <p className="font-semibold text-foreground text-lg">Nog geen diensten</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Click &ldquo;Kamer toevoegen&rdquo; to create your first room
+                  Klik op &ldquo;Dienst toevoegen&rdquo; om uw eerste dienst aan te maken
                 </p>
               </div>
               <Button onClick={handleCreateRoom} disabled={isSaving} className="mt-2">
                 <Plus className="mr-2 h-4 w-4" />
-                Eerste kamer toevoegen
+                Eerste dienst toevoegen
               </Button>
             </div>
           ) : (
             <div className="grid gap-5 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 max-w-7xl mx-auto">
               {rooms.map((room) => (
-                <RoomCard
+                <ServiceCard
                   key={room.id}
                   room={room}
                   onUpdate={handleUpdateRoom}
@@ -520,7 +518,7 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
                 />
               ))}
 
-              {/* Add room card */}
+              {/* Add service card */}
               <button
                 type="button"
                 onClick={handleCreateRoom}
@@ -530,7 +528,7 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
                 <div className="rounded-full bg-muted group-hover:bg-primary/10 p-3 transition-colors">
                   <Plus className="h-6 w-6" />
                 </div>
-                <span className="text-sm font-medium">Nog een kamer toevoegen</span>
+                <span className="text-sm font-medium">Nog een dienst toevoegen</span>
               </button>
             </div>
           )}
