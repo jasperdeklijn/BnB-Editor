@@ -31,15 +31,17 @@ export async function loadPublicWebsitePage({
 
   const adminSupabase = await createAdminClient()
 
-  const websiteBnbId = await (async () => {
-    const { data: bnb, error: bnbError } = await adminSupabase
-      .from('bnbs')
+  const websiteBusinessId = website.business_id ?? await (async () => {
+    const { data: business, error: businessError } = await adminSupabase
+      .from('businesses')
       .select('id')
       .eq('user_id', website.user_id)
+      .order("created_at", { ascending: true })
+      .limit(1)
       .maybeSingle()
 
-    if (bnbError) return null
-    return bnb?.id ?? null
+    if (businessError) return null
+    return business?.id ?? null
   })()
 
   // Get user email for contact form default recipient
@@ -52,7 +54,8 @@ export async function loadPublicWebsitePage({
       type: r.type,
       data: {
         ...(r.content ?? {}),
-        bnbId: websiteBnbId,
+        bnbId: websiteBusinessId,
+        businessId: websiteBusinessId,
         // Set default recipientEmail if not already set
         recipientEmail: r.content?.recipientEmail || userEmail,
       },
@@ -60,27 +63,36 @@ export async function loadPublicWebsitePage({
     })
   )
 
-  // For public sites, fetch rooms data for rooms sections to bypass RLS
-  if (!isPreview && websiteBnbId) {
-    const roomsSections = sections.filter(s => s.type === 'rooms')
-    if (roomsSections.length > 0) {
-      const { data: roomsData } = await adminSupabase
-        .from("rooms")
+  // For public sites, fetch services data for service sections to bypass RLS
+  if (!isPreview && websiteBusinessId) {
+    const serviceSections = sections.filter(s => s.type === 'rooms' || s.type === 'services')
+    if (serviceSections.length > 0) {
+      const { data: servicesData } = await adminSupabase
+        .from("services")
         .select("*")
-        .eq("bnb_id", websiteBnbId)
+        .eq("business_id", websiteBusinessId)
         .order("position", { ascending: true })
 
-      const rooms = (roomsData ?? []).map((r) => ({
-        ...r,
-        images: Array.isArray(r.images) ? r.images : [],
+      const rooms = (servicesData ?? []).map((service) => ({
+        id: service.id,
+        bnb_id: service.business_id,
+        name: service.title,
+        description: service.description,
+        price: service.price,
+        max_guests: service.capacity,
+        images: Array.isArray(service.image_urls) ? service.image_urls : [],
+        position: service.position,
+        created_at: service.created_at,
+        updated_at: service.updated_at,
       }))
 
-      // Add rooms data to each rooms section
+      // The current renderer still expects `rooms`; the rows now come from `services`.
       sections.forEach(section => {
-        if (section.type === 'rooms') {
+        if (section.type === 'rooms' || section.type === 'services') {
           section.data = {
             ...section.data,
             rooms,
+            services: servicesData ?? [],
           }
         }
       })

@@ -491,7 +491,7 @@ export function RoomsSection({ data, styles }: RoomsSectionProps) {
   const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(true)
 
-  const bnbId = data.bnbId as string | null | undefined
+  const businessId = (data.businessId ?? data.bnbId) as string | null | undefined
   const roomIdsKey = (roomIds ?? []).join(",")
 
   useEffect(() => {
@@ -500,12 +500,25 @@ export function RoomsSection({ data, styles }: RoomsSectionProps) {
     const fetchRooms = async () => {
       setLoading(true)
       try {
-        // If rooms data is already provided (from server-side fetch), use it
-        if (data.rooms) {
-          let result = (data.rooms as Room[]).map((r) => ({
-            ...r,
-            images: Array.isArray(r.images) ? r.images : [],
-          }))
+        // If service data is already provided (from server-side fetch), use it.
+        if (data.services || data.rooms) {
+          let result = data.services
+            ? (data.services as any[]).map((service): Room => ({
+                id: service.id,
+                bnb_id: service.business_id,
+                name: service.title,
+                description: service.description,
+                price: service.price,
+                max_guests: service.capacity,
+                images: Array.isArray(service.image_urls) ? service.image_urls : [],
+                position: service.position,
+                created_at: service.created_at,
+                updated_at: service.updated_at,
+              }))
+            : (data.rooms as Room[]).map((r) => ({
+                ...r,
+                images: Array.isArray(r.images) ? r.images : [],
+              }))
 
           if (roomIds && roomIds.length > 0) {
             result = result.filter((r) => roomIds.includes(r.id))
@@ -519,9 +532,9 @@ export function RoomsSection({ data, styles }: RoomsSectionProps) {
         const supabase = createClient()
 
         // Use bnbId from section data if available; otherwise fall back to user→bnb lookup
-        let resolvedBnbId: string | null = bnbId ?? null
+        let resolvedBusinessId: string | null = businessId ?? null
 
-        if (!resolvedBnbId) {
+        if (!resolvedBusinessId) {
           const {
             data: { user },
           } = await supabase.auth.getUser()
@@ -530,32 +543,42 @@ export function RoomsSection({ data, styles }: RoomsSectionProps) {
             return
           }
 
-          const { data: bnb } = await supabase
-            .from("bnbs")
+          const { data: business } = await supabase
+            .from("businesses")
             .select("id")
             .eq("user_id", user.id)
+            .order("created_at", { ascending: true })
+            .limit(1)
             .maybeSingle()
 
-          if (!bnb || cancelled) {
+          if (!business || cancelled) {
             setLoading(false)
             return
           }
-          resolvedBnbId = bnb.id
+          resolvedBusinessId = business.id
         }
 
         if (cancelled) return
 
-        const { data: roomData } = await supabase
-          .from("rooms")
+        const { data: serviceData } = await supabase
+          .from("services")
           .select("*")
-          .eq("bnb_id", resolvedBnbId)
+          .eq("business_id", resolvedBusinessId)
           .order("position", { ascending: true })
 
         if (cancelled) return
 
-        let result = ((roomData ?? []) as Room[]).map((r) => ({
-          ...r,
-          images: Array.isArray(r.images) ? r.images : [],
+        let result = ((serviceData ?? []) as any[]).map((service): Room => ({
+          id: service.id,
+          bnb_id: service.business_id,
+          name: service.title,
+          description: service.description,
+          price: service.price,
+          max_guests: service.capacity,
+          images: Array.isArray(service.image_urls) ? service.image_urls : [],
+          position: service.position,
+          created_at: service.created_at,
+          updated_at: service.updated_at,
         }))
 
         if (roomIds && roomIds.length > 0) {
@@ -574,7 +597,7 @@ export function RoomsSection({ data, styles }: RoomsSectionProps) {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bnbId, roomIdsKey])
+  }, [businessId, roomIdsKey])
 
   const sectionStyle: React.CSSProperties = {
     backgroundColor: styles?.backgroundColor,

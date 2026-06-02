@@ -18,7 +18,7 @@ export async function GET(request: Request) {
 
   try {
     // Check A record for apex
-    const aRecords = await dns.resolve4(domain).catch(() => [])
+    const aRecords = await dns.resolve4(domain).catch((): string[] => [])
 
 if (aRecords.includes(VERCEL_IP)) {
   return NextResponse.json({
@@ -38,7 +38,7 @@ if (aRecords.length > 0 && !aRecords.includes(VERCEL_IP)) {
 }
 
 // Check CNAME
-    const cnameRecords = await dns.resolveCname(domain).catch(() => [])
+    const cnameRecords = await dns.resolveCname(domain).catch((): string[] => [])
 
     if (cnameRecords.some((r) => r.toLowerCase() === VERCEL_CNAME)) {
       return NextResponse.json({

@@ -115,37 +115,41 @@ export function SelectionEditor({
         const supabase = createClient()
 
         // Use bnbId prop if available; otherwise fall back to user→bnb lookup
-        let resolvedBnbId: string | null = bnbId ?? null
+        let resolvedBusinessId: string | null = bnbId ?? null
 
-        if (!resolvedBnbId) {
+        if (!resolvedBusinessId) {
           const {
             data: { user },
           } = await supabase.auth.getUser()
           if (!user || cancelled) { setLoadingRooms(false); return }
 
-          const { data: bnb } = await supabase
-            .from("bnbs")
+          const { data: business } = await supabase
+            .from("businesses")
             .select("id")
             .eq("user_id", user.id)
+            .order("created_at", { ascending: true })
+            .limit(1)
             .maybeSingle()
 
-          if (!bnb || cancelled) { setLoadingRooms(false); return }
-          resolvedBnbId = bnb.id
+          if (!business || cancelled) { setLoadingRooms(false); return }
+          resolvedBusinessId = business.id
         }
 
         if (cancelled) return
 
-        const { data: roomRows } = await supabase
-          .from("rooms")
-          .select("id, name, images, price")
-          .eq("bnb_id", resolvedBnbId)
+        const { data: serviceRows } = await supabase
+          .from("services")
+          .select("id, title, image_urls, price")
+          .eq("business_id", resolvedBusinessId)
           .order("position", { ascending: true })
 
         if (!cancelled) {
           setAvailableRooms(
-            (roomRows ?? []).map((r) => ({
-              ...r,
-              images: Array.isArray(r.images) ? r.images : [],
+            (serviceRows ?? []).map((service) => ({
+              id: service.id,
+              name: service.title,
+              images: Array.isArray(service.image_urls) ? service.image_urls : [],
+              price: service.price,
             }))
           )
         }
@@ -250,13 +254,25 @@ export function SelectionEditor({
     }
   }
 
-  // Toggle a room in the roomIds selection
+  // Toggle a service while keeping the legacy roomIds key in sync.
   const toggleRoomId = (roomId: string) => {
-    const current = ((selectedSection.data as any).roomIds as string[]) ?? []
+    const current =
+      (((selectedSection.data as any).serviceIds ?? (selectedSection.data as any).roomIds) as string[]) ?? []
     const next = current.includes(roomId)
       ? current.filter((id) => id !== roomId)
       : [...current, roomId]
-    updateField("roomIds", next)
+    onUpdate(selectedSection.id, { roomIds: next, serviceIds: next })
+
+    if (saveTimeoutId) clearTimeout(saveTimeoutId)
+    const timeout = setTimeout(async () => {
+      await saveToDatabase({ ...selectedSection.data, roomIds: next, serviceIds: next })
+      toast.success("Opgeslagen in database", {
+        position: "bottom-right",
+        duration: 2000,
+        style: { background: "#10b981", color: "white" },
+      })
+    }, 800)
+    setSaveTimeoutId(timeout)
   }
 
   return (
