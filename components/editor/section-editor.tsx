@@ -54,10 +54,10 @@ import {
   ExternalLink,
   Check,
 } from "lucide-react"
-import type { HeroLayout } from "@/components/bnb-sections/hero-section"
-import type { GalleryLayout } from "@/components/bnb-sections/gallery-section"
-import type { RoomsLayout } from "@/components/bnb-sections/rooms-section"
-import type { ContactLayout } from "@/components/bnb-sections/contact-section"
+import type { HeroLayout } from "@/components/sections/hero-section"
+import type { GalleryLayout } from "@/components/sections/gallery-section"
+import type { ServicesLayout } from "@/components/sections/services-section"
+import type { ContactLayout } from "@/components/sections/contact-section"
 import type { SectionType } from "@/lib/types"
 
 interface AvailableRoom {
@@ -431,15 +431,15 @@ export function SelectionEditor({
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {[
-                  { layout: "grid" as RoomsLayout, label: "Raster", icon: LayoutGrid },
-                  { layout: "list" as RoomsLayout, label: "Lijst", icon: List },
-                  { layout: "featured" as RoomsLayout, label: "Uitgelicht", icon: Maximize },
-                  { layout: "magazine" as RoomsLayout, label: "Magazine", icon: Newspaper },
-                  { layout: "minimal" as RoomsLayout, label: "Minimaal", icon: AlignJustify },
-                  { layout: "carousel" as RoomsLayout, label: "Carrousel", icon: GalleryHorizontal },
+                  { layout: "grid" as ServicesLayout, label: "Raster", icon: LayoutGrid },
+                  { layout: "list" as ServicesLayout, label: "Lijst", icon: List },
+                  { layout: "featured" as ServicesLayout, label: "Uitgelicht", icon: Maximize },
+                  { layout: "magazine" as ServicesLayout, label: "Magazine", icon: Newspaper },
+                  { layout: "minimal" as ServicesLayout, label: "Minimaal", icon: AlignJustify },
+                  { layout: "carousel" as ServicesLayout, label: "Carrousel", icon: GalleryHorizontal },
                 ].map(({ layout, label, icon: Icon }) => {
                   const currentLayout =
-                    ((selectedSection.data as any).layout as RoomsLayout) || "grid"
+                    ((selectedSection.data as any).layout as ServicesLayout) || "grid"
                   const isActive = currentLayout === layout
                   return (
                     <button
@@ -458,17 +458,17 @@ export function SelectionEditor({
                 })}
               </div>
               <p className="text-[10px] text-muted-foreground text-center">
-                {((selectedSection.data as any).layout as RoomsLayout) === "grid" &&
+                {((selectedSection.data as any).layout as ServicesLayout) === "grid" &&
                   "Klassieke 3-koloms kaartweergave"}
-                {((selectedSection.data as any).layout as RoomsLayout) === "list" &&
+                {((selectedSection.data as any).layout as ServicesLayout) === "list" &&
                   "Horizontale lijstkaarten met afbeelding links"}
-                {((selectedSection.data as any).layout as RoomsLayout) === "featured" &&
+                {((selectedSection.data as any).layout as ServicesLayout) === "featured" &&
                   "Eerste dienst groot uitgelicht, rest in raster"}
-                {((selectedSection.data as any).layout as RoomsLayout) === "magazine" &&
+                {((selectedSection.data as any).layout as ServicesLayout) === "magazine" &&
                   "Afwisselend links/rechts met grote afbeeldingen"}
-                {((selectedSection.data as any).layout as RoomsLayout) === "minimal" &&
+                {((selectedSection.data as any).layout as ServicesLayout) === "minimal" &&
                   "Strakke tekstlijst met prijs"}
-                {((selectedSection.data as any).layout as RoomsLayout) === "carousel" &&
+                {((selectedSection.data as any).layout as ServicesLayout) === "carousel" &&
                   "Horizontaal schuivende kaarten"}
               </p>
             </Card>

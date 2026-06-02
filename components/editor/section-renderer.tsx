@@ -2,14 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react"
 import type { Section } from "@/lib/types"
-import { HeroSection } from "@/components/bnb-sections/hero-section"
-import { AboutSection } from "@/components/bnb-sections/about-section"
-import { RoomsSection } from "@/components/bnb-sections/rooms-section"
-import { GallerySection } from "@/components/bnb-sections/gallery-section"
-import { AmenitiesSection } from "@/components/bnb-sections/amenities-section"
-import { ContactSection } from "@/components/bnb-sections/contact-section"
-import { NavSection } from "@/components/bnb-sections/nav-section"
-import { FooterSection } from "@/components/bnb-sections/footer-section"
+import { getSectionDefinition } from "@/components/editor/section-registry"
 
 interface SectionRendererProps {
   section: Section
@@ -180,38 +173,11 @@ export function SectionRenderer({ section, isPreview, onUpdate, wrapTransition, 
     styles: section.styles,
   }
 
-  let inner: React.ReactElement | null = null
-
-  switch (section.type) {
-    case "hero":
-      inner = <HeroSection {...commonProps} />
-      break
-    case "about":
-      inner = <AboutSection {...commonProps} />
-      break
-    case "services":
-    case "rooms":
-      inner = <RoomsSection {...commonProps} />
-      break
-    case "gallery":
-      inner = <GallerySection {...commonProps} />
-      break
-    case "features":
-    case "amenities":
-      inner = <AmenitiesSection {...commonProps} />
-      break
-    case "contact":
-      inner = <ContactSection {...commonProps} />
-      break
-    case "nav":
-      inner = <NavSection {...commonProps} allSections={allSections} device={device} />
-      break
-    case "footer":
-      inner = <FooterSection {...commonProps} />
-      break
-    default:
-      inner = null
-  }
+  const definition = getSectionDefinition(section.type)
+  const Renderer = definition?.Renderer
+  const inner = Renderer ? (
+    <Renderer {...commonProps} allSections={allSections} device={device} />
+  ) : null
 
   // If wrapTransition is explicitly false, don't wrap
   if (wrapTransition === false) return inner

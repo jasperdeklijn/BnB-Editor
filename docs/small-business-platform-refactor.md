@@ -592,6 +592,16 @@ Use these as ticket-sized tasks. Each task should leave the app buildable.
 
 Done when: a new section can be added as "Diensten" and no editor empty/default state says BnB.
 
+### Milestone 1.5: Transition Type Cleanup
+
+- Fix `lib/transitions/resolveTransition.ts` so it matches the current `Section` and `Transition` types.
+- Decide whether transitions live only in the normalized `section_transitions` table or whether sections still carry a `transitionToNext` field.
+- Remove or reintroduce `SectionTransition` consistently in `lib/types.ts`.
+- Update callers to use one transition model only.
+- Add a small regression check around transition resolution between two adjacent sections.
+
+Done when: `npx tsc --noEmit` no longer reports transition-related type errors.
+
 ### Milestone 2: Section Component Reorganization
 
 - Create `components/sections`.

@@ -6,14 +6,8 @@ import { EditorCanvas } from "./editor-canvas"
 import { SelectionEditor } from "./section-editor"
 import { useEditorLayout } from "./editor-layout-context"
 import type { Section, SectionStyles, SectionType, Transition } from "@/lib/types"
-import {
-  DEFAULT_BUSINESS_EMAIL,
-  DEFAULT_BUSINESS_NAME,
-  DEFAULT_FEATURES,
-  DEFAULT_GALLERY_IMAGES,
-  DEFAULT_SITE_TITLE,
-  SECTION_COPY,
-} from "@/lib/business-naming"
+import { DEFAULT_SITE_TITLE } from "@/lib/business-naming"
+import { getDefaultSectionData as getRegistryDefaultSectionData } from "@/components/editor/section-registry"
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { useRouter } from "next/navigation"
@@ -21,65 +15,8 @@ import { Layers, Paintbrush, LayoutTemplate } from "lucide-react"
 
 type MobilePanel = "canvas" | "sections" | "style"
 
-const getDefaultSectionData = (type: SectionType, bnbId?: string | null): Record<string, unknown> => {
-  switch (type) {
-    case "hero":
-      return {
-        title: SECTION_COPY.hero.defaultTitle,
-        subtitle: "Professionele service, persoonlijk contact.",
-        ctaText: "Neem contact op",
-      }
-    case "about":
-      return {
-        title: SECTION_COPY.about.defaultTitle,
-        description: "Vertel wie je bent, wat je doet en waarom klanten voor je kiezen.",
-      }
-    case "services":
-    case "rooms":
-      return {
-        title: SECTION_COPY.services.defaultTitle,
-        layout: "grid",
-        bnbId: bnbId ?? null,
-        businessId: bnbId ?? null,
-        roomIds: [],
-        serviceIds: [],
-      }
-    case "gallery":
-      return {
-        title: SECTION_COPY.gallery.defaultTitle,
-        subtitle: "Bekijk een selectie van ons werk",
-        layout: "grid",
-        images: DEFAULT_GALLERY_IMAGES,
-      }
-    case "features":
-    case "amenities":
-      return {
-        title: SECTION_COPY.features.defaultTitle,
-        amenities: DEFAULT_FEATURES,
-        features: DEFAULT_FEATURES,
-      }
-    case "contact":
-      return {
-        title: SECTION_COPY.contact.defaultTitle,
-        address: "Straatnaam 1, 1234 AB Plaats",
-        phone: "+31 6 00000000",
-        email: DEFAULT_BUSINESS_EMAIL,
-      }
-    case "nav":
-      return {
-        brandName: DEFAULT_BUSINESS_NAME,
-        isSticky: true,
-        navLinks: [],
-      }
-    case "footer":
-      return {
-        brandName: DEFAULT_BUSINESS_NAME,
-        copyright: `© ${new Date().getFullYear()} ${DEFAULT_BUSINESS_NAME}. Alle rechten voorbehouden.`,
-      }
-    default:
-      return {}
-  }
-}
+const getDefaultSectionData = (type: SectionType, bnbId?: string | null): Record<string, unknown> =>
+  getRegistryDefaultSectionData(type, { businessId: bnbId })
 
 interface EditorClientProps {
   userId: string

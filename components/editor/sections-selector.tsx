@@ -3,44 +3,24 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import {
-  ImageIcon,
-  Home,
-  Briefcase,
-  Mail,
-  Sparkles,
-  Info,
   ChevronLeft,
   ChevronRight,
   Plus,
-  Menu,
-  Layout,
-  Link as LinkIcon,
   ExternalLink,
 } from "lucide-react"
 import Link from "next/link"
 import type { SectionType } from "@/lib/types"
-import { SECTION_COPY } from "@/lib/business-naming"
+import { selectableSectionDefinitions } from "@/components/editor/section-registry"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { createClient } from "@/lib/supabase/client"
 import { useTouchDrag } from "@/hooks/use-touch-drag"
-
-const sectionTypes: { type: SectionType; label: string; icon: React.ReactNode; description: string }[] = [
-  { type: "nav", label: SECTION_COPY.nav.label, icon: <Menu className="h-5 w-5" />, description: SECTION_COPY.nav.description },
-  { type: "hero", label: SECTION_COPY.hero.label, icon: <Home className="h-5 w-5" />, description: SECTION_COPY.hero.description },
-  { type: "about", label: SECTION_COPY.about.label, icon: <Info className="h-5 w-5" />, description: SECTION_COPY.about.description },
-  { type: "services", label: SECTION_COPY.services.label, icon: <Briefcase className="h-5 w-5" />, description: SECTION_COPY.services.description },
-  { type: "gallery", label: SECTION_COPY.gallery.label, icon: <ImageIcon className="h-5 w-5" />, description: SECTION_COPY.gallery.description },
-  { type: "features", label: SECTION_COPY.features.label, icon: <Sparkles className="h-5 w-5" />, description: SECTION_COPY.features.description },
-  { type: "contact", label: SECTION_COPY.contact.label, icon: <Mail className="h-5 w-5" />, description: SECTION_COPY.contact.description },
-  { type: "footer", label: SECTION_COPY.footer.label, icon: <Layout className="h-5 w-5" />, description: SECTION_COPY.footer.description },
-]
 
 // ----- Sub-components so each draggable item can call the hook independently -----
 
 interface SectionCardProps {
   type: SectionType
   label: string
-  icon: React.ReactNode
+  Icon: React.ComponentType<{ className?: string }>
   description: string
   collapsed: boolean
   isDragging: boolean
@@ -49,7 +29,7 @@ interface SectionCardProps {
   onDragEnd: () => void
 }
 
-function SectionCard({ type, label, icon, description, collapsed, isDragging, onAdd, onDragStart, onDragEnd }: SectionCardProps) {
+function SectionCard({ type, label, Icon, description, collapsed, isDragging, onAdd, onDragStart, onDragEnd }: SectionCardProps) {
   const { onTouchStart, onTouchMove, onTouchEnd } = useTouchDrag({ payload: { sectionType: type } })
   return (
     <div
@@ -67,7 +47,7 @@ function SectionCard({ type, label, icon, description, collapsed, isDragging, on
       title={collapsed ? `${label}: ${description}` : label}
     >
       <div className="flex-shrink-0 rounded-md bg-primary/10 p-2 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
-        {icon}
+        <Icon className="h-5 w-5" />
       </div>
       {!collapsed && (
         <div className="flex-1 min-w-0">
@@ -273,12 +253,12 @@ export function SectionsSelector({ className = "", userId, onAddSection, onSecti
           </div>
 
           <div className={`space-y-2 ${collapsed ? "mt-12 flex flex-col items-center" : ""}`}>
-            {sectionTypes.map(({ type, label, icon, description }) => (
+            {selectableSectionDefinitions.map(({ type, label, icon: Icon, description }) => (
               <SectionCard
                 key={type}
                 type={type}
                 label={label}
-                icon={icon}
+                Icon={Icon}
                 description={description}
                 collapsed={collapsed}
                 isDragging={draggingType === type}
