@@ -6,6 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { SectionRenderer, TransitionWrapper } from "@/components/editor/section-renderer"
 import type { Section, Transition } from "@/lib/types"
+import { resolveAllSections } from "@/lib/supabase/section-resolver"
 
 interface PageLoaderOptions {
   slug: string
@@ -31,15 +32,17 @@ export async function loadPublicWebsitePage({
 
   const adminSupabase = await createAdminClient()
 
-  const websiteBnbId = await (async () => {
-    const { data: bnb, error: bnbError } = await adminSupabase
-      .from('bnbs')
+  const websiteBusinessId = website.business_id ?? await (async () => {
+    const { data: business, error: businessError } = await adminSupabase
+      .from('businesses')
       .select('id')
       .eq('user_id', website.user_id)
+      .order("created_at", { ascending: true })
+      .limit(1)
       .maybeSingle()
 
-    if (bnbError) return null
-    return bnb?.id ?? null
+    if (businessError) return null
+    return business?.id ?? null
   })()
 
   // Get user email for contact form default recipient
@@ -52,7 +55,8 @@ export async function loadPublicWebsitePage({
       type: r.type,
       data: {
         ...(r.content ?? {}),
-        bnbId: websiteBnbId,
+        bnbId: websiteBusinessId,
+        businessId: websiteBusinessId,
         // Set default recipientEmail if not already set
         recipientEmail: r.content?.recipientEmail || userEmail,
       },
@@ -60,32 +64,15 @@ export async function loadPublicWebsitePage({
     })
   )
 
-  // For public sites, fetch rooms data for rooms sections to bypass RLS
-  if (!isPreview && websiteBnbId) {
-    const roomsSections = sections.filter(s => s.type === 'rooms')
-    if (roomsSections.length > 0) {
-      const { data: roomsData } = await adminSupabase
-        .from("rooms")
-        .select("*")
-        .eq("bnb_id", websiteBnbId)
-        .order("position", { ascending: true })
-
-      const rooms = (roomsData ?? []).map((r) => ({
-        ...r,
-        images: Array.isArray(r.images) ? r.images : [],
-      }))
-
-      // Add rooms data to each rooms section
-      sections.forEach(section => {
-        if (section.type === 'rooms') {
-          section.data = {
-            ...section.data,
-            rooms,
-          }
-        }
-      })
-    }
-  }
+  // Resolve live data for all sections that need it (services, rooms, etc.).
+  // The admin client is used so RLS does not block reads for published sites.
+  // Preview shares the same resolver path — resolvers are safe for both modes.
+  const resolvedSections = await resolveAllSections(sections, {
+    businessId: websiteBusinessId,
+    supabase: adminSupabase,
+    isPreview,
+  })
+  sections.splice(0, sections.length, ...resolvedSections)
 
   // Fetch transitions from section_transitions table
   const { data: transitionRows } = await supabase

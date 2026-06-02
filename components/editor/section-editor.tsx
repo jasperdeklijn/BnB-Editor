@@ -115,37 +115,41 @@ export function SelectionEditor({
         const supabase = createClient()
 
         // Use bnbId prop if available; otherwise fall back to user→bnb lookup
-        let resolvedBnbId: string | null = bnbId ?? null
+        let resolvedBusinessId: string | null = bnbId ?? null
 
-        if (!resolvedBnbId) {
+        if (!resolvedBusinessId) {
           const {
             data: { user },
           } = await supabase.auth.getUser()
           if (!user || cancelled) { setLoadingRooms(false); return }
 
-          const { data: bnb } = await supabase
-            .from("bnbs")
+          const { data: business } = await supabase
+            .from("businesses")
             .select("id")
             .eq("user_id", user.id)
+            .order("created_at", { ascending: true })
+            .limit(1)
             .maybeSingle()
 
-          if (!bnb || cancelled) { setLoadingRooms(false); return }
-          resolvedBnbId = bnb.id
+          if (!business || cancelled) { setLoadingRooms(false); return }
+          resolvedBusinessId = business.id
         }
 
         if (cancelled) return
 
-        const { data: roomRows } = await supabase
-          .from("rooms")
-          .select("id, name, images, price")
-          .eq("bnb_id", resolvedBnbId)
+        const { data: serviceRows } = await supabase
+          .from("services")
+          .select("id, title, image_urls, price")
+          .eq("business_id", resolvedBusinessId)
           .order("position", { ascending: true })
 
         if (!cancelled) {
           setAvailableRooms(
-            (roomRows ?? []).map((r) => ({
-              ...r,
-              images: Array.isArray(r.images) ? r.images : [],
+            (serviceRows ?? []).map((service) => ({
+              id: service.id,
+              name: service.title,
+              images: Array.isArray(service.image_urls) ? service.image_urls : [],
+              price: service.price,
             }))
           )
         }
@@ -250,13 +254,25 @@ export function SelectionEditor({
     }
   }
 
-  // Toggle a room in the roomIds selection
+  // Toggle a service while keeping the legacy roomIds key in sync.
   const toggleRoomId = (roomId: string) => {
-    const current = ((selectedSection.data as any).roomIds as string[]) ?? []
+    const current =
+      (((selectedSection.data as any).serviceIds ?? (selectedSection.data as any).roomIds) as string[]) ?? []
     const next = current.includes(roomId)
       ? current.filter((id) => id !== roomId)
       : [...current, roomId]
-    updateField("roomIds", next)
+    onUpdate(selectedSection.id, { roomIds: next, serviceIds: next })
+
+    if (saveTimeoutId) clearTimeout(saveTimeoutId)
+    const timeout = setTimeout(async () => {
+      await saveToDatabase({ ...selectedSection.data, roomIds: next, serviceIds: next })
+      toast.success("Opgeslagen in database", {
+        position: "bottom-right",
+        duration: 2000,
+        style: { background: "#10b981", color: "white" },
+      })
+    }, 800)
+    setSaveTimeoutId(timeout)
   }
 
   return (
@@ -943,6 +959,13 @@ export function SelectionEditor({
                   "features",
                   "amenities",
                   "contact",
+                  "testimonials",
+                  "faq",
+                  "opening_hours",
+                  "pricing",
+                  "map",
+                  "cta",
+                  "request_form",
                 ]
                 const defaultLabels: Record<SectionType, string> = {
                   hero: "Home",
@@ -955,6 +978,13 @@ export function SelectionEditor({
                   contact: "Contact",
                   nav: "Navigation",
                   footer: "Footer",
+                  testimonials: "Recensies",
+                  faq: "FAQ",
+                  opening_hours: "Openingstijden",
+                  pricing: "Tarieven",
+                  map: "Locatie",
+                  cta: "Actie",
+                  request_form: "Aanvraag",
                 }
 
                 const navigableSections = sections.filter((s) =>
@@ -1064,6 +1094,402 @@ export function SelectionEditor({
                   </div>
                 )
               })()}
+            </div>
+          </Card>
+        )}
+
+        {selectedSection.type === "testimonials" && (
+          <Card className="p-4 space-y-3">
+            <Label className="flex items-center gap-2">
+              <Type className="h-3.5 w-3.5" />
+              Inhoud
+            </Label>
+            <div>
+              <Label className="text-xs mb-1.5 block">Titel</Label>
+              <Input
+                placeholder="Wat klanten zeggen"
+                value={(selectedSection.data as any).title || ""}
+                onChange={(e) => updateField("title", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs mb-1.5 block">Ondertitel</Label>
+              <Input
+                placeholder="Lees ervaringen van onze klanten"
+                value={(selectedSection.data as any).subtitle || ""}
+                onChange={(e) => updateField("subtitle", e.target.value)}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Recensies worden automatisch weergegeven vanuit de standaardinhoud. Koppeling aan een live database volgt in een volgende stap.
+            </p>
+          </Card>
+        )}
+
+        {selectedSection.type === "faq" && (
+          <Card className="p-4 space-y-3">
+            <Label className="flex items-center gap-2">
+              <Type className="h-3.5 w-3.5" />
+              Inhoud
+            </Label>
+            <div>
+              <Label className="text-xs mb-1.5 block">Titel</Label>
+              <Input
+                placeholder="Veelgestelde vragen"
+                value={(selectedSection.data as any).title || ""}
+                onChange={(e) => updateField("title", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs mb-1.5 block">Ondertitel</Label>
+              <Input
+                placeholder="Alles wat je wil weten"
+                value={(selectedSection.data as any).subtitle || ""}
+                onChange={(e) => updateField("subtitle", e.target.value)}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              FAQ-items worden automatisch weergegeven vanuit de standaardinhoud. Beheer items via je bedrijfsprofiel.
+            </p>
+          </Card>
+        )}
+
+        {selectedSection.type === "opening_hours" && (
+          <Card className="p-4 space-y-3">
+            <Label className="flex items-center gap-2">
+              <Type className="h-3.5 w-3.5" />
+              Inhoud
+            </Label>
+            <div>
+              <Label className="text-xs mb-1.5 block">Titel</Label>
+              <Input
+                placeholder="Openingstijden"
+                value={(selectedSection.data as any).title || ""}
+                onChange={(e) => updateField("title", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs mb-1.5 block">Ondertitel</Label>
+              <Input
+                placeholder="Wanneer je ons kunt bereiken"
+                value={(selectedSection.data as any).subtitle || ""}
+                onChange={(e) => updateField("subtitle", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs mb-1.5 block">Opmerking (optioneel)</Label>
+              <Input
+                placeholder="bijv. Op feestdagen gesloten"
+                value={(selectedSection.data as any).note || ""}
+                onChange={(e) => updateField("note", e.target.value)}
+              />
+            </div>
+            {(["monday","tuesday","wednesday","thursday","friday","saturday","sunday"] as const).map((day) => {
+              const labels: Record<string, string> = {
+                monday: "Maandag", tuesday: "Dinsdag", wednesday: "Woensdag",
+                thursday: "Donderdag", friday: "Vrijdag", saturday: "Zaterdag", sunday: "Zondag",
+              }
+              const val = (selectedSection.data as any)[day] as { hours?: string; closed?: boolean } | undefined
+              const closed = val?.closed ?? (day === "sunday")
+              const hours = val?.hours ?? (day === "sunday" ? "" : "09:00 – 17:00")
+              return (
+                <div key={day} className="flex items-center gap-2">
+                  <span className="w-24 text-xs text-muted-foreground flex-shrink-0">{labels[day]}</span>
+                  <button
+                    type="button"
+                    onClick={() => updateField(day, { hours, closed: !closed })}
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full flex-shrink-0 transition-colors ${closed ? "bg-muted" : "bg-primary"}`}
+                  >
+                    <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${closed ? "translate-x-0.5" : "translate-x-4"}`} />
+                  </button>
+                  {!closed && (
+                    <Input
+                      className="h-7 text-xs flex-1"
+                      placeholder="09:00 – 17:00"
+                      value={hours}
+                      onChange={(e) => updateField(day, { hours: e.target.value, closed: false })}
+                    />
+                  )}
+                  {closed && <span className="text-xs text-muted-foreground italic">Gesloten</span>}
+                </div>
+              )
+            })}
+          </Card>
+        )}
+
+        {selectedSection.type === "pricing" && (
+          <Card className="p-4 space-y-3">
+            <Label className="flex items-center gap-2">
+              <Type className="h-3.5 w-3.5" />
+              Inhoud
+            </Label>
+            <div>
+              <Label className="text-xs mb-1.5 block">Titel</Label>
+              <Input
+                placeholder="Onze tarieven"
+                value={(selectedSection.data as any).title || ""}
+                onChange={(e) => updateField("title", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs mb-1.5 block">Ondertitel</Label>
+              <Input
+                placeholder="Transparante tarieven zonder verrassingen"
+                value={(selectedSection.data as any).subtitle || ""}
+                onChange={(e) => updateField("subtitle", e.target.value)}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Prijskaarten worden automatisch weergegeven vanuit de standaardinhoud. Individuele pakketten zijn aanpasbaar via de API.
+            </p>
+          </Card>
+        )}
+
+        {selectedSection.type === "map" && (
+          <Card className="p-4 space-y-3">
+            <Label className="flex items-center gap-2">
+              <MapPin className="h-3.5 w-3.5" />
+              Locatiegegevens
+            </Label>
+            <div>
+              <Label className="text-xs mb-1.5 block">Titel</Label>
+              <Input
+                placeholder="Onze locatie"
+                value={(selectedSection.data as any).title || ""}
+                onChange={(e) => updateField("title", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs mb-1.5 block">Adres</Label>
+              <Input
+                placeholder="Dorpsstraat 1, 1234 AB Amsterdam"
+                value={(selectedSection.data as any).address || ""}
+                onChange={(e) => updateField("address", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="flex items-center gap-2 text-xs mb-1.5">
+                <Phone className="h-3 w-3" />
+                Telefoon
+              </Label>
+              <Input
+                placeholder="+31 6 00000000"
+                value={(selectedSection.data as any).phone || ""}
+                onChange={(e) => updateField("phone", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="flex items-center gap-2 text-xs mb-1.5">
+                <Mail className="h-3 w-3" />
+                E-mail
+              </Label>
+              <Input
+                placeholder="info@mijnbedrijf.nl"
+                value={(selectedSection.data as any).email || ""}
+                onChange={(e) => updateField("email", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs mb-1.5 block">Google Maps embed-URL (optioneel)</Label>
+              <Input
+                placeholder="https://maps.google.com/maps?q=..."
+                value={(selectedSection.data as any).embedUrl || ""}
+                onChange={(e) => updateField("embedUrl", e.target.value)}
+              />
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                Laat leeg om automatisch te genereren vanuit het adres.
+              </p>
+            </div>
+          </Card>
+        )}
+
+        {selectedSection.type === "cta" && (
+          <Card className="p-4 space-y-3">
+            <Label className="flex items-center gap-2">
+              <Type className="h-3.5 w-3.5" />
+              Inhoud
+            </Label>
+            <div>
+              <Label className="text-xs mb-1.5 block">Titel</Label>
+              <Input
+                placeholder="Klaar om te beginnen?"
+                value={(selectedSection.data as any).title || ""}
+                onChange={(e) => updateField("title", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs mb-1.5 block">Ondertitel</Label>
+              <Input
+                placeholder="Neem vandaag nog contact op"
+                value={(selectedSection.data as any).subtitle || ""}
+                onChange={(e) => updateField("subtitle", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs mb-1.5 block">Knoptekst (primair)</Label>
+              <Input
+                placeholder="Neem contact op"
+                value={(selectedSection.data as any).primaryCtaText || ""}
+                onChange={(e) => updateField("primaryCtaText", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs mb-1.5 block">Knoplink (primair)</Label>
+              <Input
+                placeholder="#contact"
+                value={(selectedSection.data as any).primaryCtaHref || ""}
+                onChange={(e) => updateField("primaryCtaHref", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs mb-1.5 block">Knoptekst (secundair, optioneel)</Label>
+              <Input
+                placeholder="Meer weten"
+                value={(selectedSection.data as any).secondaryCtaText || ""}
+                onChange={(e) => updateField("secondaryCtaText", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="flex items-center gap-2 text-xs mb-1.5">
+                <Phone className="h-3 w-3" />
+                Telefoonnummer (optioneel)
+              </Label>
+              <Input
+                placeholder="+31 6 00000000"
+                value={(selectedSection.data as any).phone || ""}
+                onChange={(e) => updateField("phone", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs mb-1.5 block">Lay-out</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {(["centered", "split", "banner"] as const).map((layout) => {
+                  const isActive = ((selectedSection.data as any).layout || "centered") === layout
+                  const labels = { centered: "Gecentreerd", split: "Gesplitst", banner: "Banner" }
+                  return (
+                    <button
+                      key={layout}
+                      type="button"
+                      onClick={() => updateField("layout", layout)}
+                      className={`rounded-lg border p-2 text-xs font-medium transition-all ${
+                        isActive
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      {labels[layout]}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {selectedSection.type === "request_form" && (
+          <Card className="p-4 space-y-3">
+            <Label className="flex items-center gap-2">
+              <Type className="h-3.5 w-3.5" />
+              Inhoud
+            </Label>
+            <div>
+              <Label className="text-xs mb-1.5 block">Titel</Label>
+              <Input
+                placeholder="Stuur een aanvraag"
+                value={(selectedSection.data as any).title || ""}
+                onChange={(e) => updateField("title", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs mb-1.5 block">Ondertitel</Label>
+              <Input
+                placeholder="Vul het formulier in, wij nemen contact op"
+                value={(selectedSection.data as any).subtitle || ""}
+                onChange={(e) => updateField("subtitle", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs mb-1.5 block">Type aanvraag</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {(["contact", "appointment", "quote", "whatsapp"] as const).map((type) => {
+                  const isActive = ((selectedSection.data as any).requestType || "contact") === type
+                  const labels = {
+                    contact: "Bericht",
+                    appointment: "Afspraak",
+                    quote: "Offerte",
+                    whatsapp: "WhatsApp",
+                  }
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => updateField("requestType", type)}
+                      className={`rounded-lg border p-2 text-xs font-medium transition-all ${
+                        isActive
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      {labels[type]}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            {((selectedSection.data as any).requestType === "whatsapp") && (
+              <div>
+                <Label className="text-xs mb-1.5 block">WhatsApp-nummer</Label>
+                <Input
+                  placeholder="31612345678"
+                  value={(selectedSection.data as any).whatsappNumber || ""}
+                  onChange={(e) => updateField("whatsappNumber", e.target.value)}
+                />
+                <p className="mt-1 text-[10px] text-muted-foreground">Zonder + of spaties, bijv. 31612345678</p>
+              </div>
+            )}
+            <div>
+              <Label className="flex items-center gap-2 text-xs mb-1.5">
+                <Mail className="h-3 w-3" />
+                Ontvanger e-mail
+              </Label>
+              <Input
+                type="email"
+                placeholder="jouw@email.nl"
+                value={(selectedSection.data as any).recipientEmail || ""}
+                onChange={(e) => updateField("recipientEmail", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs mb-1.5 block">Formuliervelden</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {(["name", "email", "phone", "date", "service", "budget", "message"] as const).map((field) => {
+                  const fieldLabels = {
+                    name: "Naam", email: "E-mail", phone: "Telefoon",
+                    date: "Datum", service: "Dienst", budget: "Budget", message: "Bericht",
+                  }
+                  const currentFields: string[] = (selectedSection.data as any).fields || ["name", "email", "phone", "message"]
+                  const isActive = currentFields.includes(field)
+                  return (
+                    <button
+                      key={field}
+                      type="button"
+                      onClick={() => {
+                        const next = isActive
+                          ? currentFields.filter((f) => f !== field)
+                          : [...currentFields, field]
+                        updateField("fields", next)
+                      }}
+                      className={`rounded-lg border p-2 text-xs font-medium transition-all ${
+                        isActive
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border hover:border-primary/50 opacity-50"
+                      }`}
+                    >
+                      {fieldLabels[field]}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
           </Card>
         )}
