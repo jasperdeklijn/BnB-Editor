@@ -8,6 +8,13 @@ import {
   Mail,
   Menu,
   Sparkles,
+  Star,
+  HelpCircle,
+  Clock,
+  DollarSign,
+  MapPin,
+  Megaphone,
+  ClipboardList,
   type LucideIcon,
 } from "lucide-react"
 import type { Section, SectionStyles, SectionType } from "@/lib/types"
@@ -26,6 +33,13 @@ import { GallerySection } from "@/components/sections/gallery-section"
 import { HeroSection } from "@/components/sections/hero-section"
 import { NavSection } from "@/components/sections/nav-section"
 import { ServicesSection } from "@/components/sections/services-section"
+import { TestimonialsSection } from "@/components/sections/testimonials-section"
+import { FaqSection } from "@/components/sections/faq-section"
+import { OpeningHoursSection } from "@/components/sections/opening-hours-section"
+import { PricingSection } from "@/components/sections/pricing-section"
+import { MapSection } from "@/components/sections/map-section"
+import { CtaSection } from "@/components/sections/cta-section"
+import { RequestFormSection } from "@/components/sections/request-form-section"
 
 export interface SectionDefaultContext {
   businessId?: string | null
@@ -191,6 +205,98 @@ export const sectionDefinitions = {
       copyright: `© ${currentYear} ${DEFAULT_BUSINESS_NAME}. Alle rechten voorbehouden.`,
     }),
     Renderer: FooterSection,
+  },
+  testimonials: {
+    type: "testimonials",
+    label: SECTION_COPY.testimonials.label,
+    description: SECTION_COPY.testimonials.description,
+    icon: Star,
+    category: "content",
+    defaultData: () => ({
+      title: SECTION_COPY.testimonials.defaultTitle,
+      subtitle: "Lees wat onze klanten over ons zeggen.",
+      items: [],
+    }),
+    Renderer: TestimonialsSection,
+  },
+  faq: {
+    type: "faq",
+    label: SECTION_COPY.faq.label,
+    description: SECTION_COPY.faq.description,
+    icon: HelpCircle,
+    category: "content",
+    defaultData: () => ({
+      title: SECTION_COPY.faq.defaultTitle,
+      subtitle: "Alles wat je wil weten.",
+      items: [],
+    }),
+    Renderer: FaqSection,
+  },
+  opening_hours: {
+    type: "opening_hours",
+    label: SECTION_COPY.opening_hours.label,
+    description: SECTION_COPY.opening_hours.description,
+    icon: Clock,
+    category: "business",
+    defaultData: () => ({
+      title: SECTION_COPY.opening_hours.defaultTitle,
+    }),
+    Renderer: OpeningHoursSection,
+  },
+  pricing: {
+    type: "pricing",
+    label: SECTION_COPY.pricing.label,
+    description: SECTION_COPY.pricing.description,
+    icon: DollarSign,
+    category: "business",
+    defaultData: () => ({
+      title: SECTION_COPY.pricing.defaultTitle,
+      subtitle: "Transparante tarieven zonder verrassingen.",
+      plans: [],
+    }),
+    Renderer: PricingSection,
+  },
+  map: {
+    type: "map",
+    label: SECTION_COPY.map.label,
+    description: SECTION_COPY.map.description,
+    icon: MapPin,
+    category: "business",
+    defaultData: () => ({
+      title: SECTION_COPY.map.defaultTitle,
+      address: "",
+      showMap: true,
+    }),
+    Renderer: MapSection,
+  },
+  cta: {
+    type: "cta",
+    label: SECTION_COPY.cta.label,
+    description: SECTION_COPY.cta.description,
+    icon: Megaphone,
+    category: "conversion",
+    defaultData: () => ({
+      title: SECTION_COPY.cta.defaultTitle,
+      subtitle: "Neem vandaag nog contact op.",
+      primaryCtaText: "Neem contact op",
+      primaryCtaHref: "#contact",
+      layout: "centered",
+    }),
+    Renderer: CtaSection,
+  },
+  request_form: {
+    type: "request_form",
+    label: SECTION_COPY.request_form.label,
+    description: SECTION_COPY.request_form.description,
+    icon: ClipboardList,
+    category: "conversion",
+    defaultData: () => ({
+      title: SECTION_COPY.request_form.defaultTitle,
+      subtitle: "Vul het formulier in, wij nemen contact op.",
+      requestType: "contact",
+      fields: ["name", "email", "phone", "message"],
+    }),
+    Renderer: RequestFormSection,
   },
 } satisfies Record<SectionType, SectionDefinition>
 
