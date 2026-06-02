@@ -6,6 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { SectionRenderer, TransitionWrapper } from "@/components/editor/section-renderer"
 import type { Section, Transition } from "@/lib/types"
+import { resolveAllSections } from "@/lib/supabase/section-resolver"
 
 interface PageLoaderOptions {
   slug: string
@@ -63,41 +64,15 @@ export async function loadPublicWebsitePage({
     })
   )
 
-  // For public sites, fetch services data for service sections to bypass RLS
-  if (!isPreview && websiteBusinessId) {
-    const serviceSections = sections.filter(s => s.type === 'rooms' || s.type === 'services')
-    if (serviceSections.length > 0) {
-      const { data: servicesData } = await adminSupabase
-        .from("services")
-        .select("*")
-        .eq("business_id", websiteBusinessId)
-        .order("position", { ascending: true })
-
-      const rooms = (servicesData ?? []).map((service) => ({
-        id: service.id,
-        bnb_id: service.business_id,
-        name: service.title,
-        description: service.description,
-        price: service.price,
-        max_guests: service.capacity,
-        images: Array.isArray(service.image_urls) ? service.image_urls : [],
-        position: service.position,
-        created_at: service.created_at,
-        updated_at: service.updated_at,
-      }))
-
-      // The current renderer still expects `rooms`; the rows now come from `services`.
-      sections.forEach(section => {
-        if (section.type === 'rooms' || section.type === 'services') {
-          section.data = {
-            ...section.data,
-            rooms,
-            services: servicesData ?? [],
-          }
-        }
-      })
-    }
-  }
+  // Resolve live data for all sections that need it (services, rooms, etc.).
+  // The admin client is used so RLS does not block reads for published sites.
+  // Preview shares the same resolver path — resolvers are safe for both modes.
+  const resolvedSections = await resolveAllSections(sections, {
+    businessId: websiteBusinessId,
+    supabase: adminSupabase,
+    isPreview,
+  })
+  sections.splice(0, sections.length, ...resolvedSections)
 
   // Fetch transitions from section_transitions table
   const { data: transitionRows } = await supabase

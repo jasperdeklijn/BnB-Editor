@@ -56,6 +56,41 @@ export const SECTION_COPY: Record<
     label: "Voettekst",
     description: "Onderste voettekst",
   },
+  testimonials: {
+    label: "Recensies",
+    description: "Klantbeoordelingen en ervaringen",
+    defaultTitle: "Wat klanten zeggen",
+  },
+  faq: {
+    label: "Veelgestelde vragen",
+    description: "Antwoorden op veelgestelde vragen",
+    defaultTitle: "Veelgestelde vragen",
+  },
+  opening_hours: {
+    label: "Openingstijden",
+    description: "Wanneer je bereikbaar bent",
+    defaultTitle: "Openingstijden",
+  },
+  pricing: {
+    label: "Prijzen",
+    description: "Tarieven en pakketten",
+    defaultTitle: "Onze tarieven",
+  },
+  map: {
+    label: "Locatie",
+    description: "Kaart en locatiegegevens",
+    defaultTitle: "Onze locatie",
+  },
+  cta: {
+    label: "Actieknop",
+    description: "Uitnodiging tot actie",
+    defaultTitle: "Klaar om te beginnen?",
+  },
+  request_form: {
+    label: "Aanvraagformulier",
+    description: "Formulier voor contact, offerte of afspraak",
+    defaultTitle: "Stuur een aanvraag",
+  },
 }
 
 export const DEFAULT_FEATURES = [
