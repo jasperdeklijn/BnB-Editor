@@ -1,4 +1,6 @@
 import type { ComponentType } from "react"
+import type { SectionDataResolver } from "@/lib/supabase/section-resolver"
+import { servicesResolver, roomsResolver } from "@/lib/supabase/section-resolver"
 import {
   Briefcase,
   Home,
@@ -62,6 +64,9 @@ export interface SectionDefinition {
   category: "structure" | "content" | "business" | "conversion"
   selectable?: boolean
   defaultData: (context: SectionDefaultContext) => Record<string, unknown>
+  /** Optional server-side data resolver. When present, page-loader calls this
+   *  before rendering to enrich section.data with live database content. */
+  resolveData?: SectionDataResolver
   Renderer: ComponentType<SectionRenderProps>
 }
 
@@ -120,6 +125,7 @@ export const sectionDefinitions = {
       roomIds: [],
       serviceIds: [],
     }),
+    resolveData: servicesResolver,
     Renderer: ServicesSection,
   },
   rooms: {
@@ -137,6 +143,7 @@ export const sectionDefinitions = {
       roomIds: [],
       serviceIds: [],
     }),
+    resolveData: roomsResolver,
     Renderer: ServicesSection,
   },
   gallery: {
