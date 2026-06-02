@@ -9,13 +9,6 @@ export type SectionType =
   | "about"
   | "nav"
   | "footer"
-  | "testimonials"
-  | "faq"
-  | "opening_hours"
-  | "pricing"
-  | "map"
-  | "cta"
-  | "request_form"
 
 export type TransitionType =
   | "none"
