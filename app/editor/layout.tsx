@@ -3,8 +3,8 @@ import { createClient } from "@/lib/supabase/server"
 import { EditorLayoutClient } from "@/components/editor/editor-layout-client"
 
 export const metadata = {
-  title: "Editor | BnB Builder",
-  description: "Build and manage your BnB website",
+  title: "Editor | Website Maker",
+  description: "Bouw en beheer uw website",
 }
 
 export default async function EditorLayout({

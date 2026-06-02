@@ -47,12 +47,14 @@ type LegacyBusinessRow = {
   updated_at: string
 }
 
-function parseBusiness(row: LegacyBusinessRow): Business {
+function parseBusiness(row: LegacyBusinessRow, categoryHint?: string): Business {
   return {
     id: row.id,
     user_id: row.user_id,
     name: row.name,
-    category: "general_service",
+    // category and contact fields are not yet in the bnbs table; preserved via categoryHint
+    // until Milestone 8 adds the new columns.
+    category: categoryHint ?? "general_service",
     tagline: row.tagline,
     description: row.description,
     street: row.street,
@@ -63,9 +65,11 @@ function parseBusiness(row: LegacyBusinessRow): Business {
     phone: null,
     whatsapp: null,
     website_url: row.website_url,
-    opening_note: null,
-    appointment_start_time: row.checkin_time,
-    appointment_end_time: row.checkout_time,
+    // opening_note is stored in checkin_time until Milestone 8.
+    opening_note: row.checkin_time ?? null,
+    // appointment_start_time and appointment_end_time map to check-in/out for now.
+    appointment_start_time: row.checkin_time ?? null,
+    appointment_end_time: row.checkout_time ?? null,
     capacity: row.max_guests,
     languages: row.languages,
     created_at: row.created_at,
@@ -85,9 +89,12 @@ function toLegacyBusinessUpdates(updates: Partial<BusinessInput>): Record<string
   if (updates.country !== undefined) payload.country = updates.country
   if (updates.website_url !== undefined) payload.website_url = updates.website_url
   if (updates.languages !== undefined) payload.languages = updates.languages
+  // opening_note is stored in checkin_time until the DB migration in Milestone 8.
+  if (updates.opening_note !== undefined) payload.checkin_time = updates.opening_note
   if (updates.appointment_start_time !== undefined) payload.checkin_time = updates.appointment_start_time
   if (updates.appointment_end_time !== undefined) payload.checkout_time = updates.appointment_end_time
   if (updates.capacity !== undefined) payload.max_guests = updates.capacity
+  // category, contact_email, phone, whatsapp are not yet columns in bnbs — skipped until M8.
 
   return payload
 }
@@ -135,5 +142,6 @@ export async function updateBusiness(
     .single()
 
   if (error) throw error
-  return parseBusiness(data as LegacyBusinessRow)
+  // Pass category back as a hint so it survives the round-trip until M8 adds the column.
+  return parseBusiness(data as LegacyBusinessRow, updates.category)
 }

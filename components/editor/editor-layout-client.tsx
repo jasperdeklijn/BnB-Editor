@@ -23,17 +23,17 @@ export function EditorLayoutClient({
 
   const pageTitles: Record<string, string> = {
     "/editor": "Website Maker",
-    "/editor/bnb": "Bedrijfsgegevens",
+    "/editor/business": "Bedrijfsgegevens",
     "/editor/images": "Afbeeldingen",
-    "/editor/rooms": "Diensten",
-    "/editor/domains": "Domain instellingen",
+    "/editor/services": "Diensten",
+    "/editor/domains": "Domeininstellingen",
   }
 
   const pageIcons: Record<string, React.ReactNode> = {
     "/editor": <LayoutTemplate className="h-4 w-4" />,
-    "/editor/bnb": <Home className="h-4 w-4" />,
+    "/editor/business": <Home className="h-4 w-4" />,
     "/editor/images": <ImageIcon className="h-4 w-4" />,
-    "/editor/rooms": <Briefcase className="h-4 w-4" />,
+    "/editor/services": <Briefcase className="h-4 w-4" />,
     "/editor/domains": <Globe className="h-4 w-4" />,
   }
 

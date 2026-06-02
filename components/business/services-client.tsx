@@ -3,12 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import {
-  createRoom as apiCreateRoom,
-  updateRoom as apiUpdateRoom,
-  deleteRoom as apiDeleteRoom,
-  type Room,
-  type RoomInput,
-} from "@/lib/supabase/bnb"
+  createService as apiCreateService,
+  updateService as apiUpdateService,
+  deleteService as apiDeleteService,
+  type Service,
+  type ServiceInput,
+} from "@/lib/supabase/services"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -31,10 +31,10 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
-interface RoomsClientProps {
+interface ServicesClientProps {
   userId: string
-  bnbId: string
-  initialRooms: Room[]
+  businessId: string
+  initialServices: Service[]
 }
 
 // ---- Image card in the sidebar (draggable) ----
@@ -70,33 +70,32 @@ function SidebarImageCard({ name, url, isDragging, onDragStart, onDragEnd }: Sid
 
 // ---- Service card ----
 interface ServiceCardProps {
-  room: Room
-  onUpdate: (id: string, updates: Partial<RoomInput>) => void
+  service: Service
+  onUpdate: (id: string, updates: Partial<ServiceInput>) => void
   onDelete: (id: string) => void
   isSaving: boolean
 }
 
-function ServiceCard({ room, onUpdate, onDelete, isSaving }: ServiceCardProps) {
+function ServiceCard({ service, onUpdate, onDelete, isSaving }: ServiceCardProps) {
   const [isDragOver, setIsDragOver] = useState(false)
-  const [localName, setLocalName] = useState(room.name)
-  const [localDescription, setLocalDescription] = useState(room.description ?? "")
-  const [localPrice, setLocalPrice] = useState(room.price ?? "")
-  const [localCapacity, setLocalCapacity] = useState(room.max_guests?.toString() ?? "")
+  const [localTitle, setLocalTitle] = useState(service.title)
+  const [localDescription, setLocalDescription] = useState(service.description ?? "")
+  const [localPrice, setLocalPrice] = useState(service.price ?? "")
+  const [localDuration, setLocalDuration] = useState(service.duration ?? "")
 
-  // Sync local state when room prop changes (e.g., after save)
   useEffect(() => {
-    setLocalName(room.name)
-    setLocalDescription(room.description ?? "")
-    setLocalPrice(room.price ?? "")
-    setLocalCapacity(room.max_guests?.toString() ?? "")
-  }, [room])
+    setLocalTitle(service.title)
+    setLocalDescription(service.description ?? "")
+    setLocalPrice(service.price ?? "")
+    setLocalDuration(service.duration ?? "")
+  }, [service])
 
   const handleBlur = () => {
-    onUpdate(room.id, {
-      name: localName,
+    onUpdate(service.id, {
+      title: localTitle,
       description: localDescription,
       price: localPrice,
-      max_guests: localCapacity ? parseInt(localCapacity, 10) : null,
+      duration: localDuration || null,
     })
   }
 
@@ -112,16 +111,15 @@ function ServiceCard({ room, onUpdate, onDelete, isSaving }: ServiceCardProps) {
     e.preventDefault()
     setIsDragOver(false)
     const imageUrl = e.dataTransfer.getData("imageUrl")
-    if (imageUrl && !room.images.includes(imageUrl)) {
-      onUpdate(room.id, { images: [...room.images, imageUrl] })
+    if (imageUrl && !service.image_urls.includes(imageUrl)) {
+      onUpdate(service.id, { image_urls: [...service.image_urls, imageUrl] })
     }
   }
 
   const removeImage = (imgUrl: string) => {
-    onUpdate(room.id, { images: room.images.filter((u) => u !== imgUrl) })
+    onUpdate(service.id, { image_urls: service.image_urls.filter((u) => u !== imgUrl) })
   }
 
-  // Touch drop support
   const cardRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const el = cardRef.current
@@ -129,13 +127,13 @@ function ServiceCard({ room, onUpdate, onDelete, isSaving }: ServiceCardProps) {
     const handler = (e: Event) => {
       const custom = e as CustomEvent
       const imageUrl = custom.detail?.imageUrl
-      if (imageUrl && !room.images.includes(imageUrl)) {
-        onUpdate(room.id, { images: [...room.images, imageUrl] })
+      if (imageUrl && !service.image_urls.includes(imageUrl)) {
+        onUpdate(service.id, { image_urls: [...service.image_urls, imageUrl] })
       }
     }
     el.addEventListener("touchdrop", handler)
     return () => el.removeEventListener("touchdrop", handler)
-  }, [room.id, room.images, onUpdate])
+  }, [service.id, service.image_urls, onUpdate])
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-sm">
@@ -144,14 +142,14 @@ function ServiceCard({ room, onUpdate, onDelete, isSaving }: ServiceCardProps) {
         <div className="flex items-center gap-2">
           <Briefcase className="h-4 w-4 text-primary" />
           <span className="font-semibold text-foreground truncate max-w-[200px]">
-            {room.name || "Naamloze dienst"}
+            {service.title || "Naamloze dienst"}
           </span>
           <div className="relative group">
             {(() => {
               const missing = []
-              if (!room.name) missing.push("naam")
-              if (!room.description) missing.push("beschrijving")
-              if (!room.price) missing.push("prijs")
+              if (!service.title) missing.push("naam")
+              if (!service.description) missing.push("beschrijving")
+              if (!service.price) missing.push("prijs")
               return (
                 <>
                   {missing.length === 0 ? (
@@ -170,7 +168,7 @@ function ServiceCard({ room, onUpdate, onDelete, isSaving }: ServiceCardProps) {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => onDelete(room.id)}
+          onClick={() => onDelete(service.id)}
           className="h-7 w-7 text-destructive hover:bg-destructive/10 flex-shrink-0"
           disabled={isSaving}
         >
@@ -179,19 +177,19 @@ function ServiceCard({ room, onUpdate, onDelete, isSaving }: ServiceCardProps) {
       </div>
 
       <div className="p-5 space-y-4">
-        {/* Name */}
+        {/* Title */}
         <div className="space-y-1.5">
           <Label
-            htmlFor={`name-${room.id}`}
+            htmlFor={`title-${service.id}`}
             className="text-xs font-medium text-muted-foreground uppercase tracking-wide"
           >
             Dienstnaam
           </Label>
           <Input
-            id={`name-${room.id}`}
+            id={`title-${service.id}`}
             placeholder="Knipbeurt"
-            value={localName}
-            onChange={(e) => setLocalName(e.target.value)}
+            value={localTitle}
+            onChange={(e) => setLocalTitle(e.target.value)}
             onBlur={handleBlur}
           />
         </div>
@@ -199,13 +197,13 @@ function ServiceCard({ room, onUpdate, onDelete, isSaving }: ServiceCardProps) {
         {/* Description */}
         <div className="space-y-1.5">
           <Label
-            htmlFor={`desc-${room.id}`}
+            htmlFor={`desc-${service.id}`}
             className="text-xs font-medium text-muted-foreground uppercase tracking-wide"
           >
             Beschrijving
           </Label>
           <Textarea
-            id={`desc-${room.id}`}
+            id={`desc-${service.id}`}
             placeholder="Wat houdt deze dienst in..."
             value={localDescription}
             onChange={(e) => setLocalDescription(e.target.value)}
@@ -215,18 +213,18 @@ function ServiceCard({ room, onUpdate, onDelete, isSaving }: ServiceCardProps) {
           />
         </div>
 
-        {/* Price + capacity row */}
+        {/* Price + duration row */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label
-              htmlFor={`price-${room.id}`}
+              htmlFor={`price-${service.id}`}
               className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide"
             >
               <DollarSign className="h-3 w-3 text-primary" />
               Prijs
             </Label>
             <Input
-              id={`price-${room.id}`}
+              id={`price-${service.id}`}
               type="text"
               placeholder="Vanaf € 45"
               value={localPrice}
@@ -236,19 +234,18 @@ function ServiceCard({ room, onUpdate, onDelete, isSaving }: ServiceCardProps) {
           </div>
           <div className="space-y-1.5">
             <Label
-              htmlFor={`capacity-${room.id}`}
+              htmlFor={`duration-${service.id}`}
               className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide"
             >
               <Clock className="h-3 w-3 text-primary" />
-              Capaciteit
+              Duur
             </Label>
             <Input
-              id={`capacity-${room.id}`}
-              type="number"
-              min="1"
-              placeholder="1"
-              value={localCapacity}
-              onChange={(e) => setLocalCapacity(e.target.value)}
+              id={`duration-${service.id}`}
+              type="text"
+              placeholder="30 min"
+              value={localDuration}
+              onChange={(e) => setLocalDuration(e.target.value)}
               onBlur={handleBlur}
             />
           </div>
@@ -273,7 +270,7 @@ function ServiceCard({ room, onUpdate, onDelete, isSaving }: ServiceCardProps) {
                 : "border-border/60 hover:border-primary/40 bg-muted/20"
             }`}
           >
-            {room.images.length === 0 ? (
+            {service.image_urls.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-16 text-center gap-1">
                 <ImageIcon className={`h-5 w-5 ${isDragOver ? "text-primary" : "text-muted-foreground/40"}`} />
                 <p className={`text-xs ${isDragOver ? "text-primary font-medium" : "text-muted-foreground/60"}`}>
@@ -282,7 +279,7 @@ function ServiceCard({ room, onUpdate, onDelete, isSaving }: ServiceCardProps) {
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-1.5">
-                {room.images.map((url) => (
+                {service.image_urls.map((url) => (
                   <div key={url} className="relative group rounded overflow-hidden aspect-square">
                     <img src={url} alt="" className="w-full h-full object-cover" />
                     <button
@@ -310,16 +307,16 @@ function ServiceCard({ room, onUpdate, onDelete, isSaving }: ServiceCardProps) {
 }
 
 // ---- Main client component ----
-export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
-  const [rooms, setRooms] = useState<Room[]>(initialRooms)
+export function ServicesClient({ userId, businessId, initialServices }: ServicesClientProps) {
+  const [services, setServices] = useState<Service[]>(initialServices)
   const [images, setImages] = useState<{ name: string; url: string }[]>([])
   const [isLoadingImages, setIsLoadingImages] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [draggingImage, setDraggingImage] = useState<string | null>(null)
-  const { setIsSaving: setHeaderSaving, setActionLabel, setOnAction, setActionIcon, setActionLoading, setInfoText } = useEditorLayout()
+  const { setIsSaving: setHeaderSaving, setActionLabel, setOnAction, setActionIcon, setActionLoading, setInfoText } =
+    useEditorLayout()
 
-  // Load images from Supabase storage on mount
   useEffect(() => {
     setIsLoadingImages(true)
     const supabase = createClient()
@@ -345,18 +342,19 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
       })
   }, [userId])
 
-  const handleCreateRoom = useCallback(async () => {
+  const handleCreateService = useCallback(async () => {
     setIsSaving(true)
     try {
-      const newRoom = await apiCreateRoom(bnbId, {
-        name: "Nieuwe dienst",
+      const newService = await apiCreateService(businessId, {
+        title: "Nieuwe dienst",
         description: "",
         price: "",
-        max_guests: null,
-        images: [],
-        position: rooms.length,
+        duration: null,
+        capacity: null,
+        image_urls: [],
+        position: services.length,
       })
-      setRooms((prev) => [...prev, newRoom])
+      setServices((prev) => [...prev, newService])
       toast.success("Dienst aangemaakt")
     } catch (err) {
       console.error(err)
@@ -364,7 +362,7 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
     } finally {
       setIsSaving(false)
     }
-  }, [bnbId, rooms.length])
+  }, [businessId, services.length])
 
   useEffect(() => {
     setHeaderSaving(isSaving)
@@ -374,8 +372,8 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
   useEffect(() => {
     setActionLabel("Dienst toevoegen")
     setActionIcon(<Plus className="mr-2 h-4 w-4" />)
-    setOnAction(() => handleCreateRoom)
-    setInfoText(`${rooms.length} ${rooms.length === 1 ? "dienst" : "diensten"}`)
+    setOnAction(() => handleCreateService)
+    setInfoText(`${services.length} ${services.length === 1 ? "dienst" : "diensten"}`)
 
     return () => {
       setActionLabel(undefined)
@@ -384,18 +382,14 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
       setActionLoading(false)
       setInfoText(undefined)
     }
-  }, [rooms.length, handleCreateRoom, setActionLabel, setActionIcon, setActionLoading, setOnAction, setInfoText])
+  }, [services.length, handleCreateService, setActionLabel, setActionIcon, setActionLoading, setOnAction, setInfoText])
 
-  const handleUpdateRoom = async (id: string, updates: Partial<RoomInput>) => {
-    // Optimistic update
-    setRooms((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, ...updates } : r))
-    )
-
+  const handleUpdateService = async (id: string, updates: Partial<ServiceInput>) => {
+    setServices((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)))
     setIsSaving(true)
     try {
-      const updated = await apiUpdateRoom(id, updates)
-      setRooms((prev) => prev.map((r) => (r.id === id ? updated : r)))
+      const updated = await apiUpdateService(id, updates)
+      setServices((prev) => prev.map((s) => (s.id === id ? updated : s)))
     } catch (err) {
       console.error(err)
       toast.error("Bijwerken mislukt")
@@ -404,18 +398,16 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
     }
   }
 
-  const handleDeleteRoom = async (id: string) => {
-    // Optimistic delete
-    const prev = rooms
-    setRooms((r) => r.filter((room) => room.id !== id))
-
+  const handleDeleteService = async (id: string) => {
+    const prev = services
+    setServices((s) => s.filter((service) => service.id !== id))
     setIsSaving(true)
     try {
-      await apiDeleteRoom(id)
+      await apiDeleteService(id)
       toast.success("Dienst verwijderd")
     } catch (err) {
       console.error(err)
-      setRooms(prev)
+      setServices(prev)
       toast.error("Verwijderen mislukt")
     } finally {
       setIsSaving(false)
@@ -439,7 +431,6 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
             sidebarCollapsed ? "w-12" : "w-56"
           } hidden md:flex flex-col`}
         >
-          {/* sidebar header */}
           <div className="flex items-center justify-between px-3 py-3 border-b border-border sticky top-0 bg-[var(--editor-sidebar)] z-10">
             {!sidebarCollapsed && (
               <div>
@@ -457,7 +448,6 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
             </button>
           </div>
 
-          {/* image list */}
           {!sidebarCollapsed && (
             <div className="p-2 space-y-1.5">
               {isLoadingImages ? (
@@ -488,9 +478,9 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
           )}
         </aside>
 
-        {/* Main rooms canvas */}
+        {/* Main services canvas */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          {rooms.length === 0 ? (
+          {services.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-24 gap-4">
               <div className="rounded-full bg-primary/10 p-6">
                 <Briefcase className="h-10 w-10 text-primary" />
@@ -501,19 +491,19 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
                   Klik op &ldquo;Dienst toevoegen&rdquo; om uw eerste dienst aan te maken
                 </p>
               </div>
-              <Button onClick={handleCreateRoom} disabled={isSaving} className="mt-2">
+              <Button onClick={handleCreateService} disabled={isSaving} className="mt-2">
                 <Plus className="mr-2 h-4 w-4" />
                 Eerste dienst toevoegen
               </Button>
             </div>
           ) : (
             <div className="grid gap-5 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 max-w-7xl mx-auto">
-              {rooms.map((room) => (
+              {services.map((service) => (
                 <ServiceCard
-                  key={room.id}
-                  room={room}
-                  onUpdate={handleUpdateRoom}
-                  onDelete={handleDeleteRoom}
+                  key={service.id}
+                  service={service}
+                  onUpdate={handleUpdateService}
+                  onDelete={handleDeleteService}
                   isSaving={isSaving}
                 />
               ))}
@@ -521,7 +511,7 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
               {/* Add service card */}
               <button
                 type="button"
-                onClick={handleCreateRoom}
+                onClick={handleCreateService}
                 disabled={isSaving}
                 className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border/60 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200 min-h-[200px] text-muted-foreground hover:text-primary group disabled:opacity-50"
               >

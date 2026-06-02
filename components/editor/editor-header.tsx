@@ -157,7 +157,7 @@ export function EditorHeader({
 
               {/* Business details link */}
               <Link
-                href="/editor/bnb"
+                href="/editor/business"
                 role="menuitem"
                 onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-slate-700 hover:bg-violet-50 hover:text-violet-900 transition-colors border-b border-slate-200"
@@ -168,7 +168,7 @@ export function EditorHeader({
 
               {/* Services link */}
               <Link
-                href="/editor/rooms"
+                href="/editor/services"
                 role="menuitem"
                 onClick={() => setMenuOpen(false)}
                 className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-slate-700 hover:bg-violet-50 hover:text-violet-900 transition-colors border-b border-slate-200"
