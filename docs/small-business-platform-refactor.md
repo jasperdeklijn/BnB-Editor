@@ -582,7 +582,7 @@ Do not build scheduling inventory in this refactor. Keep advanced availability a
 
 Use these as ticket-sized tasks. Each task should leave the app buildable.
 
-### Milestone 1: Generic Naming Foundation
+### Milestone 1: Generic Naming Foundation — ✅ Done
 
 - Create generic aliases in `lib/types.ts`: add `services` to `SectionType` while keeping `rooms` temporarily.
 - Add a naming map/constants file for user-facing labels: business, services, features, contact, requests.
@@ -592,7 +592,7 @@ Use these as ticket-sized tasks. Each task should leave the app buildable.
 
 Done when: a new section can be added as "Diensten" and no editor empty/default state says BnB.
 
-### Milestone 1.5: Transition Type Cleanup
+### Milestone 1.5: Transition Type Cleanup — ✅ Done
 
 - Fix `lib/transitions/resolveTransition.ts` so it matches the current `Section` and `Transition` types.
 - Decide whether transitions live only in the normalized `section_transitions` table or whether sections still carry a `transitionToNext` field.
@@ -602,7 +602,7 @@ Done when: a new section can be added as "Diensten" and no editor empty/default 
 
 Done when: `npx tsc --noEmit` no longer reports transition-related type errors.
 
-### Milestone 2: Section Component Reorganization
+### Milestone 2: Section Component Reorganization — ✅ Done
 
 - Create `components/sections`.
 - Move current generic sections from `components/bnb-sections` into `components/sections`.
@@ -613,7 +613,7 @@ Done when: `npx tsc --noEmit` no longer reports transition-related type errors.
 
 Done when: the app renders the same pages through generic section paths.
 
-### Milestone 3: Section Registry
+### Milestone 3: Section Registry — ✅ Done
 
 - Add `components/editor/section-registry.ts`.
 - Move section labels, icons, descriptions, default data, and renderer references into the registry.
@@ -623,7 +623,7 @@ Done when: the app renders the same pages through generic section paths.
 
 Done when: adding a new section only requires adding one registry entry plus its component/editor config.
 
-### Milestone 4: Generic Business Data API
+### Milestone 4: Generic Business Data API — ✅ Done
 
 - Add `lib/supabase/business.ts` with `Business`, `BusinessInput`, `getOrCreateBusiness`, and `updateBusiness`.
 - Add `lib/supabase/services.ts` with `Service`, `ServiceInput`, CRUD, and reorder helpers.
@@ -632,7 +632,7 @@ Done when: adding a new section only requires adding one registry entry plus its
 
 Done when: new code can call generic business/services APIs while old BnB pages still compile.
 
-### Milestone 5: Editor Route Rename
+### Milestone 5: Editor Route Rename — ✅ Done
 
 - Create `/app/editor/business/page.tsx` using `BusinessDetailsClient`.
 - Create `/app/editor/services/page.tsx` using `ServicesClient`.
@@ -642,7 +642,7 @@ Done when: new code can call generic business/services APIs while old BnB pages 
 
 Done when: old URLs still work, but the visible editor uses Business and Services.
 
-### Milestone 6: Business Details UI
+### Milestone 6: Business Details UI — ✅ Done
 
 - Rename `components/bnb/bnb-details-client.tsx` to `components/business/business-details-client.tsx`.
 - Replace fields:
@@ -654,7 +654,7 @@ Done when: old URLs still work, but the visible editor uses Business and Service
 
 Done when: the business details page works for a non-BnB business without awkward fields.
 
-### Milestone 7: Services UI
+### Milestone 7: Services UI — ✅ Done
 
 - Rename `components/rooms/rooms-client.tsx` to `components/business/services-client.tsx`.
 - Rename `RoomCard` to `ServiceCard`.
@@ -668,7 +668,7 @@ Done when: the business details page works for a non-BnB business without awkwar
 
 Done when: users can manage services/offerings without accommodation language.
 
-### Milestone 8: Database Migration
+### Milestone 8: Database Migration — ✅ Done
 
 - Add migration for `businesses`.
 - Add migration for `services`.
@@ -681,7 +681,7 @@ Done when: users can manage services/offerings without accommodation language.
 
 Done when: existing users have equivalent business and service records.
 
-### Milestone 9: Public Site Data Resolver
+### Milestone 9: Public Site Data Resolver — ✅ Done
 
 - Replace `components/page-loader.tsx` room-specific enrichment with a generic section resolver.
 - Add `resolveSectionData(section, context)`.
@@ -691,8 +691,8 @@ Done when: existing users have equivalent business and service records.
 
 Done when: public sites render services through generic business data.
 
-### Milestone 10: Template Presets
-
+### Milestone 10: Template Presets — ⬜ Not done
+ 
 - Add `lib/business/categories.ts`.
 - Add `components/templates/category-presets.ts`.
 - Define presets for hairdresser, gardener, coach, restaurant, photographer, freelancer, construction, and general service.
@@ -701,8 +701,8 @@ Done when: public sites render services through generic business data.
 
 Done when: selecting a category seeds a useful editable website.
 
-### Milestone 11: Theme System
-
+### Milestone 11: Theme System — ⬜ Not done
+ 
 - Add `components/themes/palettes.ts`.
 - Add `components/themes/fonts.ts`.
 - Add theme token type in `lib/themes/theme-types.ts`.
@@ -712,7 +712,7 @@ Done when: selecting a category seeds a useful editable website.
 
 Done when: users can swap the look without changing section content.
 
-### Milestone 12: New Generic Sections
+### Milestone 12: New Generic Sections — ✅ Done
 
 - Add `testimonials-section`.
 - Add `faq-section`.
@@ -725,7 +725,7 @@ Done when: users can swap the look without changing section content.
 
 Done when: the section picker covers common small-business websites beyond services/gallery/contact.
 
-### Milestone 13: Contact And Request Flexibility
+### Milestone 13: Contact And Request Flexibility — ⬜ Not done
 
 - Add or update `contact_requests` table.
 - Update `/api/contact` into a generic request handler or add `/api/requests`.
@@ -735,7 +735,7 @@ Done when: the section picker covers common small-business websites beyond servi
 
 Done when: forms work for many service businesses and store structured requests.
 
-### Milestone 14: SEO And Business Essentials
+### Milestone 14: SEO And Business Essentials — ⬜ Not done
 
 - Add SEO fields to website/page editing.
 - Generate OpenGraph metadata from SEO fields with business fallback.
@@ -746,7 +746,7 @@ Done when: forms work for many service businesses and store structured requests.
 
 Done when: generated sites have business metadata, sharing cards, structured data, and analytics hooks.
 
-### Milestone 15: Platform Copy Cleanup
+### Milestone 15: Platform Copy Cleanup — ⬜ Not done
 
 - Replace remaining `BnB Website Maken` product copy where this is no longer the intended brand.
 - Update auth pages, account pages, billing pages, legal pages, email sender names, sitemap base URL, and domain placeholder text.
@@ -754,7 +754,7 @@ Done when: generated sites have business metadata, sharing cards, structured dat
 
 Done when: `rg -n "BnB|bnb|B&B|rooms|kamer|gasten|property|host"` returns only intentional compatibility references.
 
-### Milestone 16: Cleanup And Removal
+### Milestone 16: Cleanup And Removal — ⬜ Not done
 
 - Remove old `components/bnb-sections` compatibility exports.
 - Remove old `/editor/bnb` and `/editor/rooms` redirects only after a safe period.
