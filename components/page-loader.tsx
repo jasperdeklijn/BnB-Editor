@@ -207,5 +207,36 @@ export async function loadPublicWebsitePage({
     // Transition items don't render themselves; they're handled by wrapping sections
   }
 
-  return <div className="min-h-screen bg-background">{nodes}</div>
+  // If the website contains persisted theme tokens, map them to CSS variables
+  const themeVars: React.CSSProperties | undefined = (website as any)?.theme_tokens
+    ? (() => {
+        const t = (website as any).theme_tokens
+        const vars: Record<string, string> = {}
+        try {
+          if (t.colors) {
+            vars['--background'] = t.colors.background
+            vars['--foreground'] = t.colors.text
+            vars['--primary'] = t.colors.primary
+            vars['--accent'] = t.colors.accent
+          }
+          if (t.radius) vars['--radius'] = t.radius
+          if (t.spacing) vars['--spacing'] = t.spacing
+          if (t.fonts) {
+            // map font tokens to globals used across the site
+            vars['--font-sans'] = t.fonts.body
+            vars['--font-mono'] = t.fonts.body
+            vars['--font-heading'] = t.fonts.heading
+          }
+        } catch (err) {
+          // ignore mapping errors
+        }
+        return vars as React.CSSProperties
+      })()
+    : undefined
+
+  return (
+    <div className="min-h-screen bg-background" style={themeVars}>
+      {nodes}
+    </div>
+  )
 }
