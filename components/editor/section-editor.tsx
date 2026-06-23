@@ -19,8 +19,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import type { Section, SectionStyles, Transition } from "@/lib/types"
-import { ThemeEditor } from "@/components/themes/theme-editor"
-import type { ThemeTokens } from "@/lib/themes/theme-types"
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
 import {
@@ -104,52 +102,6 @@ export function SelectionEditor({
       if (saveTimeoutId) clearTimeout(saveTimeoutId)
     }
   }, [])
-
-  // Website-level theme tokens
-  const [themeTokens, setThemeTokens] = useState<ThemeTokens | null>(null)
-
-  // Load website theme tokens when websiteId available
-  useEffect(() => {
-    let cancelled = false
-    const load = async () => {
-      if (!websiteId) return
-      try {
-        const supabase = createClient()
-        const { data, error } = await supabase.from('websites').select('theme_tokens').eq('id', websiteId).single()
-        if (!cancelled && !error && data) {
-          setThemeTokens((data as any).theme_tokens ?? null)
-        }
-      } catch (err) {
-        // ignore
-      }
-    }
-    load()
-    return () => { cancelled = true }
-  }, [websiteId])
-
-  // Apply tokens to document
-  useEffect(() => {
-    if (!themeTokens) return
-    try {
-      const root = document.documentElement
-      const { colors, radius, spacing, fonts } = themeTokens as any
-      if (colors) {
-        root.style.setProperty('--background', colors.background)
-        root.style.setProperty('--foreground', colors.text)
-        root.style.setProperty('--primary', colors.primary)
-        root.style.setProperty('--accent', colors.accent)
-      }
-      if (radius) root.style.setProperty('--radius', radius)
-      if (spacing) root.style.setProperty('--spacing', spacing)
-      if (fonts) {
-        root.style.setProperty('--font-sans', fonts.body)
-        root.style.setProperty('--font-mono', fonts.body)
-        root.style.setProperty('--font-heading', fonts.heading)
-      }
-    } catch (err) {
-      // ignore
-    }
-  }, [themeTokens])
 
   // Fetch available offerings whenever a services section is selected.
   useEffect(() => {
@@ -252,47 +204,12 @@ export function SelectionEditor({
   if (!selectedSection) {
     return (
       <div className="w-full md:w-80 border-border bg-[var(--editor-panel)] p-4 md:border-l md:p-6">
-        <div className="mb-4">
-          <div className="flex items-center gap-2">
-            <div className="rounded-md bg-primary/15 p-1.5 text-primary">
-              <Palette className="h-4 w-4" />
-            </div>
-            <h2 className="text-lg font-semibold">Thema en stijl</h2>
+        <div className="flex h-full flex-col items-center justify-center text-center">
+          <div className="mb-4 rounded-full bg-primary/10 p-4">
+            <Wand2 className="h-8 w-8 text-primary" />
           </div>
-          <p className="text-xs text-muted-foreground">Kies een kleurpalet, lettertype en spacing voor deze website</p>
-        </div>
-
-        <div className="space-y-4">
-          <Card className="p-4">
-            <Label className="flex items-center gap-2 mb-2">
-              <Palette className="h-3.5 w-3.5" />
-              Hoe gebruik je thema's
-            </Label>
-            <p className="text-xs text-muted-foreground mb-2">
-              Kies een kleurpalet en letterparen om de look van je website aan te passen. Wijzigingen
-              worden direct toegepast in de editor en automatisch opgeslagen voor deze website.
-            </p>
-            <p className="text-[11px] text-muted-foreground">
-              Tip: Publiceer je website om bezoekers de nieuwe stijl te laten zien. Je kunt later terugkeren
-              naar dit paneel om aanpassingen door te voeren.
-            </p>
-          </Card>
-
-          <ThemeEditor
-            value={themeTokens ?? undefined}
-            onChange={async (tokens) => {
-              setThemeTokens(tokens)
-              // persist to websites.theme_tokens if possible
-              if (!websiteId) return
-              try {
-                const supabase = createClient()
-                await supabase.from('websites').update({ theme_tokens: tokens }).eq('id', websiteId)
-              } catch (err) {
-                // ignore persistence errors for now
-                console.error('Failed to persist theme tokens', err)
-              }
-            }}
-          />
+          <p className="text-sm font-medium text-muted-foreground">Geen sectie geselecteerd</p>
+          <p className="mt-2 text-xs text-muted-foreground">Klik op een sectie om aan te passen</p>
         </div>
       </div>
     )
