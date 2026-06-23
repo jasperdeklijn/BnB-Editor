@@ -582,7 +582,7 @@ Do not build scheduling inventory in this refactor. Keep advanced availability a
 
 Use these as ticket-sized tasks. Each task should leave the app buildable.
 
-### Milestone 1: Generic Naming Foundation — ✅ Done
+### Milestone 1: Generic Naming Foundation — 🟨 Partially done
 
 - Create generic aliases in `lib/types.ts`: add `services` to `SectionType` while keeping `rooms` temporarily.
 - Add a naming map/constants file for user-facing labels: business, services, features, contact, requests.
@@ -592,7 +592,9 @@ Use these as ticket-sized tasks. Each task should leave the app buildable.
 
 Done when: a new section can be added as "Diensten" and no editor empty/default state says BnB.
 
-### Milestone 1.5: Transition Type Cleanup — ✅ Done
+Audit note 2026-06-23: generic naming constants and selectable "Diensten" exist, but editor internals still use `bnbId` and query `bnbs` in `components/editor/editor-client.tsx`. Finish by switching editor context to `businessId`/`businesses` and removing visible/default BnB leftovers from editor defaults.
+
+### Milestone 1.5: Transition Type Cleanup — 🟨 Partially done
 
 - Fix `lib/transitions/resolveTransition.ts` so it matches the current `Section` and `Transition` types.
 - Decide whether transitions live only in the normalized `section_transitions` table or whether sections still carry a `transitionToNext` field.
@@ -601,6 +603,8 @@ Done when: a new section can be added as "Diensten" and no editor empty/default 
 - Add a small regression check around transition resolution between two adjacent sections.
 
 Done when: `npx tsc --noEmit` no longer reports transition-related type errors.
+
+Audit note 2026-06-23: no transition-specific type error was found, but `npx tsc --noEmit` currently fails because `components/sections/nav-section.tsx` has an incomplete `Record<SectionType, string>` after the new generic section types were added.
 
 ### Milestone 2: Section Component Reorganization — ✅ Done
 
@@ -691,7 +695,7 @@ Done when: existing users have equivalent business and service records.
 
 Done when: public sites render services through generic business data.
 
-### Milestone 10: Template Presets — ⬜ Not done
+### Milestone 10: Template Presets — 🟨 Partially done
  
 - Add `lib/business/categories.ts`.
 - Add `components/templates/category-presets.ts`.
@@ -700,6 +704,8 @@ Done when: public sites render services through generic business data.
 - Add a simple template picker route or first-run modal.
 
 Done when: selecting a category seeds a useful editable website.
+
+Audit note 2026-06-23: `lib/business/categories.ts` exists with the target categories, but `components/templates/category-presets.ts`, demo service/section presets, and a template picker route or first-run modal are still missing.
 
 ### Milestone 11: Theme System — ⬜ Not done
  
@@ -712,7 +718,7 @@ Done when: selecting a category seeds a useful editable website.
 
 Done when: users can swap the look without changing section content.
 
-### Milestone 12: New Generic Sections — ✅ Done
+### Milestone 12: New Generic Sections — 🟨 Partially done
 
 - Add `testimonials-section`.
 - Add `faq-section`.
@@ -725,6 +731,8 @@ Done when: users can swap the look without changing section content.
 
 Done when: the section picker covers common small-business websites beyond services/gallery/contact.
 
+Audit note 2026-06-23: the new section components exist and are registered, including testimonials, FAQ, opening hours, pricing, map, CTA, and request form. This milestone is not fully done until the new section types compile cleanly and all editor controls are verified; `npx tsc --noEmit` currently fails in `components/sections/nav-section.tsx`.
+
 ### Milestone 13: Contact And Request Flexibility — ⬜ Not done
 
 - Add or update `contact_requests` table.
@@ -735,7 +743,9 @@ Done when: the section picker covers common small-business websites beyond servi
 
 Done when: forms work for many service businesses and store structured requests.
 
-### Milestone 14: SEO And Business Essentials — ⬜ Not done
+Audit note 2026-06-23: request-form UI supports contact, appointment, quote, and WhatsApp, but `/api/requests`, a `contact_requests` table, structured request storage, business-email fallback, and generic email copy are still missing. `/api/contact` still uses `info@bnbwebsitemaken.nl` and BnB sender/body wording.
+
+### Milestone 14: SEO And Business Essentials — 🟨 Partially done
 
 - Add SEO fields to website/page editing.
 - Generate OpenGraph metadata from SEO fields with business fallback.
@@ -746,6 +756,8 @@ Done when: forms work for many service businesses and store structured requests.
 
 Done when: generated sites have business metadata, sharing cards, structured data, and analytics hooks.
 
+Audit note 2026-06-23: the database migration adds `seo` and `analytics` columns to `websites`, and a map section exists. Editor fields, OpenGraph generation from SEO data, LocalBusiness structured data, social links rendering, and analytics configuration are not implemented yet.
+
 ### Milestone 15: Platform Copy Cleanup — ⬜ Not done
 
 - Replace remaining `BnB Website Maken` product copy where this is no longer the intended brand.
@@ -753,6 +765,8 @@ Done when: generated sites have business metadata, sharing cards, structured dat
 - Decide final platform brand/domain constants before changing production domain behavior.
 
 Done when: `rg -n "BnB|bnb|B&B|rooms|kamer|gasten|property|host"` returns only intentional compatibility references.
+
+Audit note 2026-06-23: broad BnB-specific platform copy remains in landing, legal, billing, email, sitemap/domain-related code, and compatibility files. This should stay open until final platform brand/domain constants are decided.
 
 ### Milestone 16: Cleanup And Removal — ⬜ Not done
 
@@ -763,6 +777,8 @@ Done when: `rg -n "BnB|bnb|B&B|rooms|kamer|gasten|property|host"` returns only i
 - Add regression tests around section rendering, services resolver, and migration assumptions.
 
 Done when: the codebase is generic by default and BnB exists only as one possible business category.
+
+Audit note 2026-06-23: old BnB compatibility code remains intentionally present, including `components/bnb-sections`, `components/bnb`, `components/rooms`, `lib/supabase/bnb.ts`, old editor pages, `rooms`/`amenities` section types, and `bnbs`/`rooms` database compatibility references.
 
 ## Acceptance Criteria
 
