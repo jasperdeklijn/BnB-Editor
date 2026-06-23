@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Juridisch | BnB Website Maken',
-  description: 'Juridische documenten van BnB Website Maken',
+  title: 'Juridisch | Website Maker',
+  description: 'Juridische documenten van Website Maker',
 }
 
 export default function LegalLayout({
@@ -12,3 +12,4 @@ export default function LegalLayout({
 }) {
   return children
 }
+

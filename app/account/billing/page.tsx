@@ -4,7 +4,7 @@ import { BillingClient } from "@/components/billing/billing-client"
 import { getMockUserBillingData } from "@/lib/mock-data"
 
 export const metadata = {
-  title: "Facturering | BnB Website Maken",
+  title: "Facturering | Website Maker",
   description: "Beheer je abonnement en facturatiegegevens",
 }
 
@@ -37,3 +37,4 @@ export default async function BillingPage() {
     <BillingClient billingData={billingData} userId={data.user.id} />
   )
 }
+

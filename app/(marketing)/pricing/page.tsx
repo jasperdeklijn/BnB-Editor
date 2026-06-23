@@ -6,9 +6,9 @@ import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 
 export const metadata = {
-  title: "Pricing | BnB Website Maken",
+  title: "Pricing | Website Maker",
   description:
-    "Transparante prijzen voor onze BnB website builder. Kies het plan dat bij jouw B&B past. Upgraden of downgraden kan altijd — geen verborgen kosten.",
+    "Transparante prijzen voor onze websitebouwer. Kies het plan dat bij jouw bedrijf past. Upgraden of downgraden kan altijd — geen verborgen kosten.",
 }
 
 /**
@@ -41,7 +41,7 @@ export default function PricingPage() {
             Transparante Prijzen
           </h1>
           <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            Kies het plan dat bij jouw B&B past. Upgraden of downgraden kan altijd — geen verborgen kosten.
+            Kies het plan dat bij jouw bedrijf past. Upgraden of downgraden kan altijd — geen verborgen kosten.
           </p>
         </div>
 
@@ -118,3 +118,5 @@ export default function PricingPage() {
     </div>
   )
 }
+
+

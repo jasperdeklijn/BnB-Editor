@@ -1,8 +1,8 @@
 import { LegalLayout } from "@/components/layout/legal-layout"
 
 export const metadata = {
-  title: "Algemene Voorwaarden | BnB Website Maken",
-  description: "Lees de algemene voorwaarden van BnB Website Maken.",
+  title: "Algemene Voorwaarden | Website Maker",
+  description: "Lees de algemene voorwaarden van Website Maker.",
 }
 
 export default function TermsPage() {
@@ -18,7 +18,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-2xl font-bold text-white mb-4">1. Definities</h2>
           <ul className="space-y-3 list-disc list-inside">
-            <li><strong>Platform:</strong> BnB Website Maken, een website builder en hosting dienst.</li>
+            <li><strong>Platform:</strong> Website Maker, een website builder en hosting dienst.</li>
             <li><strong>Gebruiker:</strong> Een natuurlijk persoon die zich registreert en het Platform gebruikt.</li>
             <li><strong>Website:</strong> Een unieke website gemaakt door de Gebruiker via het Platform.</li>
             <li><strong>Content:</strong> Alle teksten, afbeeldingen, video's, bestanden en ander materiaal dat door een Gebruiker wordt geüpload.</li>
@@ -147,8 +147,8 @@ export default function TermsPage() {
           <h3 className="text-lg font-semibold text-white mb-3">Vragen?</h3>
           <p>
             Neem contact met ons op via{" "}
-            <a href="mailto:support@bnbwebsitemaken.nl" className="text-[var(--brand-blue)] hover:underline">
-              support@bnbwebsitemaken.nl
+            <a href="mailto:support@websitebouwer.nl" className="text-[var(--brand-blue)] hover:underline">
+              support@websitebouwer.nl
             </a>
           </p>
         </section>
@@ -156,3 +156,4 @@ export default function TermsPage() {
     </LegalLayout>
   )
 }
+

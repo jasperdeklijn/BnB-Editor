@@ -3,7 +3,7 @@ import { SharedFooter } from "@/components/layout/shared-footer"
 import Link from "next/link"
 
 export const metadata = {
-  title: "Juridisch | BnB Website Maken",
+  title: "Juridisch | Website Maker",
   description: "Juridische informatie en documentatie",
 }
 
@@ -83,7 +83,7 @@ export default function LegalIndexPage() {
             <div>
               <h3 className="text-lg font-semibold text-white mb-2">Bent u verantwoordelijk voor content van gebruikers?</h3>
               <p className="text-white/70">
-                Nee. BnB Website Maken biedt alleen technische hosting. Gebruikers zijn volledig verantwoordelijk 
+                Nee. Website Maker biedt alleen technische hosting. Gebruikers zijn volledig verantwoordelijk 
                 voor hun eigen content. Zie onze Disclaimer voor meer informatie.
               </p>
             </div>
@@ -92,8 +92,8 @@ export default function LegalIndexPage() {
               <h3 className="text-lg font-semibold text-white mb-2">Hoe meld ik illegale content?</h3>
               <p className="text-white/70">
                 Stuur een e-mail naar{" "}
-                <a href="mailto:abuse@bnbwebsitemaken.nl" className="text-[var(--brand-blue)] hover:underline">
-                  abuse@bnbwebsitemaken.nl
+                <a href="mailto:abuse@websitebouwer.nl" className="text-[var(--brand-blue)] hover:underline">
+                  abuse@websitebouwer.nl
                 </a>
                 {" "}met details van de content. Zie onze Notice & Takedown procedure.
               </p>
@@ -103,8 +103,8 @@ export default function LegalIndexPage() {
               <h3 className="text-lg font-semibold text-white mb-2">Hoe kan ik mijn privacy-gegevens inzien?</h3>
               <p className="text-white/70">
                 Stuur een verzoek naar{" "}
-                <a href="mailto:privacy@bnbwebsitemaken.nl" className="text-[var(--brand-blue)] hover:underline">
-                  privacy@bnbwebsitemaken.nl
+                <a href="mailto:privacy@websitebouwer.nl" className="text-[var(--brand-blue)] hover:underline">
+                  privacy@websitebouwer.nl
                 </a>
                 {" "}met uw identiteitskaart. We reageren binnen 30 dagen.
               </p>
@@ -113,9 +113,9 @@ export default function LegalIndexPage() {
             <div>
               <h3 className="text-lg font-semibold text-white mb-2">Wat zijn jullie contactgegevens?</h3>
               <p className="text-white/70">
-                <strong>Support:</strong> support@bnbwebsitemaken.nl<br/>
-                <strong>Privacy:</strong> privacy@bnbwebsitemaken.nl<br/>
-                <strong>Abuse/Takedown:</strong> abuse@bnbwebsitemaken.nl
+                <strong>Support:</strong> support@websitebouwer.nl<br/>
+                <strong>Privacy:</strong> privacy@websitebouwer.nl<br/>
+                <strong>Abuse/Takedown:</strong> abuse@websitebouwer.nl
               </p>
             </div>
           </div>
@@ -126,3 +126,4 @@ export default function LegalIndexPage() {
     </div>
   )
 }
+

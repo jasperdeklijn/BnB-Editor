@@ -75,18 +75,18 @@ export default function SignUpPage() {
           <h1 className="mb-4 text-3xl font-bold text-white text-balance">
             {"Begin met bouwen aan jouw "}
             <span className="bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-blue)] bg-clip-text text-transparent">
-              B&B website
+              website
             </span>
           </h1>
           <p className="text-white/60 leading-relaxed">
-            Maak een gratis account aan en ontdek hoe makkelijk het is om een professionele website voor jouw bed & breakfast te maken.
+            Maak een gratis account aan en ontdek hoe makkelijk het is om een professionele website voor jouw kleine bedrijf te maken.
           </p>
 
           <div className="mt-10 grid grid-cols-2 gap-4">
             <div className="rounded-xl border border-[var(--brand-purple)]/20 overflow-hidden shadow-lg shadow-[var(--brand-purple)]/5">
               <img
                 src="/placeholder.svg?height=200&width=250"
-                alt="Voorbeeld B&B website template"
+                alt="Voorbeeld website template"
                 className="w-full"
                 width={250}
                 height={200}
@@ -95,7 +95,7 @@ export default function SignUpPage() {
             <div className="rounded-xl border border-[var(--brand-blue)]/20 overflow-hidden shadow-lg shadow-[var(--brand-blue)]/5">
               <img
                 src="/placeholder.svg?height=200&width=250"
-                alt="Voorbeeld B&B boekingsmodule"
+                alt="Voorbeeld bedrijf boekingsmodule"
                 className="w-full"
                 width={250}
                 height={200}
@@ -119,7 +119,7 @@ export default function SignUpPage() {
             </div>
             <Image
               src="/logo.png"
-              alt="BnB Website Maken"
+              alt="Website Maker"
               width={180}
               height={50}
               className="h-12 w-auto"
@@ -220,3 +220,4 @@ export default function SignUpPage() {
     </div>
   )
 }
+

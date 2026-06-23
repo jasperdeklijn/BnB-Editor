@@ -12,12 +12,12 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
   lite: {
     id: "lite",
     name: "Lite",
-    description: "Perfect voor de startende B&B-eigenaar",
+    description: "Perfect voor de startende ondernemer",
     monthlyPrice: 9,
     currency: "EUR",
     features: [
       "1 accommodatie",
-      "Basissecties (hero, galerij, kamers, contact)",
+      "Basissecties (hero, galerij, diensten, contact)",
       "Mobielvriendelijk ontwerp",
       "Contactformulier",
       "Gratis SSL-certificaat",
@@ -31,7 +31,7 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
   growth: {
     id: "growth",
     name: "Growth",
-    description: "Complete tools om je B&B te laten groeien",
+    description: "Complete tools om je bedrijf te laten groeien",
     monthlyPrice: 29,
     currency: "EUR",
     features: [
@@ -57,7 +57,7 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
     monthlyPrice: 19,
     currency: "EUR",
     features: [
-      "Boekingsaanvragen van gasten",
+      "Aanvragen van klanten",
       "Beschikbaarheidskalender",
       "Dashboard voor reserveringsbeheer",
       "Gastcommunicatie",
@@ -147,9 +147,9 @@ export const PRICING_FAQ = [
       "Het Booking Add-on wordt samen met je standaardplan afgerekend op dezelfde factureringsdatum. Je kunt het op elk moment in- of uitschakelen.",
   },
   {
-    question: "Kunnen kleine B&Bs het Lite plan gebruiken?",
+    question: "Kunnen kleine bedrijven het Lite plan gebruiken?",
     answer:
-      "Absoluut! Het Lite plan is perfect voor kleine B&Bs die net beginnen. Je kunt later altijd upgraden naar Growth als je groeit.",
+      "Absoluut! Het Lite plan is perfect voor kleine bedrijven die net beginnen. Je kunt later altijd upgraden naar Growth als je groeit.",
   },
 ]
 
@@ -238,3 +238,4 @@ export function isBilledMonthly(planId: PlanId): boolean {
 export function getPlansExcept(planId: PlanId): PricingPlan[] {
   return getMainPlans().filter((plan) => plan.id !== planId)
 }
+

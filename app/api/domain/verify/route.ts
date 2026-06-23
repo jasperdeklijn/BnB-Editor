@@ -4,7 +4,7 @@ import dns from "node:dns/promises"
 const VERCEL_IP = "76.76.21.21"
 const VERCEL_CNAME = "cname.vercel-dns.com"
 
-// GET /api/domain/verify?domain=mybnb.com
+// GET /api/domain/verify?domain=mijnbedrijf.nl
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const domain = searchParams.get("domain")
@@ -63,3 +63,4 @@ if (aRecords.length > 0 && !aRecords.includes(VERCEL_IP)) {
     })
   }
 }
+

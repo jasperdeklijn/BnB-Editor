@@ -735,7 +735,7 @@ Done when: the section picker covers common small-business websites beyond servi
 
 Completion note 2026-06-23: the new section components are registered, navigation labels cover all new section types, editor controls are present, and `npx tsc --noEmit` passes.
 
-### Milestone 13: Contact And Request Flexibility — ⬜ Not done
+### Milestone 13: Contact And Request Flexibility — ✅ Done
 
 - Add or update `contact_requests` table.
 - Update `/api/contact` into a generic request handler or add `/api/requests`.
@@ -745,7 +745,7 @@ Completion note 2026-06-23: the new section components are registered, navigatio
 
 Done when: forms work for many service businesses and store structured requests.
 
-Audit note 2026-06-23: request-form UI supports contact, appointment, quote, and WhatsApp, but `/api/requests`, a `contact_requests` table, structured request storage, business-email fallback, and generic email copy are still missing. `/api/contact` still uses `info@bnbwebsitemaken.nl` and BnB sender/body wording.
+Completion note 2026-06-23: added `contact_requests` storage, `/api/requests`, a compatibility `/api/contact` wrapper, structured request payloads, contact/quote/appointment/booking request/WhatsApp request types, business-email recipient fallback, and generic email copy. Contact and request form sections now post to the generic request handler.
 
 ### Milestone 14: SEO And Business Essentials — ✅ Done
 
@@ -760,7 +760,7 @@ Done when: generated sites have business metadata, sharing cards, structured dat
 
 Completion note 2026-06-23: `/editor/seo` now edits website SEO, OpenGraph, social links, and analytics settings; public and preview routes generate metadata from SEO fields with business fallback; `lib/business/structured-data.ts` emits LocalBusiness JSON-LD; map section support remains available.
 
-### Milestone 15: Platform Copy Cleanup — ⬜ Not done
+### Milestone 15: Platform Copy Cleanup — ✅ Done
 
 - Replace remaining `BnB Website Maken` product copy where this is no longer the intended brand.
 - Update auth pages, account pages, billing pages, legal pages, email sender names, sitemap base URL, and domain placeholder text.
@@ -768,7 +768,7 @@ Completion note 2026-06-23: `/editor/seo` now edits website SEO, OpenGraph, soci
 
 Done when: `rg -n "BnB|bnb|B&B|rooms|kamer|gasten|property|host"` returns only intentional compatibility references.
 
-Audit note 2026-06-23: broad BnB-specific platform copy remains in landing, legal, billing, email, sitemap/domain-related code, and compatibility files. This should stay open until final platform brand/domain constants are decided.
+Completion note 2026-06-23: visible platform copy in marketing, auth, account, billing, legal, pricing, domain UI, sitemap, and request email defaults has been moved from BnB-specific wording to generic Website Maker/small-business wording. `lib/platform.ts` now centralizes platform brand/domain/email constants; old `/editor/bnb` and `/editor/rooms` pages redirect to the generic editor routes. Remaining `bnb`/`rooms` references are compatibility code paths for Milestone 16 cleanup.
 
 ### Milestone 16: Cleanup And Removal — ⬜ Not done
 

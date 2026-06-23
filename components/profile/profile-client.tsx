@@ -219,7 +219,7 @@ export function ProfileClient({ userId, email, initialMeta }: ProfileClientProps
               </Label>
               <Textarea
                 id="bio"
-                placeholder="A short description about yourself and your BnB experience..."
+                placeholder="Een korte beschrijving over uzelf en uw bedrijfservaring..."
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 rows={4}
@@ -253,3 +253,4 @@ export function ProfileClient({ userId, email, initialMeta }: ProfileClientProps
     </div>
   )
 }
+

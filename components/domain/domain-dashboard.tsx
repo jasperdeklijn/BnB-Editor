@@ -5,8 +5,8 @@ import { Copy, CheckCircle, ExternalLink, Globe, Eye, Wifi, WifiOff, AlertCircle
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { PLATFORM_DOMAIN } from "@/lib/platform"
 
-const PLATFORM_DOMAIN = "bnbwebsitemaken.nl"
 
 interface DomainDashboardProps {
   slug: string
@@ -160,7 +160,7 @@ export function DomainDashboard({ slug, currentCustomDomain, isPublished }: Doma
             <div className="flex gap-2">
               <Input
                 id="custom-domain"
-                placeholder="mybnb.com"
+                placeholder="mijnbedrijf.nl"
                 value={customDomain}
                 onChange={(e) => setCustomDomain(e.target.value)}
                 className="font-mono text-sm"
@@ -274,3 +274,5 @@ function DnsTable({ rows }: { rows: { type: string; host: string; value: string 
     </div>
   )
 }
+
+

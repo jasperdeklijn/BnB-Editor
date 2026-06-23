@@ -1,7 +1,7 @@
 import { LegalLayout } from "@/components/layout/legal-layout"
 
 export const metadata = {
-  title: "Notice & Takedown | BnB Website Maken",
+  title: "Notice & Takedown | Website Maker",
   description: "Procedure voor melding van illegale of schadelijke content.",
 }
 
@@ -18,7 +18,7 @@ export default function TakedownPage() {
         <section>
           <h2 className="text-2xl font-bold text-white mb-4">1. Inleiding</h2>
           <p>
-            Deze pagina beschrijft hoe u illegale of schadelijke content op het Platform kunt melden. BnB Website Maken neemt dergelijke meldingen serieus en zal snel optreden.
+            Deze pagina beschrijft hoe u illegale of schadelijke content op het Platform kunt melden. Website Maker neemt dergelijke meldingen serieus en zal snel optreden.
           </p>
         </section>
 
@@ -44,8 +44,8 @@ export default function TakedownPage() {
           <h2 className="text-2xl font-bold text-white mb-4">3. Hoe Te Rapporteren</h2>
           <p className="mb-4">
             Stuur een e-mail naar:{" "}
-            <a href="mailto:abuse@bnbwebsitemaken.nl" className="text-[var(--brand-blue)] hover:underline font-semibold">
-              abuse@bnbwebsitemaken.nl
+            <a href="mailto:abuse@websitebouwer.nl" className="text-[var(--brand-blue)] hover:underline font-semibold">
+              abuse@websitebouwer.nl
             </a>
           </p>
 
@@ -57,7 +57,7 @@ export default function TakedownPage() {
             <li>
               <strong>URL van de pagina:</strong> De volledige link naar de content/Website
               <br />
-              <em className="text-white/70">Voorbeeld: https://example.bnbwebsitemaken.nl/page</em>
+              <em className="text-white/70">Voorbeeld: https://example.websitebouwer.nl/page</em>
             </li>
             <li>
               <strong>Beschrijving van de overtreding:</strong> Wat is er illegaal of schadelijk?
@@ -100,7 +100,7 @@ export default function TakedownPage() {
         <section>
           <h2 className="text-2xl font-bold text-white mb-4">5. Reactietijd</h2>
           <p className="mb-3">
-            BnB Website Maken streeft ernaar:
+            Website Maker streeft ernaar:
           </p>
           <ul className="space-y-2 list-disc list-inside">
             <li>Meldingen binnen <strong>48 uur</strong> te beoordelen</li>
@@ -133,7 +133,7 @@ export default function TakedownPage() {
             Bent u het niet eens met een verwijdering? U kunt beroep instellen:
           </p>
           <ul className="space-y-2 list-disc list-inside">
-            <li>Stuur een e-mail naar <a href="mailto:appeals@bnbwebsitemaken.nl" className="text-[var(--brand-blue)] hover:underline">appeals@bnbwebsitemaken.nl</a></li>
+            <li>Stuur een e-mail naar <a href="mailto:appeals@websitebouwer.nl" className="text-[var(--brand-blue)] hover:underline">appeals@websitebouwer.nl</a></li>
             <li>Leg uit waarom u het niet eens bent</li>
             <li>Dien aanvullende bewijzen in</li>
             <li>We beoordelen het beroep binnen 30 dagen</li>
@@ -160,8 +160,8 @@ export default function TakedownPage() {
           </p>
           <p className="mb-4">
             E-mail:{" "}
-            <a href="mailto:abuse@bnbwebsitemaken.nl" className="text-[var(--brand-blue)] hover:underline font-semibold">
-              abuse@bnbwebsitemaken.nl
+            <a href="mailto:abuse@websitebouwer.nl" className="text-[var(--brand-blue)] hover:underline font-semibold">
+              abuse@websitebouwer.nl
             </a>
           </p>
 
@@ -170,8 +170,8 @@ export default function TakedownPage() {
           </p>
           <p>
             E-mail:{" "}
-            <a href="mailto:appeals@bnbwebsitemaken.nl" className="text-[var(--brand-blue)] hover:underline font-semibold">
-              appeals@bnbwebsitemaken.nl
+            <a href="mailto:appeals@websitebouwer.nl" className="text-[var(--brand-blue)] hover:underline font-semibold">
+              appeals@websitebouwer.nl
             </a>
           </p>
         </section>
@@ -179,10 +179,12 @@ export default function TakedownPage() {
         <section className="pt-6 border-t border-[var(--brand-blue)]/20">
           <h3 className="text-lg font-semibold text-white mb-3">Dank u voor het Helpen</h3>
           <p>
-            Dank u dat u BnB Website Maken veilig en wettelijk confrom houdt. Samen bouwen we een vertrouwde platform.
+            Dank u dat u Website Maker veilig en wettelijk conform houdt. Samen bouwen we een vertrouwd platform.
           </p>
         </section>
       </div>
     </LegalLayout>
   )
 }
+
+

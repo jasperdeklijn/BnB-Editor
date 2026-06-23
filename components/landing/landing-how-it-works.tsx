@@ -6,12 +6,12 @@ const steps = [
     title: "Maak een account aan",
     description: "Registreer gratis en begin direct met het maken van jouw website.",
     image: "/placeholder.svg?height=160&width=280",
-    alt: "Registratieformulier voor BnB Website Maken",
+    alt: "Registratieformulier voor Website Maker",
   },
   {
     step: "02",
     title: "Kies je secties",
-    description: "Kies uit kant-en-klare secties voor B&B's: hero, kamers, galerij, contact en meer.",
+    description: "Kies uit kant-en-klare secties voor bedrijven: hero, diensten, galerij, contact en meer.",
     image: "/placeholder.svg?height=160&width=280",
     alt: "Overzicht van beschikbare website secties",
   },
@@ -25,7 +25,7 @@ const steps = [
   {
     step: "04",
     title: "Publiceer direct",
-    description: "Druk op publiceren en je B&B website staat live met een eigen URL voor je gasten.",
+    description: "Druk op publiceren en je website staat live met een eigen URL voor je klanten.",
     image: "/placeholder.svg?height=160&width=280",
     alt: "Gepubliceerde website met eigen URL",
   },
@@ -68,3 +68,4 @@ export function LandingHowItWorks() {
     </section>
   )
 }
+

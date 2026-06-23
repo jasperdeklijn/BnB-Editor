@@ -42,16 +42,16 @@ export function LandingHero() {
         {/* Demo badge */}
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--brand-purple)]/40 bg-[var(--brand-purple)]/10 px-4 py-1.5">
           <span className="h-2 w-2 rounded-full bg-[var(--brand-purple)] animate-pulse" aria-hidden="true" />
-          <span className="text-sm font-medium text-[var(--brand-purple)]">Professionele B&B websites maken</span>
+          <span className="text-sm font-medium text-[var(--brand-purple)]">Professionele websites maken</span>
         </div>
 
         <h1 className="mb-6 text-balance text-5xl font-bold leading-tight tracking-tight text-white md:text-6xl lg:text-7xl">
-          Bouw jouw B&B website{" "}
+          Bouw jouw website{" "}
           <span className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] bg-clip-text text-transparent">zonder code</span>
         </h1>
 
         <p className="mx-auto mb-10 max-w-2xl text-pretty text-xl leading-relaxed text-white/60">
-          Met BnB Website Maken bouw je eenvoudig een professionele website voor jouw bed & breakfast. 
+          Met Website Maker bouw je eenvoudig een professionele website voor jouw kleine bedrijf. 
           Kies secties, pas content aan en publiceer direct online.
         </p>
 
@@ -74,7 +74,7 @@ export function LandingHero() {
         </div>
 
         <p className="mt-5 text-sm text-white/30">
-          Start vandaag nog met het maken van jouw professionele B&B website.
+          Start vandaag nog met het maken van jouw professionele website.
         </p>
       </div>
 
@@ -87,12 +87,12 @@ export function LandingHero() {
             <div className="h-3 w-3 rounded-full bg-yellow-400/60" aria-hidden="true" />
             <div className="h-3 w-3 rounded-full bg-green-400/60" aria-hidden="true" />
             <div className="mx-3 flex-1 rounded-md bg-white/10 px-3 py-1 text-xs text-white/40">
-              bnbwebsitemaken.nl / editor
+              websitebouwer.nl / editor
             </div>
           </div>
           {/* Screenshot image */}
           <video
-            aria-label="Voorbeeld van BnB Website Maken — professionele website bouwer voor bed & breakfast"
+            aria-label="Voorbeeld van Website Maker — professionele websitebouwer voor kleine bedrijven"
             width={1200}
             height={350}
             className="w-full"
@@ -109,3 +109,5 @@ export function LandingHero() {
     </section>
   )
 }
+
+

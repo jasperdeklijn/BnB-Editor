@@ -92,9 +92,9 @@ export function SelectionEditor({
 }: SelectionEditorProps) {
   const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null)
 
-  // Rooms selector state
-  const [availableRooms, setAvailableRooms] = useState<AvailableRoom[]>([])
-  const [loadingRooms, setLoadingRooms] = useState(false)
+  // Diensten selector state
+  const [availableDiensten, setAvailableDiensten] = useState<AvailableRoom[]>([])
+  const [loadingDiensten, setLoadingDiensten] = useState(false)
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -108,9 +108,9 @@ export function SelectionEditor({
     if (selectedSection?.type !== "rooms" && selectedSection?.type !== "services") return
 
     let cancelled = false
-    setLoadingRooms(true)
+    setLoadingDiensten(true)
 
-    const fetchRooms = async () => {
+    const fetchDiensten = async () => {
       try {
         const supabase = createClient()
 
@@ -121,7 +121,7 @@ export function SelectionEditor({
           const {
             data: { user },
           } = await supabase.auth.getUser()
-          if (!user || cancelled) { setLoadingRooms(false); return }
+          if (!user || cancelled) { setLoadingDiensten(false); return }
 
           const { data: business } = await supabase
             .from("businesses")
@@ -131,7 +131,7 @@ export function SelectionEditor({
             .limit(1)
             .maybeSingle()
 
-          if (!business || cancelled) { setLoadingRooms(false); return }
+          if (!business || cancelled) { setLoadingDiensten(false); return }
           resolvedBusinessId = business.id
         }
 
@@ -144,7 +144,7 @@ export function SelectionEditor({
           .order("position", { ascending: true })
 
         if (!cancelled) {
-          setAvailableRooms(
+          setAvailableDiensten(
             (serviceRows ?? []).map((service) => ({
               id: service.id,
               name: service.title,
@@ -156,10 +156,10 @@ export function SelectionEditor({
       } catch {
         // ignore
       }
-      if (!cancelled) setLoadingRooms(false)
+      if (!cancelled) setLoadingDiensten(false)
     }
 
-    fetchRooms()
+    fetchDiensten()
     return () => { cancelled = true }
   }, [businessId, selectedSection?.id, selectedSection?.type])
 
@@ -436,7 +436,7 @@ export function SelectionEditor({
 
         {(selectedSection.type === "rooms" || selectedSection.type === "services") && (
           <>
-            {/* Rooms Layout Selector */}
+            {/* Diensten Layout Selector */}
             <Card className="p-4 space-y-3">
               <Label className="flex items-center gap-2">
                 <LayoutGrid className="h-3.5 w-3.5" />
@@ -489,7 +489,7 @@ export function SelectionEditor({
               </p>
             </Card>
 
-            {/* Rooms Title + selector */}
+            {/* Diensten Title + selector */}
             <Card className="p-4 space-y-3">
               <Label className="flex items-center gap-2">
                 <Type className="h-3.5 w-3.5" />
@@ -510,11 +510,11 @@ export function SelectionEditor({
                   Laat leeg om alle diensten te tonen, of selecteer specifieke diensten.
                 </p>
 
-                {loadingRooms ? (
+                {loadingDiensten ? (
                   <div className="flex items-center justify-center py-6">
                     <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                   </div>
-                ) : availableRooms.length === 0 ? (
+                ) : availableDiensten.length === 0 ? (
                   <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border py-6 text-center">
                     <Briefcase className="h-8 w-8 text-muted-foreground/40" />
                     <div>
@@ -526,7 +526,7 @@ export function SelectionEditor({
                       </p>
                     </div>
                     <Link
-                      href="/editor/rooms"
+                      href="/editor/services"
                       className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
                     >
                       <ExternalLink className="h-3 w-3" />
@@ -535,7 +535,7 @@ export function SelectionEditor({
                   </div>
                 ) : (
                   <div className="space-y-1.5">
-                    {availableRooms.map((room) => {
+                    {availableDiensten.map((room) => {
                       const selectedIds =
                         ((selectedSection.data as any).roomIds as string[]) ?? []
                       const isSelected =
@@ -592,7 +592,7 @@ export function SelectionEditor({
                       )
                     })}
 
-                    {/* Show "all rooms" reset option */}
+                    {/* Show "all services" reset option */}
                     {((selectedSection.data as any).roomIds as string[] | undefined)?.length ? (
                       <button
                         type="button"
@@ -604,7 +604,7 @@ export function SelectionEditor({
                     ) : null}
 
                     <Link
-                      href="/editor/rooms"
+                      href="/editor/services"
                       className="flex items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
                     >
                       <ExternalLink className="h-3 w-3" />
@@ -884,7 +884,7 @@ export function SelectionEditor({
                 onChange={(e) => updateField("recipientEmail", e.target.value)}
               />
               <p className="text-[10px] text-muted-foreground">
-                Verzonden vanaf: info@bnbwebsitemaken.nl
+                Verzonden vanaf: info@websitebouwer.nl
               </p>
             </Card>
           </>
@@ -1646,4 +1646,7 @@ export function SelectionEditor({
     </div>
   )
 }
+
+
+
 

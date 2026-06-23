@@ -31,10 +31,10 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
-interface RoomsClientProps {
+interface DienstenClientProps {
   userId: string
   bnbId: string
-  initialRooms: Room[]
+  initialDiensten: Room[]
 }
 
 // ---- Image card in the sidebar (draggable) ----
@@ -310,8 +310,8 @@ function ServiceCard({ room, onUpdate, onDelete, isSaving }: ServiceCardProps) {
 }
 
 // ---- Main client component ----
-export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
-  const [rooms, setRooms] = useState<Room[]>(initialRooms)
+export function DienstenClient({ userId, bnbId, initialDiensten }: DienstenClientProps) {
+  const [rooms, setDiensten] = useState<Room[]>(initialDiensten)
   const [images, setImages] = useState<{ name: string; url: string }[]>([])
   const [isLoadingImages, setIsLoadingImages] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -356,7 +356,7 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
         images: [],
         position: rooms.length,
       })
-      setRooms((prev) => [...prev, newRoom])
+      setDiensten((prev) => [...prev, newRoom])
       toast.success("Dienst aangemaakt")
     } catch (err) {
       console.error(err)
@@ -388,14 +388,14 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
 
   const handleUpdateRoom = async (id: string, updates: Partial<RoomInput>) => {
     // Optimistic update
-    setRooms((prev) =>
+    setDiensten((prev) =>
       prev.map((r) => (r.id === id ? { ...r, ...updates } : r))
     )
 
     setIsSaving(true)
     try {
       const updated = await apiUpdateRoom(id, updates)
-      setRooms((prev) => prev.map((r) => (r.id === id ? updated : r)))
+      setDiensten((prev) => prev.map((r) => (r.id === id ? updated : r)))
     } catch (err) {
       console.error(err)
       toast.error("Bijwerken mislukt")
@@ -407,7 +407,7 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
   const handleDeleteRoom = async (id: string) => {
     // Optimistic delete
     const prev = rooms
-    setRooms((r) => r.filter((room) => room.id !== id))
+    setDiensten((r) => r.filter((room) => room.id !== id))
 
     setIsSaving(true)
     try {
@@ -415,7 +415,7 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
       toast.success("Dienst verwijderd")
     } catch (err) {
       console.error(err)
-      setRooms(prev)
+      setDiensten(prev)
       toast.error("Verwijderen mislukt")
     } finally {
       setIsSaving(false)
@@ -537,3 +537,4 @@ export function RoomsClient({ userId, bnbId, initialRooms }: RoomsClientProps) {
     </div>
   )
 }
+

@@ -54,7 +54,7 @@ interface FormState {
 
 type FieldKey = keyof FormState
 
-function useRequestForm(recipientEmail?: string, requestType: RequestType = "contact") {
+function useRequestForm(recipientEmail?: string, requestType: RequestType = "contact", businessId?: string, websiteId?: string) {
   const [form, setForm] = useState<FormState>({
     name: "",
     email: "",
@@ -75,10 +75,10 @@ function useRequestForm(recipientEmail?: string, requestType: RequestType = "con
     setStatus("loading")
     setErrorMsg("")
     try {
-      const res = await fetch("/api/contact", {
+      const res = await fetch("/api/requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, recipientEmail, requestType }),
+        body: JSON.stringify({ ...form, recipientEmail, requestType, businessId, websiteId, source: "request_form_section" }),
       })
       const json = await res.json()
       if (!res.ok) {
@@ -112,13 +112,15 @@ export function RequestFormSection({ data, styles, isPreview }: RequestFormSecti
   const subtitle = data.subtitle as string | undefined
   const requestType = ((data.requestType as RequestType) || "contact") satisfies RequestType
   const recipientEmail = data.recipientEmail as string | undefined
+  const businessId = data.businessId as string | undefined
+  const websiteId = data.websiteId as string | undefined
   const whatsappNumber = data.whatsappNumber as string | undefined
   const fields = (data.fields as FieldKey[]) || ["name", "email", "phone", "message"]
 
   const config = REQUEST_TYPE_CONFIG[requestType] ?? REQUEST_TYPE_CONFIG.contact
   const Icon = config.icon
 
-  const { form, update, submit, status, errorMsg } = useRequestForm(recipientEmail, requestType)
+  const { form, update, submit, status, errorMsg } = useRequestForm(recipientEmail, requestType, businessId, websiteId)
 
   const sectionStyle: React.CSSProperties = {
     backgroundColor: styles?.backgroundColor,
@@ -324,3 +326,4 @@ export function RequestFormSection({ data, styles, isPreview }: RequestFormSecti
     </section>
   )
 }
+

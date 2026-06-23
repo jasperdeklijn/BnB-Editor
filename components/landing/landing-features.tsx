@@ -9,9 +9,9 @@ const features = [
     alt: "Schermafbeelding van de drag-and-drop editor interface",
   },
   {
-    title: "Kant-en-klare B&B secties",
+    title: "Kant-en-klare bedrijf secties",
     description:
-      "Hero banners, kameroverzichten, voorzieningen, fotogalerijen, contactformulieren en meer — allemaal speciaal voor B&B's gemaakt.",
+      "Hero banners, dienstoverzichten, voorzieningen, fotogalerijen, contactformulieren en meer — allemaal speciaal voor bedrijven gemaakt.",
     image: "/placeholder.svg?height=200&width=400",
     alt: "Voorbeeld van kant-en-klare website secties voor een bed and breakfast",
   },
@@ -27,19 +27,19 @@ const features = [
     description:
       "Upload je eigen foto's van het pand en beheer ze vanuit een centrale bibliotheek die altijd binnen handbereik is.",
     image: "/placeholder.svg?height=200&width=400",
-    alt: "Afbeeldingenbibliotheek met foto's van een B&B",
+    alt: "Afbeeldingenbibliotheek met foto's van een bedrijf",
   },
   {
     title: "Direct publiceren",
     description:
-      "Publiceer je wijzigingen met een klik. Je gasten zien de updates meteen, geen deploy pipeline nodig.",
+      "Publiceer je wijzigingen met een klik. Je klanten zien de updates meteen, geen deploy pipeline nodig.",
     image: "/placeholder.svg?height=200&width=400",
     alt: "Publiceerknop en live preview van de website",
   },
   {
     title: "Veilig & altijd online",
     description:
-      "Gebouwd op Supabase en Vercel. Je data is veilig en je site is snel, waar je gasten ook zijn.",
+      "Gebouwd op Supabase en Vercel. Je data is veilig en je site is snel, waar je klanten ook zijn.",
     image: "/placeholder.svg?height=200&width=400",
     alt: "Beveiligingspictogrammen en uptime statistieken",
   },
@@ -52,10 +52,10 @@ export function LandingFeatures() {
         <div className="mb-16 text-center">
           <p className="mb-3 text-sm font-medium uppercase tracking-widest text-[var(--brand-purple)]">Functies</p>
           <h2 className="text-balance text-4xl font-bold text-[var(--foreground)] md:text-5xl">
-            Alles wat jouw B&B website nodig heeft
+            Alles wat jouw website nodig heeft
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-pretty text-lg leading-relaxed text-[var(--muted-foreground)]">
-            Een gerichte set tools speciaal voor bed & breakfast eigenaren — eenvoudig en effectief.
+            Een gerichte set tools speciaal voor kleine bedrijven eigenaren — eenvoudig en effectief.
           </p>
         </div>
 
@@ -86,3 +86,5 @@ export function LandingFeatures() {
     </section>
   )
 }
+
+

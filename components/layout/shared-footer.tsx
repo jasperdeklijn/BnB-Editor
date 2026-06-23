@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { PLATFORM_EMAILS } from "@/lib/platform"
 import Image from "next/image"
 
 export function SharedFooter() {
@@ -10,13 +11,13 @@ export function SharedFooter() {
           <div className="flex flex-col gap-2">
             <Image
               src="/logo_klein.png"
-              alt="BnB Website Maken"
+              alt="Website Maker"
               width={120}
               height={60}
               className="h-10 w-auto"
             />
             <p className="text-xs text-white/50">
-              &copy; {new Date().getFullYear()} BnB Website Maken
+              &copy; {new Date().getFullYear()} Website Maker
             </p>
           </div>
 
@@ -46,7 +47,7 @@ export function SharedFooter() {
               <Link href="/" className="text-xs text-white/50 hover:text-[var(--brand-blue)] transition-colors">
                 Contact
               </Link>
-              <a href="mailto:support@bnbwebsitemaken.nl" className="text-xs text-white/50 hover:text-[var(--brand-blue)] transition-colors">
+              <a href={`mailto:${PLATFORM_EMAILS.support}`} className="text-xs text-white/50 hover:text-[var(--brand-blue)] transition-colors">
                 Support
               </a>
             </nav>
@@ -77,10 +78,12 @@ export function SharedFooter() {
 
         <div className="border-t border-[var(--brand-blue)]/10 pt-8">
           <p className="text-xs text-white/30 text-center">
-            BnB Website Maken — Platform voor het maken en hosten van jouw B&B website
+            Website Maker — Platform voor het maken en hosten van jouw website
           </p>
         </div>
       </div>
     </footer>
   )
 }
+
+

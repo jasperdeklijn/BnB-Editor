@@ -63,10 +63,10 @@ export function BnbDetailsClient({ initialBnb }: BnbDetailsClientProps) {
         website_url: websiteUrl || null,
       })
       setBnb(updated)
-      toast.success("BnB details saved")
+      toast.success("Bedrijfsgegevens opgeslagen")
     } catch (err) {
       console.error(err)
-      toast.error("Failed to save BnB details")
+      toast.error("Bedrijfsgegevens opslaan is mislukt")
     } finally {
       setIsSaving(false)
     }
@@ -94,7 +94,7 @@ export function BnbDetailsClient({ initialBnb }: BnbDetailsClientProps) {
               </Label>
               <Input
                 id="name"
-                placeholder="Sunset Villa BnB"
+                placeholder="Mijn bedrijf"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
@@ -309,3 +309,4 @@ export function BnbDetailsClient({ initialBnb }: BnbDetailsClientProps) {
     </div>
   )
 }
+

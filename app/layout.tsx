@@ -9,8 +9,8 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'BnB Website Maken',
-  description: 'Bouw eenvoudig een professionele website voor jouw bed & breakfast. Geen code nodig, direct online.',
+  title: 'Website Maker',
+  description: 'Bouw eenvoudig een professionele website voor jouw kleine bedrijf. Geen code nodig, direct online.',
   generator: 'v0.app',
   icons: [
     { rel: 'icon', url: '/favicon_48x48.png', sizes: '48x48' },
@@ -33,3 +33,4 @@ export default function RootLayout({
     </html>
   )
 }
+

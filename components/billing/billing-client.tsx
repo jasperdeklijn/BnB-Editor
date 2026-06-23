@@ -90,7 +90,7 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
               isEnabled={addonStates.bookingAddon}
               monthlyPrice={19}
               features={[
-                "Boekingsaanvragen van gasten",
+                "Aanvragen van klanten",
                 "Beschikbaarheidskalender",
                 "Reserveringsbeheer",
                 "Gastcommunicatie",
@@ -149,3 +149,4 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
     </div>
   )
 }
+

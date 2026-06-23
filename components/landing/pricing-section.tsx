@@ -23,7 +23,7 @@ export function PricingSection() {
             Simpel, transparante prijzen
           </h2>
           <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            Kies het juiste plan voor jouw B&B. Upgraden of downgraden op elk moment.
+            Kies het juiste plan voor jouw bedrijf. Upgraden of downgraden op elk moment.
           </p>
         </div>
 
@@ -64,3 +64,4 @@ export function PricingSection() {
     </section>
   )
 }
+

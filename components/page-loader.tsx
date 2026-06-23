@@ -68,14 +68,15 @@ export async function loadPublicWebsitePage({
         ...(r.content ?? {}),
         bnbId: websiteBusinessId,
         businessId: websiteBusinessId,
+        websiteId: website.id,
         // Set default recipientEmail if not already set
-        recipientEmail: r.content?.recipientEmail || userEmail,
+        recipientEmail: r.content?.recipientEmail || businessDetails?.email || userEmail,
       },
       styles: r.styles || {},
     })
   )
 
-  // Resolve live data for all sections that need it (services, rooms, etc.).
+  // Resolve live data for all sections that need it (services and legacy rooms, etc.).
   // The admin client is used so RLS does not block reads for published sites.
   // Preview shares the same resolver path — resolvers are safe for both modes.
   const resolvedSections = await resolveAllSections(sections, {
@@ -235,6 +236,9 @@ export async function loadPublicWebsitePage({
     </WebsiteThemeProvider>
   )
 }
+
+
+
 
 
 

@@ -18,7 +18,7 @@ export function LandingCta() {
           <div className="overflow-hidden rounded-2xl border border-[var(--brand-blue)]/20">
             <Image
               src="/placeholder.svg?height=400&width=500"
-              alt="Voorbeeld van een professionele B&B website gemaakt met BnB Website Maken"
+              alt="Voorbeeld van een professionele website gemaakt met Website Maker"
               width={500}
               height={400}
               className="h-full w-full object-cover"
@@ -32,14 +32,14 @@ export function LandingCta() {
               Professioneel
             </div>
             <h2 className="mb-4 text-balance text-4xl font-bold text-white">
-              Klaar om jouw B&B website te{" "}
+              Klaar om jouw website te{" "}
               <span className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] bg-clip-text text-transparent">
                 maken
               </span>
               ?
             </h2>
             <p className="mb-8 text-pretty text-lg leading-relaxed text-white/55">
-              Maak een account aan en begin direct met het ontwerpen van jouw professionele B&B website.
+              Maak een account aan en begin direct met het ontwerpen van jouw professionele website.
               Kies uit kant-en-klare secties, upload je eigen foto's en publiceer binnen minuten.
             </p>
             <div className="flex flex-col items-center gap-4 sm:flex-row md:justify-start">
@@ -68,3 +68,4 @@ export function LandingCta() {
     </section>
   )
 }
+

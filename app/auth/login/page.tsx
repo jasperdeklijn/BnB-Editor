@@ -63,17 +63,17 @@ export default function LoginPage() {
           <h1 className="mb-4 text-3xl font-bold text-white text-balance">
             {"Welkom terug bij "}
             <span className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] bg-clip-text text-transparent">
-              BnB Website Maken
+              Website Maker
             </span>
           </h1>
           <p className="text-white/60 leading-relaxed">
-            Bouw prachtige websites voor jouw bed & breakfast. Bewerk, publiceer en beheer alles vanuit één plek.
+            Bouw prachtige websites voor jouw kleine bedrijf. Bewerk, publiceer en beheer alles vanuit één plek.
           </p>
 
           <div className="mt-10 rounded-xl border border-[var(--brand-blue)]/20 overflow-hidden shadow-2xl shadow-[var(--brand-blue)]/10">
             <img
               src="/placeholder.svg?height=300&width=500"
-              alt="BnB Website Maken voorbeeld dashboard"
+              alt="Website Maker voorbeeld dashboard"
               className="w-full"
               width={500}
               height={300}
@@ -89,7 +89,7 @@ export default function LoginPage() {
           <div className="mb-8 flex items-center lg:hidden">
             <Image
               src="/logo.png"
-              alt="BnB Website Maken"
+              alt="Website Maker"
               width={180}
               height={50}
               className="h-12 w-auto"
@@ -176,3 +176,4 @@ export default function LoginPage() {
     </div>
   )
 }
+

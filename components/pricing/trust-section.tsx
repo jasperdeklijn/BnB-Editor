@@ -49,9 +49,10 @@ export function TrustSection() {
 
       <div className="mt-12 text-center">
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Vertrouwd door meer dan 500+ B&B eigenaren in Nederland
+          Vertrouwd door meer dan 500+ bedrijf eigenaren in Nederland
         </p>
       </div>
     </section>
   )
 }
+

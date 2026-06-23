@@ -13,7 +13,7 @@ export function SharedHeader({ title }: SharedHeaderProps) {
         <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
           <Image
             src="/logo.png"
-            alt="BnB Website Maken"
+            alt="Website Maker"
             width={160}
             height={48}
             className="h-12 w-auto"
@@ -38,3 +38,4 @@ export function SharedHeader({ title }: SharedHeaderProps) {
     </header>
   )
 }
+

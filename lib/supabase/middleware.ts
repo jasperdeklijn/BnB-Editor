@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
+import { PLATFORM_DOMAIN } from "@/lib/platform"
 
-const PLATFORM_DOMAIN = "bnbwebsitemaken.nl"
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -96,6 +96,7 @@ console.log("HOST:", hostname)
   if (
     request.nextUrl.pathname !== "/" &&
     !user &&
+    !request.nextUrl.pathname.startsWith("/api") &&
     !request.nextUrl.pathname.startsWith("/login") &&
     !request.nextUrl.pathname.startsWith("/auth") &&
     !request.nextUrl.pathname.startsWith("/editor-demo.mp4") &&
@@ -111,3 +112,7 @@ console.log("HOST:", hostname)
 
   return supabaseResponse
 }
+
+
+
+

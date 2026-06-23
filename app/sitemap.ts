@@ -1,7 +1,8 @@
-import { MetadataRoute } from 'next'
+import type { MetadataRoute } from 'next'
+import { PLATFORM_BASE_URL } from '@/lib/platform'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = 'https://bnbwebsitemaken.nl'
+  const baseUrl = PLATFORM_BASE_URL
 
   const staticUrls: MetadataRoute.Sitemap = [
     {

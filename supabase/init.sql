@@ -18,6 +18,7 @@ create extension if not exists "pgcrypto";
 -- Reset application schema objects
 -- ------------------------------------------------------------
 
+drop table if exists public.contact_requests cascade;
 drop table if exists public.section_transitions cascade;
 drop table if exists public.website_sections cascade;
 drop table if exists public.services cascade;
@@ -189,6 +190,26 @@ create table public.website_sections (
   updated_at timestamptz not null default now()
 );
 
+create table public.contact_requests (
+  id uuid primary key default gen_random_uuid(),
+  website_id uuid references public.websites(id) on delete set null,
+  business_id uuid references public.businesses(id) on delete set null,
+  user_id uuid references auth.users(id) on delete set null,
+  request_type text not null default 'contact'
+    check (request_type in ('contact', 'quote', 'appointment', 'booking_request', 'whatsapp')),
+  name text not null default '',
+  email text not null default '',
+  phone text not null default '',
+  service text not null default '',
+  preferred_date text not null default '',
+  budget text not null default '',
+  message text not null default '',
+  payload jsonb not null default '{}'::jsonb,
+  recipient_email text not null default '',
+  source text not null default 'website_form',
+  created_at timestamptz not null default now()
+);
+
 create table public.section_transitions (
   id uuid primary key default gen_random_uuid(),
   website_id uuid not null references public.websites(id) on delete cascade,
@@ -233,6 +254,10 @@ create index idx_website_sections_website_id on public.website_sections (website
 create index idx_website_sections_position on public.website_sections (website_id, position);
 create index idx_website_sections_type on public.website_sections (type);
 
+create index idx_contact_requests_website_id on public.contact_requests (website_id);
+create index idx_contact_requests_business_id on public.contact_requests (business_id);
+create index idx_contact_requests_user_id_created_at on public.contact_requests (user_id, created_at desc);
+
 create index idx_section_transitions_website_id on public.section_transitions (website_id);
 create index idx_section_transitions_from_section on public.section_transitions (from_section_id);
 create index idx_section_transitions_to_section on public.section_transitions (to_section_id);
@@ -248,6 +273,7 @@ alter table public.services enable row level security;
 alter table public.websites enable row level security;
 alter table public.website_sections enable row level security;
 alter table public.section_transitions enable row level security;
+alter table public.contact_requests enable row level security;
 
 -- Legacy bnbs
 create policy "Users can view own bnb"
@@ -481,6 +507,19 @@ create policy "Users can delete their own website sections"
     )
   );
 
+-- Contact requests
+create policy "Users can view own contact requests"
+  on public.contact_requests for select
+  using (auth.uid() = user_id);
+
+create policy "Anyone can insert public contact requests"
+  on public.contact_requests for insert
+  with check (true);
+
+create policy "Users can delete own contact requests"
+  on public.contact_requests for delete
+  using (auth.uid() = user_id);
+
 -- Section transitions
 create policy "Anyone can view transitions of published websites"
   on public.section_transitions for select
@@ -595,3 +634,4 @@ create policy "Users can update their own images"
   );
 
 commit;
+

@@ -1,7 +1,7 @@
 import { LegalLayout } from "@/components/layout/legal-layout"
 
 export const metadata = {
-  title: "Acceptable Use Policy | BnB Website Maken",
+  title: "Acceptable Use Policy | Website Maker",
   description: "Lees onze Acceptable Use Policy.",
 }
 
@@ -18,7 +18,7 @@ export default function AUPPage() {
         <section>
           <h2 className="text-2xl font-bold text-white mb-4">1. Inleiding</h2>
           <p>
-            Deze Acceptable Use Policy (AUP) beschrijft welk gedrag en content niet acceptabel zijn op BnB Website Maken. Door het Platform te gebruiken, gaat u akkoord met deze beperkingen.
+            Deze Acceptable Use Policy (AUP) beschrijft welk gedrag en content niet acceptabel zijn op Website Maker. Door het Platform te gebruiken, gaat u akkoord met deze beperkingen.
           </p>
         </section>
 
@@ -136,8 +136,8 @@ export default function AUPPage() {
             Als u content ziet die deze AUP schendt, rapporteer dit via:
           </p>
           <p>
-            <a href="mailto:abuse@bnbwebsitemaken.nl" className="text-[var(--brand-blue)] hover:underline">
-              abuse@bnbwebsitemaken.nl
+            <a href="mailto:abuse@websitebouwer.nl" className="text-[var(--brand-blue)] hover:underline">
+              abuse@websitebouwer.nl
             </a>
           </p>
           <p className="mt-3">
@@ -149,8 +149,8 @@ export default function AUPPage() {
           <h3 className="text-lg font-semibold text-white mb-3">Vragen?</h3>
           <p>
             Neem contact op via{" "}
-            <a href="mailto:support@bnbwebsitemaken.nl" className="text-[var(--brand-blue)] hover:underline">
-              support@bnbwebsitemaken.nl
+            <a href="mailto:support@websitebouwer.nl" className="text-[var(--brand-blue)] hover:underline">
+              support@websitebouwer.nl
             </a>
           </p>
         </section>
@@ -158,3 +158,4 @@ export default function AUPPage() {
     </LegalLayout>
   )
 }
+

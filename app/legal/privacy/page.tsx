@@ -1,8 +1,8 @@
 import { LegalLayout } from "@/components/layout/legal-layout"
 
 export const metadata = {
-  title: "Privacyverklaring | BnB Website Maken",
-  description: "Lees hoe we uw persoonsgegevens verwerken op BnB Website Maken.",
+  title: "Privacyverklaring | Website Maker",
+  description: "Lees hoe we uw persoonsgegevens verwerken op Website Maker.",
 }
 
 export default function PrivacyPage() {
@@ -18,7 +18,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-2xl font-bold text-white mb-4">1. Inleiding</h2>
           <p>
-            BnB Website Maken ("het Platform") respecteert uw privacy. Deze privacyverklaring beschrijft hoe we uw persoonsgegevens verzamelen, gebruiken en beschermen in overeenstemming met de Algemene Verordening Gegevensbescherming (GDPR/AVG).
+            Website Maker ("het Platform") respecteert uw privacy. Deze privacyverklaring beschrijft hoe we uw persoonsgegevens verzamelen, gebruiken en beschermen in overeenstemming met de Algemene Verordening Gegevensbescherming (GDPR/AVG).
           </p>
         </section>
 
@@ -130,8 +130,8 @@ export default function PrivacyPage() {
           </ul>
           <p className="mt-3">
             Om deze rechten uit te oefenen, mail{" "}
-            <a href="mailto:privacy@bnbwebsitemaken.nl" className="text-[var(--brand-blue)] hover:underline">
-              privacy@bnbwebsitemaken.nl
+            <a href="mailto:privacy@websitebouwer.nl" className="text-[var(--brand-blue)] hover:underline">
+              privacy@websitebouwer.nl
             </a>
           </p>
         </section>
@@ -165,8 +165,8 @@ export default function PrivacyPage() {
           </p>
           <p className="mb-3">
             E-mail:{" "}
-            <a href="mailto:privacy@bnbwebsitemaken.nl" className="text-[var(--brand-blue)] hover:underline">
-              privacy@bnbwebsitemaken.nl
+            <a href="mailto:privacy@websitebouwer.nl" className="text-[var(--brand-blue)] hover:underline">
+              privacy@websitebouwer.nl
             </a>
           </p>
           <p className="mb-3">
@@ -190,3 +190,4 @@ export default function PrivacyPage() {
     </LegalLayout>
   )
 }
+

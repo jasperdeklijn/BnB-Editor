@@ -68,7 +68,7 @@ export function LandingNav() {
         <div className="flex items-center">
           <Image
             src="/logo.png"
-            alt="BnB Website Maken"
+            alt="Website Maker"
             width={160}
             height={48}
             className="h-12 w-auto"
@@ -183,3 +183,4 @@ export function LandingNav() {
     </header>
   )
 }
+

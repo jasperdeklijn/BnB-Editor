@@ -1,8 +1,8 @@
 import { LegalLayout } from "@/components/layout/legal-layout"
 
 export const metadata = {
-  title: "Disclaimer | BnB Website Maken",
-  description: "Disclaimer van BnB Website Maken.",
+  title: "Disclaimer | Website Maker",
+  description: "Disclaimer van Website Maker.",
 }
 
 export default function DisclaimerPage() {
@@ -18,7 +18,7 @@ export default function DisclaimerPage() {
         <section>
           <h2 className="text-2xl font-bold text-white mb-4">1. Algemene Disclaimer</h2>
           <p>
-            BnB Website Maken biedt een website builder en hosting platform. Dit document verhelderst de aansprakelijkheidsgrenzen en risico's.
+            Website Maker biedt een website builder en hosting platform. Dit document verhelderst de aansprakelijkheidsgrenzen en risico's.
           </p>
         </section>
 
@@ -55,7 +55,7 @@ export default function DisclaimerPage() {
         <section>
           <h2 className="text-2xl font-bold text-white mb-4">4. Platform Is Niet Aansprakelijk Voor</h2>
           <p className="mb-3">
-            BnB Website Maken is <strong>niet aansprakelijk</strong> voor:
+            Website Maker is <strong>niet aansprakelijk</strong> voor:
           </p>
           <ul className="space-y-3 list-disc list-inside">
             <li>
@@ -104,7 +104,7 @@ export default function DisclaimerPage() {
         <section>
           <h2 className="text-2xl font-bold text-white mb-4">6. Beperking van Aansprakelijkheid</h2>
           <p className="mb-3">
-            De maximale aansprakelijkheid van BnB Website Maken voor alle vorderingen is beperkt tot:
+            De maximale aansprakelijkheid van Website Maker voor alle vorderingen is beperkt tot:
           </p>
           <p className="text-base text-[var(--brand-blue)] font-semibold mb-3">
             Het bedrag dat u in het voorbije 12 maanden aan het Platform hebt betaald
@@ -144,7 +144,7 @@ export default function DisclaimerPage() {
         <section>
           <h2 className="text-2xl font-bold text-white mb-4">9. Aansprakelijkheid van Gebruikers</h2>
           <p className="mb-3">
-            U stelt BnB Website Maken vrijwarig van:
+            U stelt Website Maker vrijwarig van:
           </p>
           <ul className="space-y-2 list-disc list-inside">
             <li>Claims gerelateerd aan uw Website</li>
@@ -158,7 +158,7 @@ export default function DisclaimerPage() {
         <section>
           <h2 className="text-2xl font-bold text-white mb-4">10. Links en Derden</h2>
           <p className="mb-3">
-            BnB Website Maken:
+            Website Maker:
           </p>
           <ul className="space-y-2 list-disc list-inside">
             <li>Is niet verantwoordelijk voor content van linksites</li>
@@ -175,7 +175,7 @@ export default function DisclaimerPage() {
           <ul className="space-y-2 list-disc list-inside">
             <li>Kunnen we dit niet volledig voorkomen</li>
             <li>Bent u verantwoordelijk voor moderation van opmerkingen/content op uw Website</li>
-            <li>U kunt dit rapporteren via abuse@bnbwebsitemaken.nl</li>
+            <li>U kunt dit rapporteren via abuse@websitebouwer.nl</li>
           </ul>
         </section>
 
@@ -193,8 +193,8 @@ export default function DisclaimerPage() {
           </p>
           <p>
             Vragen? Neem contact op via{" "}
-            <a href="mailto:support@bnbwebsitemaken.nl" className="text-[var(--brand-blue)] hover:underline">
-              support@bnbwebsitemaken.nl
+            <a href="mailto:support@websitebouwer.nl" className="text-[var(--brand-blue)] hover:underline">
+              support@websitebouwer.nl
             </a>
           </p>
         </section>
@@ -202,3 +202,4 @@ export default function DisclaimerPage() {
     </LegalLayout>
   )
 }
+

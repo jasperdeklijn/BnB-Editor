@@ -9,10 +9,10 @@ import type { Room } from "@/lib/supabase/bnb"
 import Link from "next/link"
 import { Briefcase, Users, ChevronLeft, ChevronRight, DollarSign } from "lucide-react"
 
-export type RoomsLayout = "grid" | "list" | "featured" | "magazine" | "minimal" | "carousel"
-export type ServicesLayout = RoomsLayout
+export type DienstenLayout = "grid" | "list" | "featured" | "magazine" | "minimal" | "carousel"
+export type ServicesLayout = DienstenLayout
 
-interface RoomsSectionProps {
+interface DienstenSectionProps {
   data: Record<string, unknown>
   isPreview: boolean
   styles?: SectionStyles
@@ -482,13 +482,13 @@ function CarouselLayout({
 
 // ---- Main section component ----
 
-export function RoomsSection({ data, styles }: RoomsSectionProps) {
+export function DienstenSection({ data, styles }: DienstenSectionProps) {
   const title = (data.title as string) || "Onze diensten"
-  const layout = (data.layout as RoomsLayout) || "grid"
+  const layout = (data.layout as DienstenLayout) || "grid"
   // Support both new `serviceIds` and legacy `roomIds` keys.
   const roomIds = (data.serviceIds ?? data.roomIds) as string[] | undefined
 
-  const [rooms, setRooms] = useState<Room[]>([])
+  const [rooms, setDiensten] = useState<Room[]>([])
   const [loading, setLoading] = useState(true)
 
   const businessId = (data.businessId ?? data.bnbId) as string | null | undefined
@@ -497,7 +497,7 @@ export function RoomsSection({ data, styles }: RoomsSectionProps) {
   useEffect(() => {
     let cancelled = false
 
-    const fetchRooms = async () => {
+    const fetchDiensten = async () => {
       setLoading(true)
       try {
         // If service data is already provided (from server-side fetch), use it.
@@ -524,7 +524,7 @@ export function RoomsSection({ data, styles }: RoomsSectionProps) {
             result = result.filter((r) => roomIds.includes(r.id))
           }
 
-          setRooms(result)
+          setDiensten(result)
           setLoading(false)
           return
         }
@@ -585,14 +585,14 @@ export function RoomsSection({ data, styles }: RoomsSectionProps) {
           result = result.filter((r) => roomIds.includes(r.id))
         }
 
-        setRooms(result)
+        setDiensten(result)
       } catch {
         // ignore
       }
       if (!cancelled) setLoading(false)
     }
 
-    fetchRooms()
+    fetchDiensten()
     return () => {
       cancelled = true
     }
@@ -702,5 +702,8 @@ export function RoomsSection({ data, styles }: RoomsSectionProps) {
   )
 }
 
-export const ServicesSection = RoomsSection
+export const ServicesSection = DienstenSection
+
+
+
 

@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { ProfileClient } from "@/components/profile/profile-client"
 
 export const metadata = {
-  title: "My Profile | BnB Builder",
+  title: "My Profile | Website Maker",
   description: "Update your personal profile information",
 }
 
@@ -23,3 +23,4 @@ export default async function ProfilePage() {
     />
   )
 }
+

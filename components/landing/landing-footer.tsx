@@ -9,7 +9,7 @@ export function LandingFooter() {
         <div className="flex items-center">
           <Image
             src="/logo.png"
-            alt="BnB Website Maken"
+            alt="Website Maker"
             width={140}
             height={40}
             className="h-10 w-auto"
@@ -30,9 +30,10 @@ export function LandingFooter() {
         </nav>
 
         <p className="text-xs text-white/25">
-          &copy; {new Date().getFullYear()} BnB Website Maken
+          &copy; {new Date().getFullYear()} Website Maker
         </p>
       </div>
     </footer>
   )
 }
+
