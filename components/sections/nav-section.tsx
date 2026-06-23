@@ -31,6 +31,13 @@ const defaultSectionLabels: Record<SectionType, string> = {
   contact: "Contact",
   nav: "Navigatie",
   footer: "Footer",
+  testimonials: "Recensies",
+  faq: "FAQ",
+  opening_hours: "Openingstijden",
+  pricing: "Prijzen",
+  map: "Locatie",
+  cta: "Actie",
+  request_form: "Aanvraag",
 }
 
 // Sections that can appear in navigation
@@ -42,6 +49,13 @@ const navigableSectionTypes: SectionType[] = [
   "gallery",
   "features",
   "amenities",
+  "testimonials",
+  "faq",
+  "opening_hours",
+  "pricing",
+  "map",
+  "cta",
+  "request_form",
   "contact",
 ]
 
@@ -173,3 +187,5 @@ export function NavSection({ data, styles, allSections, device }: NavSectionProp
     </nav>
   )
 }
+
+

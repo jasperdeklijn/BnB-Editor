@@ -703,3 +703,4 @@ export function RoomsSection({ data, styles }: RoomsSectionProps) {
 }
 
 export const ServicesSection = RoomsSection
+

@@ -11,7 +11,7 @@ interface FooterSectionProps {
 }
 
 export function FooterSection({ data, styles }: FooterSectionProps) {
-  const companyName = (data.companyName as string) || "BnB Website Maken"
+  const companyName = (data.companyName as string) || "Mijn bedrijf"
   const companyDescription =
     (data.companyDescription as string) ||
     "A modern website editor for bed and breakfast properties."
@@ -91,3 +91,4 @@ export function FooterSection({ data, styles }: FooterSectionProps) {
     </footer>
   )
 }
+

@@ -356,7 +356,7 @@ function LayoutEditor({
           <Maximize2 className="w-4 h-4" />
           Spacing
         </Label>
-        <RadioGroup value={spacing} onValueChange={(v) => onSpacingChange(v as ThemeSpacing)}>
+        <RadioGroup value={spacing} onValueChange={(value: string) => onSpacingChange(value as ThemeSpacing)}>
           {spacingOptions.map((option) => (
             <div
               key={option.value}
@@ -410,3 +410,4 @@ function LayoutEditor({
     </div>
   );
 }
+

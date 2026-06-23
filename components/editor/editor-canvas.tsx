@@ -23,7 +23,7 @@ interface EditorCanvasProps {
   onSectionSelect: (id: string | null) => void
   device: "desktop" | "tablet" | "mobile"
   websiteId?: string | null
-  bnbId?: string | null
+  businessId?: string | null
   supabase?: SupabaseClient
   isDraggingNewSectionExternal?: boolean
   isDraggingImageExternal?: boolean
@@ -38,7 +38,7 @@ export function EditorCanvas({
   onSectionSelect,
   device,
   websiteId,
-  bnbId,
+  businessId,
   supabase,
   isDraggingNewSectionExternal = false,
   isDraggingImageExternal = false,
@@ -294,7 +294,7 @@ export function EditorCanvas({
   }
 
   const getDefaultSectionData = (type: SectionType): Record<string, unknown> =>
-    getRegistryDefaultSectionData(type, { businessId: bnbId })
+    getRegistryDefaultSectionData(type, { businessId })
 
   const handleDropOnGap = async (e: React.DragEvent, index: number) => {
     e.preventDefault()
@@ -705,3 +705,4 @@ export function EditorCanvas({
     </main>
   )
 }
+

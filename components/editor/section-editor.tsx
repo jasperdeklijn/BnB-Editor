@@ -76,7 +76,7 @@ interface SelectionEditorProps {
   onDelete: (id: string) => void
   onTransitionUpdate: (fromSectionId: string, toSectionId: string, transitionType: string) => void
   websiteId?: string | null
-  bnbId?: string | null
+  businessId?: string | null
 }
 
 export function SelectionEditor({
@@ -88,7 +88,7 @@ export function SelectionEditor({
   onDelete,
   onTransitionUpdate,
   websiteId,
-  bnbId,
+  businessId,
 }: SelectionEditorProps) {
   const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null)
 
@@ -115,7 +115,7 @@ export function SelectionEditor({
         const supabase = createClient()
 
         // Use bnbId prop if available; otherwise fall back to user→bnb lookup
-        let resolvedBusinessId: string | null = bnbId ?? null
+        let resolvedBusinessId: string | null = businessId ?? null
 
         if (!resolvedBusinessId) {
           const {
@@ -161,7 +161,7 @@ export function SelectionEditor({
 
     fetchRooms()
     return () => { cancelled = true }
-  }, [bnbId, selectedSection?.id, selectedSection?.type])
+  }, [businessId, selectedSection?.id, selectedSection?.type])
 
   // Save to database with debouncing
   const saveToDatabase = async (updatedData: any) => {
@@ -1646,3 +1646,4 @@ export function SelectionEditor({
     </div>
   )
 }
+

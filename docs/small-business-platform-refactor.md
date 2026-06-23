@@ -582,7 +582,7 @@ Do not build scheduling inventory in this refactor. Keep advanced availability a
 
 Use these as ticket-sized tasks. Each task should leave the app buildable.
 
-### Milestone 1: Generic Naming Foundation — 🟨 Partially done
+### Milestone 1: Generic Naming Foundation — ✅ Done
 
 - Create generic aliases in `lib/types.ts`: add `services` to `SectionType` while keeping `rooms` temporarily.
 - Add a naming map/constants file for user-facing labels: business, services, features, contact, requests.
@@ -592,9 +592,9 @@ Use these as ticket-sized tasks. Each task should leave the app buildable.
 
 Done when: a new section can be added as "Diensten" and no editor empty/default state says BnB.
 
-Audit note 2026-06-23: generic naming constants and selectable "Diensten" exist, but editor internals still use `bnbId` and query `bnbs` in `components/editor/editor-client.tsx`. Finish by switching editor context to `businessId`/`businesses` and removing visible/default BnB leftovers from editor defaults.
+Completion note 2026-06-23: editor defaults use generic business naming, `components/editor/editor-client.tsx` now loads `businesses` into `businessId`, and editor child props use `businessId` while legacy section data can still read `bnbId` for compatibility.
 
-### Milestone 1.5: Transition Type Cleanup — 🟨 Partially done
+### Milestone 1.5: Transition Type Cleanup — ✅ Done
 
 - Fix `lib/transitions/resolveTransition.ts` so it matches the current `Section` and `Transition` types.
 - Decide whether transitions live only in the normalized `section_transitions` table or whether sections still carry a `transitionToNext` field.
@@ -604,7 +604,7 @@ Audit note 2026-06-23: generic naming constants and selectable "Diensten" exist,
 
 Done when: `npx tsc --noEmit` no longer reports transition-related type errors.
 
-Audit note 2026-06-23: no transition-specific type error was found, but `npx tsc --noEmit` currently fails because `components/sections/nav-section.tsx` has an incomplete `Record<SectionType, string>` after the new generic section types were added.
+Completion note 2026-06-23: `components/sections/nav-section.tsx` now includes all current `SectionType` labels, and `npx tsc --noEmit` passes.
 
 ### Milestone 2: Section Component Reorganization — ✅ Done
 
@@ -695,7 +695,7 @@ Done when: existing users have equivalent business and service records.
 
 Done when: public sites render services through generic business data.
 
-### Milestone 10: Template Presets — 🟨 Partially done
+### Milestone 10: Template Presets — ✅ Done
  
 - Add `lib/business/categories.ts`.
 - Add `components/templates/category-presets.ts`.
@@ -705,9 +705,9 @@ Done when: public sites render services through generic business data.
 
 Done when: selecting a category seeds a useful editable website.
 
-Audit note 2026-06-23: `lib/business/categories.ts` exists with the target categories, but `components/templates/category-presets.ts`, demo service/section presets, and a template picker route or first-run modal are still missing.
+Completion note 2026-06-23: category presets, template selector, template factory, apply API, and `/editor/templates` are wired together. Selecting a category now creates or updates the business, seeds demo services, replaces website sections with preset sections, and redirects to the editor.
 
-### Milestone 11: Theme System — ⬜ Not done
+### Milestone 11: Theme System — ✅ Done
  
 - Add `components/themes/palettes.ts`.
 - Add `components/themes/fonts.ts`.
@@ -718,7 +718,9 @@ Audit note 2026-06-23: `lib/business/categories.ts` exists with the target categ
 
 Done when: users can swap the look without changing section content.
 
-### Milestone 12: New Generic Sections — 🟨 Partially done
+Completion note 2026-06-23: theme primitives, editor UI, `/editor/themes`, `/api/themes`, `websites.theme_config`, public theme application, and missing UI primitives are in place. `npx tsc --noEmit` passes.
+
+### Milestone 12: New Generic Sections — ✅ Done
 
 - Add `testimonials-section`.
 - Add `faq-section`.
@@ -731,7 +733,7 @@ Done when: users can swap the look without changing section content.
 
 Done when: the section picker covers common small-business websites beyond services/gallery/contact.
 
-Audit note 2026-06-23: the new section components exist and are registered, including testimonials, FAQ, opening hours, pricing, map, CTA, and request form. This milestone is not fully done until the new section types compile cleanly and all editor controls are verified; `npx tsc --noEmit` currently fails in `components/sections/nav-section.tsx`.
+Completion note 2026-06-23: the new section components are registered, navigation labels cover all new section types, editor controls are present, and `npx tsc --noEmit` passes.
 
 ### Milestone 13: Contact And Request Flexibility — ⬜ Not done
 
@@ -745,7 +747,7 @@ Done when: forms work for many service businesses and store structured requests.
 
 Audit note 2026-06-23: request-form UI supports contact, appointment, quote, and WhatsApp, but `/api/requests`, a `contact_requests` table, structured request storage, business-email fallback, and generic email copy are still missing. `/api/contact` still uses `info@bnbwebsitemaken.nl` and BnB sender/body wording.
 
-### Milestone 14: SEO And Business Essentials — 🟨 Partially done
+### Milestone 14: SEO And Business Essentials — ✅ Done
 
 - Add SEO fields to website/page editing.
 - Generate OpenGraph metadata from SEO fields with business fallback.
@@ -756,7 +758,7 @@ Audit note 2026-06-23: request-form UI supports contact, appointment, quote, and
 
 Done when: generated sites have business metadata, sharing cards, structured data, and analytics hooks.
 
-Audit note 2026-06-23: the database migration adds `seo` and `analytics` columns to `websites`, and a map section exists. Editor fields, OpenGraph generation from SEO data, LocalBusiness structured data, social links rendering, and analytics configuration are not implemented yet.
+Completion note 2026-06-23: `/editor/seo` now edits website SEO, OpenGraph, social links, and analytics settings; public and preview routes generate metadata from SEO fields with business fallback; `lib/business/structured-data.ts` emits LocalBusiness JSON-LD; map section support remains available.
 
 ### Milestone 15: Platform Copy Cleanup — ⬜ Not done
 
@@ -788,3 +790,5 @@ Audit note 2026-06-23: old BnB compatibility code remains intentionally present,
 - Public pages render dynamically from section data and theme tokens.
 - Contact, quote, appointment, WhatsApp, and booking request CTAs are supported without webshop behavior.
 - SEO metadata, OpenGraph, structured data, maps, social links, and analytics configuration have generic business support.
+
+

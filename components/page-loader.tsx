@@ -7,6 +7,9 @@ import websiteSections from "@/lib/supabase/websiteSections"
 import { SectionRenderer, TransitionWrapper } from "@/components/editor/section-renderer"
 import type { Section, Transition } from "@/lib/types"
 import { resolveAllSections } from "@/lib/supabase/section-resolver"
+import { WebsiteThemeProvider } from "@/components/themes/website-theme-provider"
+import type { ThemeConfig } from "@/lib/themes"
+import { buildLocalBusinessJsonLd } from "@/lib/business/structured-data"
 
 interface PageLoaderOptions {
   slug: string
@@ -48,6 +51,14 @@ export async function loadPublicWebsitePage({
   // Get user email for contact form default recipient
   const { data: userData } = await adminSupabase.auth.admin.getUserById(website.user_id)
   const userEmail = userData?.user?.email
+
+  const { data: businessDetails } = websiteBusinessId
+    ? await adminSupabase
+        .from('businesses')
+        .select('name, category, description, phone, email, street, city, postal, country, latitude, longitude, social_links, opening_note')
+        .eq('id', websiteBusinessId)
+        .maybeSingle()
+    : { data: null }
 
   const sections: Section[] = (website.website_sections || []).map(
     (r: any): Section => ({
@@ -207,5 +218,26 @@ export async function loadPublicWebsitePage({
     // Transition items don't render themselves; they're handled by wrapping sections
   }
 
-  return <div className="min-h-screen bg-background">{nodes}</div>
+  const jsonLd = buildLocalBusinessJsonLd(
+    businessDetails as Parameters<typeof buildLocalBusinessJsonLd>[0],
+    website.custom_domain ? `https://${website.custom_domain}` : `/site/${website.slug}`,
+  )
+
+  return (
+    <WebsiteThemeProvider initialConfig={(website.theme_config as ThemeConfig | null) ?? undefined}>
+      <div className="min-h-screen bg-background">{nodes}</div>
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+    </WebsiteThemeProvider>
+  )
 }
+
+
+
+
+
+

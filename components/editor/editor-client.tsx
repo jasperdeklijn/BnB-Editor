@@ -15,8 +15,8 @@ import { Layers, Paintbrush, LayoutTemplate } from "lucide-react"
 
 type MobilePanel = "canvas" | "sections" | "style"
 
-const getDefaultSectionData = (type: SectionType, bnbId?: string | null): Record<string, unknown> =>
-  getRegistryDefaultSectionData(type, { businessId: bnbId })
+const getDefaultSectionData = (type: SectionType, businessId?: string | null): Record<string, unknown> =>
+  getRegistryDefaultSectionData(type, { businessId })
 
 interface EditorClientProps {
   userId: string
@@ -26,7 +26,7 @@ export function EditorClient({ userId }: EditorClientProps) {
   const [sections, setSections] = useState<Section[]>([])
   const [transitions, setTransitions] = useState<Transition[]>([])
   const [websiteId, setWebsiteId] = useState<string | null>(null)
-  const [bnbId, setBnbId] = useState<string | null>(null)
+  const [businessId, setBusinessId] = useState<string | null>(null)
   const [title, setTitle] = useState(DEFAULT_SITE_TITLE)
   const [slug, setSlug] = useState("")
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null)
@@ -72,12 +72,14 @@ export function EditorClient({ userId }: EditorClientProps) {
     // Fetch the user's current business id for service-backed sections.
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
-      const { data: bnb } = await supabase
-        .from("bnbs")
+      const { data: business } = await supabase
+        .from("businesses")
         .select("id")
         .eq("user_id", user.id)
+        .order("created_at", { ascending: true })
+        .limit(1)
         .maybeSingle()
-      if (bnb) setBnbId(bnb.id)
+      if (business) setBusinessId(business.id)
     }
 
     // Try to load existing website
@@ -353,7 +355,7 @@ export function EditorClient({ userId }: EditorClientProps) {
     const section: Section = {
       id: `section-${Date.now()}`,
       type,
-      data: getDefaultSectionData(type, bnbId),
+      data: getDefaultSectionData(type, businessId),
       styles: {},
     }
 
@@ -385,7 +387,7 @@ export function EditorClient({ userId }: EditorClientProps) {
           selectedSectionId={selectedSectionId}
           onSectionSelect={handleSectionSelect}
           device={device}
-          bnbId={bnbId}
+          businessId={businessId}
           isDraggingNewSectionExternal={isMobileDraggingNewSection}
           isDraggingImageExternal={isMobileDraggingImage}
         />
@@ -399,7 +401,7 @@ export function EditorClient({ userId }: EditorClientProps) {
             onDelete={handleDelete}
             onTransitionUpdate={handleTransitionUpdate}
             websiteId={websiteId}
-            bnbId={bnbId}
+            businessId={businessId}
           />
         )}
       </div>
@@ -425,7 +427,7 @@ export function EditorClient({ userId }: EditorClientProps) {
               selectedSectionId={selectedSectionId}
               onSectionSelect={handleSectionSelect}
               device={device}
-              bnbId={bnbId}
+              businessId={businessId}
               isDraggingNewSectionExternal={isMobileDraggingNewSection}
               isDraggingImageExternal={isMobileDraggingImage}
             />
@@ -440,7 +442,7 @@ export function EditorClient({ userId }: EditorClientProps) {
               onDelete={handleDelete}
               onTransitionUpdate={handleTransitionUpdate}
               websiteId={websiteId}
-              bnbId={bnbId}
+              businessId={businessId}
             />
           )}
         </div>
@@ -490,3 +492,6 @@ export function EditorClient({ userId }: EditorClientProps) {
     </div>
   )
 }
+
+
+

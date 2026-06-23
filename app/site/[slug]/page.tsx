@@ -1,13 +1,49 @@
+import type { Metadata } from "next"
 import { loadPublicWebsitePage } from "@/components/page-loader"
 import { createClient } from "@/lib/supabase/server"
+import { getSeoDescription, getSeoTitle, type WebsiteSeoFields } from "@/lib/seo/metadata"
 
 interface PageProps {
   params: Promise<{ slug: string }>
 }
 
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params
+  const client = await createClient()
+  const { data: website } = await client
+    .from("websites")
+    .select("title, slug, custom_domain, seo, businesses:business_id(name, description)")
+    .eq("slug", slug)
+    .maybeSingle()
+
+  const businessRelation = website?.businesses as { name?: string; description?: string } | { name?: string; description?: string }[] | null | undefined
+  const business = Array.isArray(businessRelation) ? businessRelation[0] : businessRelation
+  const seo = website?.seo as WebsiteSeoFields | null | undefined
+  const title = getSeoTitle(seo, business?.name || website?.title || "Website")
+  const description = getSeoDescription(seo, business?.description)
+  const url = website?.custom_domain ? `https://${website.custom_domain}` : `/site/${website?.slug ?? slug}`
+
+  return {
+    title,
+    description,
+    alternates: { canonical: seo?.canonicalUrl || url },
+    openGraph: {
+      title,
+      description,
+      url,
+      images: seo?.ogImage ? [{ url: seo.ogImage }] : undefined,
+    },
+    twitter: {
+      card: seo?.ogImage ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: seo?.ogImage ? [seo.ogImage] : undefined,
+    },
+  }
+}
+
 export default async function PublicSitePage({ params }: PageProps) {
   const { slug } = await params
-  // Live site: anon client respects RLS — only published websites are visible.
   const client = await createClient()
   return loadPublicWebsitePage({ slug, isPreview: false, client })
 }
