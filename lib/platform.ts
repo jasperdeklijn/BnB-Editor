@@ -1,4 +1,5 @@
-export const PLATFORM_BRAND_NAME = "Website Maker"
+export const PLATFORM_BRAND_NAME = "SiteVoorMij.nl"
+export const PLATFORM_BRAND_INITIALS = "SV"
 export const PLATFORM_PRODUCT_DESCRIPTION = "websitebouwer voor kleine bedrijven"
 
 // Keep production domain behavior centralized. Change these when the final

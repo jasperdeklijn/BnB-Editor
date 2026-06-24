@@ -1,11 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { PLATFORM_BRAND_INITIALS, PLATFORM_BRAND_NAME } from "@/lib/platform"
 
 export function LandingNav() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -62,31 +62,31 @@ export function LandingNav() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-[var(--hero-bg)]/90 backdrop-blur border-b border-[var(--brand-blue)]/20">
+    <header className="fixed top-0 left-0 right-0 z-50 border-b border-[var(--landing-border)] bg-white/92 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        {/* Logo */}
         <div className="flex items-center">
-          <Image
-            src="/logo.png"
-            alt="Website Maker"
-            width={160}
-            height={48}
-            className="h-12 w-auto"
-          />
+          <Link href="/" className="flex items-center gap-3" aria-label={`${PLATFORM_BRAND_NAME} homepage`}>
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--landing-primary)] text-sm font-bold text-white shadow-sm">
+              {PLATFORM_BRAND_INITIALS}
+            </span>
+            <span className="text-base font-bold text-[var(--landing-secondary)]">
+              {PLATFORM_BRAND_NAME}
+            </span>
+          </Link>
         </div>
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-8 md:flex" aria-label="Hoofdnavigatie">
-          <Link href="#voorbeeld" onClick={handleNavClick} className="text-sm text-white/70 hover:text-[var(--brand-blue)] transition-colors">
+          <Link href="#voorbeeld" onClick={handleNavClick} className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
             Voorbeeld
           </Link>
-          <Link href="#functies" onClick={handleNavClick} className="text-sm text-white/70 hover:text-[var(--brand-blue)] transition-colors">
+          <Link href="#functies" onClick={handleNavClick} className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
             Functies
           </Link>
-          <Link href="#hoe-het-werkt" onClick={handleNavClick} className="text-sm text-white/70 hover:text-[var(--brand-blue)] transition-colors">
+          <Link href="#hoe-het-werkt" onClick={handleNavClick} className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
             Hoe het werkt
           </Link>
-          <Link href="#prijzen" onClick={handleNavClick} className="text-sm text-white/70 hover:text-[var(--brand-blue)] transition-colors">
+          <Link href="#prijzen" onClick={handleNavClick} className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
             Prijzen
           </Link> 
         </nav>
@@ -101,20 +101,20 @@ export function LandingNav() {
                   <Button
                     onClick={handleLogout}
                     variant="ghost"
-                    className="text-white/80 hover:text-white hover:bg-white/10"
+                    className="text-slate-700 hover:bg-[var(--landing-primary-light)] hover:text-[var(--landing-primary-dark)]"
                   >
                     Uitloggen
                   </Button>
-                    <Button asChild className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] text-white hover:opacity-90">
+                    <Button asChild className="rounded-full bg-[var(--landing-primary)] text-white shadow-sm hover:bg-[var(--landing-primary-dark)]">
                     <Link href="/editor">Editor</Link>
                   </Button>
                 </>
               ) : (
                 <>
-                  <Button asChild variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10">
+                  <Button asChild variant="ghost" className="text-slate-700 hover:bg-[var(--landing-primary-light)] hover:text-[var(--landing-primary-dark)]">
                     <Link href="/auth/login">Inloggen</Link>
                   </Button>
-                  <Button asChild className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] text-white hover:opacity-90">
+                  <Button asChild className="rounded-full bg-[var(--landing-primary)] text-white shadow-sm hover:bg-[var(--landing-primary-dark)]">
                     <Link href="/auth/sign-up">Gratis proberen</Link>
                   </Button>
                 </>
@@ -125,7 +125,7 @@ export function LandingNav() {
 
         {/* Mobile hamburger */}
         <button
-          className="flex items-center justify-center rounded-md p-2 text-white/70 hover:text-white md:hidden"
+          className="flex items-center justify-center rounded-md p-2 text-[var(--landing-secondary)] hover:bg-[var(--landing-primary-light)] md:hidden"
           aria-label={menuOpen ? "Menu sluiten" : "Menu openen"}
           onClick={() => setMenuOpen((v) => !v)}
         >
@@ -143,33 +143,33 @@ export function LandingNav() {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="border-t border-[var(--brand-blue)]/20 bg-[var(--hero-bg)] px-6 py-4 md:hidden">
+        <div className="border-t border-[var(--landing-border)] bg-white px-6 py-4 md:hidden">
           <nav className="flex flex-col gap-4" aria-label="Mobiele navigatie">
-            <Link href="#functies" onClick={handleNavClick} className="text-sm text-white/80 hover:text-[var(--brand-blue)]">Functies</Link>
-            <Link href="#hoe-het-werkt" onClick={handleNavClick} className="text-sm text-white/80 hover:text-[var(--brand-blue)]">Hoe het werkt</Link>
-            <Link href="#voorbeeld" onClick={handleNavClick} className="text-sm text-white/80 hover:text-[var(--brand-blue)]">Voorbeeld</Link>
+            <Link href="#functies" onClick={handleNavClick} className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">Functies</Link>
+            <Link href="#hoe-het-werkt" onClick={handleNavClick} className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">Hoe het werkt</Link>
+            <Link href="#voorbeeld" onClick={handleNavClick} className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">Voorbeeld</Link>
             <div className="flex gap-3 pt-2">
               {!isLoading && (
                 <>
                   {isLoggedIn ? (
                     <>
-                      <Button asChild className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] text-white flex-1">
+                      <Button asChild className="flex-1 rounded-full bg-[var(--landing-primary)] text-white hover:bg-[var(--landing-primary-dark)]">
                         <Link href="/editor">Editor</Link>
                       </Button>
                       <Button
                         onClick={handleLogout}
                         variant="ghost"
-                        className="text-white/80 hover:text-white hover:bg-white/10 flex-1"
+                        className="flex-1 text-slate-700 hover:bg-[var(--landing-primary-light)] hover:text-[var(--landing-primary-dark)]"
                       >
                         Uitloggen
                       </Button>
                     </>
                   ) : (
                     <>
-                      <Button asChild variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10 flex-1">
+                      <Button asChild variant="ghost" className="flex-1 text-slate-700 hover:bg-[var(--landing-primary-light)] hover:text-[var(--landing-primary-dark)]">
                         <Link href="/auth/login">Inloggen</Link>
                       </Button>
-                      <Button asChild className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] text-white flex-1">
+                      <Button asChild className="flex-1 rounded-full bg-[var(--landing-primary)] text-white hover:bg-[var(--landing-primary-dark)]">
                         <Link href="/auth/sign-up">Gratis proberen</Link>
                       </Button>
                     </>

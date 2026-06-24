@@ -6,49 +6,44 @@ import { PricingCard } from "@/components/pricing/pricing-card"
 import { PRICING_PLANS } from "@/lib/pricing"
 import { ArrowRight } from "lucide-react"
 
-/**
- * Pricing Section Component for Homepage
- * Displays preview of Lite and Growth plans
- */
 export function PricingSection() {
   const litePlan = PRICING_PLANS.lite
   const growthPlan = PRICING_PLANS.growth
 
   return (
-    <section id="prijzen" className="py-20 px-6 bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
-      <div className="max-w-6xl mx-auto">
-        {/* Section header */}
-        <div className="text-center mb-16 animate-in fade-in duration-700">
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">
-            Simpel, transparante prijzen
+    <section id="prijzen" className="bg-white px-6 py-24">
+      <div className="mx-auto max-w-6xl">
+        <div className="mx-auto mb-14 max-w-2xl text-center animate-in fade-in duration-700">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-[var(--landing-primary)]">
+            Prijzen
+          </p>
+          <h2 className="text-balance text-4xl font-bold tracking-tight text-[var(--landing-secondary)] md:text-5xl">
+            Simpele, transparante prijzen
           </h2>
-          <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            Kies het juiste plan voor jouw bedrijf. Upgraden of downgraden op elk moment.
+          <p className="mt-4 text-lg leading-relaxed text-[var(--landing-muted)]">
+            Kies het juiste plan voor jouw bedrijf. Upgraden of downgraden kan op elk moment.
           </p>
         </div>
 
-        {/* Pricing cards grid */}
-        <div className="grid md:grid-cols-2 gap-8 mb-12 animate-in fade-in duration-700 delay-200">
+        <div className="mb-12 grid gap-8 md:grid-cols-2 animate-in fade-in duration-700 delay-200">
           <PricingCard plan={litePlan} />
-          <PricingCard plan={growthPlan} isPopular={true} />
+          <PricingCard plan={growthPlan} isPopular />
         </div>
 
-        {/* Booking addon mention */}
-        <div className="bg-gradient-to-r from-[var(--brand-blue)]/10 to-[var(--brand-purple)]/10 dark:from-[var(--brand-blue)]/20 dark:to-[var(--brand-purple)]/20 border border-[var(--brand-blue)]/30 dark:border-[var(--brand-blue)]/50 rounded-lg p-8 mb-12 text-center animate-in fade-in duration-700 delay-300">
-          <p className="text-slate-900 dark:text-white mb-2">
-            <strong>Booking Add-on:</strong> Voeg boekingsbeheer toe voor €19/maand
+        <div className="mb-12 rounded-3xl border border-[var(--landing-border)] bg-[var(--landing-primary-light)] p-8 text-center animate-in fade-in duration-700 delay-300">
+          <p className="mb-2 text-[var(--landing-secondary)]">
+            <strong>Booking Add-on:</strong> Voeg boekingsbeheer toe voor EUR 19/maand
           </p>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-sm text-[var(--landing-muted)]">
             Beschikbaar voor elk plan. Inclusief aanvragenbeheer, beschikbaarheidskalender en geautomatiseerde e-mails.
           </p>
         </div>
 
-        {/* CTA */}
         <div className="text-center animate-in fade-in duration-700 delay-400">
           <Button
             asChild
             size="lg"
-            className="bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200 gap-2"
+            className="gap-2 rounded-full bg-[var(--landing-primary)] px-8 py-6 text-white hover:bg-[var(--landing-primary-dark)]"
           >
             <Link href="/pricing">
               Alle prijzen bekijken
@@ -56,7 +51,7 @@ export function PricingSection() {
             </Link>
           </Button>
 
-          <p className="mt-4 text-sm text-slate-500 dark:text-slate-500">
+          <p className="mt-4 text-sm text-[var(--landing-muted)]">
             Inclusief 14-daagse gratis proefperiode
           </p>
         </div>
@@ -64,4 +59,3 @@ export function PricingSection() {
     </section>
   )
 }
-

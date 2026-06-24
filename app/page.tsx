@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase/server"
 import { LandingNav } from "@/components/landing/landing-nav"
 import { LandingHero } from "@/components/landing/landing-hero"
 import { LandingFeatures } from "@/components/landing/landing-features"
@@ -8,13 +7,8 @@ import { LandingCta } from "@/components/landing/landing-cta"
 import { SharedFooter } from "@/components/layout/shared-footer"
 
 export default async function HomePage() {
-  const supabase = await createClient()
-  const { data } = await supabase.auth.getUser()
-
-  
-
   return (
-    <main>
+    <main className="bg-white text-[var(--landing-secondary)]">
       <LandingNav />
       <LandingHero />
       <LandingFeatures />

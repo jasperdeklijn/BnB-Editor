@@ -42,11 +42,20 @@
   --sidebar-border: oklch(0.87 0.025 260);
   --sidebar-ring: oklch(0.46 0.24 264);
   /* Landing page tokens */
-  --hero-bg: oklch(0.12 0.07 265);
-  --hero-surface: oklch(0.16 0.07 265);
-  --brand-blue: oklch(0.46 0.24 264);
-  --brand-purple: oklch(0.56 0.22 296);
-  --surface-dim: oklch(0.94 0.02 264);
+  --hero-bg: #1d2c24;
+  --hero-surface: #24382d;
+  --brand-blue: #8fb09d;
+  --brand-purple: #385344;
+  --surface-dim: #e9efea;
+  --landing-surface: #f6f8f5;
+  --landing-primary: #385344;
+  --landing-primary-dark: #24382d;
+  --landing-primary-light: #eaf1ed;
+  --landing-secondary: #20342a;
+  --landing-accent: #6f927d;
+  --landing-border: #d6e0d9;
+  --landing-muted: #667085;
+  --landing-footer: #1d2c24;
   /* Editor-specific surface tokens */
   --editor-sidebar: oklch(0.97 0.018 264);
   --editor-panel: oklch(0.965 0.022 290);

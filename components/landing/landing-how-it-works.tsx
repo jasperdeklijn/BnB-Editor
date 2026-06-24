@@ -1,71 +1,57 @@
-import Image from "next/image"
-
 const steps = [
   {
     step: "01",
     title: "Maak een account aan",
-    description: "Registreer gratis en begin direct met het maken van jouw website.",
-    image: "/placeholder.svg?height=160&width=280",
-    alt: "Registratieformulier voor Website Maker",
+    description: "Registreer gratis en open direct de editor.",
   },
   {
     step: "02",
     title: "Kies je secties",
-    description: "Kies uit kant-en-klare secties voor bedrijven: hero, diensten, galerij, contact en meer.",
-    image: "/placeholder.svg?height=160&width=280",
-    alt: "Overzicht van beschikbare website secties",
+    description: "Selecteer onderdelen die passen bij jouw bedrijf en klanten.",
   },
   {
     step: "03",
     title: "Pas de inhoud aan",
-    description: "Klik op tekst of afbeeldingen om direct op de pagina te bewerken. Stel kleuren en lettertypen in.",
-    image: "/placeholder.svg?height=160&width=280",
-    alt: "Editor met tekst en afbeelding aanpassingen",
+    description: "Vul teksten, foto's, kleuren en contactgegevens in.",
   },
   {
     step: "04",
-    title: "Publiceer direct",
-    description: "Druk op publiceren en je website staat live met een eigen URL voor je klanten.",
-    image: "/placeholder.svg?height=160&width=280",
-    alt: "Gepubliceerde website met eigen URL",
+    title: "Publiceer online",
+    description: "Zet je website live en werk hem later eenvoudig bij.",
   },
 ]
 
 export function LandingHowItWorks() {
   return (
-    <section id="hoe-het-werkt" className="bg-[var(--hero-bg)] px-6 py-24">
+    <section id="hoe-het-werkt" className="bg-[var(--landing-surface)] px-6 py-24">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-16 text-center">
-          <p className="mb-3 text-sm font-medium uppercase tracking-widest text-[var(--brand-blue)]">Hoe het werkt</p>
-          <h2 className="text-balance text-4xl font-bold text-white md:text-5xl">
-            Van registratie tot <span className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] bg-clip-text text-transparent">live</span> in vier stappen
+        <div className="mb-14 max-w-2xl">
+          <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-[var(--landing-primary)]">
+            Hoe het werkt
+          </p>
+          <h2 className="text-balance text-4xl font-bold text-[var(--landing-secondary)] md:text-5xl">
+            Van eerste opzet tot live website in vier stappen
           </h2>
+          <p className="mt-4 text-pretty text-lg leading-relaxed text-[var(--landing-muted)]">
+            De workflow blijft bewust kort, zodat je vooral bezig bent met je bedrijf en niet met techniek.
+          </p>
         </div>
 
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((s) => (
-            <div key={s.step} className="group flex flex-col">
-              {/* Step image */}
-              <div className="mb-4 overflow-hidden rounded-xl border border-[var(--brand-blue)]/20 bg-[var(--hero-surface)]">
-                <Image
-                  src={s.image}
-                  alt={s.alt}
-                  width={280}
-                  height={160}
-                  className="h-36 w-full object-cover transition-transform group-hover:scale-105"
-                />
+            <article
+              key={s.step}
+              className="rounded-3xl border border-[var(--landing-border)] bg-white p-7"
+            >
+              <div className="mb-8 flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--landing-primary-light)] text-sm font-bold text-[var(--landing-primary-dark)]">
+                {s.step}
               </div>
-              {/* Step number */}
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--brand-blue)]/20 to-[var(--brand-purple)]/20 border border-[var(--brand-blue)]/30">
-                <span className="text-sm font-bold bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] bg-clip-text text-transparent">{s.step}</span>
-              </div>
-              <h3 className="mb-2 font-semibold text-white">{s.title}</h3>
-              <p className="text-sm leading-relaxed text-white/50">{s.description}</p>
-            </div>
+              <h3 className="mb-2 text-lg font-bold text-[var(--landing-secondary)]">{s.title}</h3>
+              <p className="text-sm leading-relaxed text-[var(--landing-muted)]">{s.description}</p>
+            </article>
           ))}
         </div>
       </div>
     </section>
   )
 }
-

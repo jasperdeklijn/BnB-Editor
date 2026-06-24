@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
-import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { PLATFORM_BRAND_INITIALS, PLATFORM_BRAND_NAME } from "@/lib/platform"
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("")
@@ -65,18 +65,20 @@ export default function SignUpPage() {
         />
 
         <div className="relative z-10 max-w-md text-center">
-          <div className="mx-auto mb-8 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--brand-purple)] to-[var(--brand-blue)]">
+          <div className="mx-auto mb-8 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#B7D1C2]">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
-              <path d="M2 17l10 5 10-5" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
-              <path d="M2 12l10 5 10-5" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
+              <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="#1d2c24" strokeWidth="1.5" strokeLinejoin="round" />
+              <path d="M2 17l10 5 10-5" stroke="#1d2c24" strokeWidth="1.5" strokeLinejoin="round" />
+              <path d="M2 12l10 5 10-5" stroke="#1d2c24" strokeWidth="1.5" strokeLinejoin="round" />
             </svg>
           </div>
           <h1 className="mb-4 text-3xl font-bold text-white text-balance">
             {"Begin met bouwen aan jouw "}
-            <span className="bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-blue)] bg-clip-text text-transparent">
+            <span className="text-[#B7D1C2]">
               website
             </span>
+            {" met "}
+            <span className="text-[#B7D1C2]">{PLATFORM_BRAND_NAME}</span>
           </h1>
           <p className="text-white/60 leading-relaxed">
             Maak een gratis account aan en ontdek hoe makkelijk het is om een professionele website voor jouw kleine bedrijf te maken.
@@ -110,20 +112,10 @@ export default function SignUpPage() {
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[var(--brand-purple)] to-[var(--brand-blue)]">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
-                <path d="M2 17l10 5 10-5" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
-                <path d="M2 12l10 5 10-5" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <Image
-              src="/logo.png"
-              alt="Website Maker"
-              width={180}
-              height={50}
-              className="h-12 w-auto"
-            />
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#B7D1C2] text-sm font-bold text-[var(--hero-bg)]">
+              {PLATFORM_BRAND_INITIALS}
+            </span>
+            <span className="text-base font-bold text-white">{PLATFORM_BRAND_NAME}</span>
           </div>
 
           <div
@@ -152,7 +144,7 @@ export default function SignUpPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="border-[var(--brand-purple)]/20 bg-[var(--hero-bg)] text-white placeholder:text-white/30 focus-visible:ring-[var(--brand-blue)]"
+                  className="border-[#B7D1C2]/25 bg-[var(--hero-bg)] text-white placeholder:text-white/40 focus-visible:ring-[#B7D1C2]"
                 />
               </div>
 
@@ -166,7 +158,7 @@ export default function SignUpPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="border-[var(--brand-purple)]/20 bg-[var(--hero-bg)] text-white placeholder:text-white/30 focus-visible:ring-[var(--brand-blue)]"
+                  className="border-[#B7D1C2]/25 bg-[var(--hero-bg)] text-white placeholder:text-white/40 focus-visible:ring-[#B7D1C2]"
                 />
               </div>
 
@@ -180,7 +172,7 @@ export default function SignUpPage() {
                   required
                   value={repeatPassword}
                   onChange={(e) => setRepeatPassword(e.target.value)}
-                  className="border-[var(--brand-purple)]/20 bg-[var(--hero-bg)] text-white placeholder:text-white/30 focus-visible:ring-[var(--brand-blue)]"
+                  className="border-[#B7D1C2]/25 bg-[var(--hero-bg)] text-white placeholder:text-white/40 focus-visible:ring-[#B7D1C2]"
                 />
               </div>
 
@@ -192,7 +184,7 @@ export default function SignUpPage() {
 
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-[var(--brand-purple)] to-[var(--brand-blue)] text-white font-semibold hover:opacity-90 transition-opacity"
+                className="w-full bg-[#B7D1C2] text-[var(--hero-bg)] font-semibold hover:bg-white transition-colors"
                 disabled={isLoading}
               >
                 {isLoading ? "Account wordt aangemaakt..." : "Account aanmaken"}
@@ -203,15 +195,15 @@ export default function SignUpPage() {
               {"Heb je al een account? "}
               <Link
                 href="/auth/login"
-                className="font-medium text-[var(--brand-blue)] hover:text-[var(--brand-purple)] transition-colors underline underline-offset-4"
+                className="font-medium text-[#B7D1C2] hover:text-white transition-colors underline underline-offset-4"
               >
                 Inloggen
               </Link>
             </p>
           </div>
 
-          <p className="mt-6 text-center text-xs text-white/30">
-            <Link href="/" className="hover:text-white/60 transition-colors">
+          <p className="mt-6 text-center text-xs text-white/60">
+            <Link href="/" className="hover:text-white transition-colors">
               Terug naar de homepage
             </Link>
           </p>

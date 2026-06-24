@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
-import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { PLATFORM_BRAND_INITIALS, PLATFORM_BRAND_NAME } from "@/lib/platform"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -62,8 +62,8 @@ export default function LoginPage() {
           </div>
           <h1 className="mb-4 text-3xl font-bold text-white text-balance">
             {"Welkom terug bij "}
-            <span className="bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] bg-clip-text text-transparent">
-              Website Maker
+            <span className="text-[#B7D1C2]">
+              {PLATFORM_BRAND_NAME}
             </span>
           </h1>
           <p className="text-white/60 leading-relaxed">
@@ -73,7 +73,7 @@ export default function LoginPage() {
           <div className="mt-10 rounded-xl border border-[var(--brand-blue)]/20 overflow-hidden shadow-2xl shadow-[var(--brand-blue)]/10">
             <img
               src="/placeholder.svg?height=300&width=500"
-              alt="Website Maker voorbeeld dashboard"
+              alt={`${PLATFORM_BRAND_NAME} voorbeeld dashboard`}
               className="w-full"
               width={500}
               height={300}
@@ -86,14 +86,11 @@ export default function LoginPage() {
       <div className="flex w-full items-center justify-center p-6 lg:w-1/2 lg:p-12">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
-          <div className="mb-8 flex items-center lg:hidden">
-            <Image
-              src="/logo.png"
-              alt="Website Maker"
-              width={180}
-              height={50}
-              className="h-12 w-auto"
-            />
+          <div className="mb-8 flex items-center gap-3 lg:hidden">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#B7D1C2] text-sm font-bold text-[var(--hero-bg)]">
+              {PLATFORM_BRAND_INITIALS}
+            </span>
+            <span className="text-base font-bold text-white">{PLATFORM_BRAND_NAME}</span>
           </div>
 
           <div
@@ -122,7 +119,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="border-[var(--brand-blue)]/20 bg-[var(--hero-bg)] text-white placeholder:text-white/30 focus-visible:ring-[var(--brand-purple)]"
+                  className="border-[#B7D1C2]/25 bg-[var(--hero-bg)] text-white placeholder:text-white/40 focus-visible:ring-[#B7D1C2]"
                 />
               </div>
 
@@ -136,7 +133,7 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="border-[var(--brand-blue)]/20 bg-[var(--hero-bg)] text-white placeholder:text-white/30 focus-visible:ring-[var(--brand-purple)]"
+                  className="border-[#B7D1C2]/25 bg-[var(--hero-bg)] text-white placeholder:text-white/40 focus-visible:ring-[#B7D1C2]"
                 />
               </div>
 
@@ -148,7 +145,7 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-[var(--brand-blue)] to-[var(--brand-purple)] text-white font-semibold hover:opacity-90 transition-opacity"
+                className="w-full bg-[#B7D1C2] text-[var(--hero-bg)] font-semibold hover:bg-white transition-colors"
                 disabled={isLoading}
               >
                 {isLoading ? "Bezig met inloggen..." : "Inloggen"}
@@ -159,15 +156,15 @@ export default function LoginPage() {
               {"Nog geen account? "}
               <Link
                 href="/auth/sign-up"
-                className="font-medium text-[var(--brand-purple)] hover:text-[var(--brand-blue)] transition-colors underline underline-offset-4"
+                className="font-medium text-[#B7D1C2] hover:text-white transition-colors underline underline-offset-4"
               >
                 Account aanmaken
               </Link>
             </p>
           </div>
 
-          <p className="mt-6 text-center text-xs text-white/30">
-            <Link href="/" className="hover:text-white/60 transition-colors">
+          <p className="mt-6 text-center text-xs text-white/60">
+            <Link href="/" className="hover:text-white transition-colors">
               Terug naar de homepage
             </Link>
           </p>

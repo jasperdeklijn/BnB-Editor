@@ -59,16 +59,16 @@ export default function LegalIndexPage() {
             <Link
               key={page.href}
               href={page.href}
-              className="group bg-white/5 hover:bg-white/10 border border-[var(--brand-blue)]/20 hover:border-[var(--brand-blue)]/40 rounded-lg p-6 transition-all duration-300"
+              className="group rounded-lg border border-[#B7D1C2]/20 bg-white/5 p-6 text-white transition-all duration-300 hover:border-[#B7D1C2]/45 hover:bg-white/10"
             >
               <div className="text-4xl mb-4">{page.icon}</div>
-              <h2 className="text-xl font-semibold text-white mb-2 group-hover:text-[var(--brand-blue)] transition-colors">
+              <h2 className="text-xl font-semibold text-white mb-2 group-hover:text-[#B7D1C2] transition-colors">
                 {page.title}
               </h2>
               <p className="text-white/60">
                 {page.description}
               </p>
-              <div className="mt-4 flex items-center text-[var(--brand-blue)] opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="mt-4 flex items-center text-[#B7D1C2] transition-colors group-hover:text-white">
                 <span className="text-sm font-medium">Lees meer</span>
                 <span className="ml-2">→</span>
               </div>
@@ -76,7 +76,7 @@ export default function LegalIndexPage() {
           ))}
         </div>
 
-        <div className="bg-white/5 border border-[var(--brand-blue)]/20 rounded-lg p-8">
+        <div className="bg-white/5 border border-[#B7D1C2]/20 rounded-lg p-8">
           <h2 className="text-2xl font-bold text-white mb-4">Veel gestelde vragen</h2>
           
           <div className="space-y-6">
@@ -92,7 +92,7 @@ export default function LegalIndexPage() {
               <h3 className="text-lg font-semibold text-white mb-2">Hoe meld ik illegale content?</h3>
               <p className="text-white/70">
                 Stuur een e-mail naar{" "}
-                <a href="mailto:abuse@websitebouwer.nl" className="text-[var(--brand-blue)] hover:underline">
+                <a href="mailto:abuse@websitebouwer.nl" className="text-[#B7D1C2] hover:text-white hover:underline">
                   abuse@websitebouwer.nl
                 </a>
                 {" "}met details van de content. Zie onze Notice & Takedown procedure.
@@ -103,7 +103,7 @@ export default function LegalIndexPage() {
               <h3 className="text-lg font-semibold text-white mb-2">Hoe kan ik mijn privacy-gegevens inzien?</h3>
               <p className="text-white/70">
                 Stuur een verzoek naar{" "}
-                <a href="mailto:privacy@websitebouwer.nl" className="text-[var(--brand-blue)] hover:underline">
+                <a href="mailto:privacy@websitebouwer.nl" className="text-[#B7D1C2] hover:text-white hover:underline">
                   privacy@websitebouwer.nl
                 </a>
                 {" "}met uw identiteitskaart. We reageren binnen 30 dagen.
