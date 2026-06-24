@@ -60,7 +60,7 @@ import type { ServicesLayout } from "@/components/sections/services-section"
 import type { ContactLayout } from "@/components/sections/contact-section"
 import type { SectionType } from "@/lib/types"
 
-interface AvailableRoom {
+interface AvailableService {
   id: string
   name: string
   images: string[]
@@ -93,7 +93,7 @@ export function SelectionEditor({
   const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null)
 
   // Diensten selector state
-  const [availableDiensten, setAvailableDiensten] = useState<AvailableRoom[]>([])
+  const [availableDiensten, setAvailableDiensten] = useState<AvailableService[]>([])
   const [loadingDiensten, setLoadingDiensten] = useState(false)
 
   // Cleanup timeout on unmount
@@ -105,7 +105,7 @@ export function SelectionEditor({
 
   // Fetch available offerings whenever a services section is selected.
   useEffect(() => {
-    if (selectedSection?.type !== "rooms" && selectedSection?.type !== "services") return
+    if (selectedSection?.type !== "services") return
 
     let cancelled = false
     setLoadingDiensten(true)
@@ -114,7 +114,7 @@ export function SelectionEditor({
       try {
         const supabase = createClient()
 
-        // Use bnbId prop if available; otherwise fall back to user→bnb lookup
+        // Use businessId prop if available; otherwise fall back to the user's first business.
         let resolvedBusinessId: string | null = businessId ?? null
 
         if (!resolvedBusinessId) {
@@ -254,18 +254,18 @@ export function SelectionEditor({
     }
   }
 
-  // Toggle a service while keeping the legacy roomIds key in sync.
-  const toggleRoomId = (roomId: string) => {
+  // Toggle a service selection.
+  const toggleServiceId = (serviceId: string) => {
     const current =
-      (((selectedSection.data as any).serviceIds ?? (selectedSection.data as any).roomIds) as string[]) ?? []
-    const next = current.includes(roomId)
-      ? current.filter((id) => id !== roomId)
-      : [...current, roomId]
-    onUpdate(selectedSection.id, { roomIds: next, serviceIds: next })
+      ((selectedSection.data as any).serviceIds as string[]) ?? []
+    const next = current.includes(serviceId)
+      ? current.filter((id) => id !== serviceId)
+      : [...current, serviceId]
+    onUpdate(selectedSection.id, { serviceIds: next })
 
     if (saveTimeoutId) clearTimeout(saveTimeoutId)
     const timeout = setTimeout(async () => {
-      await saveToDatabase({ ...selectedSection.data, roomIds: next, serviceIds: next })
+      await saveToDatabase({ ...selectedSection.data, serviceIds: next })
       toast.success("Opgeslagen in database", {
         position: "bottom-right",
         duration: 2000,
@@ -392,7 +392,7 @@ export function SelectionEditor({
                 <div>
                   <Label className="text-xs mb-1.5 block">Ondertitel</Label>
                   <Input
-                    placeholder="bijv., Ervaar comfort en gastvrijheid"
+                    placeholder="bijv., Professionele service, persoonlijk contact"
                     value={(selectedSection.data as any).subtitle || ""}
                     onChange={(e) => updateField("subtitle", e.target.value)}
                   />
@@ -400,7 +400,7 @@ export function SelectionEditor({
                 <div>
                   <Label className="text-xs mb-1.5 block">CTA-knoptekst</Label>
                   <Input
-                    placeholder="bijv., Nu boeken"
+                    placeholder="bijv., Neem contact op"
                     value={(selectedSection.data as any).ctaText || ""}
                     onChange={(e) => updateField("ctaText", e.target.value)}
                   />
@@ -434,7 +434,7 @@ export function SelectionEditor({
           </Card>
         )}
 
-        {(selectedSection.type === "rooms" || selectedSection.type === "services") && (
+        {selectedSection.type === "services" && (
           <>
             {/* Diensten Layout Selector */}
             <Card className="p-4 space-y-3">
@@ -535,18 +535,18 @@ export function SelectionEditor({
                   </div>
                 ) : (
                   <div className="space-y-1.5">
-                    {availableDiensten.map((room) => {
+                    {availableDiensten.map((service) => {
                       const selectedIds =
-                        ((selectedSection.data as any).roomIds as string[]) ?? []
+                        ((selectedSection.data as any).serviceIds as string[]) ?? []
                       const isSelected =
-                        selectedIds.length === 0 || selectedIds.includes(room.id)
-                      const isExplicitlySelected = selectedIds.includes(room.id)
+                        selectedIds.length === 0 || selectedIds.includes(service.id)
+                      const isExplicitlySelected = selectedIds.includes(service.id)
 
                       return (
                         <button
-                          key={room.id}
+                          key={service.id}
                           type="button"
-                          onClick={() => toggleRoomId(room.id)}
+                          onClick={() => toggleServiceId(service.id)}
                           className={`w-full flex items-center gap-3 rounded-lg border p-2.5 text-left transition-all hover:scale-[1.01] ${
                             isExplicitlySelected
                               ? "border-primary bg-primary/5"
@@ -557,10 +557,10 @@ export function SelectionEditor({
                         >
                           {/* Thumbnail */}
                           <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-md bg-amber-100">
-                            {room.images.length > 0 ? (
+                            {service.images.length > 0 ? (
                               <img
-                                src={room.images[0]}
-                                alt={room.name}
+                                src={service.images[0]}
+                                alt={service.name}
                                 className="h-full w-full object-cover"
                               />
                             ) : (
@@ -572,9 +572,9 @@ export function SelectionEditor({
 
                           {/* Name + price */}
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium truncate">{room.name}</p>
-                            {room.price && (
-                              <p className="text-[10px] text-muted-foreground">{room.price}</p>
+                            <p className="text-xs font-medium truncate">{service.name}</p>
+                            {service.price && (
+                              <p className="text-[10px] text-muted-foreground">{service.price}</p>
                             )}
                           </div>
 
@@ -593,10 +593,10 @@ export function SelectionEditor({
                     })}
 
                     {/* Show "all services" reset option */}
-                    {((selectedSection.data as any).roomIds as string[] | undefined)?.length ? (
+                    {((selectedSection.data as any).serviceIds as string[] | undefined)?.length ? (
                       <button
                         type="button"
-                        onClick={() => updateField("roomIds", [])}
+                        onClick={() => updateField("serviceIds", [])}
                         className="w-full rounded-lg border border-dashed border-border py-2 text-xs text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors"
                       >
                         Selectie wissen (alle diensten tonen)
@@ -726,7 +726,7 @@ export function SelectionEditor({
           </>
         )}
 
-        {(selectedSection.type === "amenities" || selectedSection.type === "features") && (
+        {selectedSection.type === "features" && (
           <Card className="p-4 space-y-3">
             <Label className="flex items-center gap-2">
               <Type className="h-3.5 w-3.5" />
@@ -743,7 +743,7 @@ export function SelectionEditor({
             </Label>
             <Input
               placeholder="Persoonlijke service, Heldere afspraken, Vakmanschap"
-              value={((selectedSection.data as any).items || []).join(", ")}
+              value={(((selectedSection.data as any).features as string[] | undefined) || []).join(", ")}
               onChange={(e) =>
                 updateField(
                   "items",
@@ -861,7 +861,7 @@ export function SelectionEditor({
                   E-mail (weergave)
                 </Label>
                 <Input
-                  placeholder="info@mijnbnb.nl"
+                  placeholder="info@mijnbedrijf.nl"
                   value={(selectedSection.data as any).email || ""}
                   onChange={(e) => updateField("email", e.target.value)}
                 />
@@ -954,10 +954,8 @@ export function SelectionEditor({
                   "hero",
                   "about",
                   "services",
-                  "rooms",
                   "gallery",
                   "features",
-                  "amenities",
                   "contact",
                   "testimonials",
                   "faq",
@@ -971,10 +969,8 @@ export function SelectionEditor({
                   hero: "Home",
                   about: "Over",
                   services: "Diensten",
-                  rooms: "Diensten",
                   gallery: "Galerij",
                   features: "Kenmerken",
-                  amenities: "Kenmerken",
                   contact: "Contact",
                   nav: "Navigation",
                   footer: "Footer",
@@ -1646,6 +1642,7 @@ export function SelectionEditor({
     </div>
   )
 }
+
 
 
 

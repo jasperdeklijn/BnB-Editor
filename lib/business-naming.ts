@@ -27,22 +27,12 @@ export const SECTION_COPY: Record<
     description: "Toon diensten of aanbod",
     defaultTitle: "Onze diensten",
   },
-  rooms: {
-    label: "Diensten",
-    description: "Toon diensten of aanbod",
-    defaultTitle: "Onze diensten",
-  },
   gallery: {
     label: "Galerij",
     description: "Fotogalerij of portfolio",
     defaultTitle: "Galerij",
   },
   features: {
-    label: "Kenmerken",
-    description: "Pluspunten en voordelen",
-    defaultTitle: "Waarom klanten voor ons kiezen",
-  },
-  amenities: {
     label: "Kenmerken",
     description: "Pluspunten en voordelen",
     defaultTitle: "Waarom klanten voor ons kiezen",

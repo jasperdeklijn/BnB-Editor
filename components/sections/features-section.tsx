@@ -5,15 +5,15 @@ import type React from "react"
 import { Check } from "lucide-react"
 import type { SectionStyles } from "@/lib/types"
 
-interface AmenitiesSectionProps {
+interface FeaturesSectionProps {
   data: Record<string, unknown>
   isPreview: boolean
   styles?: SectionStyles
 }
 
-export function AmenitiesSection({ data, styles }: AmenitiesSectionProps) {
+export function FeaturesSection({ data, styles }: FeaturesSectionProps) {
   const title = data.title as string
-  const amenities = (data.amenities as string[]) || []
+  const features = (data.features as string[]) || []
 
   const sectionStyle: React.CSSProperties = {
     backgroundColor: styles?.backgroundColor,
@@ -36,13 +36,13 @@ export function AmenitiesSection({ data, styles }: AmenitiesSectionProps) {
           {title}
         </h2>
         <div className="grid gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {amenities.map((amenity, index) => (
+          {features.map((feature, index) => (
             <div key={index} className="flex items-center gap-3">
               <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-amber-700">
                 <Check className="h-5 w-5 text-amber-50" />
               </div>
               <span className="text-amber-800" style={textStyle}>
-                {amenity}
+                {feature}
               </span>
             </div>
           ))}
@@ -51,5 +51,3 @@ export function AmenitiesSection({ data, styles }: AmenitiesSectionProps) {
     </section>
   )
 }
-
-export const FeaturesSection = AmenitiesSection

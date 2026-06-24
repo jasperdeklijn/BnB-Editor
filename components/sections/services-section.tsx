@@ -5,22 +5,33 @@ import { useState, useEffect, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import type { SectionStyles } from "@/lib/types"
-import type { Room } from "@/lib/supabase/bnb"
 import Link from "next/link"
 import { Briefcase, Users, ChevronLeft, ChevronRight, DollarSign } from "lucide-react"
 
-export type DienstenLayout = "grid" | "list" | "featured" | "magazine" | "minimal" | "carousel"
-export type ServicesLayout = DienstenLayout
+export type ServicesLayout = "grid" | "list" | "featured" | "magazine" | "minimal" | "carousel"
 
-interface DienstenSectionProps {
+
+interface ServicesSectionProps {
   data: Record<string, unknown>
   isPreview: boolean
   styles?: SectionStyles
 }
 
+interface ServiceDisplay {
+  id: string
+  name: string
+  description: string | null
+  price: string | null
+  capacity: number | null
+  images: string[]
+  position?: number | null
+  created_at?: string | null
+  updated_at?: string | null
+}
+
 // ---- Shared helpers ----
 
-function RoomImage({
+function ServiceImage({
   images,
   name,
   className,
@@ -50,45 +61,45 @@ function RoomImage({
 // ---- Layout: Grid ----
 
 function GridLayout({
-  rooms,
+  services,
   textStyle,
 }: {
-  rooms: Room[]
+  services: ServiceDisplay[]
   textStyle: React.CSSProperties
 }) {
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {rooms.map((room) => (
+      {services.map((service) => (
         <div
-          key={room.id}
+          key={service.id}
           className="group overflow-hidden rounded-2xl border border-amber-100 bg-white shadow-sm hover:shadow-md transition-shadow"
         >
           <div className="relative h-52 overflow-hidden">
-            <RoomImage
-              images={room.images}
-              name={room.name}
+            <ServiceImage
+              images={service.images}
+              name={service.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
-            {room.price && (
+            {service.price && (
               <div className="absolute bottom-3 right-3 rounded-full bg-white/90 backdrop-blur-sm px-3 py-1 text-sm font-bold text-amber-900 shadow">
-                {room.price}
+                {service.price}
               </div>
             )}
           </div>
           <div className="p-5">
             <h3 className="text-lg font-bold text-amber-950 mb-1" style={textStyle}>
-              {room.name}
+              {service.name}
             </h3>
-            {room.description && (
+            {service.description && (
               <p className="text-sm text-amber-700 leading-relaxed line-clamp-2 mb-4">
-                {room.description}
+                {service.description}
               </p>
             )}
             <div className="flex items-center justify-between">
-              {room.max_guests && (
+              {service.capacity && (
                 <span className="flex items-center gap-1 text-xs text-amber-600">
                   <Users className="h-3.5 w-3.5" />
-                  {room.max_guests} deelnemers
+                  {service.capacity} deelnemers
                 </span>
               )}
               <Button
@@ -109,49 +120,49 @@ function GridLayout({
 // ---- Layout: List ----
 
 function ListLayout({
-  rooms,
+  services,
   textStyle,
 }: {
-  rooms: Room[]
+  services: ServiceDisplay[]
   textStyle: React.CSSProperties
 }) {
   return (
     <div className="space-y-5">
-      {rooms.map((room) => (
+      {services.map((service) => (
         <div
-          key={room.id}
+          key={service.id}
           className="group flex overflow-hidden rounded-2xl border border-amber-100 bg-white shadow-sm hover:shadow-md transition-shadow"
         >
           <div className="relative w-2/5 flex-shrink-0 min-h-[180px] overflow-hidden">
-            <RoomImage
-              images={room.images}
-              name={room.name}
+            <ServiceImage
+              images={service.images}
+              name={service.name}
               className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           </div>
           <div className="flex-1 p-6 flex flex-col justify-between">
             <div>
               <h3 className="text-xl font-bold text-amber-950 mb-2" style={textStyle}>
-                {room.name}
+                {service.name}
               </h3>
-              {room.description && (
+              {service.description && (
                 <p className="text-sm text-amber-700 leading-relaxed line-clamp-3">
-                  {room.description}
+                  {service.description}
                 </p>
               )}
             </div>
             <div className="flex items-center justify-between mt-4">
               <div className="flex items-center gap-4">
-                {room.max_guests && (
+                {service.capacity && (
                   <span className="flex items-center gap-1 text-xs text-amber-600">
                     <Users className="h-3.5 w-3.5" />
-                    {room.max_guests} deelnemers
+                    {service.capacity} deelnemers
                   </span>
                 )}
-                {room.price && (
+                {service.price && (
                   <span className="flex items-center gap-1 text-xs text-amber-600">
                     <DollarSign className="h-3.5 w-3.5" />
-                    {room.price}
+                    {service.price}
                   </span>
                 )}
               </div>
@@ -169,20 +180,20 @@ function ListLayout({
 // ---- Layout: Featured ----
 
 function FeaturedLayout({
-  rooms,
+  services,
   textStyle,
 }: {
-  rooms: Room[]
+  services: ServiceDisplay[]
   textStyle: React.CSSProperties
 }) {
-  const [featured, ...rest] = rooms
+  const [featured, ...rest] = services
   if (!featured) return null
   return (
     <div className="space-y-6">
       {/* Featured hero card */}
       <div className="group relative flex overflow-hidden rounded-3xl bg-white shadow-md hover:shadow-xl transition-shadow min-h-[380px]">
         <div className="relative w-1/2 overflow-hidden">
-          <RoomImage
+          <ServiceImage
             images={featured.images}
             name={featured.name}
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -210,10 +221,10 @@ function FeaturedLayout({
                   {featured.price}
                 </span>
               )}
-              {featured.max_guests && (
+              {featured.capacity && (
                 <p className="flex items-center gap-1 text-xs text-amber-600">
                   <Users className="h-3.5 w-3.5" />
-                  {featured.max_guests} deelnemers
+                  {featured.capacity} deelnemers
                 </p>
               )}
             </div>
@@ -225,28 +236,28 @@ function FeaturedLayout({
       {/* Rest in grid */}
       {rest.length > 0 && (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {rest.map((room) => (
+          {rest.map((service) => (
             <div
-              key={room.id}
+              key={service.id}
               className="group overflow-hidden rounded-2xl border border-amber-100 bg-white shadow-sm hover:shadow-md transition-shadow"
             >
               <div className="relative h-44 overflow-hidden">
-                <RoomImage
-                  images={room.images}
-                  name={room.name}
+                <ServiceImage
+                  images={service.images}
+                  name={service.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
               </div>
               <div className="p-4">
                 <h3 className="font-bold text-amber-950 mb-1" style={textStyle}>
-                  {room.name}
+                  {service.name}
                 </h3>
-                {room.description && (
-                  <p className="text-xs text-amber-700 line-clamp-2 mb-3">{room.description}</p>
+                {service.description && (
+                  <p className="text-xs text-amber-700 line-clamp-2 mb-3">{service.description}</p>
                 )}
                 <div className="flex items-center justify-between">
-                  {room.price && (
-                    <span className="text-sm font-bold text-amber-900">{room.price}</span>
+                  {service.price && (
+                    <span className="text-sm font-bold text-amber-900">{service.price}</span>
                   )}
                   <Button
                     size="sm"
@@ -268,27 +279,27 @@ function FeaturedLayout({
 // ---- Layout: Magazine ----
 
 function MagazineLayout({
-  rooms,
+  services,
   textStyle,
 }: {
-  rooms: Room[]
+  services: ServiceDisplay[]
   textStyle: React.CSSProperties
 }) {
   return (
     <div className="space-y-8">
-      {rooms.map((room, i) => {
+      {services.map((service, i) => {
         const isReversed = i % 2 !== 0
         return (
           <div
-            key={room.id}
+            key={service.id}
             className={`group flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm hover:shadow-md transition-shadow ${
               isReversed ? "sm:flex-row-reverse" : "sm:flex-row"
             }`}
           >
             <div className="relative h-64 sm:h-auto sm:w-1/2 overflow-hidden">
-              <RoomImage
-                images={room.images}
-                name={room.name}
+              <ServiceImage
+                images={service.images}
+                name={service.name}
                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
             </div>
@@ -300,21 +311,21 @@ function MagazineLayout({
                 className="text-2xl font-bold text-amber-950 mb-3 text-balance"
                 style={textStyle}
               >
-                {room.name}
+                {service.name}
               </h3>
-              {room.description && (
-                <p className="text-amber-700 leading-relaxed mb-6">{room.description}</p>
+              {service.description && (
+                <p className="text-amber-700 leading-relaxed mb-6">{service.description}</p>
               )}
               <div className="flex items-center gap-4 flex-wrap">
-                {room.price && (
+                {service.price && (
                   <span className="text-lg font-bold text-amber-900" style={textStyle}>
-                    {room.price}
+                    {service.price}
                   </span>
                 )}
-                {room.max_guests && (
+                {service.capacity && (
                   <span className="flex items-center gap-1 text-xs text-amber-600">
                     <Users className="h-3.5 w-3.5" />
-                    {room.max_guests} deelnemers
+                    {service.capacity} deelnemers
                   </span>
                 )}
               </div>
@@ -332,44 +343,44 @@ function MagazineLayout({
 // ---- Layout: Minimal ----
 
 function MinimalLayout({
-  rooms,
+  services,
   textStyle,
 }: {
-  rooms: Room[]
+  services: ServiceDisplay[]
   textStyle: React.CSSProperties
 }) {
   return (
     <div className="divide-y divide-amber-100">
-      {rooms.map((room) => (
-        <div key={room.id} className="flex items-center justify-between py-6 group">
+      {services.map((service) => (
+        <div key={service.id} className="flex items-center justify-between py-6 group">
           <div className="flex items-center gap-5">
             <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl">
-              <RoomImage images={room.images} name={room.name} />
+              <ServiceImage images={service.images} name={service.name} />
             </div>
             <div>
               <h3
                 className="font-bold text-amber-950 group-hover:text-amber-700 transition-colors"
                 style={textStyle}
               >
-                {room.name}
+                {service.name}
               </h3>
-              {room.description && (
+              {service.description && (
                 <p className="text-sm text-amber-600 mt-0.5 line-clamp-1 max-w-md">
-                  {room.description}
+                  {service.description}
                 </p>
               )}
-              {room.max_guests && (
+              {service.capacity && (
                 <span className="flex items-center gap-1 text-xs text-amber-500 mt-1">
                   <Users className="h-3 w-3" />
-                  {room.max_guests} deelnemers
+                  {service.capacity} deelnemers
                 </span>
               )}
             </div>
           </div>
           <div className="flex items-center gap-6 pl-4 flex-shrink-0">
-            {room.price && (
+            {service.price && (
               <span className="text-lg font-bold text-amber-900 whitespace-nowrap" style={textStyle}>
-                {room.price}
+                {service.price}
               </span>
             )}
             <Button
@@ -389,10 +400,10 @@ function MinimalLayout({
 // ---- Layout: Carousel ----
 
 function CarouselLayout({
-  rooms,
+  services,
   textStyle,
 }: {
-  rooms: Room[]
+  services: ServiceDisplay[]
   textStyle: React.CSSProperties
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -421,38 +432,38 @@ function CarouselLayout({
         className="flex gap-5 overflow-x-auto scroll-smooth pb-2 px-1"
         style={{ scrollSnapType: "x mandatory", scrollbarWidth: "none" }}
       >
-        {rooms.map((room) => (
+        {services.map((service) => (
           <div
-            key={room.id}
+            key={service.id}
             className="group flex-shrink-0 w-72 overflow-hidden rounded-2xl border border-amber-100 bg-white shadow-sm hover:shadow-md transition-shadow"
             style={{ scrollSnapAlign: "start" }}
           >
             <div className="relative h-48 overflow-hidden">
-              <RoomImage
-                images={room.images}
-                name={room.name}
+              <ServiceImage
+                images={service.images}
+                name={service.name}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
-              {room.price && (
+              {service.price && (
                 <div className="absolute bottom-3 right-3 rounded-full bg-white/90 backdrop-blur-sm px-3 py-1 text-sm font-bold text-amber-900 shadow">
-                  {room.price}
+                  {service.price}
                 </div>
               )}
             </div>
             <div className="p-4">
               <h3 className="font-bold text-amber-950 mb-1 truncate" style={textStyle}>
-                {room.name}
+                {service.name}
               </h3>
-              {room.description && (
+              {service.description && (
                 <p className="text-xs text-amber-700 line-clamp-2 mb-3 leading-relaxed">
-                  {room.description}
+                  {service.description}
                 </p>
               )}
               <div className="flex items-center justify-between">
-                {room.max_guests && (
+                {service.capacity && (
                   <span className="flex items-center gap-1 text-xs text-amber-600">
                     <Users className="h-3.5 w-3.5" />
-                    {room.max_guests} pers.
+                    {service.capacity} pers.
                   </span>
                 )}
                 <Button
@@ -482,56 +493,53 @@ function CarouselLayout({
 
 // ---- Main section component ----
 
-export function DienstenSection({ data, styles }: DienstenSectionProps) {
+export function ServicesSection({ data, styles }: ServicesSectionProps) {
   const title = (data.title as string) || "Onze diensten"
-  const layout = (data.layout as DienstenLayout) || "grid"
-  // Support both new `serviceIds` and legacy `roomIds` keys.
-  const roomIds = (data.serviceIds ?? data.roomIds) as string[] | undefined
+  const layout = (data.layout as ServicesLayout) || "grid"
+  const serviceIds = data.serviceIds as string[] | undefined
 
-  const [rooms, setDiensten] = useState<Room[]>([])
+  const [services, setServices] = useState<ServiceDisplay[]>([])
   const [loading, setLoading] = useState(true)
 
-  const businessId = (data.businessId ?? data.bnbId) as string | null | undefined
-  const roomIdsKey = (roomIds ?? []).join(",")
+  const businessId = (data.businessId) as string | null | undefined
+  const serviceIdsKey = (serviceIds ?? []).join(",")
 
   useEffect(() => {
     let cancelled = false
 
-    const fetchDiensten = async () => {
+    const fetchServices = async () => {
       setLoading(true)
       try {
         // If service data is already provided (from server-side fetch), use it.
-        if (data.services || data.rooms) {
-          let result = data.services
-            ? (data.services as any[]).map((service): Room => ({
-                id: service.id,
-                bnb_id: service.business_id,
-                name: service.title,
-                description: service.description,
-                price: service.price,
-                max_guests: service.capacity,
-                images: Array.isArray(service.image_urls) ? service.image_urls : [],
-                position: service.position,
-                created_at: service.created_at,
-                updated_at: service.updated_at,
-              }))
-            : (data.rooms as Room[]).map((r) => ({
-                ...r,
-                images: Array.isArray(r.images) ? r.images : [],
-              }))
+        if (data.services) {
+          let result = (data.services as any[]).map((service): ServiceDisplay => ({
+            id: service.id,
+            name: service.title ?? service.name ?? "",
+            description: service.description ?? null,
+            price: service.price ?? null,
+            capacity: service.capacity ?? service.metadata?.capacity ?? null,
+            images: Array.isArray(service.image_urls)
+              ? service.image_urls
+              : Array.isArray(service.images)
+                ? service.images
+                : [],
+            position: service.position,
+            created_at: service.created_at,
+            updated_at: service.updated_at,
+          }))
 
-          if (roomIds && roomIds.length > 0) {
-            result = result.filter((r) => roomIds.includes(r.id))
+          if (serviceIds && serviceIds.length > 0) {
+            result = result.filter((service) => serviceIds.includes(service.id))
           }
 
-          setDiensten(result)
+          setServices(result)
           setLoading(false)
           return
         }
 
         const supabase = createClient()
 
-        // Use bnbId from section data if available; otherwise fall back to user→bnb lookup
+        // Use businessId from section data if available; otherwise fall back to the user's first business.
         let resolvedBusinessId: string | null = businessId ?? null
 
         if (!resolvedBusinessId) {
@@ -568,36 +576,36 @@ export function DienstenSection({ data, styles }: DienstenSectionProps) {
 
         if (cancelled) return
 
-        let result = ((serviceData ?? []) as any[]).map((service): Room => ({
+        let result = ((serviceData ?? []) as any[]).map((service): ServiceDisplay => ({
           id: service.id,
-          bnb_id: service.business_id,
-          name: service.title,
-          description: service.description,
-          price: service.price,
-          max_guests: service.capacity,
+          
+          name: service.title ?? "",
+          description: service.description ?? null,
+          price: service.price ?? null,
+          capacity: service.capacity ?? service.metadata?.capacity ?? null,
           images: Array.isArray(service.image_urls) ? service.image_urls : [],
           position: service.position,
           created_at: service.created_at,
           updated_at: service.updated_at,
         }))
 
-        if (roomIds && roomIds.length > 0) {
-          result = result.filter((r) => roomIds.includes(r.id))
+        if (serviceIds && serviceIds.length > 0) {
+          result = result.filter((service) => serviceIds.includes(service.id))
         }
 
-        setDiensten(result)
+        setServices(result)
       } catch {
         // ignore
       }
       if (!cancelled) setLoading(false)
     }
 
-    fetchDiensten()
+    fetchServices()
     return () => {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [businessId, roomIdsKey])
+  }, [businessId, serviceIdsKey])
 
   const sectionStyle: React.CSSProperties = {
     backgroundColor: styles?.backgroundColor,
@@ -628,7 +636,7 @@ export function DienstenSection({ data, styles }: DienstenSectionProps) {
   }
 
   // Empty state - link to the offerings manager.
-  if (rooms.length === 0) {
+  if (services.length === 0) {
     return (
      <section
       className={`relative overflow-hidden bg-[#020617] px-4 py-20 ${styles?.fontFamily ?? ""}`}
@@ -691,18 +699,20 @@ export function DienstenSection({ data, styles }: DienstenSectionProps) {
           {title}
         </h2>
 
-        {layout === "grid" && <GridLayout rooms={rooms} textStyle={textStyle} />}
-        {layout === "list" && <ListLayout rooms={rooms} textStyle={textStyle} />}
-        {layout === "featured" && <FeaturedLayout rooms={rooms} textStyle={textStyle} />}
-        {layout === "magazine" && <MagazineLayout rooms={rooms} textStyle={textStyle} />}
-        {layout === "minimal" && <MinimalLayout rooms={rooms} textStyle={textStyle} />}
-        {layout === "carousel" && <CarouselLayout rooms={rooms} textStyle={textStyle} />}
+        {layout === "grid" && <GridLayout services={services} textStyle={textStyle} />}
+        {layout === "list" && <ListLayout services={services} textStyle={textStyle} />}
+        {layout === "featured" && <FeaturedLayout services={services} textStyle={textStyle} />}
+        {layout === "magazine" && <MagazineLayout services={services} textStyle={textStyle} />}
+        {layout === "minimal" && <MinimalLayout services={services} textStyle={textStyle} />}
+        {layout === "carousel" && <CarouselLayout services={services} textStyle={textStyle} />}
       </div>
     </section>
   )
 }
 
-export const ServicesSection = DienstenSection
+
+
+
 
 
 

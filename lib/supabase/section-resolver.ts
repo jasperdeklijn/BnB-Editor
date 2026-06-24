@@ -24,7 +24,7 @@ export type SectionDataResolver = (
 // Per-type resolver map. Only sections that need live data have an entry.
 // ---------------------------------------------------------------------------
 
-/** Shape that the services/rooms renderer expects. */
+/** Shape that the services renderer expects. */
 interface ServiceRow {
   id: string
   business_id: string
@@ -52,42 +52,6 @@ async function fetchServicesForBusiness(
   return (data ?? []) as ServiceRow[]
 }
 
-/**
- * Map a `services` row into the legacy `rooms` shape expected by ServicesSection.
- * Keeps both `services` (normalized) and `rooms` (legacy) on the data object so
- * either renderer variant can consume it.
- */
-function mapServicesToRendererData(rows: ServiceRow[]): {
-  services: ServiceRow[]
-  rooms: Array<{
-    id: string
-    bnb_id: string
-    name: string
-    description: string
-    price: string
-    max_guests: number | null
-    images: string[]
-    position: number
-    created_at: string
-    updated_at: string
-  }>
-} {
-  const rooms = rows.map((s) => ({
-    id: s.id,
-    bnb_id: s.business_id,
-    name: s.title,
-    description: s.description,
-    price: s.price,
-    max_guests: s.capacity,
-    images: Array.isArray(s.image_urls) ? (s.image_urls as string[]) : [],
-    position: s.position,
-    created_at: s.created_at,
-    updated_at: s.updated_at,
-  }))
-
-  return { services: rows, rooms }
-}
-
 // ---------------------------------------------------------------------------
 // Resolver implementations
 // ---------------------------------------------------------------------------
@@ -105,13 +69,7 @@ const servicesResolver: SectionDataResolver = async (data, { businessId, supabas
       ? rows.filter((r) => serviceIds.includes(r.id))
       : rows
 
-  return { ...data, ...mapServicesToRendererData(filtered) }
-}
-
-/** Compatibility resolver: old `rooms` sections are backed by the new
- *  `services` table. We just delegate to the same logic. */
-const roomsCompatibilityResolver: SectionDataResolver = async (data, context) => {
-  return servicesResolver(data, context)
+  return { ...data, services: filtered }
 }
 
 // ---------------------------------------------------------------------------
@@ -119,12 +77,11 @@ const roomsCompatibilityResolver: SectionDataResolver = async (data, context) =>
 // ---------------------------------------------------------------------------
 const resolvers: Partial<Record<SectionType, SectionDataResolver>> = {
   services: servicesResolver,
-  rooms: roomsCompatibilityResolver,
 }
 
 // Named exports so individual section definitions in the registry can attach
 // the correct resolver directly on their entry (single source of truth).
-export { servicesResolver, roomsCompatibilityResolver as roomsResolver }
+export { servicesResolver }
 
 // ---------------------------------------------------------------------------
 // Public API

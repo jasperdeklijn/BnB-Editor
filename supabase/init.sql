@@ -1,5 +1,5 @@
 -- ============================================================
--- BnB Editor / Small Business Website Builder database init
+-- Small Business Website Builder database init
 -- ============================================================
 -- Use this file to rebuild the application database schema in a
 -- Supabase project. It intentionally drops the application tables
@@ -55,56 +55,7 @@ begin
 end;
 $$;
 
--- ------------------------------------------------------------
--- Compatibility tables: legacy BnB/rooms model
--- ------------------------------------------------------------
--- These are kept so old compatibility routes/wrappers can still work
--- during the migration window. New code should use businesses/services.
-
-create table public.bnbs (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
-  name text not null default '',
-  tagline text not null default '',
-  description text not null default '',
-  street text not null default '',
-  city text not null default '',
-  postal text not null default '',
-  country text not null default '',
-  checkin_time text not null default '15:00',
-  checkout_time text not null default '11:00',
-  max_guests integer,
-  languages text not null default '',
-  website_url text not null default '',
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique (user_id)
-);
-
-create table public.rooms (
-  id uuid primary key default gen_random_uuid(),
-  bnb_id uuid not null references public.bnbs(id) on delete cascade,
-  name text not null default '',
-  description text not null default '',
-  price text not null default '',
-  max_guests integer,
-  images jsonb not null default '[]'::jsonb,
-  position integer not null default 0,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create trigger set_bnbs_updated_at
-  before update on public.bnbs
-  for each row execute procedure public.set_updated_at();
-
-create trigger set_rooms_updated_at
-  before update on public.rooms
-  for each row execute procedure public.set_updated_at();
-
--- ------------------------------------------------------------
--- Generic business/services model
--- ------------------------------------------------------------
+-- ------------------------------------------------------------`r`n-- Generic business/services model`r`n-- ------------------------------------------------------------
 
 create table public.businesses (
   id uuid primary key default gen_random_uuid(),
@@ -266,80 +217,12 @@ create index idx_section_transitions_to_section on public.section_transitions (t
 -- Row Level Security
 -- ------------------------------------------------------------
 
-alter table public.bnbs enable row level security;
-alter table public.rooms enable row level security;
 alter table public.businesses enable row level security;
 alter table public.services enable row level security;
 alter table public.websites enable row level security;
 alter table public.website_sections enable row level security;
 alter table public.section_transitions enable row level security;
 alter table public.contact_requests enable row level security;
-
--- Legacy bnbs
-create policy "Users can view own bnb"
-  on public.bnbs for select
-  using (auth.uid() = user_id);
-
-create policy "Users can insert own bnb"
-  on public.bnbs for insert
-  with check (auth.uid() = user_id);
-
-create policy "Users can update own bnb"
-  on public.bnbs for update
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
-
-create policy "Users can delete own bnb"
-  on public.bnbs for delete
-  using (auth.uid() = user_id);
-
--- Legacy rooms
-create policy "Users can view own rooms"
-  on public.rooms for select
-  using (
-    exists (
-      select 1 from public.bnbs b
-      where b.id = rooms.bnb_id
-        and b.user_id = auth.uid()
-    )
-  );
-
-create policy "Users can insert own rooms"
-  on public.rooms for insert
-  with check (
-    exists (
-      select 1 from public.bnbs b
-      where b.id = rooms.bnb_id
-        and b.user_id = auth.uid()
-    )
-  );
-
-create policy "Users can update own rooms"
-  on public.rooms for update
-  using (
-    exists (
-      select 1 from public.bnbs b
-      where b.id = rooms.bnb_id
-        and b.user_id = auth.uid()
-    )
-  )
-  with check (
-    exists (
-      select 1 from public.bnbs b
-      where b.id = rooms.bnb_id
-        and b.user_id = auth.uid()
-    )
-  );
-
-create policy "Users can delete own rooms"
-  on public.rooms for delete
-  using (
-    exists (
-      select 1 from public.bnbs b
-      where b.id = rooms.bnb_id
-        and b.user_id = auth.uid()
-    )
-  );
 
 -- Businesses
 create policy "Anyone can view published website businesses"
@@ -634,4 +517,5 @@ create policy "Users can update their own images"
   );
 
 commit;
+
 

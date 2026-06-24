@@ -768,9 +768,9 @@ Completion note 2026-06-23: `/editor/seo` now edits website SEO, OpenGraph, soci
 
 Done when: `rg -n "BnB|bnb|B&B|rooms|kamer|gasten|property|host"` returns only intentional compatibility references.
 
-Completion note 2026-06-23: visible platform copy in marketing, auth, account, billing, legal, pricing, domain UI, sitemap, and request email defaults has been moved from BnB-specific wording to generic Website Maker/small-business wording. `lib/platform.ts` now centralizes platform brand/domain/email constants; old `/editor/bnb` and `/editor/rooms` pages redirect to the generic editor routes. Remaining `bnb`/`rooms` references are compatibility code paths for Milestone 16 cleanup.
+Completion note 2026-06-23: visible platform copy in marketing, auth, account, billing, legal, pricing, domain UI, sitemap, and request email defaults has been moved from BnB-specific wording to generic Website Maker/small-business wording. `lib/platform.ts` now centralizes platform brand/domain/email constants. Remaining compatibility references were scheduled for Milestone 16 cleanup.
 
-### Milestone 16: Cleanup And Removal — ⬜ Not done
+### Milestone 16: Cleanup And Removal � Done
 
 - Remove old `components/bnb-sections` compatibility exports.
 - Remove old `/editor/bnb` and `/editor/rooms` redirects only after a safe period.
@@ -780,7 +780,7 @@ Completion note 2026-06-23: visible platform copy in marketing, auth, account, b
 
 Done when: the codebase is generic by default and BnB exists only as one possible business category.
 
-Audit note 2026-06-23: old BnB compatibility code remains intentionally present, including `components/bnb-sections`, `components/bnb`, `components/rooms`, `lib/supabase/bnb.ts`, old editor pages, `rooms`/`amenities` section types, and `bnbs`/`rooms` database compatibility references.
+Completion note 2026-06-24: removed old BnB/rooms editor routes, redirects, compatibility components, `lib/supabase/bnb.ts`, deprecated `rooms`/`amenities` section types, and legacy service selection keys. `supabase/init.sql` now rebuilds only the generic business/services schema while dropping old tables during reset, and `supabase/migrations/20260605100000_remove_legacy_bnb_rooms.sql` removes legacy tables for existing projects. Historical backfill migration references remain intentionally preserved.
 
 ## Acceptance Criteria
 
@@ -790,5 +790,7 @@ Audit note 2026-06-23: old BnB compatibility code remains intentionally present,
 - Public pages render dynamically from section data and theme tokens.
 - Contact, quote, appointment, WhatsApp, and booking request CTAs are supported without webshop behavior.
 - SEO metadata, OpenGraph, structured data, maps, social links, and analytics configuration have generic business support.
+
+
 
 

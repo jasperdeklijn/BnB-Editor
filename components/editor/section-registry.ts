@@ -1,6 +1,6 @@
 import type { ComponentType } from "react"
 import type { SectionDataResolver } from "@/lib/supabase/section-resolver"
-import { servicesResolver, roomsResolver } from "@/lib/supabase/section-resolver"
+import { servicesResolver } from "@/lib/supabase/section-resolver"
 import {
   Briefcase,
   Home,
@@ -120,30 +120,10 @@ export const sectionDefinitions = {
     defaultData: ({ businessId }) => ({
       title: SECTION_COPY.services.defaultTitle,
       layout: "grid",
-      bnbId: businessId ?? null,
       businessId: businessId ?? null,
-      roomIds: [],
       serviceIds: [],
     }),
     resolveData: servicesResolver,
-    Renderer: ServicesSection,
-  },
-  rooms: {
-    type: "rooms",
-    label: SECTION_COPY.rooms.label,
-    description: SECTION_COPY.rooms.description,
-    icon: Briefcase,
-    category: "business",
-    selectable: false,
-    defaultData: ({ businessId }) => ({
-      title: SECTION_COPY.services.defaultTitle,
-      layout: "grid",
-      bnbId: businessId ?? null,
-      businessId: businessId ?? null,
-      roomIds: [],
-      serviceIds: [],
-    }),
-    resolveData: roomsResolver,
     Renderer: ServicesSection,
   },
   gallery: {
@@ -168,21 +148,6 @@ export const sectionDefinitions = {
     category: "business",
     defaultData: () => ({
       title: SECTION_COPY.features.defaultTitle,
-      amenities: DEFAULT_FEATURES,
-      features: DEFAULT_FEATURES,
-    }),
-    Renderer: FeaturesSection,
-  },
-  amenities: {
-    type: "amenities",
-    label: SECTION_COPY.amenities.label,
-    description: SECTION_COPY.amenities.description,
-    icon: Sparkles,
-    category: "business",
-    selectable: false,
-    defaultData: () => ({
-      title: SECTION_COPY.features.defaultTitle,
-      amenities: DEFAULT_FEATURES,
       features: DEFAULT_FEATURES,
     }),
     Renderer: FeaturesSection,
