@@ -59,7 +59,7 @@ Use this file as the task list for the next `/editor` refactor. Keep the app bui
    - Component-level overrides still work when supported.
    - Theme defaults are applied consistently in editor preview, public site, and preview routes.
 
-7. [ ] Make the styling sidebar correspond to the selected section
+7. [x] Make the styling sidebar correspond to the selected section
 
    Update the styling sidebar so it reflects the currently selected section.
 
@@ -69,7 +69,7 @@ Use this file as the task list for the next `/editor` refactor. Keep the app bui
    - Editing style values updates the selected section preview immediately.
    - Switching sections does not leak styling state between different sections.
 
-8. [ ] Make every page mobile friendly
+8. [x] Make every page mobile friendly
 
    This is the final task and should be done after the desktop editor refactor is stable.
 

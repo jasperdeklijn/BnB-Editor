@@ -33,14 +33,14 @@ export function TemplateSelector({ onSelect, onClose }: TemplateSelectorProps) {
           return (
             <Card
               key={category.value}
-              className={`p-6 cursor-pointer transition-all hover:shadow-lg ${
+              className={`cursor-pointer p-4 transition-all hover:shadow-lg sm:p-6 ${
                 isSelected ? "ring-2 ring-primary bg-secondary" : "hover:shadow-md"
               }`}
               onClick={() => handleSelect(category.value)}
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold mb-1">{category.label}</h3>
+              <div className="mb-4 flex min-w-0 items-start justify-between">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base font-semibold mb-1 sm:text-lg">{category.label}</h3>
                   <p className="text-sm text-muted-foreground mb-3">{category.description}</p>
                 </div>
                 {isSelected && (
@@ -73,7 +73,7 @@ export function TemplateSelector({ onSelect, onClose }: TemplateSelectorProps) {
       </div>
 
       {selectedCategory && (
-        <div className="mt-8 flex gap-4 justify-end">
+        <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           {onClose && (
             <Button variant="outline" onClick={onClose}>
               Sluiten

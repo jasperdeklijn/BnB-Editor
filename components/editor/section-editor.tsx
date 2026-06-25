@@ -106,6 +106,19 @@ function getLayoutIcon(layout: SectionLayout) {
   }
 }
 
+type StyleControl = keyof Pick<SectionStyles, "fontFamily" | "backgroundColor" | "textColor" | "backgroundImage">
+
+const DEFAULT_STYLE_CONTROLS: StyleControl[] = ["fontFamily", "backgroundColor", "textColor", "backgroundImage"]
+
+const SECTION_STYLE_CONTROLS: Partial<Record<SectionType, StyleControl[]>> = {
+  nav: ["backgroundColor", "textColor"],
+  footer: ["backgroundColor", "textColor"],
+}
+
+function getSectionStyleControls(type: SectionType): StyleControl[] {
+  return SECTION_STYLE_CONTROLS[type] ?? DEFAULT_STYLE_CONTROLS
+}
+
 export function SelectionEditor({
   selectedSection,
   sections,
@@ -308,6 +321,30 @@ export function SelectionEditor({
   const layoutOptions = getSectionLayoutOptions(selectedSection.type)
   const selectedLayoutOption = layoutOptions.find((option) => option.value === selectedLayout) ?? layoutOptions[0]
   const LayoutIcon = getLayoutIcon(selectedLayout)
+  const supportedStyleControls = getSectionStyleControls(selectedSection.type)
+  const supportsStyleControl = (control: StyleControl) => supportedStyleControls.includes(control)
+
+  const updateStyleValue = (key: StyleControl, value: string) => {
+    const newStyles = { ...(selectedSection.styles || {}) }
+
+    if (value) {
+      newStyles[key] = value
+    } else {
+      delete newStyles[key]
+    }
+
+    onStyleUpdate(newStyles)
+    if (saveTimeoutId) clearTimeout(saveTimeoutId)
+    const timeout = setTimeout(async () => {
+      await saveStylesToDatabase(newStyles)
+      toast.success("Stijl opgeslagen", {
+        position: "bottom-right",
+        duration: 2000,
+        style: { background: "#10b981", color: "white" },
+      })
+    }, 800)
+    setSaveTimeoutId(timeout)
+  }
 
   return (
     <div className="w-full md:w-80 border-border bg-[var(--editor-panel)] p-4 md:border-l md:p-6 overflow-auto animate-in slide-in-from-right duration-300">
@@ -1657,32 +1694,21 @@ export function SelectionEditor({
             Stijlen
           </Label>
           <div className="space-y-3">
-            <div>
-              <Label className="mb-2 text-xs">Lettertypefamilie</Label>
-              <Input
-                placeholder="bijv., font-serif"
-                value={(selectedSection.styles as any)?.fontFamily || ""}
-                onChange={(e) => {
-                  const newStyles = {
-                    ...(selectedSection.styles || {}),
-                    fontFamily: e.target.value,
-                  }
-                  onStyleUpdate(newStyles)
-                  if (saveTimeoutId) clearTimeout(saveTimeoutId)
-                  const timeout = setTimeout(async () => {
-                    await saveStylesToDatabase(newStyles)
-                    toast.success("Stijl opgeslagen", {
-                      position: "bottom-right",
-                      duration: 2000,
-                      style: { background: "#10b981", color: "white" },
-                    })
-                  }, 800)
-                  setSaveTimeoutId(timeout)
-                }}
-              />
-            </div>
-            <div className="flex gap-3">
-              <div className="flex-1">
+            {supportsStyleControl("fontFamily") ? (
+              <div>
+                <Label className="mb-2 text-xs">Lettertypefamilie</Label>
+                <Input
+                  placeholder="bijv. font-serif"
+                  value={selectedSection.styles?.fontFamily || ""}
+                  onChange={(e) => updateStyleValue("fontFamily", e.target.value)}
+                />
+              </div>
+            ) : null}
+
+            {(supportsStyleControl("backgroundColor") || supportsStyleControl("textColor")) ? (
+              <div className="flex gap-3">
+                {supportsStyleControl("backgroundColor") ? (
+                <div className="flex-1">
                 <Label className="mb-2 flex items-center gap-1 text-xs">
                   <div className="h-3 w-3 rounded border bg-muted" />
                   Achtergrond
@@ -1690,28 +1716,14 @@ export function SelectionEditor({
                 <input
                   type="color"
                   aria-label="Achtergrondkleur"
-                  value={(selectedSection.styles as any)?.backgroundColor || "#ffffff"}
-                  onChange={(e) => {
-                    const newStyles = {
-                      ...(selectedSection.styles || {}),
-                      backgroundColor: e.target.value,
-                    }
-                    onStyleUpdate(newStyles)
-                    if (saveTimeoutId) clearTimeout(saveTimeoutId)
-                    const timeout = setTimeout(async () => {
-                      await saveStylesToDatabase(newStyles)
-                      toast.success("Stijl opgeslagen", {
-                        position: "bottom-right",
-                        duration: 2000,
-                        style: { background: "#10b981", color: "white" },
-                      })
-                    }, 800)
-                    setSaveTimeoutId(timeout)
-                  }}
+                  value={selectedSection.styles?.backgroundColor || "#ffffff"}
+                  onChange={(e) => updateStyleValue("backgroundColor", e.target.value)}
                   className="h-9 w-full cursor-pointer rounded border"
                 />
               </div>
-              <div className="flex-1">
+                ) : null}
+                {supportsStyleControl("textColor") ? (
+                <div className="flex-1">
                 <Label className="mb-2 flex items-center gap-1 text-xs">
                   <Type className="h-3 w-3" />
                   Tekst
@@ -1719,28 +1731,45 @@ export function SelectionEditor({
                 <input
                   type="color"
                   aria-label="Tekstkleur"
-                  value={(selectedSection.styles as any)?.textColor || "#000000"}
-                  onChange={(e) => {
-                    const newStyles = {
-                      ...(selectedSection.styles || {}),
-                      textColor: e.target.value,
-                    }
-                    onStyleUpdate(newStyles)
-                    if (saveTimeoutId) clearTimeout(saveTimeoutId)
-                    const timeout = setTimeout(async () => {
-                      await saveStylesToDatabase(newStyles)
-                      toast.success("Stijl opgeslagen", {
-                        position: "bottom-right",
-                        duration: 2000,
-                        style: { background: "#10b981", color: "white" },
-                      })
-                    }, 800)
-                    setSaveTimeoutId(timeout)
-                  }}
+                  value={selectedSection.styles?.textColor || "#000000"}
+                  onChange={(e) => updateStyleValue("textColor", e.target.value)}
                   className="h-9 w-full cursor-pointer rounded border"
                 />
               </div>
-            </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {supportsStyleControl("backgroundImage") ? (
+              <div>
+                <Label className="mb-2 flex items-center gap-1 text-xs">
+                  <ImageIcon className="h-3 w-3" />
+                  Achtergrondafbeelding
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="https://..."
+                    value={selectedSection.styles?.backgroundImage || ""}
+                    onChange={(e) => updateStyleValue("backgroundImage", e.target.value)}
+                  />
+                  {selectedSection.styles?.backgroundImage ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-10 shrink-0"
+                      onClick={() => updateStyleValue("backgroundImage", "")}
+                    >
+                      Wis
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              Beschikbare stijlopties voor deze {selectedSection.type.replace("_", " ")} sectie.
+            </p>
           </div>
         </Card>
 

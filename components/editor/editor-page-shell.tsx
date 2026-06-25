@@ -34,19 +34,19 @@ export function EditorPageShell({
     <div className={cn("h-full bg-muted", scroll ? "overflow-auto" : "overflow-hidden", className)}>
       <main
         className={cn(
-          "mx-auto flex min-h-full w-full flex-col gap-6 px-4 py-8 md:px-8",
+          "mx-auto flex min-h-full w-full min-w-0 flex-col gap-4 px-3 py-5 sm:gap-6 sm:px-4 sm:py-8 md:px-8",
           maxWidthClasses[maxWidth],
           contentClassName,
         )}
       >
-        <header className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <header className="flex min-w-0 flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold leading-tight text-foreground">{title}</h1>
+            <h1 className="text-xl font-bold leading-tight text-foreground sm:text-2xl">{title}</h1>
             {description ? (
               <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">{description}</p>
             ) : null}
           </div>
-          {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
+          {actions ? <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:shrink-0">{actions}</div> : null}
         </header>
         {children}
       </main>

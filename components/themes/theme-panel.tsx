@@ -140,16 +140,16 @@ export function ThemePanel({
 
   return (
     <div className={cn('flex flex-col h-full', className)}>
-      <div className="flex items-center justify-between px-4 py-3 border-b">
-        <div className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center justify-between gap-2 px-3 py-3 border-b sm:px-4">
+        <div className="flex min-w-0 items-center gap-2">
           <Palette className="h-4 w-4 text-primary" />
-          <span className="font-medium text-sm">Website Thema</span>
+          <span className="truncate font-medium text-sm">Website Thema</span>
         </div>
         {isSaving && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-        <TabsList className="mx-4 mt-3 grid grid-cols-3">
+        <TabsList className="mx-3 mt-3 grid grid-cols-3 sm:mx-4">
           <TabsTrigger value="presets" className="text-xs">
             Presets
           </TabsTrigger>
@@ -161,7 +161,7 @@ export function ThemePanel({
           </TabsTrigger>
         </TabsList>
 
-        <div className="flex-1 min-h-0 p-4">
+        <div className="flex-1 min-h-0 p-3 sm:p-4">
           <TabsContent value="presets" className="h-full mt-0">
             <ScrollArea className="h-full">
               {businessCategory && recommendedPresets.length > 0 && (
@@ -170,7 +170,7 @@ export function ThemePanel({
                     <Sparkles className="h-3.5 w-3.5 text-amber-500" />
                     <Label className="text-xs text-muted-foreground">Aanbevolen voor jouw bedrijf</Label>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 mb-4">
+                  <div className="grid grid-cols-1 gap-2 mb-4 sm:grid-cols-2">
                     {recommendedPresets.slice(0, 4).map((preset) => (
                       <PresetCard
                         key={preset.id}
@@ -185,7 +185,7 @@ export function ThemePanel({
               )}
 
               <Label className="text-xs text-muted-foreground mb-3 block">Alle thema&apos;s</Label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {THEME_PRESETS.map((preset) => (
                   <PresetCard
                     key={preset.id}
@@ -200,7 +200,7 @@ export function ThemePanel({
 
           <TabsContent value="colors" className="h-full mt-0">
             <ScrollArea className="h-full">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {COLOR_PALETTES.map((palette) => (
                   <PaletteCard
                     key={palette.id}
@@ -231,16 +231,16 @@ export function ThemePanel({
       </Tabs>
 
       {/* Layout Controls (always visible at bottom) */}
-      <div className="border-t p-4 space-y-4">
+      <div className="border-t p-3 space-y-4 sm:p-4">
         <div>
           <Label className="text-xs text-muted-foreground mb-2 block">Afstand</Label>
-          <div className="flex gap-1">
+          <div className="grid grid-cols-1 gap-1 min-[360px]:grid-cols-3">
             {(['compact', 'comfortable', 'spacious'] as ThemeSpacing[]).map((s) => (
               <Button
                 key={s}
                 variant={theme.spacing === s ? 'default' : 'outline'}
                 size="sm"
-                className="flex-1 text-xs"
+                className="text-xs"
                 onClick={() => handleSpacingChange(s)}
               >
                 {s === 'compact' ? 'Compact' : s === 'comfortable' ? 'Comfortabel' : 'Ruim'}
@@ -250,13 +250,13 @@ export function ThemePanel({
         </div>
         <div>
           <Label className="text-xs text-muted-foreground mb-2 block">Hoeken</Label>
-          <div className="flex gap-1">
+          <div className="grid grid-cols-4 gap-1">
             {(['none', 'small', 'medium', 'large'] as ThemeRadius[]).map((r) => (
               <Button
                 key={r}
                 variant={theme.radius === r ? 'default' : 'outline'}
                 size="sm"
-                className="flex-1 text-xs px-2"
+                className="text-xs px-2"
                 onClick={() => handleRadiusChange(r)}
               >
                 <div

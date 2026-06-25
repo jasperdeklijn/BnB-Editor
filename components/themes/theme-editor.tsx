@@ -74,7 +74,7 @@ export function ThemeEditor({ value, onChange, className }: ThemeEditorProps) {
   return (
     <div className={cn('flex flex-col h-full', className)}>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-        <TabsList className="grid grid-cols-4 mb-4">
+        <TabsList className="mb-4 grid grid-cols-2 sm:grid-cols-4">
           <TabsTrigger value="presets" className="text-xs">
             Presets
           </TabsTrigger>
@@ -135,7 +135,7 @@ function PresetSelector({
 
   return (
     <ScrollArea className="h-[400px] pr-3">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {THEME_PRESETS.map((preset) => {
           const isSelected = matchingPreset?.id === preset.id;
           const palette = COLOR_PALETTES.find((p) => p.id === preset.paletteId);
@@ -195,7 +195,7 @@ function PaletteSelector({
 }) {
   return (
     <ScrollArea className="h-[400px] pr-3">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {COLOR_PALETTES.map((palette) => {
           const isSelected = value === palette.id;
 
@@ -386,7 +386,7 @@ function LayoutEditor({
           <Circle className="w-4 h-4" />
           Corners
         </Label>
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 gap-2 min-[420px]:grid-cols-3 sm:grid-cols-5">
           {radiusOptions.map((option) => (
             <button
               key={option.value}
