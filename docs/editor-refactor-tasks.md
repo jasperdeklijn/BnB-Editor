@@ -4,7 +4,7 @@ Use this file as the task list for the next `/editor` refactor. Keep the app bui
 
 ## Tasks
 
-1. [ ] Style all editor pages with the style guide
+1. [x] Style all editor pages with the style guide
 
    Apply the rules from `docs/style-guide.md` across every `/editor` page and editor-related view.
 
@@ -13,7 +13,7 @@ Use this file as the task list for the next `/editor` refactor. Keep the app bui
    - Buttons, cards, headers, forms, borders, and empty states follow the shared style guide.
    - Old blue/purple landing or editor styling is removed from the editor UI unless explicitly needed.
 
-2. [ ] Make the left sidebar compatible with collapse
+2. [x] Make the left sidebar compatible with collapse
 
    Refactor the left editor sidebar so it works cleanly in expanded and collapsed states.
 

@@ -375,7 +375,7 @@ export function EditorClient({ userId }: EditorClientProps) {
   const selectedSection = sections.find((s) => s.id === selectedSectionId) || null
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-muted/30">
+    <div className="flex h-full min-h-0 flex-col bg-muted">
       {/* Desktop layout: side-by-side panels */}
       <div className="hidden md:flex flex-1 overflow-hidden">
         {!isPreview && <SectionsSelector userId={userId} />}
@@ -449,7 +449,7 @@ export function EditorClient({ userId }: EditorClientProps) {
 
         {/* Bottom tab bar */}
         {!isPreview && (
-          <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-border bg-background pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] md:hidden">
+          <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-border bg-background pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(31,41,51,0.08)] md:hidden">
             <button
               type="button"
               onClick={() => setMobilePanel("sections")}

@@ -38,14 +38,14 @@ export default function TemplatesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12 px-4">
+    <div className="min-h-screen bg-muted py-12 px-4">
       {isLoading && (
-        <div className="mx-auto mb-6 max-w-4xl rounded-lg border bg-white p-4 text-sm text-muted-foreground shadow-sm">
+        <div className="mx-auto mb-6 max-w-4xl rounded-xl border border-border bg-white p-4 text-sm text-muted-foreground shadow-sm">
           Sjabloon wordt toegepast...
         </div>
       )}
       {error && (
-        <div className="mx-auto mb-6 max-w-4xl rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="mx-auto mb-6 max-w-4xl rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
           {error}
         </div>
       )}

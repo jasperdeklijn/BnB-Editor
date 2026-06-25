@@ -531,7 +531,7 @@ export function EditorCanvas({
   return (
     <main
       ref={canvasRef}
-      className="flex-1 overflow-auto bg-muted/30"
+      className="flex-1 overflow-auto bg-muted"
       onDragOver={handleDragOver}
     >
       <div className={isPreview ? "" : "p-3 sm:p-4 md:p-8"}>

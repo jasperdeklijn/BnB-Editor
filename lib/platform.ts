@@ -1,4 +1,4 @@
-export const PLATFORM_BRAND_NAME = "SiteVoorMij.nl"
+export const PLATFORM_BRAND_NAME = "BnbWebsiteMaken.nl" //SiteVoorMij.nl
 export const PLATFORM_BRAND_INITIALS = "SV"
 export const PLATFORM_PRODUCT_DESCRIPTION = "websitebouwer voor kleine bedrijven"
 

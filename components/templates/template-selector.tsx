@@ -27,7 +27,7 @@ export function TemplateSelector({ onSelect, onClose }: TemplateSelectorProps) {
     <div className="w-full max-w-4xl mx-auto p-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Kies uw bedrijfstype</h1>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           Selecteer het bedrijfstype dat het beste bij u past. We zorgen voor een sjabloon met relevante secties en content.
         </p>
       </div>
@@ -41,18 +41,18 @@ export function TemplateSelector({ onSelect, onClose }: TemplateSelectorProps) {
             <Card
               key={category.value}
               className={`p-6 cursor-pointer transition-all hover:shadow-lg ${
-                isSelected ? "ring-2 ring-blue-500 bg-blue-50" : "hover:shadow-md"
+                isSelected ? "ring-2 ring-primary bg-secondary" : "hover:shadow-md"
               }`}
               onClick={() => handleSelect(category.value)}
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold mb-1">{category.label}</h3>
-                  <p className="text-sm text-gray-600 mb-3">{category.description}</p>
+                  <p className="text-sm text-muted-foreground mb-3">{category.description}</p>
                 </div>
                 {isSelected && (
                   <div className="ml-4 flex-shrink-0">
-                    <div className="flex items-center justify-center h-6 w-6 rounded-full bg-blue-500">
+                    <div className="flex items-center justify-center h-6 w-6 rounded-full bg-primary">
                       <Check className="h-4 w-4 text-white" />
                     </div>
                   </div>
@@ -61,15 +61,15 @@ export function TemplateSelector({ onSelect, onClose }: TemplateSelectorProps) {
 
               {template && (
                 <div className="mb-4 pt-4 border-t">
-                  <p className="text-xs font-medium text-gray-500 mb-2">VOORBEELD DIENSTEN:</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">VOORBEELD DIENSTEN:</p>
                   <div className="flex flex-wrap gap-1">
                     {template.services.slice(0, 3).map((service, idx) => (
-                      <span key={idx} className="inline-block px-2 py-1 bg-gray-100 rounded text-xs text-gray-700">
+                      <span key={idx} className="inline-block px-2 py-1 bg-secondary rounded text-xs text-secondary-foreground">
                         {service.title}
                       </span>
                     ))}
                     {template.services.length > 3 && (
-                      <span className="inline-block px-2 py-1 text-xs text-gray-600">+{template.services.length - 3} meer</span>
+                      <span className="inline-block px-2 py-1 text-xs text-muted-foreground">+{template.services.length - 3} meer</span>
                     )}
                   </div>
                 </div>

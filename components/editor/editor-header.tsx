@@ -101,7 +101,7 @@ export function EditorHeader({
           />
           <Link
             href="/editor"
-            className="hidden md:inline-flex items-center gap-2 rounded-md border border-[var(--editor-header-accent)] bg-[var(--editor-header)] px-3 py-2 text-xs md:text-sm font-medium text-[var(--editor-header-fg)] transition-colors hover:bg-violet-500/10"
+            className="hidden md:inline-flex items-center gap-2 rounded-full border border-[var(--editor-header-accent)] bg-[var(--editor-header)] px-3 py-2 text-xs md:text-sm font-medium text-[var(--editor-header-fg)] transition-colors hover:bg-[var(--editor-header-accent)]/25"
           >
             <ArrowLeft className="h-3 w-3 md:h-4 md:w-4" />
             <span className="hidden sm:inline">Terug</span>
@@ -129,7 +129,7 @@ export function EditorHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 rounded-md bg-purple-600 text-white hover:bg-purple-700 px-2 md:px-3 text-xs md:text-sm"
+            className="h-8 rounded-full bg-white text-primary hover:bg-secondary px-2 md:px-3 text-xs md:text-sm shadow-sm"
             onClick={() => setMenuOpen((o) => !o)}
             aria-haspopup="menu"
             aria-expanded={menuOpen}
@@ -142,14 +142,14 @@ export function EditorHeader({
           {menuOpen && (
             <div
               role="menu"
-              className="absolute left-0 top-full z-50 mt-1 min-w-[12rem] max-w-[calc(100vw-1rem)] md:w-56 rounded-md border border-slate-200 bg-white shadow-lg text-sm"
+              className="absolute left-0 top-full z-50 mt-1 min-w-[12rem] max-w-[calc(100vw-1rem)] md:w-56 rounded-xl border border-border bg-white shadow-lg text-sm"
             >
               {/* Images link */}
               <Link
                 href="/editor/images"
                 role="menuitem"
                 onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-slate-700 hover:bg-violet-50 hover:text-violet-900 transition-colors border-b border-slate-200"
+                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors border-b border-border"
               >
                 <ImageIcon className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
                 Afbeeldingen
@@ -160,7 +160,7 @@ export function EditorHeader({
                 href="/editor/business"
                 role="menuitem"
                 onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-slate-700 hover:bg-violet-50 hover:text-violet-900 transition-colors border-b border-slate-200"
+                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors border-b border-border"
               >
                 <Home className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
                 Bedrijfsgegevens
@@ -171,7 +171,7 @@ export function EditorHeader({
                 href="/editor/services"
                 role="menuitem"
                 onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-slate-700 hover:bg-violet-50 hover:text-violet-900 transition-colors border-b border-slate-200"
+                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors border-b border-border"
               >
                 <Briefcase className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
                 Diensten
@@ -182,7 +182,7 @@ export function EditorHeader({
                 href="/editor/domains"
                 role="menuitem"
                 onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-slate-700 hover:bg-violet-50 hover:text-violet-900 transition-colors"
+                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors"
               >
                 <Globe className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
                 Domeininstellingen
@@ -261,7 +261,7 @@ export function EditorHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 md:h-10 rounded-md text-[var(--editor-header-fg)]/80 hover:bg-violet-500/10 hover:text-violet-100 px-2 md:px-3"
+            className="h-8 md:h-10 rounded-full text-[var(--editor-header-fg)]/85 hover:bg-[var(--editor-header-accent)]/25 hover:text-white px-2 md:px-3"
             onClick={() => setAccountMenuOpen((o) => !o)}
             aria-haspopup="menu"
             aria-expanded={accountMenuOpen}
@@ -286,13 +286,13 @@ export function EditorHeader({
           {accountMenuOpen && (
             <div
               role="menu"
-              className="absolute right-0 top-full z-50 mt-1 w-48 rounded-md border border-slate-200 bg-white shadow-lg text-sm"
+              className="absolute right-0 top-full z-50 mt-1 w-48 rounded-xl border border-border bg-white shadow-lg text-sm"
             >
               <Link
                 href="/account/profile"
                 role="menuitem"
                 onClick={() => setAccountMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-slate-700 hover:bg-violet-50 hover:text-violet-900 transition-colors border-b border-slate-200"
+                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors border-b border-border"
               >
                 <User className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
                 Profile
@@ -301,7 +301,7 @@ export function EditorHeader({
                 href="/account/billing"
                 role="menuitem"
                 onClick={() => setAccountMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-slate-700 hover:bg-violet-50 hover:text-violet-900 transition-colors border-b border-slate-200"
+                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors border-b border-border"
               >
                 <CreditCard className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
                 Billing
@@ -312,7 +312,7 @@ export function EditorHeader({
                   setAccountMenuOpen(false)
                   onLogout()
                 }}
-                className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-slate-700 hover:bg-violet-50 hover:text-violet-900 transition-colors"
+                className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors"
               >
                 <ArrowLeft className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
                 Logout

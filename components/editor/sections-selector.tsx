@@ -5,6 +5,8 @@ import { useState, useEffect } from "react"
 import {
   ChevronLeft,
   ChevronRight,
+  ImageIcon,
+  Layers,
   Plus,
   ExternalLink,
 } from "lucide-react"
@@ -41,7 +43,7 @@ function SectionCard({ type, label, Icon, description, collapsed, isDragging, on
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       style={{ touchAction: "none" }}
-      className={`group relative flex cursor-move items-center gap-3 rounded-lg border border-border bg-card p-3 shadow-sm transition-all duration-200 hover:scale-105 hover:shadow-md hover:border-primary active:scale-95 select-none ${
+      className={`group relative flex cursor-move items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-primary active:scale-95 select-none ${
         collapsed ? "justify-center px-2 py-3" : ""
       } ${isDragging ? "opacity-50 scale-95" : ""}`}
       title={collapsed ? `${label}: ${description}` : label}
@@ -88,11 +90,11 @@ function ImageCard({ name, url, collapsed, isDragging, onDragStart, onDragEnd }:
       onTouchEnd={onTouchEnd}
       style={{ touchAction: "none" }}
       className={`rounded-lg border border-border bg-card p-1 shadow-sm cursor-move hover:border-primary transition-all duration-200 select-none ${
-        isDragging ? "ring-4 ring-primary shadow-xl scale-105 bg-accent" : ""
+        isDragging ? "ring-4 ring-primary shadow-xl scale-105 bg-secondary" : ""
       }`}
       title={name}
     >
-      <img src={url} alt={name} className="w-full h-12 object-cover rounded" />
+      <img src={url} alt={name} className={`${collapsed ? "h-10" : "h-12"} w-full object-cover rounded`} />
       {!collapsed && (
         <div className="text-[10px] text-muted-foreground truncate text-center mt-1">{name}</div>
       )}
@@ -217,17 +219,25 @@ export function SectionsSelector({ className = "", userId, onAddSection, onSecti
     setDraggingImage(null)
   }
 
+  const collapsedTabButtonClass = (value: "sections" | "images") =>
+    `flex h-10 w-10 items-center justify-center rounded-full border text-sm transition-colors ${
+      tab === value
+        ? "border-primary bg-primary text-primary-foreground shadow-sm"
+        : "border-border bg-card text-muted-foreground hover:border-primary/50 hover:bg-secondary hover:text-primary"
+    }`
+
   return (
     <aside
-      className={`relative flex-shrink-0 transition-all duration-300 ease-in-out overflow-y-auto w-full ${
-        collapsed ? "md:w-16" : "md:w-64"
-      } border-border bg-[var(--editor-sidebar)] p-3 md:border-r md:p-4 ${className}`}
+      data-collapsed={collapsed}
+      className={`relative flex-shrink-0 transition-[width] duration-300 ease-in-out overflow-y-auto w-full ${
+        collapsed ? "md:w-[4.5rem] md:min-w-[4.5rem] md:max-w-[4.5rem]" : "md:w-64 md:min-w-64 md:max-w-64"
+      } border-border bg-[var(--editor-sidebar)] p-3 md:border-r ${collapsed ? "md:px-3 md:py-4" : "md:p-4"} ${className}`}
     >
       {/* Collapse toggle — desktop only */}
       <button
         aria-label={collapsed ? "Secties uitvouwen" : "Secties samenvouwen"}
         onClick={() => setCollapsed((s) => !s)}
-        className="hidden md:inline-flex absolute right-2 top-2 z-10 h-7 w-7 items-center justify-center rounded-md border bg-card p-0 text-sm shadow-sm transition-all hover:scale-110 hover:bg-accent"
+        className="hidden md:inline-flex absolute right-2 top-2 z-10 h-7 w-7 items-center justify-center rounded-full border bg-card p-0 text-sm shadow-sm transition-all hover:scale-110 hover:bg-secondary"
         title={collapsed ? "Uitvouwen" : "Samenvouwen"}
         type="button"
       >
@@ -235,24 +245,51 @@ export function SectionsSelector({ className = "", userId, onAddSection, onSecti
       </button>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="mb-4 w-full flex">
-          <TabsTrigger value="sections" className="flex-1">
-            Secties
-          </TabsTrigger>
-          <TabsTrigger value="images" className="flex-1">
-            Afbeeldingen
-          </TabsTrigger>
-        </TabsList>
+        {collapsed ? (
+          <div className="mb-4 mt-10 hidden flex-col items-center gap-2 md:flex" role="tablist" aria-label="Zijbalkweergave">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "sections"}
+              aria-label="Secties"
+              title="Secties"
+              onClick={() => setTab("sections")}
+              className={collapsedTabButtonClass("sections")}
+            >
+              <Layers className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "images"}
+              aria-label="Afbeeldingen"
+              title="Afbeeldingen"
+              onClick={() => setTab("images")}
+              className={collapsedTabButtonClass("images")}
+            >
+              <ImageIcon className="h-4 w-4" />
+            </button>
+          </div>
+        ) : (
+          <TabsList className="mb-4 w-full flex">
+            <TabsTrigger value="sections" className="flex-1">
+              Secties
+            </TabsTrigger>
+            <TabsTrigger value="images" className="flex-1">
+              Afbeeldingen
+            </TabsTrigger>
+          </TabsList>
+        )}
 
         <TabsContent value="sections">
-          <div className={`mb-4 ${collapsed ? "opacity-0" : "opacity-100 transition-opacity delay-100"}`}>
+          <div className={`mb-4 ${collapsed ? "sr-only" : "opacity-100 transition-opacity delay-100"}`}>
             <h3 className={`${collapsed ? "sr-only" : "mb-1 text-sm font-semibold"}`}>Secties Toevoegen</h3>
             <p className={`${collapsed ? "sr-only" : "text-xs text-muted-foreground"}`}>
               Sleep of tik om toe te voegen
             </p>
           </div>
 
-          <div className={`space-y-2 ${collapsed ? "mt-12 flex flex-col items-center" : ""}`}>
+          <div className={`space-y-2 ${collapsed ? "flex flex-col items-center" : ""}`}>
             {selectableSectionDefinitions.map(({ type, label, icon: Icon, description }) => (
               <SectionCard
                 key={type}
@@ -270,7 +307,7 @@ export function SectionsSelector({ className = "", userId, onAddSection, onSecti
           </div>
 
           {!collapsed && (
-            <div className="mt-6 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/30 p-3 text-center animate-in fade-in slide-in-from-left-2 duration-300">
+            <div className="mt-6 rounded-xl border border-dashed border-border bg-secondary/70 p-3 text-center animate-in fade-in slide-in-from-left-2 duration-300">
               <p className="text-xs text-muted-foreground">
                 Sleep secties naar het canvas om uw site te bouwen
               </p>
@@ -279,7 +316,7 @@ export function SectionsSelector({ className = "", userId, onAddSection, onSecti
         </TabsContent>
 
         <TabsContent value="images">
-          <div className={`mb-4 ${collapsed ? "opacity-0" : "opacity-100 transition-opacity delay-100"}`}>
+          <div className={`mb-4 ${collapsed ? "sr-only" : "opacity-100 transition-opacity delay-100"}`}>
             <h3 className={`${collapsed ? "sr-only" : "mb-1 text-sm font-semibold"}`}>Afbeeldingen Slepen</h3>
             <p className={`${collapsed ? "sr-only" : "text-xs text-muted-foreground"}`}>
               Sleep afbeeldingen naar secties
@@ -287,15 +324,23 @@ export function SectionsSelector({ className = "", userId, onAddSection, onSecti
           </div>
           <Link
             href="/editor/images"
-            className="flex items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+            aria-label="Afbeeldingen beheren"
+            title="Afbeeldingen beheren"
+            className={`flex items-center justify-center gap-1.5 rounded-lg border border-border text-xs text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors ${
+              collapsed ? "mb-3 h-10 w-10 p-0" : "py-2"
+            }`}
           >
             <ExternalLink className="h-3 w-3" />
-            Afbeeldingen beheren
+            {!collapsed && "Afbeeldingen beheren"}
           </Link>
           {isLoadingImages ? (
-            <div className="text-xs text-muted-foreground text-center py-8">Afbeeldingen laden...</div>
+            <div className="text-xs text-muted-foreground text-center py-8" title="Afbeeldingen laden">
+              {collapsed ? "..." : "Afbeeldingen laden..."}
+            </div>
           ) : images.length === 0 ? (
-            <div className="text-xs text-muted-foreground text-center py-8">Geen afbeeldingen gevonden</div>
+            <div className="text-xs text-muted-foreground text-center py-8" title="Geen afbeeldingen gevonden">
+              {collapsed ? "0" : "Geen afbeeldingen gevonden"}
+            </div>
           ) : (
             <div className={`grid ${collapsed ? "grid-cols-1" : "grid-cols-2"} gap-2`}>
               {images.map((img) => (

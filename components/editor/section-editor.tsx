@@ -1062,7 +1062,7 @@ export function SelectionEditor({
                             {config.enabled ? (
                               <Eye className="h-4 w-4 text-primary" />
                             ) : (
-                              <EyeOff className="h-4 w-4 text-gray-400" />
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
                             )}
                           </button>
                           <Input
