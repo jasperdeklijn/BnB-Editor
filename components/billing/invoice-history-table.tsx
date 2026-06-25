@@ -35,7 +35,7 @@ export function InvoiceHistoryTable({
         {[...Array(3)].map((_, i) => (
           <div
             key={i}
-            className="h-12 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"
+            className="h-12 bg-secondary rounded animate-pulse"
           />
         ))}
       </div>
@@ -44,12 +44,12 @@ export function InvoiceHistoryTable({
 
   if (!invoices || invoices.length === 0) {
     return (
-      <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-8 text-center">
-        <FileText className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
+      <div className="rounded-xl border border-border bg-card p-8 text-center shadow-sm">
+        <FileText className="h-12 w-12 text-muted-foreground/40 mx-auto mb-4" />
+        <h3 className="font-semibold text-foreground mb-2">
           Geen facturen
         </h3>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+        <p className="text-sm text-muted-foreground">
           Je facturen worden hier weergegeven zodra je abonnement actief is.
         </p>
       </div>
@@ -57,23 +57,23 @@ export function InvoiceHistoryTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+    <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
       <table className="w-full">
         <thead>
-          <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
-            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900 dark:text-white">
+          <tr className="border-b border-border bg-secondary/60">
+            <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
               Datum
             </th>
-            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900 dark:text-white">
+            <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
               Plan
             </th>
-            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900 dark:text-white">
+            <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
               Betrag
             </th>
-            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900 dark:text-white">
+            <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
               Status
             </th>
-            <th className="px-6 py-4 text-center text-sm font-semibold text-slate-900 dark:text-white">
+            <th className="px-6 py-4 text-center text-sm font-semibold text-foreground">
               Aktion
             </th>
           </tr>
@@ -82,29 +82,29 @@ export function InvoiceHistoryTable({
           {invoices.map((invoice, index) => (
             <tr
               key={invoice.id}
-              className={index % 2 === 0 ? "bg-white dark:bg-slate-950" : ""}
+              className={index % 2 === 0 ? "bg-white" : ""}
             >
-              <td className="px-6 py-4 text-sm text-slate-900 dark:text-white">
+              <td className="px-6 py-4 text-sm text-foreground">
                 {new Date(invoice.date).toLocaleDateString("nl-NL", {
                   year: "numeric",
                   month: "long",
                   day: "numeric",
                 })}
               </td>
-              <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
+              <td className="px-6 py-4 text-sm text-muted-foreground">
                 {invoice.planName}
               </td>
-              <td className="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white">
+              <td className="px-6 py-4 text-sm font-medium text-foreground">
                 {formatPrice(invoice.amount)}
               </td>
               <td className="px-6 py-4 text-sm">
                 <span
                   className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                     invoice.status === "paid"
-                      ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                      ? "bg-success/10 text-success"
                       : invoice.status === "past_due"
-                        ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                        ? "bg-warning/10 text-warning"
+                        : "bg-muted text-muted-foreground"
                   }`}
                 >
                   {invoice.status === "paid" && "Betaald"}
@@ -126,7 +126,7 @@ export function InvoiceHistoryTable({
                     <span className="hidden sm:inline">PDF</span>
                   </Button>
                 ) : (
-                  <span className="text-xs text-slate-500 dark:text-slate-500">
+                  <span className="text-xs text-muted-foreground">
                     —
                   </span>
                 )}

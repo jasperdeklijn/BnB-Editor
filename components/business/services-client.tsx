@@ -10,6 +10,7 @@ import {
   type ServiceInput,
 } from "@/lib/supabase/services"
 import { Button } from "@/components/ui/button"
+import { EditorPageShell } from "@/components/editor/editor-page-shell"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -423,8 +424,14 @@ export function ServicesClient({ userId, businessId, initialServices }: Services
   const handleImageDragEnd = () => setDraggingImage(null)
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-background">
-      <div className="flex flex-1 overflow-hidden">
+    <EditorPageShell
+      title="Diensten"
+      description="Beheer diensten, prijzen, duur en afbeeldingen die op uw website worden getoond."
+      maxWidth="full"
+      scroll={false}
+      contentClassName="h-full min-h-0"
+    >
+      <div className="flex min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-background shadow-sm">
         {/* Image sidebar */}
         <aside
           className={`flex-shrink-0 border-r border-border bg-[var(--editor-sidebar)] transition-all duration-300 overflow-y-auto ${
@@ -524,6 +531,6 @@ export function ServicesClient({ userId, businessId, initialServices }: Services
           )}
         </main>
       </div>
-    </div>
+    </EditorPageShell>
   )
 }

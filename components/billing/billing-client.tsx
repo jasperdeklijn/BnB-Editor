@@ -38,8 +38,8 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
   if (!mounted) {
     return (
       <div className="space-y-8 animate-pulse">
-        <div className="h-24 bg-slate-200 dark:bg-slate-700 rounded" />
-        <div className="h-96 bg-slate-200 dark:bg-slate-700 rounded" />
+        <div className="h-24 rounded-xl bg-secondary" />
+        <div className="h-96 rounded-xl bg-secondary" />
       </div>
     )
   }
@@ -47,16 +47,16 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
   return (
     <div className="space-y-8 pb-20">
       {/* Current Plan Card */}
-      <Card className="rounded-lg border border-slate-200 dark:border-slate-700 p-8 bg-gradient-to-br from-[var(--brand-blue)]/5 to-[var(--brand-purple)]/5 dark:from-[var(--brand-blue)]/10 dark:to-[var(--brand-purple)]/10 animate-in fade-in duration-700">
+      <Card className="rounded-xl border border-border bg-secondary/70 p-8 shadow-sm animate-in fade-in duration-700">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-2">
+            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
               Huidig abonnement
             </p>
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
+            <h2 className="text-3xl font-bold text-foreground">
               {currentPlan.name}
             </h2>
-            <p className="text-slate-600 dark:text-slate-400 mt-1">
+            <p className="text-muted-foreground mt-1">
               {currentPlan.description}
             </p>
           </div>
@@ -70,7 +70,7 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
         <div className="lg:col-span-2 space-y-8">
           {/* Plan Comparison */}
           <div className="animate-in fade-in duration-700 delay-200">
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">
+            <h3 className="text-xl font-semibold text-foreground mb-4">
               Pläne vergleichen
             </h3>
             <PlanComparisonTable
@@ -81,7 +81,7 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
 
           {/* Add-on Card */}
           <div className="animate-in fade-in duration-700 delay-300">
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">
+            <h3 className="text-xl font-semibold text-foreground mb-4">
               Add-ons
             </h3>
             <AddonToggleCard
@@ -108,7 +108,7 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
 
           {/* Invoice History */}
           <div className="animate-in fade-in duration-700 delay-400">
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">
+            <h3 className="text-xl font-semibold text-foreground mb-4">
               Factuuroverzicht
             </h3>
             <InvoiceHistoryTable invoices={billingData.invoices} />
@@ -127,11 +127,11 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
       </div>
 
       {/* Info box */}
-      <div className="mt-12 rounded-lg border border-slate-200 dark:border-slate-700 p-6 bg-slate-50 dark:bg-slate-900 animate-in fade-in duration-700 delay-500">
-        <h4 className="font-semibold text-slate-900 dark:text-white mb-2">
+      <div className="mt-12 rounded-xl border border-border bg-card p-6 shadow-sm animate-in fade-in duration-700 delay-500">
+        <h4 className="font-semibold text-foreground mb-2">
           Info zum Abonnement
         </h4>
-        <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+        <ul className="space-y-2 text-sm text-muted-foreground">
           <li>
             ✓ Je kunt op elk moment van abonnement wisselen
           </li>

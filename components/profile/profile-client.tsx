@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
+import { EditorPageShell } from "@/components/editor/editor-page-shell"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -28,7 +28,6 @@ interface ProfileClientProps {
 }
 
 export function ProfileClient({ userId, email, initialMeta }: ProfileClientProps) {
-  const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [fullName, setFullName] = useState((initialMeta.full_name as string) ?? "")
@@ -87,27 +86,23 @@ export function ProfileClient({ userId, email, initialMeta }: ProfileClientProps
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Top bar */}
-      <header className="flex items-center gap-4 border-b border-border bg-[var(--editor-header)] px-4 py-3 md:px-8">
+    <EditorPageShell
+      title="Profiel"
+      description="Werk uw persoonlijke gegevens, avatar en contactinformatie bij."
+      maxWidth="2xl"
+      actions={
         <Button
-          variant="ghost"
+          variant="outline"
           size="sm"
           asChild
-          className="text-[var(--editor-header-fg)]/80 hover:bg-[var(--editor-header-fg)]/10 hover:text-[var(--editor-header-fg)]"
         >
           <Link href="/editor">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Editor
+            Terug naar editor
           </Link>
         </Button>
-        <div className="flex items-center gap-2">
-          <User className="h-5 w-5 text-[var(--editor-header-fg)]" />
-          <h1 className="text-lg font-semibold text-[var(--editor-header-fg)]">My Profile</h1>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-2xl px-4 py-10 md:px-8">
+      }
+    >
         {/* Avatar */}
         <div className="mb-10 flex flex-col items-center gap-4">
           <div className="relative">
@@ -146,7 +141,7 @@ export function ProfileClient({ userId, email, initialMeta }: ProfileClientProps
             />
           </div>
           <div className="text-center">
-            <p className="font-semibold text-foreground">{fullName || "Your Name"}</p>
+            <p className="font-semibold text-foreground">{fullName || "Uw naam"}</p>
             <p className="text-sm text-muted-foreground">{email}</p>
           </div>
         </div>
@@ -158,8 +153,8 @@ export function ProfileClient({ userId, email, initialMeta }: ProfileClientProps
               <User className="h-4 w-4" />
             </div>
             <div>
-              <h2 className="font-semibold text-foreground">Personal Information</h2>
-              <p className="text-xs text-muted-foreground">Basic details shown on your profile</p>
+              <h2 className="font-semibold text-foreground">Persoonlijke informatie</h2>
+              <p className="text-xs text-muted-foreground">Basisgegevens voor uw profiel</p>
             </div>
           </div>
 
@@ -168,7 +163,7 @@ export function ProfileClient({ userId, email, initialMeta }: ProfileClientProps
             <div className="space-y-2">
               <Label htmlFor="fullName" className="flex items-center gap-2 text-sm font-medium">
                 <User className="h-3.5 w-3.5 text-primary" />
-                Full Name
+                Volledige naam
               </Label>
               <Input
                 id="fullName"
@@ -182,7 +177,7 @@ export function ProfileClient({ userId, email, initialMeta }: ProfileClientProps
             <div className="space-y-2">
               <Label htmlFor="email" className="flex items-center gap-2 text-sm font-medium">
                 <Mail className="h-3.5 w-3.5 text-primary" />
-                Email Address
+                E-mailadres
               </Label>
               <div className="relative">
                 <Input
@@ -192,7 +187,7 @@ export function ProfileClient({ userId, email, initialMeta }: ProfileClientProps
                   className="bg-muted text-muted-foreground cursor-not-allowed"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded border">
-                  read-only
+                  alleen lezen
                 </span>
               </div>
             </div>
@@ -201,7 +196,7 @@ export function ProfileClient({ userId, email, initialMeta }: ProfileClientProps
             <div className="space-y-2">
               <Label htmlFor="phone" className="flex items-center gap-2 text-sm font-medium">
                 <Phone className="h-3.5 w-3.5 text-primary" />
-                Phone Number
+                Telefoonnummer
               </Label>
               <Input
                 id="phone"
@@ -215,7 +210,7 @@ export function ProfileClient({ userId, email, initialMeta }: ProfileClientProps
             <div className="space-y-2">
               <Label htmlFor="bio" className="flex items-center gap-2 text-sm font-medium">
                 <FileText className="h-3.5 w-3.5 text-primary" />
-                Bio
+                Profieltekst
               </Label>
               <Textarea
                 id="bio"
@@ -225,14 +220,14 @@ export function ProfileClient({ userId, email, initialMeta }: ProfileClientProps
                 rows={4}
                 className="resize-none"
               />
-              <p className="text-xs text-muted-foreground">{bio.length} / 300 characters</p>
+              <p className="text-xs text-muted-foreground">{bio.length} / 300 tekens</p>
             </div>
           </div>
 
           {/* Footer actions */}
           <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-4 bg-muted/30 rounded-b-xl">
             <Button variant="outline" asChild>
-              <Link href="/editor">Cancel</Link>
+              <Link href="/editor">Annuleren</Link>
             </Button>
             <Button onClick={handleSave} disabled={isSaving}>
               {isSaving ? (
@@ -243,14 +238,13 @@ export function ProfileClient({ userId, email, initialMeta }: ProfileClientProps
               ) : (
                 <>
                   <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Save Profile
+                  Profiel opslaan
                 </>
               )}
             </Button>
           </div>
         </div>
-      </main>
-    </div>
+    </EditorPageShell>
   )
 }
 

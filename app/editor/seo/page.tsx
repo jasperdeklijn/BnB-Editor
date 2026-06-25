@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
+import { EditorPageShell } from "@/components/editor/editor-page-shell"
 import { SeoEssentialsClient } from "@/components/business/seo-essentials-client"
 import type { WebsiteAnalyticsFields, WebsiteSeoFields } from "@/lib/seo/metadata"
 
@@ -37,13 +38,11 @@ export default async function SeoPage() {
     : { data: null }
 
   return (
-    <div className="mx-auto max-w-6xl p-4 md:p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">SEO & Analytics</h1>
-        <p className="mt-2 text-muted-foreground">
-          Stel zoekmachinegegevens, social previews, LocalBusiness-data en analytics in.
-        </p>
-      </div>
+    <EditorPageShell
+      title="SEO & Analytics"
+      description="Stel zoekmachinegegevens, social previews, LocalBusiness-data en analytics in."
+      maxWidth="6xl"
+    >
       <SeoEssentialsClient
         websiteId={website.id}
         businessId={website.business_id}
@@ -51,6 +50,6 @@ export default async function SeoPage() {
         initialAnalytics={(website.analytics as WebsiteAnalyticsFields | null) ?? null}
         initialSocialLinks={(business?.social_links as Record<string, string> | null) ?? null}
       />
-    </div>
+    </EditorPageShell>
   )
 }

@@ -2,6 +2,19 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 import { PLATFORM_DOMAIN } from "@/lib/platform"
 
+const platformDomain = PLATFORM_DOMAIN.toLowerCase().replace(/^www\./, "")
+const platformHosts = new Set([platformDomain, `www.${platformDomain}`])
+
+function isAssetOrApiRequest(pathname: string) {
+  return (
+    pathname.startsWith("/api/") ||
+    pathname.startsWith("/_next/") ||
+    pathname.includes(".") ||
+    pathname === "/favicon.ico" ||
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml"
+  )
+}
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -25,13 +38,13 @@ export async function updateSession(request: NextRequest) {
     }
   )
 const host = request.headers.get("host") || ""
-const hostname = host.split(":")[0]
+const hostname = host.split(":")[0].toLowerCase()
 
 // Preview
-if (hostname.startsWith("preview-") && hostname.endsWith(`.${PLATFORM_DOMAIN}`)) {
+if (hostname.startsWith("preview-") && hostname.endsWith(`.${platformDomain}`)) {
   const slug = hostname
     .replace("preview-", "")
-    .replace(`.${PLATFORM_DOMAIN}`, "")
+    .replace(`.${platformDomain}`, "")
 
   const url = request.nextUrl.clone()
   url.pathname = `/preview/${slug}`
@@ -39,8 +52,8 @@ if (hostname.startsWith("preview-") && hostname.endsWith(`.${PLATFORM_DOMAIN}`))
 }
 
 // Live
-if (hostname.endsWith(`.${PLATFORM_DOMAIN}`)) {
-  const slug = hostname.replace(`.${PLATFORM_DOMAIN}`, "")
+if (hostname.endsWith(`.${platformDomain}`)) {
+  const slug = hostname.replace(`.${platformDomain}`, "")
 
   if (slug !== "www") {
     const url = request.nextUrl.clone()
@@ -48,27 +61,17 @@ if (hostname.endsWith(`.${PLATFORM_DOMAIN}`)) {
     return NextResponse.rewrite(url)
   }
 }
-console.log("HOST:", hostname)
+
   // 3. Custom domain: look up custom_domain in websites table
   const isCustomDomain =
-    hostname !== PLATFORM_DOMAIN &&
-    hostname !== `www.${PLATFORM_DOMAIN}` &&
-    !hostname.endsWith(`.${PLATFORM_DOMAIN}`) &&
+    !platformHosts.has(hostname) &&
+    !hostname.endsWith(`.${platformDomain}`) &&
     !hostname.includes("localhost") &&
     !hostname.includes("vercel.app")
 
   if (isCustomDomain) {
-    console.log("CUSTOM DOMAIN DETECTED:", hostname)
-
     // Don't rewrite API routes, static assets, or other non-page requests
-    if (
-      request.nextUrl.pathname.startsWith("/api/") ||
-      request.nextUrl.pathname.startsWith("/_next/") ||
-      request.nextUrl.pathname.includes(".") || // static files
-      request.nextUrl.pathname === "/favicon.ico" ||
-      request.nextUrl.pathname === "/robots.txt" ||
-      request.nextUrl.pathname === "/sitemap.xml"
-    ) {
+    if (isAssetOrApiRequest(request.nextUrl.pathname)) {
       // Let these requests pass through normally
       return supabaseResponse
     }
@@ -79,13 +82,17 @@ console.log("HOST:", hostname)
       .or(`custom_domain.eq.${hostname},custom_domain.eq.www.${hostname}`)
       .single()
 
-    console.log("DB RESULT:", website, error)
+    if (error && error.code !== "PGRST116") {
+      console.error("Custom domain lookup failed:", error)
+    }
+
     if (website?.slug) {
       const url = request.nextUrl.clone()
       url.pathname = `/site/${website.slug}${request.nextUrl.pathname}`
       return NextResponse.rewrite(url)
     }
-    return NextResponse.redirect(new URL("/", request.url))
+
+    return NextResponse.redirect(new URL(request.nextUrl.pathname || "/", `https://${platformDomain}`))
   }
 
   // 4. Normal app routing — enforce auth

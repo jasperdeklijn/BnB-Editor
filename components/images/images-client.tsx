@@ -3,11 +3,11 @@
 import { useState, useCallback, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
+import { EditorPageShell } from "@/components/editor/editor-page-shell"
 import { toast } from "sonner"
-import Link from "next/link"
 import { ImageUploadZone } from "./image-upload-zone"
 import { ImageGrid } from "./image-grid"
-import { ArrowLeft, ImageIcon, HardDrive, Upload as UploadIcon } from "lucide-react"
+import { ImageIcon, HardDrive, Upload as UploadIcon } from "lucide-react"
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const MAX_TOTAL_SIZE = 50 * 1024 * 1024 // 50MB
@@ -199,12 +199,11 @@ export function ImagesClient({ userId }: ImagesClientProps) {
   const usagePercentage = (totalUsage / MAX_TOTAL_SIZE) * 100
 
   return (
-    <div className="min-h-screen bg-background">
- 
-
-      <main className="mx-auto w-full max-w-4xl px-4 py-10 md:px-8">
-        <div className="flex flex-col gap-6">
-
+    <EditorPageShell
+      title="Afbeeldingen"
+      description="Upload, beheer en kopieer afbeeldingen voor gebruik in uw website en editorsecties."
+      maxWidth="4xl"
+    >
           {/* Storage Usage card */}
           <div className="rounded-xl border border-border bg-card shadow-sm">
             <div className="flex items-center gap-3 border-b border-border px-6 py-4 bg-secondary/40 rounded-t-xl">
@@ -274,9 +273,6 @@ export function ImagesClient({ userId }: ImagesClientProps) {
               />
             </div>
           </div>
-
-        </div>
-      </main>
-    </div>
+    </EditorPageShell>
   )
 }

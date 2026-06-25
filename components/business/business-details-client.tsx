@@ -4,6 +4,7 @@ import { useState } from "react"
 import { updateBusiness, type Business } from "@/lib/supabase/business"
 import { BUSINESS_CATEGORIES, type BusinessCategory } from "@/lib/business/categories"
 import { Button } from "@/components/ui/button"
+import { EditorPageShell } from "@/components/editor/editor-page-shell"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -76,9 +77,11 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="mx-auto max-w-2xl px-4 py-10 md:px-8 space-y-6">
-
+    <EditorPageShell
+      title="Bedrijfsgegevens"
+      description="Beheer de basisinformatie, contactgegevens en online aanwezigheid van uw bedrijf."
+      maxWidth="2xl"
+    >
         {/* Category */}
         <div className="rounded-xl border border-border bg-card shadow-sm">
           <div className="flex items-center gap-3 border-b border-border px-6 py-4 bg-secondary/40 rounded-t-xl">
@@ -393,7 +396,6 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
             )}
           </Button>
         </div>
-      </main>
-    </div>
+    </EditorPageShell>
   )
 }

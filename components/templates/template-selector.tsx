@@ -24,14 +24,7 @@ export function TemplateSelector({ onSelect, onClose }: TemplateSelectorProps) {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Kies uw bedrijfstype</h1>
-        <p className="text-muted-foreground">
-          Selecteer het bedrijfstype dat het beste bij u past. We zorgen voor een sjabloon met relevante secties en content.
-        </p>
-      </div>
-
+    <div className="w-full">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {BUSINESS_CATEGORIES.map((category) => {
           const template = TEMPLATE_PRESETS[category.value]

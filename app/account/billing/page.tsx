@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { BillingClient } from "@/components/billing/billing-client"
+import { EditorPageShell } from "@/components/editor/editor-page-shell"
 import { getMockUserBillingData } from "@/lib/mock-data"
 
 export const metadata = {
@@ -34,7 +35,13 @@ export default async function BillingPage() {
   const billingData = getMockUserBillingData(data.user.id)
 
   return (
-    <BillingClient billingData={billingData} userId={data.user.id} />
+    <EditorPageShell
+      title="Facturering"
+      description="Beheer uw abonnement, add-ons, betaalgegevens en factuuroverzicht."
+      maxWidth="7xl"
+    >
+      <BillingClient billingData={billingData} userId={data.user.id} />
+    </EditorPageShell>
   )
 }
 

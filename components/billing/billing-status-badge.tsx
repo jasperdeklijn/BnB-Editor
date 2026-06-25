@@ -24,32 +24,32 @@ export function BillingStatusBadge({
     active: {
       icon: <CheckCircle2 className="h-4 w-4" />,
       label: "Actief",
-      color: "text-emerald-600 dark:text-emerald-400",
-      bgColor: "bg-emerald-100 dark:bg-emerald-900/30",
+      color: "text-success",
+      bgColor: "bg-success/10",
     },
     trial: {
       icon: <Clock className="h-4 w-4" />,
       label: "Gratis proefperiode",
-      color: "text-blue-600 dark:text-blue-400",
-      bgColor: "bg-blue-100 dark:bg-blue-900/30",
+      color: "text-primary",
+      bgColor: "bg-secondary",
     },
     past_due: {
       icon: <AlertCircle className="h-4 w-4" />,
       label: "Betaling vereist",
-      color: "text-yellow-600 dark:text-yellow-400",
-      bgColor: "bg-yellow-100 dark:bg-yellow-900/30",
+      color: "text-warning",
+      bgColor: "bg-warning/10",
     },
     canceled: {
       icon: <X className="h-4 w-4" />,
       label: "Geannuleerd",
-      color: "text-slate-600 dark:text-slate-400",
-      bgColor: "bg-slate-100 dark:bg-slate-900/30",
+      color: "text-muted-foreground",
+      bgColor: "bg-muted",
     },
     expired: {
       icon: <X className="h-4 w-4" />,
       label: "Verlopen",
-      color: "text-red-600 dark:text-red-400",
-      bgColor: "bg-red-100 dark:bg-red-900/30",
+      color: "text-destructive",
+      bgColor: "bg-destructive/10",
     },
   }
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { TemplateSelector } from "@/components/templates/template-selector"
+import { EditorPageShell } from "@/components/editor/editor-page-shell"
 import type { BusinessCategory } from "@/lib/business/categories"
 import { useRouter } from "next/navigation"
 
@@ -38,18 +39,22 @@ export default function TemplatesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted py-12 px-4">
+    <EditorPageShell
+      title="Sjablonen"
+      description="Kies een startpunt met passende secties en voorbeeldinhoud voor uw bedrijfstype."
+      maxWidth="4xl"
+    >
       {isLoading && (
-        <div className="mx-auto mb-6 max-w-4xl rounded-xl border border-border bg-white p-4 text-sm text-muted-foreground shadow-sm">
+        <div className="rounded-xl border border-border bg-white p-4 text-sm text-muted-foreground shadow-sm">
           Sjabloon wordt toegepast...
         </div>
       )}
       {error && (
-        <div className="mx-auto mb-6 max-w-4xl rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+        <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
           {error}
         </div>
       )}
       <TemplateSelector onSelect={handleSelectTemplate} />
-    </div>
+    </EditorPageShell>
   )
 }

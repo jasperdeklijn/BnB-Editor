@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
+import { EditorPageShell } from "@/components/editor/editor-page-shell"
 import { DomainDashboard } from "@/components/domain/domain-dashboard"
 
 export default async function DomainsPage() {
@@ -19,21 +20,16 @@ export default async function DomainsPage() {
   if (!website) redirect("/editor")
 
   return (
-    <div className="min-h-screen bg-background">
-      <main className="max-w-2xl mx-auto px-6 py-10">
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-foreground text-balance">Your website domains</h2>
-          <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
-            Manage how visitors reach your B&amp;B website — via the platform subdomain or your own custom domain.
-          </p>
-        </div>
-
-        <DomainDashboard
-          slug={website.slug}
-          currentCustomDomain={website.custom_domain ?? null}
-          isPublished={website.published ?? false}
-        />
-      </main>
-    </div>
+    <EditorPageShell
+      title="Domeininstellingen"
+      description="Beheer hoe bezoekers uw website bereiken via het platformdomein of een eigen domein."
+      maxWidth="2xl"
+    >
+      <DomainDashboard
+        slug={website.slug}
+        currentCustomDomain={website.custom_domain ?? null}
+        isPublished={website.published ?? false}
+      />
+    </EditorPageShell>
   )
 }

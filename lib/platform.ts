@@ -4,7 +4,7 @@ export const PLATFORM_PRODUCT_DESCRIPTION = "websitebouwer voor kleine bedrijven
 
 // Keep production domain behavior centralized. Change these when the final
 // platform domain is decided and DNS/Vercel routing are ready.
-export const PLATFORM_DOMAIN = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || "websitebouwer.nl"
+export const PLATFORM_DOMAIN = process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || "bnbwebsitemaken.nl"
 export const PLATFORM_BASE_URL = `https://${PLATFORM_DOMAIN}`
 
 export const PLATFORM_EMAILS = {

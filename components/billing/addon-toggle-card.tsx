@@ -75,18 +75,18 @@ export function AddonToggleCard({
 
   return (
     <>
-      <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-8 bg-gradient-to-br from-[var(--brand-blue)]/5 to-[var(--brand-purple)]/5 dark:from-[var(--brand-blue)]/10 dark:to-[var(--brand-purple)]/10">
+      <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
         {/* Header */}
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-start gap-4 flex-1">
-            <div className="p-2 bg-[var(--brand-blue)]/10 dark:bg-[var(--brand-blue)]/20 rounded-lg">
-              <Zap className="h-6 w-6 text-[var(--brand-blue)] dark:text-[var(--brand-blue)]" />
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Zap className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1">
+              <h3 className="text-xl font-bold text-foreground mb-1">
                 {addonName}
               </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
+              <p className="text-sm text-muted-foreground">
                 {formatPrice(monthlyPrice)}/maand
               </p>
             </div>
@@ -102,7 +102,7 @@ export function AddonToggleCard({
 
         {/* Features */}
         <div>
-          <p className="text-sm font-semibold text-slate-900 dark:text-white mb-4">
+          <p className="text-sm font-semibold text-foreground mb-4">
             Inclusief:
           </p>
           <FeatureList features={features} className="mb-6" />
@@ -110,8 +110,8 @@ export function AddonToggleCard({
 
         {/* Status */}
         {isEnabled && (
-          <div className="mt-6 p-3 bg-emerald-100 dark:bg-emerald-900/20 border border-emerald-300 dark:border-emerald-700 rounded-lg">
-            <p className="text-sm text-emerald-700 dark:text-emerald-400 font-medium">
+          <div className="mt-6 p-3 bg-success/10 border border-success/30 rounded-lg">
+            <p className="text-sm text-success font-medium">
               ✓ Momenteel geactiveerd
             </p>
           </div>
@@ -138,7 +138,7 @@ export function AddonToggleCard({
               disabled={isLoading}
               className={
                 pendingState
-                  ? "bg-[var(--brand-blue)] hover:bg-[var(--brand-blue)]/90"
+                  ? "bg-primary hover:bg-primary/90"
                   : "bg-red-600 hover:bg-red-700"
               }
             >

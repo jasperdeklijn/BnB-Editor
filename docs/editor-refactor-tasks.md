@@ -22,7 +22,7 @@ Use this file as the task list for the next `/editor` refactor. Keep the app bui
    - Collapsing does not break navigation, selection, drag/drop, or section controls.
    - The collapsed state keeps stable widths and does not shift the canvas unexpectedly.
 
-3. [ ] Match editor page layouts so they all look the same
+3. [x] Match editor page layouts so they all look the same
 
    Standardize the layout structure for all `/editor` pages.
 

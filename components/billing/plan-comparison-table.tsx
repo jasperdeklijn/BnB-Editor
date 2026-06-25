@@ -60,22 +60,22 @@ export function PlanComparisonTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+    <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
       <table className="w-full">
         <thead>
-          <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
-            <th className="px-6 py-4 text-left text-sm font-semibold text-slate-900 dark:text-white">
+          <tr className="border-b border-border bg-secondary/60">
+            <th className="px-6 py-4 text-left text-sm font-semibold text-foreground">
               Functie
             </th>
             {mainPlans.map((plan) => (
               <th
                 key={plan.id}
-                className="px-6 py-4 text-center text-sm font-semibold text-slate-900 dark:text-white"
+                className="px-6 py-4 text-center text-sm font-semibold text-foreground"
               >
                 <div>{plan.name}</div>
-                <div className="text-base font-bold text-amber-600 dark:text-amber-400 mt-1">
+                <div className="text-base font-bold text-primary mt-1">
                   {formatPrice(plan.monthlyPrice)}
-                  <span className="text-xs font-normal text-slate-600 dark:text-slate-400">
+                  <span className="text-xs font-normal text-muted-foreground">
                     /mo
                   </span>
                 </div>
@@ -87,9 +87,9 @@ export function PlanComparisonTable({
           {FEATURE_COMPARISON.map((row, index) => (
             <tr
               key={`feature-${index}`}
-              className={index % 2 === 0 ? "bg-white dark:bg-slate-950" : ""}
+              className={index % 2 === 0 ? "bg-white" : ""}
             >
-              <td className="px-6 py-4 text-sm font-medium text-slate-900 dark:text-white border-r border-slate-200 dark:border-slate-700">
+              <td className="px-6 py-4 text-sm font-medium text-foreground border-r border-border">
                 {row.feature}
               </td>
               {mainPlans.map((plan) => {
@@ -104,10 +104,10 @@ export function PlanComparisonTable({
                       value ? (
                         <CheckCircle2 className="h-5 w-5 text-emerald-500 mx-auto" />
                       ) : (
-                        <X className="h-5 w-5 text-slate-300 dark:text-slate-600 mx-auto" />
+                        <X className="h-5 w-5 text-muted-foreground/40 mx-auto" />
                       )
                     ) : (
-                      <span className="text-slate-600 dark:text-slate-400">
+                      <span className="text-muted-foreground">
                         {value}
                       </span>
                     )}
@@ -117,12 +117,12 @@ export function PlanComparisonTable({
             </tr>
           ))}
           {/* Action row */}
-          <tr className="border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+          <tr className="border-t border-border bg-secondary/60">
             <td className="px-6 py-4"></td>
             {mainPlans.map((plan) => (
               <td key={`action-${plan.id}`} className="px-6 py-4 text-center">
                 {plan.id === currentPlanId ? (
-                  <div className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-sm font-medium">
+                  <div className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-success/10 text-success text-sm font-medium">
                     <CheckCircle2 className="h-4 w-4" />
                     Huidig abonnement
                   </div>

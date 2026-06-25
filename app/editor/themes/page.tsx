@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
+import { EditorPageShell } from "@/components/editor/editor-page-shell"
 import { ThemePanel } from "@/components/themes/theme-panel"
 import type { ThemeConfig } from "@/lib/themes"
 
@@ -30,18 +31,16 @@ export default async function ThemesPage() {
     : businessRelation?.category
 
   return (
-    <div className="mx-auto max-w-6xl p-4 md:p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Thema</h1>
-        <p className="mt-2 text-muted-foreground">
-          Kies een stijl, kleurenpalet, lettertypecombinatie en spacing voor uw website.
-        </p>
-      </div>
+    <EditorPageShell
+      title="Thema"
+      description="Kies een stijl, kleurenpalet, lettertypecombinatie en spacing voor uw website."
+      maxWidth="6xl"
+    >
       <ThemePanel
         websiteId={website?.id ?? null}
         businessCategory={businessCategory}
         currentTheme={(website?.theme_config as ThemeConfig | null) ?? null}
       />
-    </div>
+    </EditorPageShell>
   )
 }
