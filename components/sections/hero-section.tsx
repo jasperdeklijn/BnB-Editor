@@ -4,8 +4,18 @@ import type React from "react"
 
 import { Button } from "@/components/ui/button"
 import type { SectionStyles } from "@/lib/types"
+import { normalizeSectionLayout } from "@/lib/section-layouts"
 
 export type HeroLayout = "centered" | "split" | "fullwidth" | "minimal" | "card" | "split-reverse"
+
+const heroLayoutMap = {
+  classic: "centered",
+  split: "split",
+  showcase: "fullwidth",
+  compact: "minimal",
+  card: "card",
+  banner: "split-reverse",
+} as const
 
 interface HeroSectionProps {
   data: Record<string, unknown>
@@ -17,7 +27,7 @@ export function HeroSection({ data, styles }: HeroSectionProps) {
   const title = data.title as string
   const subtitle = data.subtitle as string
   const ctaText = data.ctaText as string
-  const layout = (data.layout as HeroLayout) || "centered"
+  const layout = (heroLayoutMap[normalizeSectionLayout(data.layout)] ?? "centered") as HeroLayout
 
   const sectionStyle: React.CSSProperties = {
     backgroundColor: styles?.backgroundColor,

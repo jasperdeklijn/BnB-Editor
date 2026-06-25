@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import type { SectionStyles } from "@/lib/types"
+import { getLayoutClasses } from "@/lib/section-layouts"
 
 export type RequestType = "contact" | "appointment" | "quote" | "whatsapp"
 
@@ -116,6 +117,7 @@ export function RequestFormSection({ data, styles, isPreview }: RequestFormSecti
   const websiteId = data.websiteId as string | undefined
   const whatsappNumber = data.whatsappNumber as string | undefined
   const fields = (data.fields as FieldKey[]) || ["name", "email", "phone", "message"]
+  const layout = getLayoutClasses(data.layout)
 
   const config = REQUEST_TYPE_CONFIG[requestType] ?? REQUEST_TYPE_CONFIG.contact
   const Icon = config.icon
@@ -136,10 +138,10 @@ export function RequestFormSection({ data, styles, isPreview }: RequestFormSecti
 
     return (
       <section
-        className={`px-4 py-12 sm:px-6 md:py-20 ${styles?.fontFamily || ""}`}
+        className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`}
         style={sectionStyle}
       >
-        <div className="mx-auto max-w-xl text-center">
+        <div className={`mx-auto ${layout.container} text-center`}>
           <div className="mb-4 inline-flex items-center justify-center gap-2 rounded-full bg-green-100 px-4 py-2 text-sm font-medium text-green-800">
             <PhoneIcon className="h-4 w-4" />
             WhatsApp
@@ -173,11 +175,11 @@ export function RequestFormSection({ data, styles, isPreview }: RequestFormSecti
 
   return (
     <section
-      className={`px-4 py-12 sm:px-6 md:py-20 ${styles?.fontFamily || ""}`}
+      className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`}
       style={sectionStyle}
     >
-      <div className="mx-auto max-w-2xl">
-        <div className="mb-10 text-center">
+      <div className={`mx-auto ${layout.layout === "split" || layout.layout === "showcase" ? "grid max-w-6xl gap-8 md:grid-cols-[0.8fr_1.2fr] md:items-start" : layout.container}`}>
+        <div className={`mb-10 ${layout.layout === "split" || layout.layout === "showcase" ? "md:mb-0 md:text-left" : layout.heading}`}>
           <div className="mb-3 inline-flex items-center justify-center gap-2 rounded-full bg-amber-100 px-4 py-2 text-sm font-medium text-amber-800">
             <Icon className="h-4 w-4" />
             {config.label}
@@ -195,7 +197,7 @@ export function RequestFormSection({ data, styles, isPreview }: RequestFormSecti
           )}
         </div>
 
-        <div className="rounded-2xl border border-border bg-white/70 p-6 shadow-sm backdrop-blur md:p-8">
+        <div className={`${layout.card} border border-border bg-white/70 backdrop-blur`}>
           {status === "success" ? (
             <div className="flex flex-col items-center gap-3 py-10 text-center">
               <CheckCircle className="h-10 w-10 text-green-500" />

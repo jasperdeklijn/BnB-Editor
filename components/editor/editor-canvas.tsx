@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useRef, useState } from "react"
+import React, { useEffect, useMemo, useRef, useState } from "react"
 import { Trash2, GripVertical, ChevronUp, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Section, SectionType, Transition } from "@/lib/types"
@@ -13,11 +13,13 @@ import websiteSections from "@/lib/supabase/websiteSections"
 import { createClient } from "@/lib/supabase/client"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { toast } from "sonner"
+import { applyThemeDefaultsToSections, resolveWebsiteTheme, type ThemeConfig } from "@/lib/themes"
 
 interface EditorCanvasProps {
   sections: Section[]
   setSections: (sections: Section[]) => void
   transitions: Transition[]
+  themeConfig?: ThemeConfig | null
   isPreview: boolean
   selectedSectionId: string | null
   onSectionSelect: (id: string | null) => void
@@ -33,6 +35,7 @@ export function EditorCanvas({
   sections,
   setSections,
   transitions,
+  themeConfig,
   isPreview,
   selectedSectionId,
   onSectionSelect,
@@ -101,6 +104,19 @@ export function EditorCanvas({
   const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null)
   const showNewSectionDropTargets = isDraggingNewSection || isDraggingNewSectionExternal
   const showImageDropTargets = isDraggingImage || isDraggingImageExternal
+  const resolvedTheme = useMemo(() => resolveWebsiteTheme(themeConfig), [themeConfig])
+  const themedSections = useMemo(
+    () => applyThemeDefaultsToSections(sections, themeConfig),
+    [sections, themeConfig],
+  )
+  const themeScopeStyle = useMemo(
+    () =>
+      ({
+        ...resolvedTheme.cssVariables,
+        fontFamily: "var(--font-body)",
+      }) as React.CSSProperties,
+    [resolvedTheme],
+  )
 
   useEffect(() => {
     const handleGlobalDragEnd = () => {
@@ -567,8 +583,9 @@ export function EditorCanvas({
             </div>
           )}
 
-          {sections.map((section, i) => {
-            const next = sections[i + 1]
+          <div className="website-theme-scope" style={themeScopeStyle}>
+          {themedSections.map((section, i) => {
+            const next = themedSections[i + 1]
             const hasTransitionToNext = next && transitions.some(
               t => t.fromSectionId === section.id && t.toSectionId === next.id && t.type !== "none"
             )
@@ -700,6 +717,7 @@ export function EditorCanvas({
 
             return <React.Fragment key={section.id}>{content}</React.Fragment>
           })}
+          </div>
         </div>
       </div>
     </main>

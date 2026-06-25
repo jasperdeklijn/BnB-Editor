@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from "react"
 import { EditorHeader } from "./editor-header"
 import { usePathname, useRouter } from "next/navigation"
 import { EditorLayoutProvider } from "./editor-layout-context"
-import { ImageIcon, Globe, Home, Briefcase, LayoutTemplate, Palette, Search } from "lucide-react"
+import { ImageIcon, Globe, Home, Briefcase, LayoutTemplate, Palette, Search, CreditCard, User } from "lucide-react"
 import { DEFAULT_SITE_TITLE } from "@/lib/business-naming"
 
 interface EditorLayoutClientProps {
@@ -30,6 +30,8 @@ export function EditorLayoutClient({
     "/editor/templates": "Sjablonen",
     "/editor/themes": "Thema",
     "/editor/seo": "SEO & Analytics",
+    "/editor/account/profile": "Profiel",
+    "/editor/account/billing": "Facturering",
   }
 
   const pageIcons: Record<string, React.ReactNode> = {
@@ -41,6 +43,8 @@ export function EditorLayoutClient({
     "/editor/templates": <LayoutTemplate className="h-4 w-4" />,
     "/editor/themes": <Palette className="h-4 w-4" />,
     "/editor/seo": <Search className="h-4 w-4" />,
+    "/editor/account/profile": <User className="h-4 w-4" />,
+    "/editor/account/billing": <CreditCard className="h-4 w-4" />,
   }
 
   const pageTitle = pageTitles[pathname ?? "/editor"] ?? "Editor"

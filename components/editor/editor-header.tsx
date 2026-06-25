@@ -15,6 +15,8 @@ import {
   Globe,
   Home,
   Briefcase,
+  LayoutTemplate,
+  Palette,
   CheckCircle2,
   Loader2,
   ChevronDown,
@@ -104,7 +106,7 @@ export function EditorHeader({
             className="hidden md:inline-flex items-center gap-2 rounded-full border border-[var(--editor-header-accent)] bg-[var(--editor-header)] px-3 py-2 text-xs md:text-sm font-medium text-[var(--editor-header-fg)] transition-colors hover:bg-[var(--editor-header-accent)]/25"
           >
             <ArrowLeft className="h-3 w-3 md:h-4 md:w-4" />
-            <span className="hidden sm:inline">Terug</span>
+            <span className="hidden sm:inline">Terug naar editor</span>
           </Link>
           </div>
         ) : (
@@ -144,6 +146,16 @@ export function EditorHeader({
               role="menu"
               className="absolute left-0 top-full z-50 mt-1 min-w-[12rem] max-w-[calc(100vw-1rem)] md:w-56 rounded-xl border border-border bg-white shadow-lg text-sm"
             >
+              <Link
+                href="/editor"
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors border-b border-border"
+              >
+                <LayoutTemplate className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
+                Website bewerken
+              </Link>
+
               {/* Images link */}
               <Link
                 href="/editor/images"
@@ -164,6 +176,28 @@ export function EditorHeader({
               >
                 <Home className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
                 Bedrijfsgegevens
+              </Link>
+
+              {/* Templates link */}
+              <Link
+                href="/editor/templates"
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors border-b border-border"
+              >
+                <LayoutTemplate className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
+                Sjablonen
+              </Link>
+
+              {/* Themes link */}
+              <Link
+                href="/editor/themes"
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors border-b border-border"
+              >
+                <Palette className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
+                Thema
               </Link>
 
               {/* Services link */}
@@ -289,22 +323,22 @@ export function EditorHeader({
               className="absolute right-0 top-full z-50 mt-1 w-48 rounded-xl border border-border bg-white shadow-lg text-sm"
             >
               <Link
-                href="/account/profile"
+                href="/editor/account/profile"
                 role="menuitem"
                 onClick={() => setAccountMenuOpen(false)}
                 className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors border-b border-border"
               >
                 <User className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                Profile
+                Profiel
               </Link>
               <Link
-                href="/account/billing"
+                href="/editor/account/billing"
                 role="menuitem"
                 onClick={() => setAccountMenuOpen(false)}
                 className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors border-b border-border"
               >
                 <CreditCard className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                Billing
+                Facturering
               </Link>
               <button
                 type="button"

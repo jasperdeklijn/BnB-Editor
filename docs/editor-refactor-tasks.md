@@ -31,7 +31,7 @@ Use this file as the task list for the next `/editor` refactor. Keep the app bui
    - Page titles, descriptions, action buttons, cards, and forms follow one consistent structure.
    - Moving between editor pages feels like one product area instead of separate one-off pages.
 
-4. [ ] Make `/editor` the main editor page everything returns to
+4. [x] Make `/editor` the main editor page everything returns to
 
    Treat `/editor` as the central editor dashboard and return target.
 
@@ -40,7 +40,7 @@ Use this file as the task list for the next `/editor` refactor. Keep the app bui
    - `/editor` clearly acts as the central starting point for editing the website.
    - Related editor pages link back to `/editor` using consistent labels and placement.
 
-5. [ ] Give every section 6 layout options
+5. [x] Give every section 6 layout options
 
    Add six layout variants for every editable section type.
 
@@ -50,7 +50,7 @@ Use this file as the task list for the next `/editor` refactor. Keep the app bui
    - Switching layouts preserves section content and only changes presentation.
    - Public rendering and editor preview both use the selected layout.
 
-6. [ ] Use theme page settings as default component styling
+6. [x] Use theme page settings as default component styling
 
    Make the settings from `/editor/themes` drive default styling for components.
 

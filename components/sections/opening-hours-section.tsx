@@ -2,6 +2,7 @@
 
 import { Clock } from "lucide-react"
 import type { SectionStyles } from "@/lib/types"
+import { getLayoutClasses } from "@/lib/section-layouts"
 
 export interface OpeningHoursDay {
   label: string
@@ -63,6 +64,7 @@ export function OpeningHoursSection({ data, styles }: OpeningHoursSectionProps) 
   const subtitle = data.subtitle as string | undefined
   const note = data.note as string | undefined
   const today = getToday()
+  const layout = getLayoutClasses(data.layout)
 
   const sectionStyle: React.CSSProperties = {
     backgroundColor: styles?.backgroundColor,
@@ -112,11 +114,11 @@ export function OpeningHoursSection({ data, styles }: OpeningHoursSectionProps) 
 
   return (
     <section
-      className={`px-4 py-12 sm:px-6 md:py-20 ${styles?.fontFamily || ""}`}
+      className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`}
       style={sectionStyle}
     >
-      <div className="mx-auto max-w-xl">
-        <div className="mb-10 text-center">
+      <div className={`mx-auto ${layout.layout === "split" || layout.layout === "showcase" ? "max-w-4xl" : layout.container}`}>
+        <div className={`mb-10 ${layout.heading}`}>
           <div className="mb-3 inline-flex items-center justify-center gap-2 rounded-full bg-amber-100 px-4 py-2 text-sm font-medium text-amber-800">
             <Clock className="h-4 w-4" />
             Openingstijden
@@ -134,7 +136,7 @@ export function OpeningHoursSection({ data, styles }: OpeningHoursSectionProps) 
           )}
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-border bg-white/70 shadow-sm backdrop-blur">
+        <div className={`overflow-hidden rounded-2xl border border-border bg-white/70 shadow-sm backdrop-blur ${layout.layout === "split" || layout.layout === "showcase" ? "grid md:grid-cols-2" : ""}`}>
           {rows.map((row, idx) => (
             <div
               key={idx}

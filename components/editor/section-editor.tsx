@@ -1,12 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { createPortal } from "react-dom"
 import Link from "next/link"
 import { toast } from "sonner"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,12 +55,19 @@ import {
   Loader2,
   ExternalLink,
   Check,
+  X,
 } from "lucide-react"
 import type { HeroLayout } from "@/components/sections/hero-section"
 import type { GalleryLayout } from "@/components/sections/gallery-section"
 import type { ServicesLayout } from "@/components/sections/services-section"
 import type { ContactLayout } from "@/components/sections/contact-section"
 import type { SectionType } from "@/lib/types"
+import {
+  getSectionLayoutOptions,
+  normalizeSectionLayout,
+  type SectionLayout,
+} from "@/lib/section-layouts"
+import { SectionRenderer } from "@/components/editor/section-renderer"
 
 interface AvailableService {
   id: string
@@ -79,6 +88,24 @@ interface SelectionEditorProps {
   businessId?: string | null
 }
 
+function getLayoutIcon(layout: SectionLayout) {
+  switch (layout) {
+    case "split":
+      return Columns
+    case "showcase":
+      return Maximize
+    case "compact":
+      return Minimize
+    case "card":
+      return Square
+    case "banner":
+      return PanelRight
+    case "classic":
+    default:
+      return AlignCenter
+  }
+}
+
 export function SelectionEditor({
   selectedSection,
   sections,
@@ -91,6 +118,7 @@ export function SelectionEditor({
   businessId,
 }: SelectionEditorProps) {
   const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null)
+  const [layoutDialogOpen, setLayoutDialogOpen] = useState(false)
 
   // Diensten selector state
   const [availableDiensten, setAvailableDiensten] = useState<AvailableService[]>([])
@@ -275,6 +303,12 @@ export function SelectionEditor({
     setSaveTimeoutId(timeout)
   }
 
+  const showLegacyLayoutControls = false
+  const selectedLayout = normalizeSectionLayout((selectedSection.data as any).layout)
+  const layoutOptions = getSectionLayoutOptions(selectedSection.type)
+  const selectedLayoutOption = layoutOptions.find((option) => option.value === selectedLayout) ?? layoutOptions[0]
+  const LayoutIcon = getLayoutIcon(selectedLayout)
+
   return (
     <div className="w-full md:w-80 border-border bg-[var(--editor-panel)] p-4 md:border-l md:p-6 overflow-auto animate-in slide-in-from-right duration-300">
       <div className="mb-6">
@@ -319,7 +353,132 @@ export function SelectionEditor({
       </div>
 
       <div className="space-y-4">
-        {selectedSection.type === "hero" && (
+        <Card className="p-4 space-y-3">
+          <Label className="flex items-center gap-2">
+            <LayoutGrid className="h-3.5 w-3.5" />
+            Layoutstijl
+          </Label>
+          <button
+            type="button"
+            onClick={() => setLayoutDialogOpen(true)}
+            className="flex w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-left text-sm transition-colors hover:border-primary/60 hover:bg-accent"
+          >
+            <span className="flex min-w-0 items-center gap-2">
+              <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <LayoutIcon className="h-4 w-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate font-medium">{selectedLayoutOption.label}</span>
+                <span className="block text-xs text-muted-foreground">Bekijk layout opties</span>
+              </span>
+            </span>
+            <Eye className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+          </button>
+        </Card>
+
+        {layoutDialogOpen && typeof document !== "undefined"
+          ? createPortal(
+              <div
+                className="fixed inset-0 z-[1000] bg-black/50 p-3 md:p-6"
+                onClick={() => setLayoutDialogOpen(false)}
+              >
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="layout-dialog-title"
+                  className="mx-auto flex h-full max-w-6xl flex-col overflow-hidden rounded-lg border border-border bg-background shadow-2xl"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                    <div>
+                      <h3 id="layout-dialog-title" className="text-sm font-semibold">
+                        Layoutstijl kiezen
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedSection.type.replace("_", " ")}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => setLayoutDialogOpen(false)}
+                      aria-label="Sluiten"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <ScrollArea className="min-h-0 flex-1">
+                    <div className="grid gap-4 p-4 md:grid-cols-2">
+                      {layoutOptions.map((option) => {
+                        const isActive = selectedLayout === option.value
+                        const OptionIcon = getLayoutIcon(option.value)
+                        const previewSection = {
+                          ...selectedSection,
+                          data: {
+                            ...selectedSection.data,
+                            layout: option.value,
+                          },
+                        }
+
+                        return (
+                          <div
+                            key={option.value}
+                            className={`overflow-hidden rounded-lg border bg-white text-left transition-all hover:border-primary/70 hover:shadow-md ${
+                              isActive ? "border-primary ring-2 ring-ring/30" : "border-border"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
+                              <span className="flex min-w-0 items-center gap-2">
+                                <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                                  <OptionIcon className="h-4 w-4" />
+                                </span>
+                                <span className="truncate text-sm font-semibold">{option.label}</span>
+                              </span>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant={isActive ? "default" : "outline"}
+                                className="h-8 flex-shrink-0"
+                                onClick={() => {
+                                  updateField("layout", option.value)
+                                  setLayoutDialogOpen(false)
+                                }}
+                              >
+                                {isActive ? (
+                                  <>
+                                    <Check className="h-3.5 w-3.5" />
+                                    Actief
+                                  </>
+                                ) : (
+                                  "Kies"
+                                )}
+                              </Button>
+                            </div>
+                            <div className="h-56 overflow-hidden bg-muted/40">
+                              <div className="pointer-events-none w-[285%] origin-top-left scale-[0.35]">
+                                <SectionRenderer
+                                  section={previewSection}
+                                  isPreview
+                                  wrapTransition={false}
+                                  allSections={sections}
+                                  device="desktop"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </div>,
+              document.body,
+            )
+          : null}
+
+        {showLegacyLayoutControls && selectedSection.type === "hero" && (
           <>
             {/* Hero Layout Selector */}
             <Card className="p-4 space-y-3">
@@ -434,7 +593,7 @@ export function SelectionEditor({
           </Card>
         )}
 
-        {selectedSection.type === "services" && (
+        {showLegacyLayoutControls && selectedSection.type === "services" && (
           <>
             {/* Diensten Layout Selector */}
             <Card className="p-4 space-y-3">
@@ -617,7 +776,7 @@ export function SelectionEditor({
           </>
         )}
 
-        {selectedSection.type === "gallery" && (
+        {showLegacyLayoutControls && selectedSection.type === "gallery" && (
           <>
             {/* Gallery Layout Selector */}
             <Card className="p-4 space-y-3">
@@ -754,7 +913,7 @@ export function SelectionEditor({
           </Card>
         )}
 
-        {selectedSection.type === "contact" && (
+        {showLegacyLayoutControls && selectedSection.type === "contact" && (
           <>
             {/* Contact Layout Selector */}
             <Card className="p-4 space-y-3">
@@ -1356,6 +1515,7 @@ export function SelectionEditor({
                 onChange={(e) => updateField("phone", e.target.value)}
               />
             </div>
+            {showLegacyLayoutControls && (
             <div>
               <Label className="text-xs mb-1.5 block">Lay-out</Label>
               <div className="grid grid-cols-3 gap-2">
@@ -1379,6 +1539,7 @@ export function SelectionEditor({
                 })}
               </div>
             </div>
+            )}
           </Card>
         )}
 

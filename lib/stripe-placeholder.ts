@@ -138,7 +138,7 @@ export async function handleManageSubscription(userId: string): Promise<void> {
   // const stripe = await getStripeClient()
   // const session = await stripe.billingPortal.sessions.create({
   //   customer: customer.stripe_customer_id,
-  //   return_url: `${baseUrl}/account/billing`
+  //   return_url: `${baseUrl}/editor/account/billing`
   // })
   // redirect(session.url)
 

@@ -2,12 +2,24 @@
 
 import { ArrowRight, Phone } from "lucide-react"
 import type { SectionStyles } from "@/lib/types"
+import { normalizeSectionLayout } from "@/lib/section-layouts"
 
 interface CtaSectionProps {
   data: Record<string, unknown>
   isPreview: boolean
   styles?: SectionStyles
 }
+
+type CtaLayout = "centered" | "split" | "banner"
+
+const ctaLayoutMap = {
+  classic: "centered",
+  split: "split",
+  showcase: "banner",
+  compact: "centered",
+  card: "split",
+  banner: "banner",
+} as const
 
 export function CtaSection({ data, styles }: CtaSectionProps) {
   const title = (data.title as string) || "Klaar om te beginnen?"
@@ -17,7 +29,7 @@ export function CtaSection({ data, styles }: CtaSectionProps) {
   const secondaryText = data.secondaryCtaText as string | undefined
   const secondaryHref = (data.secondaryCtaHref as string) || "#diensten"
   const phone = data.phone as string | undefined
-  const layout = (data.layout as "centered" | "split" | "banner") || "centered"
+  const layout = (ctaLayoutMap[normalizeSectionLayout(data.layout)] ?? "centered") as CtaLayout
 
   const sectionStyle: React.CSSProperties = {
     backgroundColor: styles?.backgroundColor,

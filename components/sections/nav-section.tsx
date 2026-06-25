@@ -4,6 +4,7 @@ import type React from "react"
 import { useState } from "react"
 import type { Section, SectionStyles, SectionType } from "@/lib/types"
 import { Menu, X } from "lucide-react"
+import { normalizeSectionLayout } from "@/lib/section-layouts"
 
 interface NavLink {
   sectionId: string
@@ -60,6 +61,7 @@ export function NavSection({ data, styles, allSections, device }: NavSectionProp
   const isSticky = (data.isSticky as boolean) ?? true
   const navLinks = data.navLinks as NavLink[] | undefined
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const layout = normalizeSectionLayout(data.layout)
 
   // Force mobile view when device is mobile or tablet
   const isMobileView = device === "mobile" || device === "tablet"
@@ -120,7 +122,7 @@ export function NavSection({ data, styles, allSections, device }: NavSectionProp
       style={sectionStyle}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className={`flex h-16 items-center ${layout === "split" ? "justify-start gap-10" : layout === "compact" ? "justify-between h-12" : layout === "banner" ? "justify-center gap-8" : "justify-between"}`}>
           <div className="flex-shrink-0">
             <a
               href="#"
@@ -135,7 +137,7 @@ export function NavSection({ data, styles, allSections, device }: NavSectionProp
           </div>
 
           {/* Desktop navigation */}
-          <div className={`${isMobileView ? "hidden" : "hidden md:flex"} md:items-center md:space-x-8`}>
+          <div className={`${isMobileView ? "hidden" : "hidden md:flex"} md:items-center ${layout === "compact" ? "md:space-x-4 text-sm" : "md:space-x-8"}`}>
             {links.map((link, idx) => (
               <a
                 key={idx}

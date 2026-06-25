@@ -12,6 +12,7 @@ import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { useRouter } from "next/navigation"
 import { Layers, Paintbrush, LayoutTemplate } from "lucide-react"
+import type { ThemeConfig } from "@/lib/themes"
 
 type MobilePanel = "canvas" | "sections" | "style"
 
@@ -29,6 +30,7 @@ export function EditorClient({ userId }: EditorClientProps) {
   const [businessId, setBusinessId] = useState<string | null>(null)
   const [title, setTitle] = useState(DEFAULT_SITE_TITLE)
   const [slug, setSlug] = useState("")
+  const [themeConfig, setThemeConfig] = useState<ThemeConfig | null>(null)
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null)
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("canvas")
   const [isMobileDraggingNewSection, setIsMobileDraggingNewSection] = useState(false)
@@ -95,6 +97,7 @@ export function EditorClient({ userId }: EditorClientProps) {
       setWebsiteId(website.id)
       setTitle(website.title)
       setSlug(website.slug)
+      setThemeConfig((website.theme_config as ThemeConfig | null) ?? null)
 
       // Load normalized sections from website_sections
       const { data: rows, error: listErr } = await websiteSections.listSections(website.id, supabase)
@@ -258,7 +261,7 @@ export function EditorClient({ userId }: EditorClientProps) {
       return
     }
 
-    router.push(`/editor/domains`)
+    router.push("/editor")
   }, [router, websiteId])
 
   const handleLogout = useCallback(async () => {
@@ -383,6 +386,7 @@ export function EditorClient({ userId }: EditorClientProps) {
           sections={sections}
           setSections={persistSections}
           transitions={transitions}
+          themeConfig={themeConfig}
           isPreview={isPreview}
           selectedSectionId={selectedSectionId}
           onSectionSelect={handleSectionSelect}
@@ -423,6 +427,7 @@ export function EditorClient({ userId }: EditorClientProps) {
               sections={sections}
               setSections={persistSections}
               transitions={transitions}
+              themeConfig={themeConfig}
               isPreview={isPreview}
               selectedSectionId={selectedSectionId}
               onSectionSelect={handleSectionSelect}

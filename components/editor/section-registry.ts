@@ -42,6 +42,7 @@ import { PricingSection } from "@/components/sections/pricing-section"
 import { MapSection } from "@/components/sections/map-section"
 import { CtaSection } from "@/components/sections/cta-section"
 import { RequestFormSection } from "@/components/sections/request-form-section"
+import { getDefaultLayoutForSection } from "@/lib/section-layouts"
 
 export interface SectionDefaultContext {
   businessId?: string | null
@@ -83,6 +84,7 @@ export const sectionDefinitions = {
       brandName: DEFAULT_BUSINESS_NAME,
       isSticky: true,
       navLinks: [],
+      layout: getDefaultLayoutForSection("nav"),
     }),
     Renderer: NavSection,
   },
@@ -96,6 +98,7 @@ export const sectionDefinitions = {
       title: SECTION_COPY.hero.defaultTitle,
       subtitle: "Professionele service, persoonlijk contact.",
       ctaText: "Neem contact op",
+      layout: getDefaultLayoutForSection("hero"),
     }),
     Renderer: HeroSection,
   },
@@ -108,6 +111,7 @@ export const sectionDefinitions = {
     defaultData: () => ({
       title: SECTION_COPY.about.defaultTitle,
       description: "Vertel wie je bent, wat je doet en waarom klanten voor je kiezen.",
+      layout: getDefaultLayoutForSection("about"),
     }),
     Renderer: AboutSection,
   },
@@ -119,7 +123,7 @@ export const sectionDefinitions = {
     category: "business",
     defaultData: ({ businessId }) => ({
       title: SECTION_COPY.services.defaultTitle,
-      layout: "grid",
+      layout: getDefaultLayoutForSection("services"),
       businessId: businessId ?? null,
       serviceIds: [],
     }),
@@ -135,7 +139,7 @@ export const sectionDefinitions = {
     defaultData: () => ({
       title: SECTION_COPY.gallery.defaultTitle,
       subtitle: "Bekijk een selectie van ons werk",
-      layout: "grid",
+      layout: getDefaultLayoutForSection("gallery"),
       images: DEFAULT_GALLERY_IMAGES,
     }),
     Renderer: GallerySection,
@@ -149,6 +153,7 @@ export const sectionDefinitions = {
     defaultData: () => ({
       title: SECTION_COPY.features.defaultTitle,
       features: DEFAULT_FEATURES,
+      layout: getDefaultLayoutForSection("features"),
     }),
     Renderer: FeaturesSection,
   },
@@ -163,6 +168,7 @@ export const sectionDefinitions = {
       address: "Straatnaam 1, 1234 AB Plaats",
       phone: "+31 6 00000000",
       email: DEFAULT_BUSINESS_EMAIL,
+      layout: getDefaultLayoutForSection("contact"),
     }),
     Renderer: ContactSection,
   },
@@ -175,6 +181,7 @@ export const sectionDefinitions = {
     defaultData: () => ({
       brandName: DEFAULT_BUSINESS_NAME,
       copyright: `© ${currentYear} ${DEFAULT_BUSINESS_NAME}. Alle rechten voorbehouden.`,
+      layout: getDefaultLayoutForSection("footer"),
     }),
     Renderer: FooterSection,
   },
@@ -188,6 +195,7 @@ export const sectionDefinitions = {
       title: SECTION_COPY.testimonials.defaultTitle,
       subtitle: "Lees wat onze klanten over ons zeggen.",
       items: [],
+      layout: getDefaultLayoutForSection("testimonials"),
     }),
     Renderer: TestimonialsSection,
   },
@@ -201,6 +209,7 @@ export const sectionDefinitions = {
       title: SECTION_COPY.faq.defaultTitle,
       subtitle: "Alles wat je wil weten.",
       items: [],
+      layout: getDefaultLayoutForSection("faq"),
     }),
     Renderer: FaqSection,
   },
@@ -212,6 +221,7 @@ export const sectionDefinitions = {
     category: "business",
     defaultData: () => ({
       title: SECTION_COPY.opening_hours.defaultTitle,
+      layout: getDefaultLayoutForSection("opening_hours"),
     }),
     Renderer: OpeningHoursSection,
   },
@@ -225,6 +235,7 @@ export const sectionDefinitions = {
       title: SECTION_COPY.pricing.defaultTitle,
       subtitle: "Transparante tarieven zonder verrassingen.",
       plans: [],
+      layout: getDefaultLayoutForSection("pricing"),
     }),
     Renderer: PricingSection,
   },
@@ -238,6 +249,7 @@ export const sectionDefinitions = {
       title: SECTION_COPY.map.defaultTitle,
       address: "",
       showMap: true,
+      layout: getDefaultLayoutForSection("map"),
     }),
     Renderer: MapSection,
   },
@@ -252,7 +264,7 @@ export const sectionDefinitions = {
       subtitle: "Neem vandaag nog contact op.",
       primaryCtaText: "Neem contact op",
       primaryCtaHref: "#contact",
-      layout: "centered",
+      layout: getDefaultLayoutForSection("cta"),
     }),
     Renderer: CtaSection,
   },
@@ -267,6 +279,7 @@ export const sectionDefinitions = {
       subtitle: "Vul het formulier in, wij nemen contact op.",
       requestType: "contact",
       fields: ["name", "email", "phone", "message"],
+      layout: getDefaultLayoutForSection("request_form"),
     }),
     Renderer: RequestFormSection,
   },

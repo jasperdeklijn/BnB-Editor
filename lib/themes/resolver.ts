@@ -10,64 +10,26 @@ import { getFontPairById, DEFAULT_FONT_PAIR_ID } from './fonts';
 import { getPresetById, DEFAULT_PRESET_ID } from './presets';
 
 /**
- * Convert hex color to HSL CSS value
- */
-function hexToHSL(hex: string): string {
-  // Remove # if present
-  hex = hex.replace(/^#/, '');
-
-  // Parse hex values
-  const r = parseInt(hex.slice(0, 2), 16) / 255;
-  const g = parseInt(hex.slice(2, 4), 16) / 255;
-  const b = parseInt(hex.slice(4, 6), 16) / 255;
-
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  let h = 0;
-  let s = 0;
-  const l = (max + min) / 2;
-
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-
-    switch (max) {
-      case r:
-        h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-        break;
-      case g:
-        h = ((b - r) / d + 2) / 6;
-        break;
-      case b:
-        h = ((r - g) / d + 4) / 6;
-        break;
-    }
-  }
-
-  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
-}
-
-/**
  * Generate CSS variables from palette
  */
 function generatePaletteVariables(palette: ThemePalette): Record<string, string> {
   const { colors } = palette;
   return {
-    '--primary': hexToHSL(colors.primary),
-    '--primary-foreground': hexToHSL(colors.primaryForeground),
-    '--secondary': hexToHSL(colors.secondary),
-    '--secondary-foreground': hexToHSL(colors.secondaryForeground),
-    '--accent': hexToHSL(colors.accent),
-    '--accent-foreground': hexToHSL(colors.accentForeground),
-    '--background': hexToHSL(colors.background),
-    '--foreground': hexToHSL(colors.foreground),
-    '--muted': hexToHSL(colors.muted),
-    '--muted-foreground': hexToHSL(colors.mutedForeground),
-    '--card': hexToHSL(colors.card),
-    '--card-foreground': hexToHSL(colors.cardForeground),
-    '--border': hexToHSL(colors.border),
-    '--input': hexToHSL(colors.border),
-    '--ring': hexToHSL(colors.primary),
+    '--primary': colors.primary,
+    '--primary-foreground': colors.primaryForeground,
+    '--secondary': colors.secondary,
+    '--secondary-foreground': colors.secondaryForeground,
+    '--accent': colors.accent,
+    '--accent-foreground': colors.accentForeground,
+    '--background': colors.background,
+    '--foreground': colors.foreground,
+    '--muted': colors.muted,
+    '--muted-foreground': colors.mutedForeground,
+    '--card': colors.card,
+    '--card-foreground': colors.cardForeground,
+    '--border': colors.border,
+    '--input': colors.border,
+    '--ring': colors.primary,
     // Store raw hex values for direct use
     '--theme-primary': colors.primary,
     '--theme-primary-foreground': colors.primaryForeground,

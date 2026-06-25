@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import {
-  ArrowLeft,
   User,
   Mail,
   Phone,
@@ -18,7 +17,6 @@ import {
   Loader2,
   CheckCircle2,
 } from "lucide-react"
-import Link from "next/link"
 import Image from "next/image"
 
 interface ProfileClientProps {
@@ -90,18 +88,6 @@ export function ProfileClient({ userId, email, initialMeta }: ProfileClientProps
       title="Profiel"
       description="Werk uw persoonlijke gegevens, avatar en contactinformatie bij."
       maxWidth="2xl"
-      actions={
-        <Button
-          variant="outline"
-          size="sm"
-          asChild
-        >
-          <Link href="/editor">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Terug naar editor
-          </Link>
-        </Button>
-      }
     >
         {/* Avatar */}
         <div className="mb-10 flex flex-col items-center gap-4">
@@ -226,9 +212,6 @@ export function ProfileClient({ userId, email, initialMeta }: ProfileClientProps
 
           {/* Footer actions */}
           <div className="flex items-center justify-end gap-3 border-t border-border px-6 py-4 bg-muted/30 rounded-b-xl">
-            <Button variant="outline" asChild>
-              <Link href="/editor">Annuleren</Link>
-            </Button>
             <Button onClick={handleSave} disabled={isSaving}>
               {isSaving ? (
                 <>

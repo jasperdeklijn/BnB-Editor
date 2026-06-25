@@ -5,6 +5,8 @@ import {
   getDemoServicesFromTemplate,
 } from "@/lib/business/template-factory"
 import type { BusinessCategory } from "@/lib/business/categories"
+import { applyThemeDefaultsToSections } from "@/lib/themes"
+import type { ThemeConfig } from "@/lib/themes"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function POST(request: NextRequest) {
@@ -104,7 +106,22 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const sections = generateSectionsFromTemplate(category, resolvedBusinessId)
+    const { data: websiteTheme, error: websiteThemeError } = await supabase
+      .from("websites")
+      .select("theme_config")
+      .eq("id", resolvedWebsiteId)
+      .eq("user_id", user.id)
+      .single()
+
+    if (websiteThemeError) {
+      return NextResponse.json({ error: "Failed to load website theme" }, { status: 500 })
+    }
+
+    const themeConfig = (websiteTheme.theme_config as ThemeConfig | null) ?? null
+    const sections = applyThemeDefaultsToSections(
+      generateSectionsFromTemplate(category, resolvedBusinessId),
+      themeConfig
+    )
 
     await supabase.from("website_sections").delete().eq("website_id", resolvedWebsiteId)
 

@@ -5,8 +5,18 @@ import { useState } from "react"
 import { toast } from "sonner"
 
 import type { SectionStyles } from "@/lib/types"
+import { normalizeSectionLayout } from "@/lib/section-layouts"
 
 export type GalleryLayout = "grid" | "vertical-carousel" | "horizontal-carousel" | "masonry" | "single-with-thumbs" | "full-slider"
+
+const galleryLayoutMap = {
+  classic: "grid",
+  split: "vertical-carousel",
+  showcase: "full-slider",
+  compact: "horizontal-carousel",
+  card: "single-with-thumbs",
+  banner: "masonry",
+} as const
 
 interface GallerySectionProps {
   data: Record<string, unknown>
@@ -18,7 +28,7 @@ interface GallerySectionProps {
 export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySectionProps) {
   const title = data.title as string
   const subtitle = data.subtitle as string
-  const layout = (data.layout as GalleryLayout) || "grid"
+  const layout = (galleryLayoutMap[normalizeSectionLayout(data.layout)] ?? "grid") as GalleryLayout
 
   // Handle different image data formats - ensure consistent rendering
   const getImagesArray = () => {

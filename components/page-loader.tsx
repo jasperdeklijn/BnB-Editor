@@ -8,7 +8,7 @@ import { SectionRenderer, TransitionWrapper } from "@/components/editor/section-
 import type { Section, Transition } from "@/lib/types"
 import { resolveAllSections } from "@/lib/supabase/section-resolver"
 import { WebsiteThemeProvider } from "@/components/themes/website-theme-provider"
-import type { ThemeConfig } from "@/lib/themes"
+import { applyThemeDefaultsToSections, type ThemeConfig } from "@/lib/themes"
 import { buildLocalBusinessJsonLd } from "@/lib/business/structured-data"
 
 interface PageLoaderOptions {
@@ -83,7 +83,8 @@ export async function loadPublicWebsitePage({
     supabase: adminSupabase,
     isPreview,
   })
-  sections.splice(0, sections.length, ...resolvedSections)
+  const themeConfig = (website.theme_config as ThemeConfig | null) ?? null
+  sections.splice(0, sections.length, ...applyThemeDefaultsToSections(resolvedSections, themeConfig))
 
   // Fetch transitions from section_transitions table
   const { data: transitionRows } = await supabase
@@ -224,8 +225,8 @@ export async function loadPublicWebsitePage({
   )
 
   return (
-    <WebsiteThemeProvider initialConfig={(website.theme_config as ThemeConfig | null) ?? undefined}>
-      <div className="min-h-screen bg-background">{nodes}</div>
+    <WebsiteThemeProvider initialConfig={themeConfig ?? undefined}>
+      <div className="website-theme-scope min-h-screen bg-background">{nodes}</div>
       {jsonLd && (
         <script
           type="application/ld+json"

@@ -2,6 +2,7 @@
 
 import { Star, Quote } from "lucide-react"
 import type { SectionStyles } from "@/lib/types"
+import { getLayoutClasses } from "@/lib/section-layouts"
 
 export interface TestimonialItem {
   id?: string
@@ -101,6 +102,7 @@ export function TestimonialsSection({ data, styles }: TestimonialsSectionProps) 
     Array.isArray(data.items) && (data.items as TestimonialItem[]).length > 0
       ? (data.items as TestimonialItem[])
       : DEFAULT_TESTIMONIALS
+  const layout = getLayoutClasses(data.layout)
 
   const sectionStyle: React.CSSProperties = {
     backgroundColor: styles?.backgroundColor,
@@ -112,11 +114,11 @@ export function TestimonialsSection({ data, styles }: TestimonialsSectionProps) 
 
   return (
     <section
-      className={`px-4 py-12 sm:px-6 md:py-20 ${styles?.fontFamily || ""}`}
+      className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`}
       style={sectionStyle}
     >
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-12 text-center">
+      <div className={`mx-auto ${layout.container}`}>
+        <div className={`mb-12 ${layout.heading}`}>
           <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-amber-600">
             Ervaringen
           </p>
@@ -133,7 +135,7 @@ export function TestimonialsSection({ data, styles }: TestimonialsSectionProps) 
           )}
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className={`grid gap-6 ${layout.grid}`}>
           {items.map((item, idx) => (
             <TestimonialCard key={item.id ?? idx} item={item} textStyle={textStyle} />
           ))}

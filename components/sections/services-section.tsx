@@ -7,9 +7,18 @@ import { Button } from "@/components/ui/button"
 import type { SectionStyles } from "@/lib/types"
 import Link from "next/link"
 import { Briefcase, Users, ChevronLeft, ChevronRight, DollarSign } from "lucide-react"
+import { normalizeSectionLayout } from "@/lib/section-layouts"
 
 export type ServicesLayout = "grid" | "list" | "featured" | "magazine" | "minimal" | "carousel"
 
+const servicesLayoutMap = {
+  classic: "grid",
+  split: "list",
+  showcase: "featured",
+  compact: "minimal",
+  card: "magazine",
+  banner: "carousel",
+} as const
 
 interface ServicesSectionProps {
   data: Record<string, unknown>
@@ -495,7 +504,7 @@ function CarouselLayout({
 
 export function ServicesSection({ data, styles }: ServicesSectionProps) {
   const title = (data.title as string) || "Onze diensten"
-  const layout = (data.layout as ServicesLayout) || "grid"
+  const layout = (servicesLayoutMap[normalizeSectionLayout(data.layout)] ?? "grid") as ServicesLayout
   const serviceIds = data.serviceIds as string[] | undefined
 
   const [services, setServices] = useState<ServiceDisplay[]>([])

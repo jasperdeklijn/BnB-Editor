@@ -2,6 +2,7 @@
 
 import { MapPin, Phone, Mail, ExternalLink } from "lucide-react"
 import type { SectionStyles } from "@/lib/types"
+import { getLayoutClasses } from "@/lib/section-layouts"
 
 interface MapSectionProps {
   data: Record<string, unknown>
@@ -25,6 +26,7 @@ export function MapSection({ data, styles, isPreview }: MapSectionProps) {
   const email = data.email as string | undefined
   const embedUrl = data.embedUrl as string | undefined
   const showMap = data.showMap !== false
+  const layout = getLayoutClasses(data.layout)
 
   const mapUrl = buildEmbedUrl(embedUrl, address)
   const mapsHref = address
@@ -41,11 +43,11 @@ export function MapSection({ data, styles, isPreview }: MapSectionProps) {
 
   return (
     <section
-      className={`px-4 py-12 sm:px-6 md:py-20 ${styles?.fontFamily || ""}`}
+      className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`}
       style={sectionStyle}
     >
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-10 text-center">
+      <div className={`mx-auto ${layout.container}`}>
+        <div className={`mb-10 ${layout.heading}`}>
           <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-amber-600">
             Locatie
           </p>
@@ -63,9 +65,9 @@ export function MapSection({ data, styles, isPreview }: MapSectionProps) {
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-border shadow-sm">
-          <div className="grid md:grid-cols-5">
+          <div className={`grid ${layout.layout === "compact" ? "" : "md:grid-cols-5"}`}>
             {/* Info panel */}
-            <div className="flex flex-col justify-center gap-5 bg-amber-700 px-8 py-10 md:col-span-2">
+            <div className={`flex flex-col justify-center gap-5 bg-amber-700 px-8 py-10 ${layout.layout === "compact" ? "" : "md:col-span-2"}`}>
               <h3 className="text-lg font-semibold text-white">Kom langs</h3>
 
               {address && (
@@ -120,7 +122,7 @@ export function MapSection({ data, styles, isPreview }: MapSectionProps) {
             </div>
 
             {/* Map panel */}
-            <div className="min-h-64 md:col-span-3 md:min-h-80">
+            <div className={`min-h-64 md:min-h-80 ${layout.layout === "compact" ? "" : "md:col-span-3"}`}>
               {showMap && mapUrl && !isPreview ? (
                 <iframe
                   title="Locatiekaart"

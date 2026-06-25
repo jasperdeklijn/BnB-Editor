@@ -162,3 +162,29 @@
     @apply bg-background text-foreground;
   }
 }
+
+.website-theme-scope {
+  font-family: var(--font-body);
+  color: var(--foreground);
+  background: var(--background);
+}
+
+.website-theme-scope h1,
+.website-theme-scope h2,
+.website-theme-scope h3,
+.website-theme-scope h4 {
+  font-family: var(--font-heading);
+}
+
+.website-theme-scope section {
+  padding-block: var(--spacing-section);
+}
+
+.website-theme-scope .rounded,
+.website-theme-scope .rounded-md,
+.website-theme-scope .rounded-lg,
+.website-theme-scope .rounded-xl,
+.website-theme-scope .rounded-2xl,
+.website-theme-scope .rounded-3xl {
+  border-radius: var(--radius);
+}

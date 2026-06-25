@@ -3,6 +3,7 @@
 import type React from "react"
 import Link from "next/link"
 import type { SectionStyles } from "@/lib/types"
+import { getLayoutClasses } from "@/lib/section-layouts"
 
 interface FooterSectionProps {
   data: Record<string, unknown>
@@ -40,6 +41,7 @@ export function FooterSection({ data, styles }: FooterSectionProps) {
   ]
 
   const currentYear = new Date().getFullYear()
+  const layout = getLayoutClasses(data.layout)
 
   const sectionStyle: React.CSSProperties = {
     backgroundColor: styles?.backgroundColor || "#111827",
@@ -48,9 +50,9 @@ export function FooterSection({ data, styles }: FooterSectionProps) {
 
   return (
     <footer style={sectionStyle}>
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
-        <div className="grid grid-cols-2 gap-6 mb-8 sm:gap-8 md:grid-cols-4">
-          <div className="col-span-2 mb-4 sm:col-span-2 md:col-span-1 md:mb-0">
+      <div className={`mx-auto px-4 sm:px-6 lg:px-8 ${layout.section} ${layout.layout === "compact" ? "max-w-5xl" : "max-w-7xl"}`}>
+        <div className={`grid gap-6 mb-8 sm:gap-8 ${layout.layout === "compact" ? "md:grid-cols-3" : "grid-cols-2 md:grid-cols-4"}`}>
+          <div className={`${layout.layout === "banner" ? "md:col-span-4 text-center" : "col-span-2 mb-4 sm:col-span-2 md:col-span-1 md:mb-0"}`}>
             <h3 className="text-base font-bold mb-3 sm:text-lg sm:mb-4">
               {companyName}
             </h3>
@@ -74,7 +76,7 @@ export function FooterSection({ data, styles }: FooterSectionProps) {
         </div>
 
         <div className="border-t border-gray-700 pt-6 sm:pt-8">
-          <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:justify-between sm:text-left">
+          <div className={`flex flex-col items-center gap-4 text-center ${layout.layout === "split" ? "sm:flex-row-reverse sm:justify-between sm:text-left" : "sm:flex-row sm:justify-between sm:text-left"}`}>
             <p className="text-sm opacity-75 sm:text-base">
               &copy; {currentYear} {companyName}. All rights reserved.
             </p>

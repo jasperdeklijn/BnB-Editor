@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { ChevronDown } from "lucide-react"
 import type { SectionStyles } from "@/lib/types"
+import { getLayoutClasses } from "@/lib/section-layouts"
 
 export interface FaqItem {
   id?: string
@@ -87,6 +88,7 @@ export function FaqSection({ data, styles }: FaqSectionProps) {
     Array.isArray(data.items) && (data.items as FaqItem[]).length > 0
       ? (data.items as FaqItem[])
       : DEFAULT_FAQS
+  const layout = getLayoutClasses(data.layout)
 
   const sectionStyle: React.CSSProperties = {
     backgroundColor: styles?.backgroundColor,
@@ -98,11 +100,11 @@ export function FaqSection({ data, styles }: FaqSectionProps) {
 
   return (
     <section
-      className={`px-4 py-12 sm:px-6 md:py-20 ${styles?.fontFamily || ""}`}
+      className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`}
       style={sectionStyle}
     >
-      <div className="mx-auto max-w-3xl">
-        <div className="mb-12 text-center">
+      <div className={`mx-auto ${layout.container}`}>
+        <div className={`mb-12 ${layout.heading}`}>
           <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-amber-600">
             FAQ
           </p>
@@ -119,7 +121,7 @@ export function FaqSection({ data, styles }: FaqSectionProps) {
           )}
         </div>
 
-        <div className="rounded-2xl border border-border bg-white/70 px-6 shadow-sm backdrop-blur">
+        <div className={`${layout.layout === "split" ? "columns-1 md:columns-2 md:gap-6" : ""} rounded-2xl border border-border bg-white/70 px-6 shadow-sm backdrop-blur`}>
           {items.map((item, idx) => (
             <FaqRow key={item.id ?? idx} item={item} textStyle={textStyle} />
           ))}

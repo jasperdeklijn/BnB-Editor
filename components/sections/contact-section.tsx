@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import type { SectionStyles } from "@/lib/types"
+import { normalizeSectionLayout } from "@/lib/section-layouts"
 
 export type ContactLayout =
   | "classic"
@@ -16,6 +17,15 @@ export type ContactLayout =
   | "card"
   | "fullwidth"
   | "centered"
+
+const contactLayoutMap = {
+  classic: "classic",
+  split: "split",
+  showcase: "fullwidth",
+  compact: "minimal",
+  card: "card",
+  banner: "centered",
+} as const
 
 interface ContactSectionProps {
   data: Record<string, unknown>
@@ -505,7 +515,7 @@ function CenteredLayout({ data, styles }: { data: Record<string, unknown>; style
 // ─── Main Export ──────────────────────────────────────────────────────────────
 
 export function ContactSection({ data, styles }: ContactSectionProps) {
-  const layout = (data.layout as ContactLayout) || "classic"
+  const layout = (contactLayoutMap[normalizeSectionLayout(data.layout)] ?? "classic") as ContactLayout
 
   switch (layout) {
     case "split":

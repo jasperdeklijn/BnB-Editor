@@ -40,3 +40,10 @@ export {
   applyThemeToElement,
   getGoogleFontsUrl,
 } from './resolver';
+
+export {
+  resolveWebsiteTheme,
+  getThemeDefaultSectionStyles,
+  applyThemeDefaultsToSection,
+  applyThemeDefaultsToSections,
+} from './section-defaults';

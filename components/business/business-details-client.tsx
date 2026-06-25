@@ -22,7 +22,6 @@ import {
   Link as LinkIcon,
   Briefcase,
 } from "lucide-react"
-import Link from "next/link"
 
 interface BusinessDetailsClientProps {
   initialBusiness: Business
@@ -379,9 +378,6 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3">
-          <Button variant="outline" asChild>
-            <Link href="/editor">Annuleren</Link>
-          </Button>
           <Button onClick={handleSave} disabled={isSaving}>
             {isSaving ? (
               <>
