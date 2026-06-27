@@ -9,15 +9,13 @@ export default async function DomainsPage() {
   const { data, error } = await supabase.auth.getUser()
   if (error || !data?.user) redirect("/auth/login")
 
-  const { data: website } = await supabase
+  const { data: websites } = await supabase
     .from("websites")
-    .select("id, slug, custom_domain, published")
+    .select("id, title, slug, custom_domain, published")
     .eq("user_id", data.user.id)
     .order("created_at", { ascending: false })
-    .limit(1)
-    .single()
 
-  if (!website) redirect("/editor")
+  if (!websites || websites.length === 0) redirect("/editor")
 
   return (
     <EditorPageShell
@@ -26,9 +24,13 @@ export default async function DomainsPage() {
       maxWidth="2xl"
     >
       <DomainDashboard
-        slug={website.slug}
-        currentCustomDomain={website.custom_domain ?? null}
-        isPublished={website.published ?? false}
+        websites={websites.map((website) => ({
+          id: website.id,
+          title: website.title,
+          slug: website.slug,
+          customDomain: website.custom_domain ?? null,
+          isPublished: website.published ?? false,
+        }))}
       />
     </EditorPageShell>
   )

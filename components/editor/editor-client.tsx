@@ -10,11 +10,22 @@ import { DEFAULT_SITE_TITLE } from "@/lib/business-naming"
 import { getDefaultSectionData as getRegistryDefaultSectionData } from "@/components/editor/section-registry"
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
-import { useRouter } from "next/navigation"
-import { Layers, Paintbrush, LayoutTemplate } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { AlertCircle, CheckCircle2, Globe2, Layers, LayoutTemplate, Loader2, Paintbrush, Plus } from "lucide-react"
 import type { ThemeConfig } from "@/lib/themes"
+import { Button } from "@/components/ui/button"
+import { PLATFORM_DOMAIN } from "@/lib/platform"
 
 type MobilePanel = "canvas" | "sections" | "style"
+
+type WebsiteSummary = {
+  id: string
+  title: string
+  slug: string
+  published: boolean
+  customDomain?: string | null
+  created_at?: string
+}
 
 const getDefaultSectionData = (type: SectionType, businessId?: string | null): Record<string, unknown> =>
   getRegistryDefaultSectionData(type, { businessId })
@@ -26,17 +37,23 @@ interface EditorClientProps {
 export function EditorClient({ userId }: EditorClientProps) {
   const [sections, setSections] = useState<Section[]>([])
   const [transitions, setTransitions] = useState<Transition[]>([])
+  const [websites, setWebsites] = useState<WebsiteSummary[]>([])
   const [websiteId, setWebsiteId] = useState<string | null>(null)
   const [businessId, setBusinessId] = useState<string | null>(null)
   const [title, setTitle] = useState(DEFAULT_SITE_TITLE)
   const [slug, setSlug] = useState("")
   const [themeConfig, setThemeConfig] = useState<ThemeConfig | null>(null)
+  const [isCreatingWebsite, setIsCreatingWebsite] = useState(false)
+  const [isRenamingWebsite, setIsRenamingWebsite] = useState(false)
+  const [websiteMessage, setWebsiteMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null)
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("canvas")
   const [isMobileDraggingNewSection, setIsMobileDraggingNewSection] = useState(false)
   const [isMobileDraggingImage, setIsMobileDraggingImage] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { isPreview, setIsPreview, isSaving, setIsSaving, device, setDevice, setOnPublish, setOnLogout } = useEditorLayout()
+  const requestedWebsiteId = searchParams.get("websiteId")
 
   // Switch to canvas on mobile when a touch drag starts
   useEffect(() => {
@@ -63,12 +80,7 @@ export function EditorClient({ userId }: EditorClientProps) {
     }
   }, [])
 
-  // Load or create website on mount
-  useEffect(() => {
-    loadWebsite()
-  }, [])
-
-  const loadWebsite = async () => {
+  const loadWebsite = useCallback(async (preferredWebsiteId?: string | null) => {
     const supabase = createClient()
 
     // Fetch the user's current business id for service-backed sections.
@@ -84,20 +96,32 @@ export function EditorClient({ userId }: EditorClientProps) {
       if (business) setBusinessId(business.id)
     }
 
-    // Try to load existing website
-    const { data: websites } = await supabase
+    const { data: websiteRows } = await supabase
       .from("websites")
       .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .limit(1)
 
-    if (websites && websites.length > 0) {
-      const website = websites[0]
+    if (websiteRows && websiteRows.length > 0) {
+      const summaries = websiteRows.map((website: any) => ({
+        id: website.id,
+        title: website.title || DEFAULT_SITE_TITLE,
+        slug: website.slug,
+        published: Boolean(website.published),
+        customDomain: website.custom_domain ?? null,
+        created_at: website.created_at,
+      }))
+      setWebsites(summaries)
+
+      const website =
+        websiteRows.find((row: any) => row.id === preferredWebsiteId) ||
+        websiteRows.find((row: any) => row.published) ||
+        websiteRows[0]
       setWebsiteId(website.id)
       setTitle(website.title)
       setSlug(website.slug)
       setThemeConfig((website.theme_config as ThemeConfig | null) ?? null)
+      setSelectedSectionId(null)
 
       // Load normalized sections from website_sections
       const { data: rows, error: listErr } = await websiteSections.listSections(website.id, supabase)
@@ -143,24 +167,121 @@ export function EditorClient({ userId }: EditorClientProps) {
 
       if (newWebsite && !error) {
         setWebsiteId(newWebsite.id)
+        setTitle(newWebsite.title || DEFAULT_SITE_TITLE)
         setSlug(newSlug)
+        setWebsites([
+          {
+            id: newWebsite.id,
+            title: newWebsite.title || DEFAULT_SITE_TITLE,
+            slug: newSlug,
+            published: false,
+            customDomain: newWebsite.custom_domain ?? null,
+            created_at: newWebsite.created_at,
+          },
+        ])
       }
     }
+  }, [userId])
+
+  // Load or create website on mount and when a selected website is requested.
+  useEffect(() => {
+    loadWebsite(requestedWebsiteId)
+  }, [loadWebsite, requestedWebsiteId])
+
+  const handleWebsiteChange = (nextWebsiteId: string) => {
+    setWebsiteMessage(null)
+    router.replace(`/editor?websiteId=${nextWebsiteId}`)
+  }
+
+  const handleCreateWebsite = async () => {
+    setIsCreatingWebsite(true)
+    setWebsiteMessage(null)
+
+    const supabase = createClient()
+    const nextNumber = websites.length + 1
+    const newSlug = `site-${Date.now()}`
+    const newTitle = `${DEFAULT_SITE_TITLE} ${nextNumber}`
+
+    const { data: newWebsite, error } = await supabase
+      .from("websites")
+      .insert({
+        user_id: userId,
+        business_id: businessId,
+        title: newTitle,
+        slug: newSlug,
+      })
+      .select("id, title, slug, published, custom_domain, created_at")
+      .single()
+
+    setIsCreatingWebsite(false)
+
+    if (error || !newWebsite) {
+      setWebsiteMessage({ type: "error", text: error?.message || "Nieuwe website kon niet worden aangemaakt." })
+      return
+    }
+
+    setWebsites((current) => [
+      {
+        id: newWebsite.id,
+        title: newWebsite.title || DEFAULT_SITE_TITLE,
+        slug: newWebsite.slug,
+        published: Boolean(newWebsite.published),
+        customDomain: newWebsite.custom_domain ?? null,
+        created_at: newWebsite.created_at,
+      },
+      ...current,
+    ])
+    setWebsiteMessage({ type: "success", text: "Nieuwe website aangemaakt. U bewerkt nu deze website." })
+    router.replace(`/editor?websiteId=${newWebsite.id}`)
   }
 
   const handleSave = async () => {
     if (!websiteId) return
 
     setIsSaving(true)
-    const supabase = createClient()
+    setIsRenamingWebsite(true)
+    setWebsiteMessage(null)
 
-    const { error } = await supabase.from("websites").update({ title }).eq("id", websiteId)
+    const response = await fetch("/api/websites/rename", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ websiteId, title }),
+    })
+    const result = await response.json().catch(() => ({}))
 
     setIsSaving(false)
+    setIsRenamingWebsite(false)
 
-    if (error) {
-      console.error("Error saving:", error)
+    if (!response.ok) {
+      setWebsiteMessage({ type: "error", text: result?.error || "Websitenaam kon niet worden opgeslagen." })
+      return
     }
+
+    const updatedWebsite = result.website as {
+      id: string
+      title: string
+      slug: string
+      published: boolean
+      custom_domain?: string | null
+      created_at?: string
+    }
+    setTitle(updatedWebsite.title || DEFAULT_SITE_TITLE)
+    setSlug(updatedWebsite.slug)
+    setWebsites((current) =>
+      current.map((website) =>
+        website.id === updatedWebsite.id
+          ? {
+              ...website,
+              title: updatedWebsite.title,
+              slug: updatedWebsite.slug,
+              published: Boolean(updatedWebsite.published),
+              customDomain: updatedWebsite.custom_domain ?? website.customDomain ?? null,
+              created_at: updatedWebsite.created_at,
+            }
+          : website,
+      ),
+    )
+    setWebsiteMessage({ type: "success", text: `Websitenaam opgeslagen. Live URL: ${updatedWebsite.slug}.${PLATFORM_DOMAIN}.` })
   }
 
   // Persist sections immediately when updated from children
@@ -249,18 +370,32 @@ export function EditorClient({ userId }: EditorClientProps) {
     if (!websiteId) return
 
     setIsSaving(true)
-    const supabase = createClient()
-    const { error } = await supabase
-      .from("websites")
-      .update({ published: true })
-      .eq("id", websiteId)
+    setWebsiteMessage(null)
+    const response = await fetch("/api/websites/publish", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ websiteId }),
+    })
+    const result = await response.json().catch(() => ({}))
     setIsSaving(false)
 
-    if (error) {
-      console.error("Error publishing:", error)
+    if (!response.ok) {
+      setWebsiteMessage({
+        type: "error",
+        text:
+          result?.error ||
+          "Deze website kan niet live worden gezet. Zet eerst de huidige live website uit of wijzig de live website.",
+      })
       return
     }
 
+    setWebsites((current) =>
+      current.map((website) => ({
+        ...website,
+        published: website.id === websiteId,
+      })),
+    )
+    setWebsiteMessage({ type: "success", text: "Deze website is live gezet." })
     router.push("/editor")
   }, [router, websiteId])
 
@@ -376,9 +511,88 @@ export function EditorClient({ userId }: EditorClientProps) {
   }
 
   const selectedSection = sections.find((s) => s.id === selectedSectionId) || null
+  const selectedWebsite = websites.find((website) => website.id === websiteId)
+  const selectedWebsiteLiveUrl = selectedWebsite
+    ? selectedWebsite.customDomain || `${selectedWebsite.slug}.${PLATFORM_DOMAIN}`
+    : ""
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-muted">
+      <div className="border-b border-border bg-background px-2 py-2 md:px-4">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2">
+          <label htmlFor="website-selector" className="sr-only">
+            Website
+          </label>
+          <select
+            id="website-selector"
+            value={websiteId ?? ""}
+            onChange={(event) => handleWebsiteChange(event.target.value)}
+            className="h-8 min-w-0 rounded-md border border-input bg-background px-2 text-xs font-medium text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 sm:w-56"
+          >
+            {websites.map((website) => (
+              <option key={website.id} value={website.id}>
+                {website.title || DEFAULT_SITE_TITLE} ({website.slug})
+              </option>
+            ))}
+          </select>
+          <label htmlFor="website-name" className="sr-only">
+            Websitenaam
+          </label>
+          <input
+            id="website-name"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            className="h-8 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-xs text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 sm:max-w-64"
+            placeholder="Websitenaam"
+          />
+          <Button type="button" size="xs" onClick={handleSave} disabled={!websiteId || isRenamingWebsite}>
+            {isRenamingWebsite ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+            Opslaan
+          </Button>
+          <Button type="button" variant="outline" size="xs" onClick={handleCreateWebsite} disabled={isCreatingWebsite}>
+            {isCreatingWebsite ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+            Nieuw
+          </Button>
+          {selectedWebsite ? (
+            <div className="ml-auto flex min-w-0 items-center gap-2 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs">
+              <span
+                className={`h-2.5 w-2.5 rounded-full ring-2 ${
+                  selectedWebsite.published
+                    ? "bg-emerald-500 ring-emerald-500/20"
+                    : "bg-red-500 ring-red-500/20"
+                }`}
+                aria-hidden="true"
+              />
+              <span className="font-medium text-foreground">{selectedWebsite.published ? "Online" : "Offline"}</span>
+              {selectedWebsite.published ? (
+                <>
+                  <span className="text-muted-foreground">/</span>
+                  <Globe2 className="h-3.5 w-3.5 shrink-0 text-primary" />
+                  <span className="max-w-[42vw] truncate font-mono text-muted-foreground sm:max-w-64">
+                    {selectedWebsiteLiveUrl}
+                  </span>
+                </>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+        {websiteMessage ? (
+          <div
+            className={`mx-auto mt-2 flex max-w-7xl items-start gap-2 rounded-md border px-3 py-2 text-xs ${
+              websiteMessage.type === "success"
+                ? "border-primary/20 bg-primary/10 text-primary"
+                : "border-destructive/20 bg-destructive/10 text-destructive"
+            }`}
+          >
+            {websiteMessage.type === "success" ? (
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+            ) : (
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            )}
+            <span>{websiteMessage.text}</span>
+          </div>
+        ) : null}
+      </div>
       {/* Desktop layout: side-by-side panels */}
       <div className="hidden md:flex flex-1 overflow-hidden">
         {!isPreview && <SectionsSelector userId={userId} />}

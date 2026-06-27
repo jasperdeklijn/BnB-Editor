@@ -1,150 +1,126 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 
-// POST /api/domain — save a custom domain for the current user's website
+function normalizeDomain(domain: string | null | undefined) {
+  return domain
+    ? domain
+        .trim()
+        .replace(/^https?:\/\//i, "")
+        .replace(/^www\./i, "")
+        .replace(/\/.*$/, "")
+        .toLowerCase()
+    : null
+}
+
 export async function POST(request: Request) {
   const supabase = await createClient()
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
   if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const body = await request.json()
-  const { slug, customDomain } = body as { slug: string; customDomain: string | null }
+  const body = await request.json().catch(() => null)
+  const websiteId = typeof body?.websiteId === "string" ? body.websiteId : null
+  const slug = typeof body?.slug === "string" ? body.slug : null
+  const customDomain = typeof body?.customDomain === "string" ? body.customDomain : null
 
-  if (!slug) {
-    return NextResponse.json({ error: "Missing slug" }, { status: 400 })
+  if (!websiteId && !slug) {
+    return NextResponse.json({ error: "Missing websiteId" }, { status: 400 })
   }
 
-  // Normalize: strip protocol, www and trailing slash
-  const normalized = customDomain
-    ? customDomain
-        .replace(/^https?:\/\//i, "")
-        .replace(/^www\./i, "")
-        .replace(/\/$/, "")
-        .toLowerCase()
-    : null
+  const normalized = normalizeDomain(customDomain)
 
-  // Get current custom domain to see if changed
-  const { data: website } = await supabase
+  let websiteQuery = supabase
     .from("websites")
-    .select("custom_domain")
-    .eq("slug", slug)
+    .select("id, slug, custom_domain")
     .eq("user_id", user.id)
-    .single()
 
-  const currentDomain = website?.custom_domain
+  websiteQuery = websiteId ? websiteQuery.eq("id", websiteId) : websiteQuery.eq("slug", slug)
+
+  const { data: website, error: websiteError } = await websiteQuery.single()
+
+  if (websiteError || !website) {
+    return NextResponse.json({ error: "Website not found" }, { status: 404 })
+  }
+
+  const currentDomain = website.custom_domain
 
   const { error } = await supabase
     .from("websites")
-    .update({ custom_domain: normalized })
-    .eq("slug", slug)
+    .update({ custom_domain: normalized, updated_at: new Date().toISOString() })
+    .eq("id", website.id)
     .eq("user_id", user.id)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // Handle Vercel domain management
   const vercelToken = process.env.VERCEL_ACCESS_TOKEN
   const vercelProjectId = process.env.VERCEL_PROJECT_ID
 
-  console.log('[Vercel Domain] Starting domain management', {
-    slug,
+  console.log("[Vercel Domain] Starting domain management", {
+    websiteId: website.id,
+    slug: website.slug,
     normalized,
     currentDomain,
     hasVercelToken: !!vercelToken,
     hasVercelProjectId: !!vercelProjectId,
-    tokenLength: vercelToken?.length,
   })
 
   if (vercelToken && vercelProjectId) {
     try {
-      // If adding a new domain
       if (normalized && normalized !== currentDomain) {
         const url = `https://api.vercel.com/v10/projects/${vercelProjectId}/domains`
-        console.log('[Vercel Domain] Adding domain to Vercel', {
-          domain: normalized,
-          url,
-        })
-
         const addResponse = await fetch(url, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${vercelToken}`,
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${vercelToken}`,
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            name: normalized,
-          }),
+          body: JSON.stringify({ name: normalized }),
         })
-
-        console.log('[Vercel Domain] Add response status:', addResponse.status)
 
         if (!addResponse.ok) {
-          const errorData = await addResponse.json()
-          console.error('[Vercel Domain] Failed to add domain to Vercel:', {
+          const errorData = await addResponse.json().catch(() => null)
+          console.error("[Vercel Domain] Failed to add domain to Vercel:", {
             status: addResponse.status,
             statusText: addResponse.statusText,
             error: errorData,
           })
-        } else {
-          const successData = await addResponse.json()
-          console.log('[Vercel Domain] Successfully added domain to Vercel:', {
-            domain: normalized,
-            response: successData,
-          })
         }
-      } else if (normalized && normalized === currentDomain) {
-        console.log('[Vercel Domain] No domain change detected; current domain already matches normalized value', {
-          currentDomain,
-          normalized,
-        })
       }
 
-      // If removing a domain
       if (!normalized && currentDomain) {
-        const url = `https://api.vercel.com/v10/projects/${vercelProjectId}/domains`
-        console.log('[Vercel Domain] Removing domain from Vercel', {
-          domain: currentDomain,
-          url,
-        })
-
+        const url = `https://api.vercel.com/v9/projects/${vercelProjectId}/domains/${encodeURIComponent(currentDomain)}`
         const deleteResponse = await fetch(url, {
-          method: 'DELETE',
+          method: "DELETE",
           headers: {
-            'Authorization': `Bearer ${vercelToken}`,
+            Authorization: `Bearer ${vercelToken}`,
           },
         })
 
-        console.log('[Vercel Domain] Delete response status:', deleteResponse.status)
-
         if (!deleteResponse.ok) {
-          const errorData = await deleteResponse.json()
-          console.error('[Vercel Domain] Failed to remove domain from Vercel:', {
+          const errorData = await deleteResponse.json().catch(() => null)
+          console.error("[Vercel Domain] Failed to remove domain from Vercel:", {
             status: deleteResponse.status,
             statusText: deleteResponse.statusText,
             error: errorData,
           })
-        } else {
-          console.log('[Vercel Domain] Successfully removed domain from Vercel:', {
-            domain: currentDomain,
-          })
         }
       }
-
-      if (!normalized && !currentDomain) {
-        console.log('[Vercel Domain] No domain change - skipping Vercel API call')
-      }
     } catch (vercelError) {
-      console.error('[Vercel Domain] Exception during Vercel API call:', {
+      console.error("[Vercel Domain] Exception during Vercel API call:", {
         error: vercelError instanceof Error ? vercelError.message : String(vercelError),
         stack: vercelError instanceof Error ? vercelError.stack : undefined,
       })
     }
   } else {
-    console.warn('[Vercel Domain] Vercel credentials not configured', {
+    console.warn("[Vercel Domain] Vercel credentials not configured", {
       hasToken: !!vercelToken,
       hasProjectId: !!vercelProjectId,
     })
