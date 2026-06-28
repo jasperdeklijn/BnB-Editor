@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { EditorHeader } from "./editor-header"
 import { usePathname, useRouter } from "next/navigation"
 import { EditorLayoutProvider, type EditorSaveState } from "./editor-layout-context"
-import { ImageIcon, Globe, Home, Briefcase, LayoutTemplate, Search, CreditCard, User } from "lucide-react"
+import { CalendarDays, ImageIcon, Globe, Home, Briefcase, LayoutTemplate, Search, CreditCard, User } from "lucide-react"
 import { DEFAULT_SITE_TITLE } from "@/lib/business-naming"
 import { createClient } from "@/lib/supabase/client"
 import { getOfferingCopy, type BusinessCategory } from "@/lib/business/categories"
@@ -30,6 +30,7 @@ export function EditorLayoutClient({
     "/editor/business": "Bedrijfsgegevens",
     "/editor/images": "Afbeeldingen",
     "/editor/services": offeringCopy.title,
+    "/editor/calendar": businessCategory === "bnb" ? "Boekingskalender" : "Afsprakenkalender",
     "/editor/domains": "Domeininstellingen",
     "/editor/seo": "SEO & Analytics",
     "/editor/account/profile": "Profiel",
@@ -41,6 +42,7 @@ export function EditorLayoutClient({
     "/editor/business": <Home className="h-4 w-4" />,
     "/editor/images": <ImageIcon className="h-4 w-4" />,
     "/editor/services": <Briefcase className="h-4 w-4" />,
+    "/editor/calendar": <CalendarDays className="h-4 w-4" />,
     "/editor/domains": <Globe className="h-4 w-4" />,
     "/editor/seo": <Search className="h-4 w-4" />,
     "/editor/account/profile": <User className="h-4 w-4" />,
@@ -192,6 +194,7 @@ export function EditorLayoutClient({
           avatarUrl={avatarUrl}
           displayName={displayName}
           offeringLabel={offeringCopy.title}
+          calendarLabel={businessCategory === "bnb" ? "Boekingskalender" : "Afsprakenkalender"}
         />
         <div className={`min-h-0 flex-1 ${pathname === "/editor" ? "overflow-hidden" : "overflow-auto"}`}>
           {children}

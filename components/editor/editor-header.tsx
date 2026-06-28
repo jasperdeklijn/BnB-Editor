@@ -11,6 +11,7 @@ import {
   Monitor,
   Tablet,
   Smartphone,
+  CalendarDays,
   ImageIcon,
   Globe,
   Home,
@@ -47,6 +48,7 @@ interface EditorHeaderProps {
   showEditorActions?: boolean
   showBackButton?: boolean
   offeringLabel?: string
+  calendarLabel?: string
 }
 
 export function EditorHeader({
@@ -70,6 +72,7 @@ export function EditorHeader({
   showEditorActions = true,
   showBackButton = false,
   offeringLabel = "Aanbod",
+  calendarLabel = "Afsprakenkalender",
 }: EditorHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -191,6 +194,17 @@ export function EditorHeader({
               >
                 <Briefcase className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
                 {offeringLabel}
+              </Link>
+
+              {/* Calendar link */}
+              <Link
+                href="/editor/calendar"
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors border-b border-border"
+              >
+                <CalendarDays className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
+                {calendarLabel}
               </Link>
 
               {/* Domains link */}
