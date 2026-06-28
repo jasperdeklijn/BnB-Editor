@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { useEditorLayout } from "@/components/editor/editor-layout-context"
+import { StatusMessage } from "@/components/ui/status-message"
 import { createClient } from "@/lib/supabase/client"
 import type { WebsiteAnalyticsFields, WebsiteSeoFields } from "@/lib/seo/metadata"
 
@@ -28,7 +30,8 @@ export function SeoEssentialsClient({
   const [analytics, setAnalytics] = useState<WebsiteAnalyticsFields>(initialAnalytics ?? {})
   const [socialLinks, setSocialLinks] = useState<Record<string, string>>(initialSocialLinks ?? {})
   const [isSaving, setIsSaving] = useState(false)
-  const [status, setStatus] = useState<string | null>(null)
+  const [status, setStatus] = useState<{ tone: "success" | "error" | "warning"; text: string } | null>(null)
+  const { setIsSaving: setHeaderSaving, setSaveState } = useEditorLayout()
 
   const updateSeo = (key: keyof WebsiteSeoFields, value: string) => {
     setSeo((current) => ({ ...current, [key]: value }))
@@ -44,6 +47,7 @@ export function SeoEssentialsClient({
 
   const handleSave = async () => {
     setIsSaving(true)
+    setHeaderSaving(true)
     setStatus(null)
     const supabase = createClient()
 
@@ -53,8 +57,10 @@ export function SeoEssentialsClient({
       .eq("id", websiteId)
 
     if (websiteError) {
-      setStatus("Opslaan van SEO-instellingen is mislukt.")
       setIsSaving(false)
+      setHeaderSaving(false)
+      setSaveState("error")
+      setStatus({ tone: "error", text: "Opslaan van SEO-instellingen is mislukt." })
       return
     }
 
@@ -65,14 +71,17 @@ export function SeoEssentialsClient({
         .eq("id", businessId)
 
       if (businessError) {
-        setStatus("SEO opgeslagen, maar social links opslaan is mislukt.")
         setIsSaving(false)
+        setHeaderSaving(false)
+        setSaveState("error")
+        setStatus({ tone: "warning", text: "SEO opgeslagen, maar social links opslaan is mislukt." })
         return
       }
     }
 
-    setStatus("SEO, social links en analytics zijn opgeslagen.")
     setIsSaving(false)
+    setHeaderSaving(false)
+    setStatus({ tone: "success", text: "SEO, social links en analytics zijn opgeslagen." })
   }
 
   return (
@@ -131,7 +140,7 @@ export function SeoEssentialsClient({
           <Button onClick={handleSave} disabled={isSaving} className="w-full">
             {isSaving ? "Opslaan..." : "Instellingen opslaan"}
           </Button>
-          {status && <p className="text-sm text-muted-foreground">{status}</p>}
+          {status ? <StatusMessage tone={status.tone}>{status.text}</StatusMessage> : null}
         </div>
       </Card>
     </div>

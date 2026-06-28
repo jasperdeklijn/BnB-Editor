@@ -11,9 +11,10 @@ import { getDefaultSectionData as getRegistryDefaultSectionData } from "@/compon
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { useRouter, useSearchParams } from "next/navigation"
-import { AlertCircle, CheckCircle2, Globe2, Layers, LayoutTemplate, Loader2, Paintbrush, Plus } from "lucide-react"
+import { Globe2, Layers, LayoutTemplate, Loader2, Paintbrush, Plus } from "lucide-react"
 import type { ThemeConfig } from "@/lib/themes"
 import { Button } from "@/components/ui/button"
+import { StatusMessage } from "@/components/ui/status-message"
 import { PLATFORM_DOMAIN } from "@/lib/platform"
 
 type MobilePanel = "canvas" | "sections" | "style"
@@ -52,7 +53,7 @@ export function EditorClient({ userId }: EditorClientProps) {
   const [isMobileDraggingImage, setIsMobileDraggingImage] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { isPreview, setIsPreview, isSaving, setIsSaving, device, setDevice, setOnPublish, setOnLogout } = useEditorLayout()
+  const { isPreview, setIsPreview, isSaving, setIsSaving, setSaveState, device, setDevice, setOnPublish, setOnLogout } = useEditorLayout()
   const requestedWebsiteId = searchParams.get("websiteId")
 
   // Switch to canvas on mobile when a touch drag starts
@@ -195,6 +196,7 @@ export function EditorClient({ userId }: EditorClientProps) {
 
   const handleCreateWebsite = async () => {
     setIsCreatingWebsite(true)
+    setIsSaving(true)
     setWebsiteMessage(null)
 
     const supabase = createClient()
@@ -214,8 +216,10 @@ export function EditorClient({ userId }: EditorClientProps) {
       .single()
 
     setIsCreatingWebsite(false)
+    setIsSaving(false)
 
     if (error || !newWebsite) {
+      setSaveState("error")
       setWebsiteMessage({ type: "error", text: error?.message || "Nieuwe website kon niet worden aangemaakt." })
       return
     }
@@ -253,6 +257,7 @@ export function EditorClient({ userId }: EditorClientProps) {
     setIsRenamingWebsite(false)
 
     if (!response.ok) {
+      setSaveState("error")
       setWebsiteMessage({ type: "error", text: result?.error || "Websitenaam kon niet worden opgeslagen." })
       return
     }
@@ -361,6 +366,7 @@ export function EditorClient({ userId }: EditorClientProps) {
       }
     } catch (err) {
       console.error('Error persisting sections:', err)
+      setSaveState("error")
     } finally {
       setIsSaving(false)
     }
@@ -380,6 +386,7 @@ export function EditorClient({ userId }: EditorClientProps) {
     setIsSaving(false)
 
     if (!response.ok) {
+      setSaveState("error")
       setWebsiteMessage({
         type: "error",
         text:
@@ -454,6 +461,7 @@ export function EditorClient({ userId }: EditorClientProps) {
     // Save to database
     if (!websiteId || fromSectionId.startsWith('section-') || toSectionId.startsWith('section-')) return
 
+    setIsSaving(true)
     try {
       const supabase = createClient()
       if (transitionType === "none") {
@@ -476,6 +484,9 @@ export function EditorClient({ userId }: EditorClientProps) {
       }
     } catch (err) {
       console.error('Error saving transition:', err)
+      setSaveState("error")
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -499,6 +510,20 @@ export function EditorClient({ userId }: EditorClientProps) {
 
     persistSections([...sections, section])
     setSelectedSectionId(section.id)
+    setMobilePanel("canvas")
+  }
+
+  const handleStartTutorial = () => {
+    const starterTypes: SectionType[] = ["hero", "about", "services", "contact"]
+    const starterSections: Section[] = starterTypes.map((type, index) => ({
+      id: `section-${Date.now()}-${index}`,
+      type,
+      data: getDefaultSectionData(type, businessId),
+      styles: {},
+    }))
+
+    persistSections(starterSections)
+    setSelectedSectionId(starterSections[0]?.id ?? null)
     setMobilePanel("canvas")
   }
 
@@ -577,20 +602,9 @@ export function EditorClient({ userId }: EditorClientProps) {
           ) : null}
         </div>
         {websiteMessage ? (
-          <div
-            className={`mx-auto mt-2 flex max-w-7xl items-start gap-2 rounded-md border px-3 py-2 text-xs ${
-              websiteMessage.type === "success"
-                ? "border-primary/20 bg-primary/10 text-primary"
-                : "border-destructive/20 bg-destructive/10 text-destructive"
-            }`}
-          >
-            {websiteMessage.type === "success" ? (
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-            ) : (
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            )}
-            <span>{websiteMessage.text}</span>
-          </div>
+          <StatusMessage tone={websiteMessage.type} className="mx-auto mt-2 max-w-7xl text-xs">
+            {websiteMessage.text}
+          </StatusMessage>
         ) : null}
       </div>
       {/* Desktop layout: side-by-side panels */}
@@ -608,6 +622,7 @@ export function EditorClient({ userId }: EditorClientProps) {
           businessId={businessId}
           isDraggingNewSectionExternal={isMobileDraggingNewSection}
           isDraggingImageExternal={isMobileDraggingImage}
+          onStartTutorial={handleStartTutorial}
         />
         {!isPreview && (
           <SelectionEditor
@@ -649,6 +664,7 @@ export function EditorClient({ userId }: EditorClientProps) {
               businessId={businessId}
               isDraggingNewSectionExternal={isMobileDraggingNewSection}
               isDraggingImageExternal={isMobileDraggingImage}
+              onStartTutorial={handleStartTutorial}
             />
           )}
           {mobilePanel === "style" && !isPreview && (

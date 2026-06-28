@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { TemplateSelector } from "@/components/templates/template-selector"
 import { EditorPageShell } from "@/components/editor/editor-page-shell"
+import { useEditorLayout } from "@/components/editor/editor-layout-context"
+import { StatusMessage } from "@/components/ui/status-message"
 import type { BusinessCategory } from "@/lib/business/categories"
 import { useRouter } from "next/navigation"
 
@@ -10,10 +12,13 @@ export default function TemplatesPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const { setIsSaving, setSaveState } = useEditorLayout()
 
   const handleSelectTemplate = async (category: BusinessCategory) => {
     setIsLoading(true)
+    setIsSaving(true)
     setError(null)
+    let failed = false
 
     try {
       const response = await fetch("/api/templates/apply", {
@@ -30,11 +35,14 @@ export default function TemplatesPage() {
       router.push("/editor")
       router.refresh()
     } catch (error) {
+      failed = true
       const message = error instanceof Error ? error.message : "Template toepassen is mislukt"
       setError(message)
       console.error("Failed to apply template:", error)
     } finally {
       setIsLoading(false)
+      setIsSaving(false)
+      if (failed) setSaveState("error")
     }
   }
 
@@ -45,14 +53,10 @@ export default function TemplatesPage() {
       maxWidth="4xl"
     >
       {isLoading && (
-        <div className="rounded-xl border border-border bg-white p-4 text-sm text-muted-foreground shadow-sm">
-          Sjabloon wordt toegepast...
-        </div>
+        <StatusMessage tone="info">Sjabloon wordt toegepast...</StatusMessage>
       )}
       {error && (
-        <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-          {error}
-        </div>
+        <StatusMessage tone="error">{error}</StatusMessage>
       )}
       <TemplateSelector onSelect={handleSelectTemplate} />
     </EditorPageShell>

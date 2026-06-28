@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { EditorPageShell } from "@/components/editor/editor-page-shell"
+import { useEditorLayout } from "@/components/editor/editor-layout-context"
 import { toast } from "sonner"
 import { ImageUploadZone } from "./image-upload-zone"
 import { ImageGrid } from "./image-grid"
@@ -29,6 +30,7 @@ export function ImagesClient({ userId }: ImagesClientProps) {
   const [totalUsage, setTotalUsage] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [isUploading, setIsUploading] = useState(false)
+  const { setIsSaving, setSaveState } = useEditorLayout()
 
   const fetchImages = useCallback(async () => {
     const supabase = createClient()
@@ -108,23 +110,28 @@ export function ImagesClient({ userId }: ImagesClientProps) {
   const handleUpload = async (files: File[]) => {
     const supabase = createClient()
     setIsUploading(true)
+    setIsSaving(true)
+    let failed = false
 
     try {
       for (const file of files) {
         // Check file size
         if (file.size > MAX_FILE_SIZE) {
+          failed = true
           toast.error(`${file.name} overschrijdt 5MB limiet`)
           continue
         }
 
         // Check total usage
         if (totalUsage + file.size > MAX_TOTAL_SIZE) {
+          failed = true
           toast.error("Upload zou je 50MB opslaglimiet overschrijden")
           break
         }
 
         // Check if file type is an image
         if (!file.type.startsWith("image/")) {
+          failed = true
           toast.error(`${file.name} is geen afbeelding`)
           continue
         }
@@ -140,6 +147,7 @@ export function ImagesClient({ userId }: ImagesClientProps) {
           })
 
         if (error) {
+          failed = true
           toast.error(`Mislukt om ${file.name} te uploaden: ${error.message}`)
         } else {
           toast.success(`${file.name} succesvol geüpload`)
@@ -149,25 +157,32 @@ export function ImagesClient({ userId }: ImagesClientProps) {
 
       await fetchImages()
     } catch {
+      failed = true
       toast.error("Er is een fout opgetreden tijdens het uploaden")
     } finally {
       setIsUploading(false)
+      setIsSaving(false)
+      if (failed) setSaveState("error")
     }
   }
 
   const handleDelete = async (fileName: string) => {
     const supabase = createClient()
     const filePath = `${userId}/${fileName}`
+    setIsSaving(true)
 
     const { error } = await supabase.storage
       .from(BUCKET_NAME)
       .remove([filePath])
 
     if (error) {
+      setIsSaving(false)
+      setSaveState("error")
       toast.error("Mislukt om afbeelding te verwijderen")
     } else {
       toast.success("Afbeelding verwijderd")
       await fetchImages()
+      setIsSaving(false)
     }
   }
 

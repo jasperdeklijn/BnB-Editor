@@ -4,27 +4,30 @@ Use this file as the task list for the next website management, domain, onboardi
 
 ## Tasks
 
-1. [ ] Let users create multiple websites
+1. [x] Let users create multiple websites
 
    Allow each user to create and manage multiple websites, while only one website can be hosted live at a time.
 
    Done when:
    - A user can create more than one website in their account.
+   - A user can change a website name.
+   - Website names produce unique platform slugs, so a website named `gardens` uses `gardens.domainname.nl`.
    - Website lists, selectors, and editor entry points clearly show which website is being edited.
    - Only one website can be marked as hosted/live at the same time.
    - Trying to host a second website explains that the current live website must be changed or disabled first.
 
-2. [ ] Let domain settings choose one of the user's own websites
+2. [x] Let domain settings choose one of the user's own websites
 
    Update domain settings so a user can select one of their own websites and generate both preview and live domain versions for it.
 
    Done when:
    - Domain settings include a selector with only websites owned by the current user.
-   - Selecting a website creates or shows a preview domain in the format `preview-mywebsite.domainname.nl`.
-   - Selecting a website creates or shows a live domain in the format `mywebsite.domainname.nl`.
+   - Selecting a website creates or shows a preview domain in the format `preview-mywebsite.domainname.nl` based on the unique website name.
+   - Selecting a website creates or shows a live domain in the format `mywebsite.domainname.nl` based on the unique website name.
    - Preview and live domain states are clearly labeled and cannot be confused.
+   - The preview URL explains that the preview site is only visible to the logged-in owner.
 
-3. [ ] Support removing custom domains and explain DNS records
+3. [x] Support removing custom domains and explain DNS records
 
    Extend the custom domain page so users can remove domain names after adding them to Vercel, and add a DNS setup tutorial.
 
@@ -32,10 +35,11 @@ Use this file as the task list for the next website management, domain, onboardi
    - Users can remove a custom domain from the app.
    - Removing a custom domain also removes or disconnects the matching Vercel domain configuration.
    - Domain removal has a clear confirmation step and consistent success/error feedback.
+   - The live URL card has a publish toggle that can set the selected website live.
    - The DNS records area includes a step-by-step tutorial for how to add the required records at a domain provider.
    - The tutorial explains which record type, name, value, and verification state the user should check.
 
-4. [ ] Start a tutorial when no sections are filled
+4. [x] Start a tutorial when no sections are filled
 
    When a website has no filled sections, offer the user a tutorial to get started.
 
@@ -45,7 +49,7 @@ Use this file as the task list for the next website management, domain, onboardi
    - Starting the tutorial guides the user through adding or filling the first useful sections.
    - The tutorial can be skipped or dismissed without blocking normal editing.
 
-5. [ ] Make all alerts consistent with the style guide
+5. [x] Make all alerts consistent with the style guide
 
    Standardize all alert, toast, banner, confirmation, success, warning, and error states using `docs/style-guide.md`.
 
@@ -55,7 +59,7 @@ Use this file as the task list for the next website management, domain, onboardi
    - Alert copy is direct, practical, and consistent across the app.
    - Existing one-off alert styles are replaced or moved to shared components.
 
-6. [ ] Use the navbar saving state for all saving
+6. [x] Use the navbar saving state for all saving
 
    Centralize save feedback so all save operations use the saving state in the navbar.
 

@@ -2,6 +2,8 @@
 
 import { createContext, useContext } from "react"
 
+export type EditorSaveState = "saved" | "saving" | "error"
+
 export type EditorHeaderState = {
   title: string
   setTitle: (title: string) => void
@@ -9,6 +11,8 @@ export type EditorHeaderState = {
   setIsPreview: (value: boolean) => void
   isSaving: boolean
   setIsSaving: (value: boolean) => void
+  saveState: EditorSaveState
+  setSaveState: (value: EditorSaveState) => void
   device: "desktop" | "tablet" | "mobile"
   setDevice: (device: "desktop" | "tablet" | "mobile") => void
   onPublish: () => void

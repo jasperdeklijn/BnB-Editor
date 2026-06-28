@@ -315,7 +315,7 @@ export function ServicesClient({ userId, businessId, initialServices }: Services
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [draggingImage, setDraggingImage] = useState<string | null>(null)
-  const { setIsSaving: setHeaderSaving, setActionLabel, setOnAction, setActionIcon, setActionLoading, setInfoText } =
+  const { setIsSaving: setHeaderSaving, setSaveState, setActionLabel, setOnAction, setActionIcon, setActionLoading, setInfoText } =
     useEditorLayout()
 
   useEffect(() => {
@@ -345,6 +345,7 @@ export function ServicesClient({ userId, businessId, initialServices }: Services
 
   const handleCreateService = useCallback(async () => {
     setIsSaving(true)
+    let failed = false
     try {
       const newService = await apiCreateService(businessId, {
         title: "Nieuwe dienst",
@@ -359,11 +360,13 @@ export function ServicesClient({ userId, businessId, initialServices }: Services
       toast.success("Dienst aangemaakt")
     } catch (err) {
       console.error(err)
+      failed = true
       toast.error("Aanmaken mislukt")
     } finally {
       setIsSaving(false)
+      if (failed) setSaveState("error")
     }
-  }, [businessId, services.length])
+  }, [businessId, services.length, setSaveState])
 
   useEffect(() => {
     setHeaderSaving(isSaving)
@@ -388,14 +391,17 @@ export function ServicesClient({ userId, businessId, initialServices }: Services
   const handleUpdateService = async (id: string, updates: Partial<ServiceInput>) => {
     setServices((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)))
     setIsSaving(true)
+    let failed = false
     try {
       const updated = await apiUpdateService(id, updates)
       setServices((prev) => prev.map((s) => (s.id === id ? updated : s)))
     } catch (err) {
       console.error(err)
+      failed = true
       toast.error("Bijwerken mislukt")
     } finally {
       setIsSaving(false)
+      if (failed) setSaveState("error")
     }
   }
 
@@ -403,15 +409,18 @@ export function ServicesClient({ userId, businessId, initialServices }: Services
     const prev = services
     setServices((s) => s.filter((service) => service.id !== id))
     setIsSaving(true)
+    let failed = false
     try {
       await apiDeleteService(id)
       toast.success("Dienst verwijderd")
     } catch (err) {
       console.error(err)
       setServices(prev)
+      failed = true
       toast.error("Verwijderen mislukt")
     } finally {
       setIsSaving(false)
+      if (failed) setSaveState("error")
     }
   }
 

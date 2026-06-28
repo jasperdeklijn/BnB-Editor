@@ -42,6 +42,10 @@ const hostname = host.split(":")[0].toLowerCase()
 
 // Preview
 if (hostname.startsWith("preview-") && hostname.endsWith(`.${platformDomain}`)) {
+  if (isAssetOrApiRequest(request.nextUrl.pathname) || request.nextUrl.pathname.startsWith("/auth")) {
+    return supabaseResponse
+  }
+
   const slug = hostname
     .replace("preview-", "")
     .replace(`.${platformDomain}`, "")

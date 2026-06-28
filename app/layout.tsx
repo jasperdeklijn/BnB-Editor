@@ -29,7 +29,17 @@ export default function RootLayout({
         {children}
         <Analytics />
         <SpeedInsights/>
-        <Toaster />
+        <Toaster
+          toastOptions={{
+            classNames: {
+              toast: "rounded-md border border-border bg-background text-foreground shadow-lg",
+              success: "border-primary/20 bg-primary/10 text-primary",
+              error: "border-destructive/20 bg-destructive/10 text-destructive",
+              warning: "border-warning/30 bg-warning/10 text-secondary-foreground",
+              info: "border-border bg-muted text-foreground",
+            },
+          }}
+        />
       </body>
     </html>
   )

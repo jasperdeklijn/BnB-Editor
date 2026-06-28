@@ -4,6 +4,7 @@ import { useState, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { EditorPageShell } from "@/components/editor/editor-page-shell"
+import { useEditorLayout } from "@/components/editor/editor-layout-context"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -34,12 +35,14 @@ export function ProfileClient({ userId, email, initialMeta }: ProfileClientProps
   const [avatarUrl, setAvatarUrl] = useState((initialMeta.avatar_url as string) ?? "")
   const [isSaving, setIsSaving] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const { setIsSaving: setHeaderSaving, setSaveState } = useEditorLayout()
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
     setIsUploading(true)
+    setHeaderSaving(true)
     const supabase = createClient()
     const ext = file.name.split(".").pop()
     const path = `${userId}/avatar.${ext}`
@@ -51,17 +54,21 @@ export function ProfileClient({ userId, email, initialMeta }: ProfileClientProps
     if (error) {
       toast.error("Failed to upload avatar")
       setIsUploading(false)
+      setHeaderSaving(false)
+      setSaveState("error")
       return
     }
 
     const { data: urlData } = supabase.storage.from("user-images").getPublicUrl(path)
     setAvatarUrl(urlData.publicUrl + `?t=${Date.now()}`)
     setIsUploading(false)
+    setHeaderSaving(false)
     toast.success("Avatar updated")
   }
 
   const handleSave = async () => {
     setIsSaving(true)
+    setHeaderSaving(true)
     const supabase = createClient()
 
     const { error } = await supabase.auth.updateUser({
@@ -74,8 +81,10 @@ export function ProfileClient({ userId, email, initialMeta }: ProfileClientProps
     })
 
     setIsSaving(false)
+    setHeaderSaving(false)
 
     if (error) {
+      setSaveState("error")
       toast.error("Failed to save profile")
       return
     }

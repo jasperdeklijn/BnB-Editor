@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
 import Link from "next/link"
-import { toast } from "sonner"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -23,6 +22,7 @@ import {
 import type { Section, SectionStyles, Transition } from "@/lib/types"
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
+import { useEditorLayout } from "./editor-layout-context"
 import {
   Trash2,
   Type,
@@ -132,6 +132,7 @@ export function SelectionEditor({
 }: SelectionEditorProps) {
   const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null)
   const [layoutDialogOpen, setLayoutDialogOpen] = useState(false)
+  const { setIsSaving, setSaveState } = useEditorLayout()
 
   // Diensten selector state
   const [availableDiensten, setAvailableDiensten] = useState<AvailableService[]>([])
@@ -208,6 +209,7 @@ export function SelectionEditor({
   const saveToDatabase = async (updatedData: any) => {
     if (!websiteId || !selectedSection || selectedSection.id.startsWith("section-")) return
 
+    setIsSaving(true)
     try {
       const supabase = createClient()
       const payload = {
@@ -220,6 +222,9 @@ export function SelectionEditor({
       await websiteSections.updateSection(selectedSection.id, payload as any, supabase)
     } catch (err) {
       console.error("Error saving to database:", err)
+      setSaveState("error")
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -227,6 +232,7 @@ export function SelectionEditor({
   const saveStylesToDatabase = async (styles: any) => {
     if (!websiteId || !selectedSection || selectedSection.id.startsWith("section-")) return
 
+    setIsSaving(true)
     try {
       const supabase = createClient()
       const payload = {
@@ -239,6 +245,9 @@ export function SelectionEditor({
       await websiteSections.updateSection(selectedSection.id, payload as any, supabase)
     } catch (err) {
       console.error("Error saving styles to database:", err)
+      setSaveState("error")
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -264,12 +273,6 @@ export function SelectionEditor({
     const timeout = setTimeout(async () => {
       const updatedData = { ...selectedSection.data, [field]: value }
       await saveToDatabase(updatedData)
-
-      toast.success("Opgeslagen in database", {
-        position: "bottom-right",
-        duration: 2000,
-        style: { background: "#10b981", color: "white" },
-      })
     }, 800)
 
     setSaveTimeoutId(timeout)
@@ -285,11 +288,7 @@ export function SelectionEditor({
 
       if (saveTimeoutId) clearTimeout(saveTimeoutId)
       const timeout = setTimeout(() => {
-        toast.success("Overgang opgeslagen", {
-          position: "bottom-right",
-          duration: 2000,
-          style: { background: "#10b981", color: "white" },
-        })
+        setIsSaving(false)
       }, 800)
       setSaveTimeoutId(timeout)
     }
@@ -307,11 +306,6 @@ export function SelectionEditor({
     if (saveTimeoutId) clearTimeout(saveTimeoutId)
     const timeout = setTimeout(async () => {
       await saveToDatabase({ ...selectedSection.data, serviceIds: next })
-      toast.success("Opgeslagen in database", {
-        position: "bottom-right",
-        duration: 2000,
-        style: { background: "#10b981", color: "white" },
-      })
     }, 800)
     setSaveTimeoutId(timeout)
   }
@@ -337,11 +331,6 @@ export function SelectionEditor({
     if (saveTimeoutId) clearTimeout(saveTimeoutId)
     const timeout = setTimeout(async () => {
       await saveStylesToDatabase(newStyles)
-      toast.success("Stijl opgeslagen", {
-        position: "bottom-right",
-        duration: 2000,
-        style: { background: "#10b981", color: "white" },
-      })
     }, 800)
     setSaveTimeoutId(timeout)
   }

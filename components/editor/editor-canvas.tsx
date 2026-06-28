@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useMemo, useRef, useState } from "react"
-import { Trash2, GripVertical, ChevronUp, ChevronDown } from "lucide-react"
+import { BookOpen, CheckCircle2, Trash2, GripVertical, ChevronUp, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Section, SectionType, Transition } from "@/lib/types"
 import {
@@ -9,6 +9,7 @@ import {
 } from "@/lib/business-naming"
 import { getDefaultSectionData as getRegistryDefaultSectionData } from "@/components/editor/section-registry"
 import { SectionRenderer } from "./section-renderer"
+import { useEditorLayout } from "./editor-layout-context"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { createClient } from "@/lib/supabase/client"
 import type { SupabaseClient } from "@supabase/supabase-js"
@@ -29,6 +30,7 @@ interface EditorCanvasProps {
   supabase?: SupabaseClient
   isDraggingNewSectionExternal?: boolean
   isDraggingImageExternal?: boolean
+  onStartTutorial?: () => void
 }
 
 export function EditorCanvas({
@@ -45,7 +47,10 @@ export function EditorCanvas({
   supabase,
   isDraggingNewSectionExternal = false,
   isDraggingImageExternal = false,
+  onStartTutorial,
 }: EditorCanvasProps) {
+  const [tutorialDismissed, setTutorialDismissed] = useState(false)
+  const { setIsSaving, setSaveState } = useEditorLayout()
   function SectionTransition({
     type,
     from = {},
@@ -493,6 +498,7 @@ export function EditorCanvas({
       // Don't save if it's a temporary section or no websiteId
       if (!websiteId || id.startsWith('section-')) return
 
+      setIsSaving(true)
       try {
         const section = sections.find(s => s.id === id)
         if (!section) return
@@ -508,13 +514,11 @@ export function EditorCanvas({
         const client = supabase || createClient()
         await websiteSections.updateSection(id, payload as any, client)
 
-        toast.success("Opgeslagen in database", {
-          position: "bottom-right",
-          duration: 2000,
-          style: { background: '#10b981', color: 'white' }
-        })
+        setIsSaving(false)
       } catch (err) {
         console.error('Error saving section to database:', err)
+        setIsSaving(false)
+        setSaveState("error")
         toast.error("Opslaan mislukt", {
           position: "bottom-right",
           duration: 2000,
@@ -552,17 +556,41 @@ export function EditorCanvas({
     >
       <div className={isPreview ? "" : "p-3 sm:p-4 md:p-8"}>
         <div className={`mx-auto ${getDeviceWidth()} transition-all duration-300`}>
-          {!isPreview && sections.length === 0 && (
+          {!isPreview && sections.length === 0 && !tutorialDismissed && (
             <div
               className={`flex ${showNewSectionDropTargets ? "min-h-[420px] md:min-h-[600px]" : "min-h-[360px] md:min-h-[500px]"} items-center justify-center rounded-lg border-2 border-dashed ${showNewSectionDropTargets ? "border-primary bg-primary/5" : "border-muted-foreground/30 bg-background/50"} animate-in fade-in slide-in-from-bottom-4 duration-500 transition-all`}
               onDragOver={(e) => handleDragOverGap(e, 0)}
               onDragLeave={handleDragLeaveGap}
               onDrop={(e) => handleDropOnGap(e, 0)}
             >
-              <div className="text-center">
-                <div className="mb-4 text-5xl">👋</div>
-                <h3 className="mb-2 text-lg font-semibold">Begin met Bouwen</h3>
-                <p className="text-sm text-muted-foreground">Sleep secties van links om te beginnen</p>
+              <div className="mx-auto grid max-w-xl gap-5 px-4 text-center">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <BookOpen className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Start met een korte tutorial</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                    Deze website heeft nog geen ingevulde secties. Start met een basisopzet of sleep zelf secties vanaf links.
+                  </p>
+                </div>
+                <div className="grid gap-2 rounded-md border border-border bg-muted/50 p-3 text-left text-sm text-muted-foreground">
+                  <div className="flex gap-2">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                    <span>Voegt een hero, over-ons, diensten en contactsectie toe.</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                    <span>Gebruikt standaardinhoud die u daarna direct kunt aanpassen.</span>
+                  </div>
+                </div>
+                <div className="flex flex-col justify-center gap-2 sm:flex-row">
+                  <Button type="button" onClick={onStartTutorial} disabled={!onStartTutorial}>
+                    Tutorial starten
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => setTutorialDismissed(true)}>
+                    Zelf beginnen
+                  </Button>
+                </div>
               </div>
             </div>
           )}

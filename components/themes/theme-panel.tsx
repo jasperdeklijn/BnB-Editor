@@ -8,7 +8,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Check, Palette, Loader2, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
+import { useEditorLayout } from '@/components/editor/editor-layout-context';
+import { StatusMessage } from '@/components/ui/status-message';
 import {
   COLOR_PALETTES,
   FONT_PAIRS,
@@ -46,7 +47,9 @@ export function ThemePanel({
 }: ThemePanelProps) {
   const [theme, setTheme] = useState<ThemeConfig>(currentTheme || DEFAULT_THEME);
   const [isSaving, setIsSaving] = useState(false);
+  const [status, setStatus] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const [activeTab, setActiveTab] = useState('presets');
+  const { setIsSaving: setHeaderSaving, setSaveState } = useEditorLayout();
 
   // Sync with external theme changes
   useEffect(() => {
@@ -63,6 +66,9 @@ export function ThemePanel({
       // Auto-save to database
       if (websiteId) {
         setIsSaving(true);
+        setHeaderSaving(true);
+        setStatus(null);
+        let failed = false;
         try {
           const response = await fetch('/api/themes', {
             method: 'POST',
@@ -74,20 +80,18 @@ export function ThemePanel({
             throw new Error('Failed to save theme');
           }
 
-          toast.success('Thema opgeslagen', {
-            position: 'bottom-right',
-            duration: 2000,
-          });
+          setStatus({ tone: "success", text: "Thema opgeslagen." });
         } catch {
-          toast.error('Kon thema niet opslaan', {
-            position: 'bottom-right',
-          });
+          failed = true;
+          setStatus({ tone: "error", text: "Kon thema niet opslaan." });
         } finally {
           setIsSaving(false);
+          setHeaderSaving(false);
+          if (failed) setSaveState("error");
         }
       }
     },
-    [websiteId, onThemeChange]
+    [websiteId, onThemeChange, setHeaderSaving, setSaveState]
   );
 
   const handlePresetSelect = useCallback(
@@ -147,6 +151,7 @@ export function ThemePanel({
         </div>
         {isSaving && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
       </div>
+      {status ? <StatusMessage tone={status.tone} className="m-3 mb-0 sm:mx-4">{status.text}</StatusMessage> : null}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
         <TabsList className="mx-3 mt-3 grid grid-cols-3 sm:mx-4">

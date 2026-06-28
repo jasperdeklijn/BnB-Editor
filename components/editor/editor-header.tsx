@@ -18,6 +18,7 @@ import {
   LayoutTemplate,
   Palette,
   CheckCircle2,
+  AlertCircle,
   Loader2,
   ChevronDown,
   CreditCard,
@@ -32,6 +33,7 @@ interface EditorHeaderProps {
   onPublish: () => void
   onLogout: () => void
   isSaving: boolean
+  saveState?: "saved" | "saving" | "error"
   device: "desktop" | "tablet" | "mobile"
   onDeviceChange: (device: "desktop" | "tablet" | "mobile") => void
   avatarUrl?: string | null
@@ -53,6 +55,7 @@ export function EditorHeader({
   onPublish,
   onLogout,
   isSaving,
+  saveState = isSaving ? "saving" : "saved",
   device,
   onDeviceChange,
   avatarUrl,
@@ -240,10 +243,15 @@ export function EditorHeader({
           </span>
         ) : null}
         <span className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--editor-header-fg)]/70 flex-shrink-0">
-          {isSaving ? (
+          {saveState === "saving" ? (
             <>
               <Loader2 className="h-3 w-3 md:h-3.5 md:w-3.5 animate-spin" />
               <span className="hidden md:inline">Opslaan…</span>
+            </>
+          ) : saveState === "error" ? (
+            <>
+              <AlertCircle className="h-3 w-3 text-warning md:h-3.5 md:w-3.5" />
+              <span className="hidden md:inline">Niet opgeslagen</span>
             </>
           ) : (
             <>

@@ -128,7 +128,6 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
       toast.success("Image updated", {
         position: "bottom-right",
         duration: 2000,
-        style: { background: '#10b981', color: 'white' }
       })
       return
     }
@@ -160,7 +159,6 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
     toast.success("Images reordered", {
       position: "bottom-right",
       duration: 2000,
-      style: { background: '#10b981', color: 'white' }
     })
   }
 

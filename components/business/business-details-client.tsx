@@ -4,11 +4,12 @@ import { useState } from "react"
 import { updateBusiness, type Business } from "@/lib/supabase/business"
 import { BUSINESS_CATEGORIES, type BusinessCategory } from "@/lib/business/categories"
 import { Button } from "@/components/ui/button"
+import { useEditorLayout } from "@/components/editor/editor-layout-context"
 import { EditorPageShell } from "@/components/editor/editor-page-shell"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { toast } from "sonner"
+import { StatusMessage } from "@/components/ui/status-message"
 import {
   MapPin,
   Globe,
@@ -30,6 +31,8 @@ interface BusinessDetailsClientProps {
 export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClientProps) {
   const [business, setBusiness] = useState<Business>(initialBusiness)
   const [isSaving, setIsSaving] = useState(false)
+  const [status, setStatus] = useState<{ tone: "success" | "error"; text: string } | null>(null)
+  const { setIsSaving: setHeaderSaving, setSaveState } = useEditorLayout()
 
   const [name, setName] = useState(business.name ?? "")
   const [category, setCategory] = useState<BusinessCategory>(
@@ -49,6 +52,9 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
 
   const handleSave = async () => {
     setIsSaving(true)
+    setHeaderSaving(true)
+    setStatus(null)
+    let failed = false
     try {
       const updated = await updateBusiness(business.id, {
         name,
@@ -66,12 +72,15 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
         opening_note: openingNote || null,
       })
       setBusiness(updated)
-      toast.success("Gegevens opgeslagen")
+      setStatus({ tone: "success", text: "Gegevens opgeslagen." })
     } catch (err) {
       console.error(err)
-      toast.error("Opslaan mislukt. Probeer het opnieuw.")
+      failed = true
+      setStatus({ tone: "error", text: "Opslaan mislukt. Probeer het opnieuw." })
     } finally {
       setIsSaving(false)
+      setHeaderSaving(false)
+      if (failed) setSaveState("error")
     }
   }
 
@@ -81,6 +90,7 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
       description="Beheer de basisinformatie, contactgegevens en online aanwezigheid van uw bedrijf."
       maxWidth="2xl"
     >
+        {status ? <StatusMessage tone={status.tone}>{status.text}</StatusMessage> : null}
         {/* Category */}
         <div className="rounded-xl border border-border bg-card shadow-sm">
           <div className="flex items-center gap-3 border-b border-border px-6 py-4 bg-secondary/40 rounded-t-xl">

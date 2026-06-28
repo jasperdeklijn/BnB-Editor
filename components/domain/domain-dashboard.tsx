@@ -2,7 +2,6 @@
 
 import { useMemo, useState, useTransition } from "react"
 import {
-  AlertCircle,
   CheckCircle,
   Copy,
   ExternalLink,
@@ -14,10 +13,12 @@ import {
   Wifi,
   WifiOff,
 } from "lucide-react"
+import { useEditorLayout } from "@/components/editor/editor-layout-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import { StatusMessage } from "@/components/ui/status-message"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -122,6 +123,7 @@ export function DomainDashboard({ websites }: DomainDashboardProps) {
   const [message, setMessage] = useState<Message>(null)
   const [isPublishing, setIsPublishing] = useState(false)
   const [isPending, startTransition] = useTransition()
+  const { setIsSaving, setSaveState } = useEditorLayout()
 
   const previewUrl = selectedWebsite ? `preview-${selectedWebsite.slug}.${PLATFORM_DOMAIN}` : ""
   const liveUrl = selectedWebsite ? `${selectedWebsite.slug}.${PLATFORM_DOMAIN}` : ""
@@ -152,6 +154,7 @@ export function DomainDashboard({ websites }: DomainDashboardProps) {
   const saveDomain = async (domain: string | null) => {
     if (!selectedWebsite) return
 
+    setIsSaving(true)
     const res = await fetch("/api/domain", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -160,6 +163,8 @@ export function DomainDashboard({ websites }: DomainDashboardProps) {
     const json = await res.json().catch(() => ({}))
 
     if (!res.ok) {
+      setIsSaving(false)
+      setSaveState("error")
       setMessage({ type: "error", text: json?.error || "Domein kon niet worden opgeslagen." })
       return
     }
@@ -174,6 +179,7 @@ export function DomainDashboard({ websites }: DomainDashboardProps) {
       type: "success",
       text: normalized ? "Domein opgeslagen en naar Vercel gestuurd." : "Domein verwijderd.",
     })
+    setIsSaving(false)
   }
 
   const handleSaveDomain = async () => {
@@ -211,6 +217,7 @@ export function DomainDashboard({ websites }: DomainDashboardProps) {
     if (!selectedWebsite) return
 
     setIsPublishing(true)
+    setIsSaving(true)
     setMessage(null)
 
     const response = await fetch("/api/websites/publish", {
@@ -223,6 +230,8 @@ export function DomainDashboard({ websites }: DomainDashboardProps) {
     setIsPublishing(false)
 
     if (!response.ok) {
+      setIsSaving(false)
+      setSaveState("error")
       setMessage({ type: "error", text: result?.error || "Live status kon niet worden bijgewerkt." })
       return
     }
@@ -237,6 +246,7 @@ export function DomainDashboard({ websites }: DomainDashboardProps) {
       type: "success",
       text: published ? "Deze website staat nu live." : "Deze website staat niet meer live.",
     })
+    setIsSaving(false)
   }
 
   if (!selectedWebsite) {
@@ -383,12 +393,9 @@ export function DomainDashboard({ websites }: DomainDashboardProps) {
           ) : null}
 
           {verifyMessage ? (
-            <StatusMessage
-              type={verifyStatus === "connected" ? "success" : "error"}
-              text={verifyMessage}
-            />
+            <StatusMessage tone={verifyStatus === "connected" ? "success" : "error"}>{verifyMessage}</StatusMessage>
           ) : null}
-          {message ? <StatusMessage type={message.type} text={message.text} /> : null}
+          {message ? <StatusMessage tone={message.type}>{message.text}</StatusMessage> : null}
         </div>
       </section>
 
@@ -423,25 +430,6 @@ export function DomainDashboard({ websites }: DomainDashboardProps) {
           </ol>
         </div>
       </section>
-    </div>
-  )
-}
-
-function StatusMessage({ type, text }: { type: "success" | "error"; text: string }) {
-  return (
-    <div
-      className={`flex items-start gap-2 rounded-md border px-3 py-2 text-sm ${
-        type === "success"
-          ? "border-primary/20 bg-primary/10 text-primary"
-          : "border-destructive/20 bg-destructive/10 text-destructive"
-      }`}
-    >
-      {type === "success" ? (
-        <CheckCircle className="mt-0.5 h-4 w-4 shrink-0" />
-      ) : (
-        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-      )}
-      <span>{text}</span>
     </div>
   )
 }

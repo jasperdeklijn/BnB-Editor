@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
+import { notFound, redirect } from "next/navigation"
 import { loadPublicWebsitePage } from "@/components/page-loader"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
 import { getSeoDescription, getSeoTitle, type WebsiteSeoFields } from "@/lib/seo/metadata"
 
 interface PageProps {
@@ -9,11 +11,23 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
-  const client = await createAdminClient()
-  const { data: website } = await client
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    return {
+      title: "Website preview",
+      robots: { index: false, follow: false },
+    }
+  }
+
+  const { data: website } = await supabase
     .from("websites")
     .select("title, slug, custom_domain, seo, businesses:business_id(name, description)")
     .eq("slug", slug)
+    .eq("user_id", user.id)
     .maybeSingle()
 
   const businessRelation = website?.businesses as { name?: string; description?: string } | { name?: string; description?: string }[] | null | undefined
@@ -26,6 +40,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title,
     description,
+    robots: { index: false, follow: false },
     alternates: { canonical: seo?.canonicalUrl || url },
     openGraph: {
       title,
@@ -44,6 +59,27 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function PreviewSitePage({ params }: PageProps) {
   const { slug } = await params
+  const supabase = await createClient()
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+
+  if (error || !user) {
+    redirect("/auth/login")
+  }
+
+  const { data: website } = await supabase
+    .from("websites")
+    .select("id")
+    .eq("slug", slug)
+    .eq("user_id", user.id)
+    .maybeSingle()
+
+  if (!website) {
+    notFound()
+  }
+
   const client = await createAdminClient()
   return loadPublicWebsitePage({ slug, isPreview: true, client })
 }

@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from "react"
 import { EditorHeader } from "./editor-header"
 import { usePathname, useRouter } from "next/navigation"
-import { EditorLayoutProvider } from "./editor-layout-context"
+import { EditorLayoutProvider, type EditorSaveState } from "./editor-layout-context"
 import { ImageIcon, Globe, Home, Briefcase, LayoutTemplate, Palette, Search, CreditCard, User } from "lucide-react"
 import { DEFAULT_SITE_TITLE } from "@/lib/business-naming"
 
@@ -56,6 +56,7 @@ export function EditorLayoutClient({
   const [headerTitle, setHeaderTitle] = useState(DEFAULT_SITE_TITLE)
   const [isPreview, setIsPreview] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [saveState, setSaveState] = useState<EditorSaveState>("saved")
   const [device, setDevice] = useState<"desktop" | "tablet" | "mobile">("desktop")
   const [onPublish, setOnPublish] = useState<() => void>(() => noop)
   const [onLogout, setOnLogout] = useState<() => void>(() => noop)
@@ -78,6 +79,16 @@ export function EditorLayoutClient({
     }
   }, [router])
 
+  const setNavbarSaving = useCallback((value: boolean) => {
+    setIsSaving(value)
+    if (value) {
+      setSaveState("saving")
+      return
+    }
+
+    setSaveState((current) => (current === "error" ? "error" : "saved"))
+  }, [])
+
   const layoutValue = useMemo(
     () => ({
       title: headerTitle,
@@ -85,7 +96,9 @@ export function EditorLayoutClient({
       isPreview,
       setIsPreview,
       isSaving,
-      setIsSaving,
+      setIsSaving: setNavbarSaving,
+      saveState,
+      setSaveState,
       device,
       setDevice,
       onPublish,
@@ -111,10 +124,12 @@ export function EditorLayoutClient({
       infoText,
       isPreview,
       isSaving,
+      saveState,
       device,
       onAction,
       onPublish,
       onLogout,
+      setNavbarSaving,
     ],
   )
 
@@ -136,6 +151,7 @@ export function EditorLayoutClient({
           onPublish={onPublish}
           onLogout={onLogout === noop ? handleLogout : onLogout}
           isSaving={isSaving}
+          saveState={saveState}
           device={device}
           onDeviceChange={setDevice}
           avatarUrl={avatarUrl}
