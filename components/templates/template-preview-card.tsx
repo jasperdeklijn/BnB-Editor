@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { ArrowRight, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { getOfferingCopy } from "@/lib/business/categories"
 
 interface TemplatePreviewCardProps {
   template: TemplatePreset
@@ -19,6 +20,8 @@ export function TemplatePreviewCard({
   onSelect,
   actionLabel = "Selecteren",
 }: TemplatePreviewCardProps) {
+  const offeringCopy = getOfferingCopy(template.category)
+
   return (
     <Card className={cn("overflow-hidden transition-all", isSelected ? "ring-2 ring-primary" : "")}>
       <div className="border-b border-border bg-secondary p-4">
@@ -43,7 +46,9 @@ export function TemplatePreviewCard({
       </div>
 
       <div className="border-b border-border bg-muted p-4">
-        <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Voorbeeld diensten</p>
+        <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {offeringCopy.previewLabel}
+        </p>
         <div className="space-y-2">
           {template.services.slice(0, 3).map((service, idx) => (
             <div key={idx} className="text-sm">
@@ -54,7 +59,7 @@ export function TemplatePreviewCard({
           ))}
           {template.services.length > 3 && (
             <p className="text-xs text-muted-foreground font-medium pt-2">
-              +{template.services.length - 3} meer diensten
+              +{template.services.length - 3} meer {offeringCopy.plural}
             </p>
           )}
         </div>

@@ -24,7 +24,7 @@ interface NavSectionProps {
 const defaultSectionLabels: Record<SectionType, string> = {
   hero: "Home",
   about: "Over",
-  services: "Diensten",
+  services: "Aanbod",
   gallery: "Galerij",
   features: "Kenmerken",
   contact: "Contact",

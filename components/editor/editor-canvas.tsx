@@ -576,7 +576,7 @@ export function EditorCanvas({
                 <div className="grid gap-2 rounded-md border border-border bg-muted/50 p-3 text-left text-sm text-muted-foreground">
                   <div className="flex gap-2">
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    <span>Voegt een hero, over-ons, diensten en contactsectie toe.</span>
+                    <span>Voegt een hero, over-ons, aanbod en contactsectie toe.</span>
                   </div>
                   <div className="flex gap-2">
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />

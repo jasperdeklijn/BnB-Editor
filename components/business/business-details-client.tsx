@@ -50,6 +50,15 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
   const [websiteUrl, setWebsiteUrl] = useState(business.website_url ?? "")
   const [openingNote, setOpeningNote] = useState(business.opening_note ?? "")
 
+  const handleCategorySelect = (nextCategory: BusinessCategory) => {
+    setCategory(nextCategory)
+    window.dispatchEvent(
+      new CustomEvent("business-category-change", {
+        detail: { category: nextCategory },
+      }),
+    )
+  }
+
   const handleSave = async () => {
     setIsSaving(true)
     setHeaderSaving(true)
@@ -112,7 +121,7 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
                   <button
                     key={cat.value}
                     type="button"
-                    onClick={() => setCategory(cat.value)}
+                    onClick={() => handleCategorySelect(cat.value)}
                     className={[
                       "flex flex-col gap-0.5 rounded-lg border px-4 py-3 text-left transition-colors",
                       isSelected

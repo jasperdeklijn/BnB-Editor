@@ -5,8 +5,8 @@ import { getServices } from "@/lib/supabase/services"
 import { ServicesClient } from "@/components/business/services-client"
 
 export const metadata = {
-  title: "Diensten | Website Maker",
-  description: "Beheer de diensten van uw bedrijf",
+  title: "Aanbod | Website Maker",
+  description: "Beheer het aanbod van uw bedrijf",
 }
 
 export default async function ServicesPage() {
@@ -24,6 +24,7 @@ export default async function ServicesPage() {
     <ServicesClient
       userId={data.user.id}
       businessId={business.id}
+      businessCategory={business.category}
       initialServices={services}
     />
   )

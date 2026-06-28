@@ -503,7 +503,7 @@ function CarouselLayout({
 // ---- Main section component ----
 
 export function ServicesSection({ data, styles }: ServicesSectionProps) {
-  const title = (data.title as string) || "Onze diensten"
+  const title = (data.title as string) || "Ons aanbod"
   const layout = (servicesLayoutMap[normalizeSectionLayout(data.layout)] ?? "grid") as ServicesLayout
   const serviceIds = data.serviceIds as string[] | undefined
 
@@ -664,7 +664,7 @@ export function ServicesSection({ data, styles }: ServicesSectionProps) {
       />
       <div className="relative mx-auto max-w-4xl text-center">
         <div className="mb-5 inline-flex items-center rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-sm font-medium text-violet-400">
-          Diensten beheren
+          Aanbod beheren
         </div>
         <h2 className="mb-6 text-4xl font-extrabold tracking-tight text-white" style={textStyle}>
           {title}
@@ -676,17 +676,17 @@ export function ServicesSection({ data, styles }: ServicesSectionProps) {
               <Briefcase className="h-10 w-10 text-white" />
             </div>
             <h3 className="mb-3 text-2xl font-bold text-white">
-              Nog geen diensten aangemaakt
+              Nog geen aanbod aangemaakt
             </h3>
             <p className="max-w-xl text-base leading-8 text-white/65">
-              Maak eerst diensten aan via de diensten pagina en selecteer ze daarna hier om ze zichtbaar te maken op je website.
+              Maak eerst aanbod aan via de aanbod pagina en selecteer items daarna hier om ze zichtbaar te maken op je website.
             </p>
             <Link
               href="/editor/services"
               className="mt-10 inline-flex items-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-500 px-7 py-4 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_10px_40px_rgba(124,58,237,0.45)]"
             >
               <Briefcase className="h-4 w-4" />
-              Diensten aanmaken
+              Aanbod aanmaken
             </Link>
           </div>
         </div>

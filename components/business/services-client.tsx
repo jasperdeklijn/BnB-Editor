@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { useEditorLayout } from "@/components/editor/editor-layout-context"
 import { useTouchDrag } from "@/hooks/use-touch-drag"
+import { getOfferingCopy, type BusinessCategory, type OfferingCopy } from "@/lib/business/categories"
 import {
   Briefcase,
   Plus,
@@ -35,6 +36,7 @@ import Link from "next/link"
 interface ServicesClientProps {
   userId: string
   businessId: string
+  businessCategory?: BusinessCategory | string | null
   initialServices: Service[]
 }
 
@@ -75,9 +77,10 @@ interface ServiceCardProps {
   onUpdate: (id: string, updates: Partial<ServiceInput>) => void
   onDelete: (id: string) => void
   isSaving: boolean
+  offeringCopy: OfferingCopy
 }
 
-function ServiceCard({ service, onUpdate, onDelete, isSaving }: ServiceCardProps) {
+function ServiceCard({ service, onUpdate, onDelete, isSaving, offeringCopy }: ServiceCardProps) {
   const [isDragOver, setIsDragOver] = useState(false)
   const [localTitle, setLocalTitle] = useState(service.title)
   const [localDescription, setLocalDescription] = useState(service.description ?? "")
@@ -143,7 +146,7 @@ function ServiceCard({ service, onUpdate, onDelete, isSaving }: ServiceCardProps
         <div className="flex items-center gap-2">
           <Briefcase className="h-4 w-4 text-primary" />
           <span className="font-semibold text-foreground truncate max-w-[200px]">
-            {service.title || "Naamloze dienst"}
+            {service.title || offeringCopy.unnamedItem}
           </span>
           <div className="relative group">
             {(() => {
@@ -184,11 +187,11 @@ function ServiceCard({ service, onUpdate, onDelete, isSaving }: ServiceCardProps
             htmlFor={`title-${service.id}`}
             className="text-xs font-medium text-muted-foreground uppercase tracking-wide"
           >
-            Dienstnaam
+            {offeringCopy.itemNameLabel}
           </Label>
           <Input
             id={`title-${service.id}`}
-            placeholder="Knipbeurt"
+            placeholder={offeringCopy.itemNamePlaceholder}
             value={localTitle}
             onChange={(e) => setLocalTitle(e.target.value)}
             onBlur={handleBlur}
@@ -205,7 +208,7 @@ function ServiceCard({ service, onUpdate, onDelete, isSaving }: ServiceCardProps
           </Label>
           <Textarea
             id={`desc-${service.id}`}
-            placeholder="Wat houdt deze dienst in..."
+            placeholder={`Wat houdt deze ${offeringCopy.singular} in...`}
             value={localDescription}
             onChange={(e) => setLocalDescription(e.target.value)}
             onBlur={handleBlur}
@@ -308,8 +311,9 @@ function ServiceCard({ service, onUpdate, onDelete, isSaving }: ServiceCardProps
 }
 
 // ---- Main client component ----
-export function ServicesClient({ userId, businessId, initialServices }: ServicesClientProps) {
+export function ServicesClient({ userId, businessId, businessCategory, initialServices }: ServicesClientProps) {
   const [services, setServices] = useState<Service[]>(initialServices)
+  const offeringCopy = getOfferingCopy(businessCategory)
   const [images, setImages] = useState<{ name: string; url: string }[]>([])
   const [isLoadingImages, setIsLoadingImages] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -348,7 +352,7 @@ export function ServicesClient({ userId, businessId, initialServices }: Services
     let failed = false
     try {
       const newService = await apiCreateService(businessId, {
-        title: "Nieuwe dienst",
+        title: offeringCopy.newItemTitle,
         description: "",
         price: "",
         duration: null,
@@ -357,7 +361,7 @@ export function ServicesClient({ userId, businessId, initialServices }: Services
         position: services.length,
       })
       setServices((prev) => [...prev, newService])
-      toast.success("Dienst aangemaakt")
+      toast.success(`${offeringCopy.singular[0].toUpperCase()}${offeringCopy.singular.slice(1)} aangemaakt`)
     } catch (err) {
       console.error(err)
       failed = true
@@ -366,7 +370,7 @@ export function ServicesClient({ userId, businessId, initialServices }: Services
       setIsSaving(false)
       if (failed) setSaveState("error")
     }
-  }, [businessId, services.length, setSaveState])
+  }, [businessId, offeringCopy, services.length, setSaveState])
 
   useEffect(() => {
     setHeaderSaving(isSaving)
@@ -374,10 +378,10 @@ export function ServicesClient({ userId, businessId, initialServices }: Services
   }, [isSaving, setHeaderSaving, setActionLoading])
 
   useEffect(() => {
-    setActionLabel("Dienst toevoegen")
+    setActionLabel(offeringCopy.addLabel)
     setActionIcon(<Plus className="mr-2 h-4 w-4" />)
     setOnAction(() => handleCreateService)
-    setInfoText(`${services.length} ${services.length === 1 ? "dienst" : "diensten"}`)
+    setInfoText(`${services.length} ${services.length === 1 ? offeringCopy.singular : offeringCopy.plural}`)
 
     return () => {
       setActionLabel(undefined)
@@ -386,7 +390,7 @@ export function ServicesClient({ userId, businessId, initialServices }: Services
       setActionLoading(false)
       setInfoText(undefined)
     }
-  }, [services.length, handleCreateService, setActionLabel, setActionIcon, setActionLoading, setOnAction, setInfoText])
+  }, [services.length, handleCreateService, offeringCopy, setActionLabel, setActionIcon, setActionLoading, setOnAction, setInfoText])
 
   const handleUpdateService = async (id: string, updates: Partial<ServiceInput>) => {
     setServices((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)))
@@ -412,7 +416,7 @@ export function ServicesClient({ userId, businessId, initialServices }: Services
     let failed = false
     try {
       await apiDeleteService(id)
-      toast.success("Dienst verwijderd")
+      toast.success(`${offeringCopy.singular[0].toUpperCase()}${offeringCopy.singular.slice(1)} verwijderd`)
     } catch (err) {
       console.error(err)
       setServices(prev)
@@ -434,8 +438,8 @@ export function ServicesClient({ userId, businessId, initialServices }: Services
 
   return (
     <EditorPageShell
-      title="Diensten"
-      description="Beheer diensten, prijzen, duur en afbeeldingen die op uw website worden getoond."
+      title={offeringCopy.title}
+      description={offeringCopy.managerDescription}
       maxWidth="full"
       scroll={false}
       contentClassName="h-full min-h-0"
@@ -451,7 +455,7 @@ export function ServicesClient({ userId, businessId, initialServices }: Services
             {!sidebarCollapsed && (
               <div>
                 <p className="text-xs font-semibold text-foreground">Afbeeldingen</p>
-                <p className="text-[10px] text-muted-foreground">Sleep naar diensten</p>
+                <p className="text-[10px] text-muted-foreground">Sleep naar {offeringCopy.plural}</p>
               </div>
             )}
             <button
@@ -502,14 +506,14 @@ export function ServicesClient({ userId, businessId, initialServices }: Services
                 <Briefcase className="h-10 w-10 text-primary" />
               </div>
               <div>
-                <p className="font-semibold text-foreground text-lg">Nog geen diensten</p>
+                <p className="font-semibold text-foreground text-lg">{offeringCopy.emptyTitle}</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Klik op &ldquo;Dienst toevoegen&rdquo; om uw eerste dienst aan te maken
+                  {offeringCopy.emptyDescription}
                 </p>
               </div>
               <Button onClick={handleCreateService} disabled={isSaving} className="mt-2">
                 <Plus className="mr-2 h-4 w-4" />
-                Eerste dienst toevoegen
+                Eerste {offeringCopy.singular} toevoegen
               </Button>
             </div>
           ) : (
@@ -521,6 +525,7 @@ export function ServicesClient({ userId, businessId, initialServices }: Services
                   onUpdate={handleUpdateService}
                   onDelete={handleDeleteService}
                   isSaving={isSaving}
+                  offeringCopy={offeringCopy}
                 />
               ))}
 
@@ -534,7 +539,7 @@ export function ServicesClient({ userId, businessId, initialServices }: Services
                 <div className="rounded-full bg-muted group-hover:bg-primary/10 p-3 transition-colors">
                   <Plus className="h-6 w-6" />
                 </div>
-                <span className="text-sm font-medium">Nog een dienst toevoegen</span>
+                <span className="text-sm font-medium">Nog een {offeringCopy.singular} toevoegen</span>
               </button>
             </div>
           )}

@@ -68,6 +68,7 @@ import {
   type SectionLayout,
 } from "@/lib/section-layouts"
 import { SectionRenderer } from "@/components/editor/section-renderer"
+import { getOfferingCopy, type BusinessCategory } from "@/lib/business/categories"
 
 interface AvailableService {
   id: string
@@ -86,6 +87,7 @@ interface SelectionEditorProps {
   onTransitionUpdate: (fromSectionId: string, toSectionId: string, transitionType: string) => void
   websiteId?: string | null
   businessId?: string | null
+  businessCategory?: BusinessCategory | null
 }
 
 function getLayoutIcon(layout: SectionLayout) {
@@ -129,10 +131,12 @@ export function SelectionEditor({
   onTransitionUpdate,
   websiteId,
   businessId,
+  businessCategory,
 }: SelectionEditorProps) {
   const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null)
   const [layoutDialogOpen, setLayoutDialogOpen] = useState(false)
   const { setIsSaving, setSaveState } = useEditorLayout()
+  const offeringCopy = getOfferingCopy(businessCategory)
 
   // Diensten selector state
   const [availableDiensten, setAvailableDiensten] = useState<AvailableService[]>([])
@@ -628,7 +632,7 @@ export function SelectionEditor({
                 Layoutstijl
               </Label>
               <p className="text-xs text-muted-foreground">
-                Kies hoe de dienstkaarten worden weergegeven
+                Kies hoe de aanbodkaarten worden weergegeven
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {[
@@ -664,7 +668,7 @@ export function SelectionEditor({
                 {((selectedSection.data as any).layout as ServicesLayout) === "list" &&
                   "Horizontale lijstkaarten met afbeelding links"}
                 {((selectedSection.data as any).layout as ServicesLayout) === "featured" &&
-                  "Eerste dienst groot uitgelicht, rest in raster"}
+                "Eerste item groot uitgelicht, rest in raster"}
                 {((selectedSection.data as any).layout as ServicesLayout) === "magazine" &&
                   "Afwisselend links/rechts met grote afbeeldingen"}
                 {((selectedSection.data as any).layout as ServicesLayout) === "minimal" &&
@@ -674,14 +678,14 @@ export function SelectionEditor({
               </p>
             </Card>
 
-            {/* Diensten Title + selector */}
+            {/* Offerings title + selector */}
             <Card className="p-4 space-y-3">
               <Label className="flex items-center gap-2">
                 <Type className="h-3.5 w-3.5" />
                 Titel
               </Label>
               <Input
-                placeholder="Onze diensten"
+                placeholder={offeringCopy.sectionTitle}
                 value={(selectedSection.data as any).title || ""}
                 onChange={(e) => updateField("title", e.target.value)}
               />
@@ -689,10 +693,10 @@ export function SelectionEditor({
               <div className="pt-1 border-t border-border space-y-2">
                 <Label className="flex items-center gap-2">
                   <Briefcase className="h-3.5 w-3.5" />
-                  Diensten selecteren
+                  {offeringCopy.title} selecteren
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Laat leeg om alle diensten te tonen, of selecteer specifieke diensten.
+                  Laat leeg om alle {offeringCopy.plural} te tonen, of selecteer specifieke {offeringCopy.plural}.
                 </p>
 
                 {loadingDiensten ? (
@@ -704,10 +708,10 @@ export function SelectionEditor({
                     <Briefcase className="h-8 w-8 text-muted-foreground/40" />
                     <div>
                       <p className="text-xs font-medium text-muted-foreground">
-                        Nog geen diensten aangemaakt
+                        {offeringCopy.emptyTitle}
                       </p>
                       <p className="text-xs text-muted-foreground/70 mt-0.5">
-                        Maak diensten aan en keer hier terug
+                        Maak {offeringCopy.plural} aan en keer hier terug
                       </p>
                     </div>
                     <Link
@@ -715,7 +719,7 @@ export function SelectionEditor({
                       className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
                     >
                       <ExternalLink className="h-3 w-3" />
-                      Ga naar diensten
+                      Ga naar {offeringCopy.plural}
                     </Link>
                   </div>
                 ) : (
@@ -784,7 +788,7 @@ export function SelectionEditor({
                         onClick={() => updateField("serviceIds", [])}
                         className="w-full rounded-lg border border-dashed border-border py-2 text-xs text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors"
                       >
-                        Selectie wissen (alle diensten tonen)
+                        Selectie wissen (alle {offeringCopy.plural} tonen)
                       </button>
                     ) : null}
 
@@ -793,7 +797,7 @@ export function SelectionEditor({
                       className="flex items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
                     >
                       <ExternalLink className="h-3 w-3" />
-                      Diensten beheren
+                      {offeringCopy.manageLabel}
                     </Link>
                   </div>
                 )}
@@ -1153,7 +1157,7 @@ export function SelectionEditor({
                 const defaultLabels: Record<SectionType, string> = {
                   hero: "Home",
                   about: "Over",
-                  services: "Diensten",
+                  services: "Aanbod",
                   gallery: "Galerij",
                   features: "Kenmerken",
                   contact: "Contact",
