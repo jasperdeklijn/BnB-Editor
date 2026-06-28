@@ -106,6 +106,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (resolvedWebsiteId && resolvedBusinessId) {
+      const { error: websiteLinkError } = await supabase
+        .from("websites")
+        .update({ business_id: resolvedBusinessId, updated_at: new Date().toISOString() })
+        .eq("id", resolvedWebsiteId)
+        .eq("user_id", user.id)
+
+      if (websiteLinkError) {
+        return NextResponse.json({ error: "Failed to update website" }, { status: 500 })
+      }
+    }
+
     const { data: websiteTheme, error: websiteThemeError } = await supabase
       .from("websites")
       .select("theme_config")

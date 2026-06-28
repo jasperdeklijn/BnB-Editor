@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { SectionsSelector } from "./sections-selector"
 import { EditorCanvas } from "./editor-canvas"
-import { SelectionEditor } from "./section-editor"
+import { EditorInspector } from "./editor-inspector"
 import { useEditorLayout } from "./editor-layout-context"
 import type { Section, SectionStyles, SectionType, Transition } from "@/lib/types"
 import { DEFAULT_SITE_TITLE } from "@/lib/business-naming"
@@ -11,13 +11,14 @@ import { getDefaultSectionData as getRegistryDefaultSectionData } from "@/compon
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Globe2, Layers, LayoutTemplate, Loader2, Paintbrush, Plus } from "lucide-react"
+import { Globe2, Layers, LayoutTemplate, Loader2, Paintbrush, Plus, Sparkles } from "lucide-react"
 import type { ThemeConfig } from "@/lib/themes"
+import type { BusinessCategory } from "@/lib/business/categories"
 import { Button } from "@/components/ui/button"
 import { StatusMessage } from "@/components/ui/status-message"
 import { PLATFORM_DOMAIN } from "@/lib/platform"
 
-type MobilePanel = "canvas" | "sections" | "style"
+type MobilePanel = "canvas" | "sections" | "style" | "site"
 
 type WebsiteSummary = {
   id: string
@@ -41,6 +42,7 @@ export function EditorClient({ userId }: EditorClientProps) {
   const [websites, setWebsites] = useState<WebsiteSummary[]>([])
   const [websiteId, setWebsiteId] = useState<string | null>(null)
   const [businessId, setBusinessId] = useState<string | null>(null)
+  const [businessCategory, setBusinessCategory] = useState<BusinessCategory | null>(null)
   const [title, setTitle] = useState(DEFAULT_SITE_TITLE)
   const [slug, setSlug] = useState("")
   const [themeConfig, setThemeConfig] = useState<ThemeConfig | null>(null)
@@ -83,18 +85,23 @@ export function EditorClient({ userId }: EditorClientProps) {
 
   const loadWebsite = useCallback(async (preferredWebsiteId?: string | null) => {
     const supabase = createClient()
+    let resolvedBusinessId: string | null = null
 
     // Fetch the user's current business id for service-backed sections.
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
       const { data: business } = await supabase
         .from("businesses")
-        .select("id")
+        .select("id, category")
         .eq("user_id", user.id)
         .order("created_at", { ascending: true })
         .limit(1)
         .maybeSingle()
-      if (business) setBusinessId(business.id)
+      if (business) {
+        resolvedBusinessId = business.id
+        setBusinessId(business.id)
+        setBusinessCategory((business.category as BusinessCategory | null) ?? null)
+      }
     }
 
     const { data: websiteRows } = await supabase
@@ -121,6 +128,7 @@ export function EditorClient({ userId }: EditorClientProps) {
       setWebsiteId(website.id)
       setTitle(website.title)
       setSlug(website.slug)
+      setBusinessId(website.business_id ?? resolvedBusinessId)
       setThemeConfig((website.theme_config as ThemeConfig | null) ?? null)
       setSelectedSectionId(null)
 
@@ -170,6 +178,7 @@ export function EditorClient({ userId }: EditorClientProps) {
         setWebsiteId(newWebsite.id)
         setTitle(newWebsite.title || DEFAULT_SITE_TITLE)
         setSlug(newSlug)
+        setThemeConfig(null)
         setWebsites([
           {
             id: newWebsite.id,
@@ -183,6 +192,18 @@ export function EditorClient({ userId }: EditorClientProps) {
       }
     }
   }, [userId])
+
+  const handleTemplateApplied = useCallback(
+    async (nextWebsiteId?: string | null) => {
+      const resolvedWebsiteId = nextWebsiteId ?? websiteId
+      if (resolvedWebsiteId && resolvedWebsiteId !== websiteId) {
+        router.replace(`/editor?websiteId=${resolvedWebsiteId}`)
+      }
+      await loadWebsite(resolvedWebsiteId)
+      setMobilePanel("canvas")
+    },
+    [loadWebsite, router, websiteId],
+  )
 
   // Load or create website on mount and when a selected website is requested.
   useEffect(() => {
@@ -625,7 +646,7 @@ export function EditorClient({ userId }: EditorClientProps) {
           onStartTutorial={handleStartTutorial}
         />
         {!isPreview && (
-          <SelectionEditor
+          <EditorInspector
             selectedSection={selectedSection}
             sections={sections}
             transitions={transitions}
@@ -635,6 +656,11 @@ export function EditorClient({ userId }: EditorClientProps) {
             onTransitionUpdate={handleTransitionUpdate}
             websiteId={websiteId}
             businessId={businessId}
+            businessCategory={businessCategory}
+            currentTheme={themeConfig}
+            onThemeChange={setThemeConfig}
+            onTemplateApplied={handleTemplateApplied}
+            className="flex h-full w-80 shrink-0 flex-col border-l bg-background xl:w-96"
           />
         )}
       </div>
@@ -668,7 +694,7 @@ export function EditorClient({ userId }: EditorClientProps) {
             />
           )}
           {mobilePanel === "style" && !isPreview && (
-            <SelectionEditor
+            <EditorInspector
               selectedSection={selectedSection}
               sections={sections}
               transitions={transitions}
@@ -678,6 +704,31 @@ export function EditorClient({ userId }: EditorClientProps) {
               onTransitionUpdate={handleTransitionUpdate}
               websiteId={websiteId}
               businessId={businessId}
+              businessCategory={businessCategory}
+              currentTheme={themeConfig}
+              onThemeChange={setThemeConfig}
+              onTemplateApplied={handleTemplateApplied}
+              defaultTab="section"
+              className="h-full w-full bg-background"
+            />
+          )}
+          {mobilePanel === "site" && !isPreview && (
+            <EditorInspector
+              selectedSection={selectedSection}
+              sections={sections}
+              transitions={transitions}
+              onUpdate={handleSectionUpdate}
+              onStyleUpdate={handleStyleUpdate}
+              onDelete={handleDelete}
+              onTransitionUpdate={handleTransitionUpdate}
+              websiteId={websiteId}
+              businessId={businessId}
+              businessCategory={businessCategory}
+              currentTheme={themeConfig}
+              onThemeChange={setThemeConfig}
+              onTemplateApplied={handleTemplateApplied}
+              defaultTab="site"
+              className="h-full w-full bg-background"
             />
           )}
         </div>
@@ -720,6 +771,18 @@ export function EditorClient({ userId }: EditorClientProps) {
             >
               <Paintbrush className="h-5 w-5" />
               Stijl
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobilePanel("site")}
+              className={`flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
+                mobilePanel === "site"
+                  ? "text-primary border-t-2 border-primary -mt-px"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Sparkles className="h-5 w-5" />
+              Site
             </button>
           </nav>
         )}

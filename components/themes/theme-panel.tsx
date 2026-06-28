@@ -143,7 +143,7 @@ export function ThemePanel({
     : THEME_PRESETS.slice(0, 6);
 
   return (
-    <div className={cn('flex flex-col h-full', className)}>
+    <div className={cn('flex h-full min-h-0 flex-col overflow-hidden', className)}>
       <div className="flex min-w-0 items-center justify-between gap-2 px-3 py-3 border-b sm:px-4">
         <div className="flex min-w-0 items-center gap-2">
           <Palette className="h-4 w-4 text-primary" />
@@ -153,7 +153,7 @@ export function ThemePanel({
       </div>
       {status ? <StatusMessage tone={status.tone} className="m-3 mb-0 sm:mx-4">{status.text}</StatusMessage> : null}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <TabsList className="mx-3 mt-3 grid grid-cols-3 sm:mx-4">
           <TabsTrigger value="presets" className="text-xs">
             Presets
@@ -167,8 +167,8 @@ export function ThemePanel({
         </TabsList>
 
         <div className="flex-1 min-h-0 p-3 sm:p-4">
-          <TabsContent value="presets" className="h-full mt-0">
-            <ScrollArea className="h-full">
+          <TabsContent value="presets" className="h-full min-h-0 mt-0 overflow-hidden">
+            <ScrollArea className="h-full min-h-0">
               {businessCategory && recommendedPresets.length > 0 && (
                 <div className="mb-4">
                   <div className="flex items-center gap-2 mb-3">
@@ -203,8 +203,8 @@ export function ThemePanel({
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="colors" className="h-full mt-0">
-            <ScrollArea className="h-full">
+          <TabsContent value="colors" className="h-full min-h-0 mt-0 overflow-hidden">
+            <ScrollArea className="h-full min-h-0">
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {COLOR_PALETTES.map((palette) => (
                   <PaletteCard
@@ -218,8 +218,8 @@ export function ThemePanel({
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="fonts" className="h-full mt-0">
-            <ScrollArea className="h-full">
+          <TabsContent value="fonts" className="h-full min-h-0 mt-0 overflow-hidden">
+            <ScrollArea className="h-full min-h-0">
               <div className="space-y-2">
                 {FONT_PAIRS.map((fontPair) => (
                   <FontCard
