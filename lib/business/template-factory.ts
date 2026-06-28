@@ -70,7 +70,8 @@ export function getDemoServicesFromTemplate(
   title: string
   description: string
   price: string
-  duration?: string
+  duration: string
+  image_urls: string[]
   position: number
 }> {
   const template = TEMPLATE_PRESETS[category]
@@ -84,7 +85,8 @@ export function getDemoServicesFromTemplate(
     title: service.title,
     description: service.description,
     price: service.price || "",
-    duration: service.duration,
+    duration: service.duration || "",
+    image_urls: [],
     position: index,
   }))
 }

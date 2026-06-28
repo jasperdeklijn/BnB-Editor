@@ -257,7 +257,7 @@ export function SelectionEditor({
 
   if (!selectedSection) {
     return (
-      <div className="w-full md:w-80 border-border bg-[var(--editor-panel)] p-4 md:border-l md:p-6">
+      <div className="h-full min-h-0 w-full border-border bg-[var(--editor-panel)] p-4 md:border-l md:p-6">
         <div className="flex h-full flex-col items-center justify-center text-center">
           <div className="mb-4 rounded-full bg-primary/10 p-4">
             <Wand2 className="h-8 w-8 text-primary" />
@@ -340,7 +340,7 @@ export function SelectionEditor({
   }
 
   return (
-    <div className="w-full md:w-80 border-border bg-[var(--editor-panel)] p-4 md:border-l md:p-6 overflow-auto animate-in slide-in-from-right duration-300">
+    <div className="h-full min-h-0 w-full overflow-y-auto overscroll-contain border-border bg-[var(--editor-panel)] p-4 md:border-l md:p-6 animate-in slide-in-from-right duration-300">
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
