@@ -79,7 +79,7 @@ Customer and planning fields:
    - Users can click an existing entry to edit details.
    - The calendar works on desktop and mobile without horizontal overflow.
 
-5. [ ] Add availability and blocked-time management
+5. [x] Add availability and blocked-time management
 
    Let users define when offerings can or cannot be booked.
 
@@ -89,7 +89,7 @@ Customer and planning fields:
    - Availability can be linked to all offerings or one selected service/accommodation.
    - Conflicting bookings are clearly shown before saving.
 
-6. [ ] Connect public request forms to the calendar
+6. [x] Connect public request forms to the calendar
 
    Turn relevant public form submissions into calendar-ready entries.
 

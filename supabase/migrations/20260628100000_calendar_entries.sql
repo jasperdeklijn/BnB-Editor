@@ -26,6 +26,19 @@ create table if not exists public.calendar_entries (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.calendar_availability_windows (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  service_id uuid references public.services(id) on delete cascade,
+  weekday integer not null,
+  start_time time not null,
+  end_time time not null,
+  timezone text not null default 'Europe/Amsterdam',
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 alter table public.calendar_entries
   add column if not exists business_id uuid references public.businesses(id) on delete cascade,
   add column if not exists service_id uuid references public.services(id) on delete set null,
@@ -89,6 +102,40 @@ begin
   end if;
 end $$;
 
+alter table public.calendar_availability_windows
+  add column if not exists business_id uuid references public.businesses(id) on delete cascade,
+  add column if not exists service_id uuid references public.services(id) on delete cascade,
+  add column if not exists weekday integer,
+  add column if not exists start_time time,
+  add column if not exists end_time time,
+  add column if not exists timezone text not null default 'Europe/Amsterdam',
+  add column if not exists is_active boolean not null default true,
+  add column if not exists created_at timestamptz not null default now(),
+  add column if not exists updated_at timestamptz not null default now();
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'calendar_availability_windows_weekday_check'
+      and conrelid = 'public.calendar_availability_windows'::regclass
+  ) then
+    alter table public.calendar_availability_windows
+      add constraint calendar_availability_windows_weekday_check
+      check (weekday between 1 and 7);
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'calendar_availability_windows_time_range_check'
+      and conrelid = 'public.calendar_availability_windows'::regclass
+  ) then
+    alter table public.calendar_availability_windows
+      add constraint calendar_availability_windows_time_range_check
+      check (end_time > start_time);
+  end if;
+end $$;
+
 create index if not exists idx_calendar_entries_business_start
   on public.calendar_entries (business_id, start_at);
 
@@ -106,12 +153,25 @@ create index if not exists idx_calendar_entries_contact_request
 create index if not exists idx_calendar_entries_status
   on public.calendar_entries (business_id, status);
 
+create index if not exists idx_calendar_availability_business_weekday
+  on public.calendar_availability_windows (business_id, weekday, start_time);
+
+create index if not exists idx_calendar_availability_service_weekday
+  on public.calendar_availability_windows (service_id, weekday, start_time)
+  where service_id is not null;
+
 drop trigger if exists set_calendar_entries_updated_at on public.calendar_entries;
 create trigger set_calendar_entries_updated_at
   before update on public.calendar_entries
   for each row execute procedure public.set_updated_at();
 
+drop trigger if exists set_calendar_availability_windows_updated_at on public.calendar_availability_windows;
+create trigger set_calendar_availability_windows_updated_at
+  before update on public.calendar_availability_windows
+  for each row execute procedure public.set_updated_at();
+
 alter table public.calendar_entries enable row level security;
+alter table public.calendar_availability_windows enable row level security;
 
 drop policy if exists "Users can view own calendar entries" on public.calendar_entries;
 create policy "Users can view own calendar entries"
@@ -192,6 +252,73 @@ create policy "Users can delete own calendar entries"
     exists (
       select 1 from public.businesses b
       where b.id = calendar_entries.business_id
+        and b.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "Users can view own calendar availability windows" on public.calendar_availability_windows;
+create policy "Users can view own calendar availability windows"
+  on public.calendar_availability_windows for select
+  using (
+    exists (
+      select 1 from public.businesses b
+      where b.id = calendar_availability_windows.business_id
+        and b.user_id = auth.uid()
+    )
+  );
+
+drop policy if exists "Users can insert own calendar availability windows" on public.calendar_availability_windows;
+create policy "Users can insert own calendar availability windows"
+  on public.calendar_availability_windows for insert
+  with check (
+    exists (
+      select 1 from public.businesses b
+      where b.id = calendar_availability_windows.business_id
+        and b.user_id = auth.uid()
+    )
+    and (
+      calendar_availability_windows.service_id is null
+      or exists (
+        select 1 from public.services s
+        where s.id = calendar_availability_windows.service_id
+          and s.business_id = calendar_availability_windows.business_id
+      )
+    )
+  );
+
+drop policy if exists "Users can update own calendar availability windows" on public.calendar_availability_windows;
+create policy "Users can update own calendar availability windows"
+  on public.calendar_availability_windows for update
+  using (
+    exists (
+      select 1 from public.businesses b
+      where b.id = calendar_availability_windows.business_id
+        and b.user_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.businesses b
+      where b.id = calendar_availability_windows.business_id
+        and b.user_id = auth.uid()
+    )
+    and (
+      calendar_availability_windows.service_id is null
+      or exists (
+        select 1 from public.services s
+        where s.id = calendar_availability_windows.service_id
+          and s.business_id = calendar_availability_windows.business_id
+      )
+    )
+  );
+
+drop policy if exists "Users can delete own calendar availability windows" on public.calendar_availability_windows;
+create policy "Users can delete own calendar availability windows"
+  on public.calendar_availability_windows for delete
+  using (
+    exists (
+      select 1 from public.businesses b
+      where b.id = calendar_availability_windows.business_id
         and b.user_id = auth.uid()
     )
   );

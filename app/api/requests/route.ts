@@ -27,6 +27,32 @@ function getString(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
 }
 
+function parsePreferredDate(value: string) {
+  if (!value) return null
+
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value)
+  const date = isDateOnly ? new Date(`${value}T00:00:00`) : new Date(value)
+
+  if (!Number.isFinite(date.getTime())) return null
+
+  const end = new Date(date)
+  if (isDateOnly) {
+    end.setDate(end.getDate() + 1)
+  } else {
+    end.setHours(end.getHours() + 1)
+  }
+
+  return {
+    start_at: date.toISOString(),
+    end_at: end.toISOString(),
+    all_day: isDateOnly,
+  }
+}
+
+function getCalendarEntryType(requestType: RequestType) {
+  return requestType === "booking_request" ? "booking" : "appointment"
+}
+
 function createTransporter() {
   if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
     return null
@@ -172,26 +198,70 @@ export async function POST(request: NextRequest) {
       recipientEmail: getString(body.recipientEmail),
     })
 
-    const { error: insertError } = await context.supabase.from("contact_requests").insert({
-      website_id: context.websiteId,
-      business_id: context.businessId,
-      user_id: context.userId,
-      request_type: requestType,
-      name,
-      email,
-      phone,
-      service,
-      preferred_date: preferredDate,
-      budget,
-      message,
-      payload: body ?? {},
-      recipient_email: context.recipientEmail,
-      source,
-    })
+    const { data: contactRequest, error: insertError } = await context.supabase
+      .from("contact_requests")
+      .insert({
+        website_id: context.websiteId,
+        business_id: context.businessId,
+        user_id: context.userId,
+        request_type: requestType,
+        name,
+        email,
+        phone,
+        service,
+        preferred_date: preferredDate,
+        budget,
+        message,
+        payload: body ?? {},
+        recipient_email: context.recipientEmail,
+        source,
+      })
+      .select("id")
+      .single()
 
     if (insertError) {
       console.error("[requests] Failed to store request:", insertError)
       return NextResponse.json({ error: "Aanvraag kon niet worden opgeslagen." }, { status: 500 })
+    }
+
+    const calendarDate = parsePreferredDate(preferredDate)
+    let calendarEntryCreated = false
+
+    if (
+      context.businessId &&
+      contactRequest?.id &&
+      calendarDate &&
+      (requestType === "appointment" || requestType === "booking_request")
+    ) {
+      const { error: calendarError } = await context.supabase.from("calendar_entries").insert({
+        business_id: context.businessId,
+        contact_request_id: contactRequest.id,
+        entry_type: getCalendarEntryType(requestType),
+        status: "pending",
+        source: "contact_request",
+        title: requestType === "booking_request" ? "Nieuwe boekingsaanvraag" : "Nieuwe afspraakaanvraag",
+        customer_name: name,
+        customer_email: email,
+        customer_phone: phone,
+        start_at: calendarDate.start_at,
+        end_at: calendarDate.end_at,
+        all_day: calendarDate.all_day,
+        timezone: "Europe/Amsterdam",
+        internal_notes: [service ? `Gewenste dienst: ${service}` : "", budget ? `Budget: ${budget}` : "", message]
+          .filter(Boolean)
+          .join("\n\n"),
+        metadata: {
+          request_type: requestType,
+          preferred_date: preferredDate,
+          source,
+        },
+      })
+
+      if (calendarError) {
+        console.error("[requests] Failed to create calendar entry:", calendarError)
+      } else {
+        calendarEntryCreated = true
+      }
     }
 
     const transporter = createTransporter()
@@ -221,7 +291,7 @@ export async function POST(request: NextRequest) {
       emailSent = true
     }
 
-    return NextResponse.json({ success: true, emailSent })
+    return NextResponse.json({ success: true, emailSent, calendarEntryCreated })
   } catch (error) {
     console.error("[requests] Error:", error)
     return NextResponse.json(

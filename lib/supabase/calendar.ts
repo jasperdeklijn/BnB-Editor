@@ -48,6 +48,28 @@ export interface CalendarEntryInput {
 
 export type CalendarEntryUpdate = Partial<CalendarEntryInput>
 
+export interface CalendarAvailabilityWindow {
+  id: string
+  business_id: string
+  service_id: string | null
+  weekday: number
+  start_time: string
+  end_time: string
+  timezone: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface CalendarAvailabilityWindowInput {
+  service_id?: string | null
+  weekday: number
+  start_time: string
+  end_time: string
+  timezone?: string
+  is_active?: boolean
+}
+
 export interface CalendarEntryFilters {
   serviceId?: string | null
   status?: CalendarEntryStatus
@@ -78,6 +100,19 @@ type CalendarEntryRow = {
   updated_at: string
 }
 
+type CalendarAvailabilityWindowRow = {
+  id: string
+  business_id: string
+  service_id: string | null
+  weekday: number
+  start_time: string
+  end_time: string
+  timezone: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
 const DEFAULT_TIMEZONE = "Europe/Amsterdam"
 
 function parseCalendarEntry(row: CalendarEntryRow): CalendarEntry {
@@ -101,6 +136,21 @@ function parseCalendarEntry(row: CalendarEntryRow): CalendarEntry {
     metadata: row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata)
       ? (row.metadata as Record<string, unknown>)
       : {},
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  }
+}
+
+function parseCalendarAvailabilityWindow(row: CalendarAvailabilityWindowRow): CalendarAvailabilityWindow {
+  return {
+    id: row.id,
+    business_id: row.business_id,
+    service_id: row.service_id,
+    weekday: row.weekday,
+    start_time: row.start_time,
+    end_time: row.end_time,
+    timezone: row.timezone,
+    is_active: row.is_active,
     created_at: row.created_at,
     updated_at: row.updated_at,
   }
@@ -314,4 +364,69 @@ export async function deleteCalendarEntry(entryId: string): Promise<void> {
 
   const { error } = await supabase.from("calendar_entries").delete().eq("id", entryId)
   if (error) throw error
+}
+
+export async function getCalendarAvailabilityWindows(
+  businessId: string,
+): Promise<CalendarAvailabilityWindow[]> {
+  const supabase = await createClient()
+  await assertOwnedBusiness(businessId, supabase)
+
+  const { data, error } = await supabase
+    .from("calendar_availability_windows")
+    .select("*")
+    .eq("business_id", businessId)
+    .order("weekday", { ascending: true })
+    .order("start_time", { ascending: true })
+
+  if (error) throw error
+  return ((data ?? []) as CalendarAvailabilityWindowRow[]).map(parseCalendarAvailabilityWindow)
+}
+
+export async function createCalendarAvailabilityWindow(
+  businessId: string,
+  input: CalendarAvailabilityWindowInput,
+): Promise<CalendarAvailabilityWindow> {
+  const supabase = await createClient()
+  await assertOwnedBusiness(businessId, supabase)
+  await assertLinkedServiceBelongsToBusiness(input.service_id, businessId, supabase)
+
+  const payload = {
+    business_id: businessId,
+    service_id: input.service_id ?? null,
+    weekday: input.weekday,
+    start_time: input.start_time,
+    end_time: input.end_time,
+    timezone: input.timezone || DEFAULT_TIMEZONE,
+    is_active: input.is_active ?? true,
+  }
+
+  const { data, error } = await supabase
+    .from("calendar_availability_windows")
+    .insert(payload)
+    .select("*")
+    .single()
+
+  if (error) throw error
+  return parseCalendarAvailabilityWindow(data as CalendarAvailabilityWindowRow)
+}
+
+export async function deleteCalendarAvailabilityWindow(windowId: string): Promise<void> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("calendar_availability_windows")
+    .select("business_id")
+    .eq("id", windowId)
+    .maybeSingle()
+
+  if (error) throw error
+  if (!data) throw new Error("Availability window not found")
+  await assertOwnedBusiness((data as { business_id: string }).business_id, supabase)
+
+  const { error: deleteError } = await supabase
+    .from("calendar_availability_windows")
+    .delete()
+    .eq("id", windowId)
+
+  if (deleteError) throw deleteError
 }

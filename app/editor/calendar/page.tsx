@@ -3,7 +3,12 @@ import { CalendarClient } from "@/components/calendar/calendar-client"
 import { EditorPageShell } from "@/components/editor/editor-page-shell"
 import { createClient } from "@/lib/supabase/server"
 import { getOrCreateBusiness } from "@/lib/supabase/business"
-import { getCalendarEntries, type CalendarEntry } from "@/lib/supabase/calendar"
+import {
+  getCalendarAvailabilityWindows,
+  getCalendarEntries,
+  type CalendarAvailabilityWindow,
+  type CalendarEntry,
+} from "@/lib/supabase/calendar"
 import { getServices } from "@/lib/supabase/services"
 import { getOfferingCopy } from "@/lib/business/categories"
 
@@ -49,14 +54,18 @@ export default async function CalendarPage() {
   const offeringCopy = getOfferingCopy(business.category)
 
   let entries: CalendarEntry[] = []
+  let availabilityWindows: CalendarAvailabilityWindow[] = []
   let calendarError: string | null = null
   const services = await getServices(business.id)
 
   try {
-    entries = await getCalendarEntries(business.id)
+    ;[entries, availabilityWindows] = await Promise.all([
+      getCalendarEntries(business.id),
+      getCalendarAvailabilityWindows(business.id),
+    ])
   } catch (error) {
     console.error("[calendar] Failed to load entries:", error)
-    calendarError = "Kalendertabel is nog niet beschikbaar. Voer de calendar_entries migratie uit voordat u boekingen of afspraken beheert."
+    calendarError = "Kalendertabellen zijn nog niet beschikbaar. Voer de calendar_entries migratie uit voordat u boekingen, afspraken of beschikbaarheid beheert."
   }
 
   return (
@@ -69,6 +78,7 @@ export default async function CalendarPage() {
         businessId={business.id}
         businessCategory={business.category ?? ""}
         initialEntries={entries}
+        initialAvailabilityWindows={availabilityWindows}
         offerings={services}
         schemaError={calendarError}
         copy={calendarCopy}

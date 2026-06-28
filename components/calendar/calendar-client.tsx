@@ -1,14 +1,24 @@
 "use client"
 
 import { Fragment, useMemo, useState, useTransition } from "react"
-import { CalendarDays, ChevronLeft, ChevronRight, Clock, Plus, Save, X } from "lucide-react"
-import { createCalendarEntryAction, updateCalendarEntryAction } from "@/app/editor/calendar/actions"
+import { AlertTriangle, Ban, CalendarDays, ChevronLeft, ChevronRight, Clock, Plus, Save, Trash2, X } from "lucide-react"
+import {
+  createAvailabilityWindowAction,
+  createCalendarEntryAction,
+  deleteAvailabilityWindowAction,
+  updateCalendarEntryAction,
+} from "@/app/editor/calendar/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { StatusMessage } from "@/components/ui/status-message"
 import { Textarea } from "@/components/ui/textarea"
-import type { CalendarEntry, CalendarEntryStatus, CalendarEntryType } from "@/lib/supabase/calendar"
+import type {
+  CalendarAvailabilityWindow,
+  CalendarEntry,
+  CalendarEntryStatus,
+  CalendarEntryType,
+} from "@/lib/supabase/calendar"
 import type { Service } from "@/lib/supabase/services"
 import type { BusinessCategory } from "@/lib/business/categories"
 
@@ -18,6 +28,7 @@ interface CalendarClientProps {
   businessId: string
   businessCategory: BusinessCategory | string
   initialEntries: CalendarEntry[]
+  initialAvailabilityWindows: CalendarAvailabilityWindow[]
   offerings: Service[]
   schemaError?: string | null
   copy: {
@@ -51,7 +62,15 @@ type EntryFormState = {
   internal_notes: string
 }
 
+type AvailabilityFormState = {
+  service_id: string
+  weekday: string
+  start_time: string
+  end_time: string
+}
+
 const WEEKDAY_LABELS = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"]
+const WEEKDAY_FULL_LABELS = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"]
 const DAY_HOURS = Array.from({ length: 12 }, (_, index) => index + 8)
 
 const STATUS_LABELS: Record<CalendarEntryStatus, string> = {
@@ -138,6 +157,52 @@ function isSameDay(a: Date, b: Date) {
   return dateKey(a) === dateKey(b)
 }
 
+function rangesOverlap(startA: Date, endA: Date, startB: Date, endB: Date) {
+  return startA < endB && endA > startB
+}
+
+function servicesOverlap(a: string | null | undefined, b: string | null | undefined) {
+  return !a || !b || a === b
+}
+
+function getEntryConflicts(form: EntryFormState, entries: CalendarEntry[]) {
+  const start = new Date(form.start_at)
+  const end = new Date(form.end_at)
+  if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end <= start) return []
+
+  return entries.filter((entry) => {
+    if (entry.id === form.id || entry.status === "cancelled" || entry.status === "completed") return false
+    if (!servicesOverlap(form.service_id || null, entry.service_id)) return false
+    return rangesOverlap(start, end, new Date(entry.start_at), new Date(entry.end_at))
+  })
+}
+
+function getAvailabilityWarning(form: EntryFormState, windows: CalendarAvailabilityWindow[]) {
+  if (form.entry_type === "blocked" || form.status === "blocked") return null
+
+  const start = new Date(form.start_at)
+  const end = new Date(form.end_at)
+  if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || !isSameDay(start, end)) return null
+
+  const weekday = start.getDay() === 0 ? 7 : start.getDay()
+  const matchingWindows = windows.filter(
+    (window) =>
+      window.is_active &&
+      window.weekday === weekday &&
+      (!window.service_id || !form.service_id || window.service_id === form.service_id),
+  )
+
+  if (matchingWindows.length === 0) return null
+
+  const startTime = toDateTimeLocal(start).slice(11)
+  const endTime = toDateTimeLocal(end).slice(11)
+  const isInsideWindow = matchingWindows.some(
+    (window) => startTime >= window.start_time.slice(0, 5) && endTime <= window.end_time.slice(0, 5),
+  )
+
+  return isInsideWindow ? null : "Deze tijd valt buiten de ingestelde beschikbaarheid."
+}
+
 function getDefaultFormState(category: BusinessCategory | string, startDate: Date): EntryFormState {
   const start = new Date(startDate)
   const end = new Date(startDate)
@@ -154,6 +219,25 @@ function getDefaultFormState(category: BusinessCategory | string, startDate: Dat
     start_at: toDateTimeLocal(start),
     end_at: toDateTimeLocal(end),
     all_day: false,
+    internal_notes: "",
+  }
+}
+
+function getBlockedFormState(startDate: Date): EntryFormState {
+  const start = startOfDay(startDate)
+  const end = addDays(start, 1)
+
+  return {
+    title: "Geblokkeerde periode",
+    entry_type: "blocked",
+    status: "blocked",
+    service_id: "",
+    customer_name: "",
+    customer_email: "",
+    customer_phone: "",
+    start_at: toDateTimeLocal(start),
+    end_at: toDateTimeLocal(end),
+    all_day: true,
     internal_notes: "",
   }
 }
@@ -199,15 +283,23 @@ export function CalendarClient({
   businessId,
   businessCategory,
   initialEntries,
+  initialAvailabilityWindows,
   offerings,
   schemaError,
   copy,
   offeringCopy,
 }: CalendarClientProps) {
   const [entries, setEntries] = useState(initialEntries)
+  const [availabilityWindows, setAvailabilityWindows] = useState(initialAvailabilityWindows)
   const [activeView, setActiveView] = useState<CalendarView>("month")
   const [cursorDate, setCursorDate] = useState(() => new Date())
   const [form, setForm] = useState<EntryFormState | null>(null)
+  const [availabilityForm, setAvailabilityForm] = useState<AvailabilityFormState>({
+    service_id: "",
+    weekday: "1",
+    start_time: "09:00",
+    end_time: "17:00",
+  })
   const [statusMessage, setStatusMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null)
   const [isPending, startTransition] = useTransition()
 
@@ -237,11 +329,18 @@ export function CalendarClient({
   const pendingCount = entries.filter((entry) => entry.status === "pending").length
   const confirmedCount = entries.filter((entry) => entry.status === "confirmed").length
   const blockedCount = entries.filter((entry) => entry.status === "blocked").length
+  const formConflicts = form ? getEntryConflicts(form, entries) : []
+  const availabilityWarning = form ? getAvailabilityWarning(form, availabilityWindows) : null
 
   const openCreateForm = (date: Date, hour = 9) => {
     const start = new Date(date)
     start.setHours(hour, 0, 0, 0)
     setForm(getDefaultFormState(businessCategory, start))
+    setStatusMessage(null)
+  }
+
+  const openBlockedForm = (date: Date = cursorDate) => {
+    setForm(getBlockedFormState(date))
     setStatusMessage(null)
   }
 
@@ -297,6 +396,62 @@ export function CalendarClient({
     })
   }
 
+  const changeEntryStatus = (entryId: string, status: CalendarEntryStatus) => {
+    startTransition(async () => {
+      const result = await updateCalendarEntryAction(entryId, { status })
+
+      if (!result.success) {
+        setStatusMessage({ tone: "error", text: result.error })
+        return
+      }
+
+      setEntries((current) => current.map((entry) => (entry.id === result.entry.id ? result.entry : entry)))
+      setForm((current) => (current?.id === result.entry.id ? formStateFromEntry(result.entry) : current))
+      setStatusMessage({ tone: "success", text: status === "confirmed" ? "Aanvraag geaccepteerd." : "Aanvraag afgewezen." })
+    })
+  }
+
+  const createAvailabilityWindow = () => {
+    if (schemaError) return
+    if (!availabilityForm.start_time || !availabilityForm.end_time || availabilityForm.end_time <= availabilityForm.start_time) {
+      setStatusMessage({ tone: "error", text: "Eindtijd van beschikbaarheid moet na starttijd liggen." })
+      return
+    }
+
+    startTransition(async () => {
+      const result = await createAvailabilityWindowAction(businessId, {
+        service_id: availabilityForm.service_id || null,
+        weekday: Number(availabilityForm.weekday),
+        start_time: availabilityForm.start_time,
+        end_time: availabilityForm.end_time,
+        timezone: "Europe/Amsterdam",
+        is_active: true,
+      })
+
+      if (!result.success) {
+        setStatusMessage({ tone: "error", text: result.error })
+        return
+      }
+
+      setAvailabilityWindows((current) => [...current, result.window].sort((a, b) => a.weekday - b.weekday || a.start_time.localeCompare(b.start_time)))
+      setStatusMessage({ tone: "success", text: "Beschikbaarheid opgeslagen." })
+    })
+  }
+
+  const deleteAvailabilityWindow = (windowId: string) => {
+    startTransition(async () => {
+      const result = await deleteAvailabilityWindowAction(windowId)
+
+      if (!result.success) {
+        setStatusMessage({ tone: "error", text: result.error })
+        return
+      }
+
+      setAvailabilityWindows((current) => current.filter((window) => window.id !== result.id))
+      setStatusMessage({ tone: "success", text: "Beschikbaarheid verwijderd." })
+    })
+  }
+
   return (
     <div className="grid gap-4">
       {schemaError ? <StatusMessage tone="error">{schemaError}</StatusMessage> : null}
@@ -345,6 +500,10 @@ export function CalendarClient({
                 <Plus className="h-4 w-4" />
                 {copy.primaryAction}
               </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => openBlockedForm()} disabled={Boolean(schemaError)}>
+                <Ban className="h-4 w-4" />
+                Blokkade
+              </Button>
             </div>
           </div>
 
@@ -383,11 +542,25 @@ export function CalendarClient({
             copy={copy}
             offeringCopy={offeringCopy}
             offerings={offerings}
+            conflicts={formConflicts}
+            availabilityWarning={availabilityWarning}
             isSaving={isPending}
             disabled={Boolean(schemaError)}
             onChange={setForm}
             onCancel={() => setForm(null)}
             onSubmit={submitForm}
+            onStatusChange={changeEntryStatus}
+          />
+
+          <AvailabilityPanel
+            form={availabilityForm}
+            windows={availabilityWindows}
+            offerings={offerings}
+            offeringCopy={offeringCopy}
+            disabled={Boolean(schemaError) || isPending}
+            onChange={setAvailabilityForm}
+            onCreate={createAvailabilityWindow}
+            onDelete={deleteAvailabilityWindow}
           />
 
           <section className="rounded-lg border border-border bg-card shadow-sm">
@@ -693,26 +866,152 @@ function EntryCard({
   )
 }
 
+function AvailabilityPanel({
+  form,
+  windows,
+  offerings,
+  offeringCopy,
+  disabled,
+  onChange,
+  onCreate,
+  onDelete,
+}: {
+  form: AvailabilityFormState
+  windows: CalendarAvailabilityWindow[]
+  offerings: Service[]
+  offeringCopy: CalendarClientProps["offeringCopy"]
+  disabled: boolean
+  onChange: (form: AvailabilityFormState) => void
+  onCreate: () => void
+  onDelete: (windowId: string) => void
+}) {
+  return (
+    <section className="rounded-lg border border-border bg-card shadow-sm">
+      <div className="border-b border-border px-4 py-3">
+        <h2 className="font-semibold text-foreground">Beschikbaarheid</h2>
+        <p className="text-xs text-muted-foreground">Stel vaste openingstijden per dag en {offeringCopy.singular} in.</p>
+      </div>
+      <div className="grid gap-3 p-4">
+        <div className="grid gap-1.5">
+          <Label htmlFor="availability-service">{offeringCopy.singular[0].toUpperCase()}{offeringCopy.singular.slice(1)}</Label>
+          <select
+            id="availability-service"
+            value={form.service_id}
+            disabled={disabled}
+            onChange={(event) => onChange({ ...form, service_id: event.target.value })}
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          >
+            <option value="">Alle {offeringCopy.plural.toLowerCase()}</option>
+            {offerings.map((offering) => (
+              <option key={offering.id} value={offering.id}>
+                {offering.title}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-[1fr_0.75fr_0.75fr]">
+          <div className="grid gap-1.5">
+            <Label htmlFor="availability-weekday">Dag</Label>
+            <select
+              id="availability-weekday"
+              value={form.weekday}
+              disabled={disabled}
+              onChange={(event) => onChange({ ...form, weekday: event.target.value })}
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+              {WEEKDAY_FULL_LABELS.map((label, index) => (
+                <option key={label} value={String(index + 1)}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="availability-start">Van</Label>
+            <Input
+              id="availability-start"
+              type="time"
+              value={form.start_time}
+              disabled={disabled}
+              onChange={(event) => onChange({ ...form, start_time: event.target.value })}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="availability-end">Tot</Label>
+            <Input
+              id="availability-end"
+              type="time"
+              value={form.end_time}
+              disabled={disabled}
+              onChange={(event) => onChange({ ...form, end_time: event.target.value })}
+            />
+          </div>
+        </div>
+        <Button type="button" variant="outline" onClick={onCreate} disabled={disabled}>
+          <Plus className="h-4 w-4" />
+          Beschikbaarheid toevoegen
+        </Button>
+
+        <div className="space-y-2 pt-1">
+          {windows.length === 0 ? (
+            <div className="rounded-md border border-dashed border-border p-3 text-sm text-muted-foreground">
+              Nog geen vaste beschikbaarheid ingesteld.
+            </div>
+          ) : (
+            windows.map((window) => {
+              const offeringTitle = window.service_id
+                ? offerings.find((offering) => offering.id === window.service_id)?.title
+                : null
+
+              return (
+                <div key={window.id} className="flex items-center justify-between gap-2 rounded-md border border-border bg-background p-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {WEEKDAY_FULL_LABELS[window.weekday - 1]} {window.start_time.slice(0, 5)} - {window.end_time.slice(0, 5)}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {offeringTitle || `Alle ${offeringCopy.plural.toLowerCase()}`}
+                    </p>
+                  </div>
+                  <Button type="button" variant="ghost" size="icon-sm" onClick={() => onDelete(window.id)} disabled={disabled}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )
+            })
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function EntryForm({
   form,
   copy,
   offeringCopy,
   offerings,
+  conflicts,
+  availabilityWarning,
   isSaving,
   disabled,
   onChange,
   onCancel,
   onSubmit,
+  onStatusChange,
 }: {
   form: EntryFormState | null
   copy: CalendarClientProps["copy"]
   offeringCopy: CalendarClientProps["offeringCopy"]
   offerings: Service[]
+  conflicts: CalendarEntry[]
+  availabilityWarning: string | null
   isSaving: boolean
   disabled: boolean
   onChange: (form: EntryFormState) => void
   onCancel: () => void
   onSubmit: () => void
+  onStatusChange: (entryId: string, status: CalendarEntryStatus) => void
 }) {
   if (!form) {
     return (
@@ -742,6 +1041,39 @@ function EntryForm({
         </Button>
       </div>
       <div className="grid gap-4 p-4">
+        {form.id && form.status === "pending" ? (
+          <div className="flex flex-col gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-amber-900">Deze aanvraag wacht op bevestiging.</p>
+            <div className="flex gap-2">
+              <Button type="button" size="sm" onClick={() => onStatusChange(form.id!, "confirmed")} disabled={disabled || isSaving}>
+                Accepteren
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => onStatusChange(form.id!, "cancelled")} disabled={disabled || isSaving}>
+                Afwijzen
+              </Button>
+            </div>
+          </div>
+        ) : null}
+        {conflicts.length > 0 || availabilityWarning ? (
+          <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <div>
+                <p className="font-medium">Controleer deze planning voor opslaan.</p>
+                {availabilityWarning ? <p className="mt-1">{availabilityWarning}</p> : null}
+                {conflicts.length > 0 ? (
+                  <ul className="mt-1 list-inside list-disc">
+                    {conflicts.slice(0, 3).map((entry) => (
+                      <li key={entry.id}>
+                        Conflict met {entry.title || STATUS_LABELS[entry.status]} ({formatEntryRange(entry)})
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        ) : null}
         <div className="grid gap-1.5">
           <Label htmlFor="calendar-title">Titel</Label>
           <Input

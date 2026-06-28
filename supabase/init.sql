@@ -19,6 +19,7 @@ create extension if not exists "pgcrypto";
 -- ------------------------------------------------------------
 
 drop table if exists public.contact_requests cascade;
+drop table if exists public.calendar_availability_windows cascade;
 drop table if exists public.calendar_entries cascade;
 drop table if exists public.section_transitions cascade;
 drop table if exists public.website_sections cascade;
@@ -188,6 +189,20 @@ create table public.calendar_entries (
   constraint calendar_entries_time_range_check check (end_at > start_at)
 );
 
+create table public.calendar_availability_windows (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  service_id uuid references public.services(id) on delete cascade,
+  weekday integer not null check (weekday between 1 and 7),
+  start_time time not null,
+  end_time time not null,
+  timezone text not null default 'Europe/Amsterdam',
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint calendar_availability_windows_time_range_check check (end_time > start_time)
+);
+
 create table public.section_transitions (
   id uuid primary key default gen_random_uuid(),
   website_id uuid not null references public.websites(id) on delete cascade,
@@ -213,6 +228,10 @@ create trigger trg_section_transitions_updated_at
 
 create trigger set_calendar_entries_updated_at
   before update on public.calendar_entries
+  for each row execute procedure public.set_updated_at();
+
+create trigger set_calendar_availability_windows_updated_at
+  before update on public.calendar_availability_windows
   for each row execute procedure public.set_updated_at();
 
 -- ------------------------------------------------------------
@@ -248,6 +267,12 @@ create index idx_calendar_entries_contact_request on public.calendar_entries (co
   where contact_request_id is not null;
 create index idx_calendar_entries_status on public.calendar_entries (business_id, status);
 
+create index idx_calendar_availability_business_weekday
+  on public.calendar_availability_windows (business_id, weekday, start_time);
+create index idx_calendar_availability_service_weekday
+  on public.calendar_availability_windows (service_id, weekday, start_time)
+  where service_id is not null;
+
 create index idx_section_transitions_website_id on public.section_transitions (website_id);
 create index idx_section_transitions_from_section on public.section_transitions (from_section_id);
 create index idx_section_transitions_to_section on public.section_transitions (to_section_id);
@@ -263,6 +288,7 @@ alter table public.website_sections enable row level security;
 alter table public.section_transitions enable row level security;
 alter table public.contact_requests enable row level security;
 alter table public.calendar_entries enable row level security;
+alter table public.calendar_availability_windows enable row level security;
 
 -- Businesses
 create policy "Anyone can view published website businesses"
@@ -519,6 +545,69 @@ create policy "Users can delete own calendar entries"
     exists (
       select 1 from public.businesses b
       where b.id = calendar_entries.business_id
+        and b.user_id = auth.uid()
+    )
+  );
+
+create policy "Users can view own calendar availability windows"
+  on public.calendar_availability_windows for select
+  using (
+    exists (
+      select 1 from public.businesses b
+      where b.id = calendar_availability_windows.business_id
+        and b.user_id = auth.uid()
+    )
+  );
+
+create policy "Users can insert own calendar availability windows"
+  on public.calendar_availability_windows for insert
+  with check (
+    exists (
+      select 1 from public.businesses b
+      where b.id = calendar_availability_windows.business_id
+        and b.user_id = auth.uid()
+    )
+    and (
+      calendar_availability_windows.service_id is null
+      or exists (
+        select 1 from public.services s
+        where s.id = calendar_availability_windows.service_id
+          and s.business_id = calendar_availability_windows.business_id
+      )
+    )
+  );
+
+create policy "Users can update own calendar availability windows"
+  on public.calendar_availability_windows for update
+  using (
+    exists (
+      select 1 from public.businesses b
+      where b.id = calendar_availability_windows.business_id
+        and b.user_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.businesses b
+      where b.id = calendar_availability_windows.business_id
+        and b.user_id = auth.uid()
+    )
+    and (
+      calendar_availability_windows.service_id is null
+      or exists (
+        select 1 from public.services s
+        where s.id = calendar_availability_windows.service_id
+          and s.business_id = calendar_availability_windows.business_id
+      )
+    )
+  );
+
+create policy "Users can delete own calendar availability windows"
+  on public.calendar_availability_windows for delete
+  using (
+    exists (
+      select 1 from public.businesses b
+      where b.id = calendar_availability_windows.business_id
         and b.user_id = auth.uid()
     )
   );
