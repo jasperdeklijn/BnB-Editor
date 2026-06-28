@@ -16,7 +16,6 @@ import {
   Home,
   Briefcase,
   LayoutTemplate,
-  Palette,
   CheckCircle2,
   AlertCircle,
   Loader2,
@@ -47,6 +46,7 @@ interface EditorHeaderProps {
   actionLoading?: boolean
   showEditorActions?: boolean
   showBackButton?: boolean
+  offeringLabel?: string
 }
 
 export function EditorHeader({
@@ -69,6 +69,7 @@ export function EditorHeader({
   actionLoading = false,
   showEditorActions = true,
   showBackButton = false,
+  offeringLabel = "Aanbod",
 }: EditorHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -181,28 +182,6 @@ export function EditorHeader({
                 Bedrijfsgegevens
               </Link>
 
-              {/* Templates link */}
-              <Link
-                href="/editor/templates"
-                role="menuitem"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors border-b border-border"
-              >
-                <LayoutTemplate className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                Sjablonen
-              </Link>
-
-              {/* Themes link */}
-              <Link
-                href="/editor/themes"
-                role="menuitem"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors border-b border-border"
-              >
-                <Palette className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                Thema
-              </Link>
-
               {/* Services link */}
               <Link
                 href="/editor/services"
@@ -211,7 +190,7 @@ export function EditorHeader({
                 className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors border-b border-border"
               >
                 <Briefcase className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                Diensten
+                {offeringLabel}
               </Link>
 
               {/* Domains link */}

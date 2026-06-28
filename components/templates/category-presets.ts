@@ -29,6 +29,39 @@ export interface TemplatePreset {
   }>
 }
 
+const BNB_TEMPLATE: TemplatePreset = {
+  id: "bnb-hospitality",
+  category: "bnb",
+  name: "B&B / Accommodatie",
+  description: "Gastvrij sjabloon voor kamers, ontbijt en reserveringsaanvragen",
+  businessDefaults: {
+    name: "B&B De Tuinkamer",
+    tagline: "Rustig overnachten met persoonlijke aandacht",
+    description: "Een sfeervolle bed & breakfast met comfortabele kamers, lokaal ontbijt en tips voor de omgeving.",
+    phone: "+31 6 12345678",
+    email: "info@bedandbreakfast.nl",
+  },
+  services: [
+    { title: "Tweepersoonskamer", description: "Comfortabele kamer inclusief ontbijt", price: "Vanaf EUR 95 per nacht" },
+    { title: "Familiekamer", description: "Ruime kamer voor gezinnen of kleine groepen", price: "Vanaf EUR 140 per nacht" },
+    { title: "Ontbijt", description: "Vers ontbijt met lokale producten", price: "Inbegrepen" },
+    { title: "Weekendarrangement", description: "Twee nachten met ontbijt en late check-out", price: "Vanaf EUR 210" },
+    { title: "Fietsverhuur", description: "Ontdek de omgeving per fiets", price: "EUR 15 per dag" },
+  ],
+  sections: [
+    { type: "nav", position: 0 },
+    { type: "hero", position: 1, data: { title: "Welkom bij onze B&B", subtitle: "Rustig overnachten in een sfeervolle omgeving" } },
+    { type: "gallery", position: 2 },
+    { type: "about", position: 3 },
+    { type: "services", position: 4, data: { title: "Onze accommodaties" } },
+    { type: "opening_hours", position: 5 },
+    { type: "testimonials", position: 6 },
+    { type: "request_form", position: 7, data: { requestType: "booking" } },
+    { type: "map", position: 8 },
+    { type: "footer", position: 9 },
+  ],
+}
+
 const HAIRDRESSER_TEMPLATE: TemplatePreset = {
   id: "hairdresser-luxury",
   category: "hairdresser",
@@ -283,6 +316,7 @@ const GENERAL_SERVICE_TEMPLATE: TemplatePreset = {
 }
 
 export const TEMPLATE_PRESETS: Record<BusinessCategory, TemplatePreset> = {
+  bnb: BNB_TEMPLATE,
   hairdresser: HAIRDRESSER_TEMPLATE,
   gardener: GARDENER_TEMPLATE,
   coach: COACH_TEMPLATE,

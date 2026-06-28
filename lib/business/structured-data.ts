@@ -15,6 +15,7 @@ type BusinessLike = {
 }
 
 const CATEGORY_SCHEMA_TYPES: Record<string, string> = {
+  bnb: "BedAndBreakfast",
   restaurant: "Restaurant",
   hairdresser: "HairSalon",
   construction: "HomeAndConstructionBusiness",

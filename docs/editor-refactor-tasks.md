@@ -52,7 +52,7 @@ Use this file as the task list for the next `/editor` refactor. Keep the app bui
 
 6. [x] Use theme page settings as default component styling
 
-   Make the settings from `/editor/themes` drive default styling for components.
+   Make the website theme settings drive default styling for components.
 
    Done when:
    - New and existing sections inherit the selected palette, font pair, radius, and spacing defaults.

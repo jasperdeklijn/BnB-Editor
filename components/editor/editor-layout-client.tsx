@@ -1,11 +1,13 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { EditorHeader } from "./editor-header"
 import { usePathname, useRouter } from "next/navigation"
 import { EditorLayoutProvider, type EditorSaveState } from "./editor-layout-context"
-import { ImageIcon, Globe, Home, Briefcase, LayoutTemplate, Palette, Search, CreditCard, User } from "lucide-react"
+import { ImageIcon, Globe, Home, Briefcase, LayoutTemplate, Search, CreditCard, User } from "lucide-react"
 import { DEFAULT_SITE_TITLE } from "@/lib/business-naming"
+import { createClient } from "@/lib/supabase/client"
+import { getOfferingCopy, type BusinessCategory } from "@/lib/business/categories"
 
 interface EditorLayoutClientProps {
   children: React.ReactNode
@@ -20,15 +22,15 @@ export function EditorLayoutClient({
 }: EditorLayoutClientProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const [businessCategory, setBusinessCategory] = useState<BusinessCategory | string | null>(null)
+  const offeringCopy = getOfferingCopy(businessCategory)
 
   const pageTitles: Record<string, string> = {
     "/editor": "Website Maker",
     "/editor/business": "Bedrijfsgegevens",
     "/editor/images": "Afbeeldingen",
-    "/editor/services": "Diensten",
+    "/editor/services": offeringCopy.title,
     "/editor/domains": "Domeininstellingen",
-    "/editor/templates": "Sjablonen",
-    "/editor/themes": "Thema",
     "/editor/seo": "SEO & Analytics",
     "/editor/account/profile": "Profiel",
     "/editor/account/billing": "Facturering",
@@ -40,8 +42,6 @@ export function EditorLayoutClient({
     "/editor/images": <ImageIcon className="h-4 w-4" />,
     "/editor/services": <Briefcase className="h-4 w-4" />,
     "/editor/domains": <Globe className="h-4 w-4" />,
-    "/editor/templates": <LayoutTemplate className="h-4 w-4" />,
-    "/editor/themes": <Palette className="h-4 w-4" />,
     "/editor/seo": <Search className="h-4 w-4" />,
     "/editor/account/profile": <User className="h-4 w-4" />,
     "/editor/account/billing": <CreditCard className="h-4 w-4" />,
@@ -65,6 +65,41 @@ export function EditorLayoutClient({
   const [actionIcon, setActionIcon] = useState<React.ReactNode>()
   const [actionLoading, setActionLoading] = useState(false)
   const [infoText, setInfoText] = useState<string | undefined>()
+
+  useEffect(() => {
+    let cancelled = false
+    const supabase = createClient()
+
+    const loadBusinessCategory = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user || cancelled) return
+
+      const { data: business } = await supabase
+        .from("businesses")
+        .select("category")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle()
+
+      if (!cancelled) {
+        setBusinessCategory((business?.category as BusinessCategory | null) ?? null)
+      }
+    }
+
+    const handleCategoryChange = (event: Event) => {
+      const detail = (event as CustomEvent<{ category?: BusinessCategory | string | null }>).detail
+      setBusinessCategory(detail?.category ?? null)
+    }
+
+    loadBusinessCategory()
+    window.addEventListener("business-category-change", handleCategoryChange)
+
+    return () => {
+      cancelled = true
+      window.removeEventListener("business-category-change", handleCategoryChange)
+    }
+  }, [])
 
   const handleLogout = useCallback(async () => {
     try {
@@ -156,6 +191,7 @@ export function EditorLayoutClient({
           onDeviceChange={setDevice}
           avatarUrl={avatarUrl}
           displayName={displayName}
+          offeringLabel={offeringCopy.title}
         />
         <div className={`min-h-0 flex-1 ${pathname === "/editor" ? "overflow-hidden" : "overflow-auto"}`}>
           {children}

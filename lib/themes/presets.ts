@@ -205,6 +205,7 @@ export function getPresetsByTag(tag: string): ThemePreset[] {
 // Get recommended presets for a business category
 export function getPresetsForCategory(category: string): ThemePreset[] {
   const categoryTagMap: Record<string, string[]> = {
+    bnb: ['restaurant', 'hospitality', 'classic'],
     hairdresser: ['salon', 'beauty', 'hairdresser'],
     gardener: ['organic', 'natural', 'gardening'],
     coach: ['wellness', 'coaching', 'fitness'],

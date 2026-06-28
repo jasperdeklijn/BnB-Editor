@@ -8,8 +8,9 @@ Template Presets provide business category-specific starting points for new webs
 
 ### 1. Category Definitions (`lib/business/categories.ts`)
 
-Eight business categories with Dutch labels and example services:
+Nine business categories with Dutch labels and example services:
 
+- **B&B / Accommodation** (B&B / Accommodatie) - Lodging and hospitality services
 - **Hairdresser** (Kapper / Schoonheidsspecialist) - Salon and beauty services
 - **Gardener** (Hovenier / Groenvoorziening) - Garden design and landscaping
 - **Coach** (Coach / Therapeut / Trainer) - Coaching and wellness services
@@ -46,13 +47,13 @@ Each template includes:
 }
 ```
 
-### 3. Template Selector Component (`components/templates/template-selector.tsx`)
+### 3. Main Editor Template Selector (`components/editor/site-design-panel.tsx`)
 
 User interface for choosing a business category:
-- Grid layout showing all 8 categories
+- Collapsible category groups for all 9 categories
 - Selection state with visual feedback
 - Service preview for each template
-- "Doorgaan" (Continue) button to apply template
+- Confirmation dialog before applying a template to the selected website
 
 ### 4. Template Factory (`lib/business/template-factory.ts`)
 
@@ -85,9 +86,9 @@ Returns:
 }
 ```
 
-### 6. Template Selector Page (`app/editor/templates/page.tsx`)
+### 6. Template Selector In The Main Editor
 
-New route at `/editor/templates` for browsing and selecting templates.
+Templates are selected from the Site tab in the main `/editor` inspector. The old standalone `/editor/templates` page has been removed.
 
 ### 7. Preview Card Component (`components/templates/template-preview-card.tsx`)
 
@@ -102,10 +103,10 @@ Detailed template preview showing:
 
 ### For End Users
 
-1. Navigate to `/editor/templates`
-2. Browse available business categories
-3. Click a category to select it
-4. Click "Doorgaan" to apply the template
+1. Navigate to `/editor`
+2. Open the Site tab in the right inspector
+3. Expand a template category
+4. Click "Toepassen" and confirm the template
 5. Website is created with:
    - Pre-configured sections
    - Demo services
@@ -224,7 +225,7 @@ Minimal, versatile default suitable for any service.
 
 ### Manual Testing Checklist
 
-- [ ] Navigate to `/editor/templates` - see all 8 categories
+- [ ] Navigate to `/editor` - open the Site tab and see all template categories
 - [ ] Click each category - selection highlights
 - [ ] Select a template - "Doorgaan" button appears
 - [ ] Click "Doorgaan" - redirects to editor
@@ -251,10 +252,9 @@ curl -X POST http://localhost:3000/api/templates/apply \
 
 **New files:**
 - `components/templates/category-presets.ts` - Template definitions
-- `components/templates/template-selector.tsx` - Selection UI
 - `components/templates/template-preview-card.tsx` - Preview component
 - `lib/business/template-factory.ts` - Template application logic
-- `app/editor/templates/page.tsx` - Template selector page
+- `components/editor/site-design-panel.tsx` - Main editor template selector and apply flow
 - `app/api/templates/apply/route.ts` - Template application API
 
 **Modified files:**
@@ -264,7 +264,7 @@ curl -X POST http://localhost:3000/api/templates/apply \
 
 ✅ Template presets created for all 8 business categories
 ✅ Each template includes demo services and default sections
-✅ Template picker UI at `/editor/templates`
+✅ Template picker UI in the main `/editor` Site tab
 ✅ API route to apply templates to websites
 ✅ Integration with existing section registry
 ✅ Demo services properly positioned and typed
