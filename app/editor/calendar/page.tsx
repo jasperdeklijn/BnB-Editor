@@ -41,7 +41,12 @@ function getCalendarCopy(category: string | null | undefined) {
   }
 }
 
-export default async function CalendarPage() {
+export default async function CalendarPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ service?: string }>
+}) {
+  const params = await searchParams
   const supabase = await createClient()
 
   const { data, error } = await supabase.auth.getUser()
@@ -68,6 +73,10 @@ export default async function CalendarPage() {
     calendarError = "Kalendertabellen zijn nog niet beschikbaar. Voer de calendar_entries migratie uit voordat u boekingen, afspraken of beschikbaarheid beheert."
   }
 
+  const initialOfferingId = services.some((service) => service.id === params?.service)
+    ? params.service!
+    : null
+
   return (
     <EditorPageShell
       title={calendarCopy.title}
@@ -80,6 +89,7 @@ export default async function CalendarPage() {
         initialEntries={entries}
         initialAvailabilityWindows={availabilityWindows}
         offerings={services}
+        initialOfferingId={initialOfferingId}
         schemaError={calendarError}
         copy={calendarCopy}
         offeringCopy={offeringCopy}

@@ -5,6 +5,7 @@ import {
   createCalendarAvailabilityWindow,
   createCalendarEntry,
   deleteCalendarAvailabilityWindow,
+  deleteCalendarEntry,
   updateCalendarEntry,
   type CalendarAvailabilityWindow,
   type CalendarAvailabilityWindowInput,
@@ -22,6 +23,10 @@ type AvailabilityActionResult =
   | { success: false; error: string }
 
 type DeleteAvailabilityActionResult =
+  | { success: true; id: string }
+  | { success: false; error: string }
+
+type DeleteCalendarEntryActionResult =
   | { success: true; id: string }
   | { success: false; error: string }
 
@@ -50,6 +55,18 @@ export async function updateCalendarEntryAction(
     const entry = await updateCalendarEntry(entryId, updates)
     revalidatePath("/editor/calendar")
     return { success: true, entry }
+  } catch (error) {
+    return { success: false, error: getErrorMessage(error) }
+  }
+}
+
+export async function deleteCalendarEntryAction(
+  entryId: string,
+): Promise<DeleteCalendarEntryActionResult> {
+  try {
+    await deleteCalendarEntry(entryId)
+    revalidatePath("/editor/calendar")
+    return { success: true, id: entryId }
   } catch (error) {
     return { success: false, error: getErrorMessage(error) }
   }

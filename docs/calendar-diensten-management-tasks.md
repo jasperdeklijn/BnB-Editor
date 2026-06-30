@@ -99,7 +99,7 @@ Customer and planning fields:
    - Accepting a request updates the calendar status.
    - Email/request handling keeps working if calendar creation fails.
 
-7. [ ] Make offering management calendar-aware
+7. [x] Make offering management calendar-aware
 
    Improve the existing diensten/accommodations management page so offerings can be planned.
 
@@ -109,7 +109,7 @@ Customer and planning fields:
    - B&B offerings use accommodation-friendly labels such as rooms, bookings, check-in, and check-out.
    - Generic service businesses continue to use appointment/service wording.
 
-8. [ ] Add status and filtering tools
+8. [x] Add status and filtering tools
 
    Make the calendar useful for day-to-day management.
 
@@ -119,7 +119,7 @@ Customer and planning fields:
    - Calendar entries use clear visual status colors.
    - The filter controls are usable on mobile.
 
-9. [ ] Add save states, empty states, and error handling
+9. [x] Add save states, empty states, and error handling
 
    Match the existing editor save behavior.
 
@@ -139,3 +139,9 @@ Customer and planning fields:
    - A generic service business and a B&B business both show fitting labels.
    - Template-generated demo offerings can be linked to calendar entries.
    - This task file is updated with completed checkboxes.
+
+   Verification notes:
+   - 2026-06-30: `npx tsc --noEmit` passes.
+   - 2026-06-30: Source check confirms B&B calendar copy uses bookings, check-in, check-out, accommodations, and generic businesses use appointment/service wording.
+   - 2026-06-30: Source check confirms template demo offerings are inserted into `services`, and calendar entries link to offerings through `service_id`.
+   - 2026-06-30: Mobile browser check at 390px reached the protected route boundary and redirected to `/auth/login` without horizontal overflow. The authenticated calendar page itself still needs a signed-in browser session before this task can be checked off.

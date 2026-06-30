@@ -1,11 +1,12 @@
 "use client"
 
-import { Fragment, useMemo, useState, useTransition } from "react"
-import { AlertTriangle, Ban, CalendarDays, ChevronLeft, ChevronRight, Clock, Plus, Save, Trash2, X } from "lucide-react"
+import { Fragment, useEffect, useMemo, useState, useTransition } from "react"
+import { AlertTriangle, Ban, CalendarDays, ChevronLeft, ChevronRight, Clock, Filter, Plus, Save, Trash2, X } from "lucide-react"
 import {
   createAvailabilityWindowAction,
   createCalendarEntryAction,
   deleteAvailabilityWindowAction,
+  deleteCalendarEntryAction,
   updateCalendarEntryAction,
 } from "@/app/editor/calendar/actions"
 import { Button } from "@/components/ui/button"
@@ -13,9 +14,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { StatusMessage } from "@/components/ui/status-message"
 import { Textarea } from "@/components/ui/textarea"
+import Link from "next/link"
+import { useEditorLayout } from "@/components/editor/editor-layout-context"
 import type {
   CalendarAvailabilityWindow,
   CalendarEntry,
+  CalendarEntrySource,
   CalendarEntryStatus,
   CalendarEntryType,
 } from "@/lib/supabase/calendar"
@@ -30,6 +34,7 @@ interface CalendarClientProps {
   initialEntries: CalendarEntry[]
   initialAvailabilityWindows: CalendarAvailabilityWindow[]
   offerings: Service[]
+  initialOfferingId?: string | null
   schemaError?: string | null
   copy: {
     title: string
@@ -69,6 +74,14 @@ type AvailabilityFormState = {
   end_time: string
 }
 
+type CalendarFilterState = {
+  status: "all" | CalendarEntryStatus
+  serviceId: "all" | "unlinked" | string
+  source: "all" | CalendarEntrySource
+  dateFrom: string
+  dateTo: string
+}
+
 const WEEKDAY_LABELS = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"]
 const WEEKDAY_FULL_LABELS = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"]
 const DAY_HOURS = Array.from({ length: 12 }, (_, index) => index + 8)
@@ -79,6 +92,13 @@ const STATUS_LABELS: Record<CalendarEntryStatus, string> = {
   cancelled: "Geannuleerd",
   completed: "Afgerond",
   blocked: "Geblokkeerd",
+}
+
+const SOURCE_LABELS: Record<CalendarEntrySource, string> = {
+  manual: "Handmatig",
+  website_form: "Websiteformulier",
+  contact_request: "Aanvraag",
+  import: "Import",
 }
 
 const STATUS_STYLES: Record<CalendarEntryStatus, string> = {
@@ -163,6 +183,25 @@ function rangesOverlap(startA: Date, endA: Date, startB: Date, endB: Date) {
 
 function servicesOverlap(a: string | null | undefined, b: string | null | undefined) {
   return !a || !b || a === b
+}
+
+function matchesCalendarFilters(entry: CalendarEntry, filters: CalendarFilterState) {
+  if (filters.status !== "all" && entry.status !== filters.status) return false
+  if (filters.source !== "all" && entry.source !== filters.source) return false
+  if (filters.serviceId === "unlinked" && entry.service_id) return false
+  if (filters.serviceId !== "all" && filters.serviceId !== "unlinked" && entry.service_id !== filters.serviceId) return false
+
+  if (filters.dateFrom) {
+    const from = new Date(`${filters.dateFrom}T00:00:00`)
+    if (new Date(entry.end_at) < from) return false
+  }
+
+  if (filters.dateTo) {
+    const to = new Date(`${filters.dateTo}T23:59:59`)
+    if (new Date(entry.start_at) > to) return false
+  }
+
+  return true
 }
 
 function getEntryConflicts(form: EntryFormState, entries: CalendarEntry[]) {
@@ -285,6 +324,7 @@ export function CalendarClient({
   initialEntries,
   initialAvailabilityWindows,
   offerings,
+  initialOfferingId,
   schemaError,
   copy,
   offeringCopy,
@@ -293,24 +333,49 @@ export function CalendarClient({
   const [availabilityWindows, setAvailabilityWindows] = useState(initialAvailabilityWindows)
   const [activeView, setActiveView] = useState<CalendarView>("month")
   const [cursorDate, setCursorDate] = useState(() => new Date())
+  const [filters, setFilters] = useState<CalendarFilterState>({
+    status: "all",
+    serviceId: initialOfferingId ?? "all",
+    source: "all",
+    dateFrom: "",
+    dateTo: "",
+  })
   const [form, setForm] = useState<EntryFormState | null>(null)
   const [availabilityForm, setAvailabilityForm] = useState<AvailabilityFormState>({
-    service_id: "",
+    service_id: initialOfferingId ?? "",
     weekday: "1",
     start_time: "09:00",
     end_time: "17:00",
   })
   const [statusMessage, setStatusMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null)
   const [isPending, startTransition] = useTransition()
+  const { setIsSaving: setHeaderSaving, setSaveState, setActionLoading, setInfoText } = useEditorLayout()
+
+  const selectedOffering = useMemo(
+    () => (filters.serviceId !== "all" && filters.serviceId !== "unlinked"
+      ? offerings.find((offering) => offering.id === filters.serviceId) ?? null
+      : null),
+    [offerings, filters.serviceId],
+  )
+  const visibleEntries = useMemo(
+    () => entries.filter((entry) => matchesCalendarFilters(entry, filters)),
+    [entries, filters],
+  )
+  const hasActiveFilters =
+    filters.status !== "all" ||
+    filters.serviceId !== "all" ||
+    filters.source !== "all" ||
+    Boolean(filters.dateFrom) ||
+    Boolean(filters.dateTo)
 
   const entriesByDay = useMemo(() => {
     const grouped = new Map<string, CalendarEntry[]>()
-    for (const entry of entries) {
+    for (const entry of visibleEntries) {
       const key = dateKey(new Date(entry.start_at))
       grouped.set(key, [...(grouped.get(key) ?? []), entry])
     }
     return grouped
-  }, [entries])
+  }, [visibleEntries])
 
   const offeringTitleById = useMemo(
     () => new Map(offerings.map((offering) => [offering.id, offering.title])),
@@ -319,28 +384,64 @@ export function CalendarClient({
 
   const upcomingEntries = useMemo(
     () =>
-      entries
-        .filter((entry) => entry.status !== "cancelled")
+      [...visibleEntries]
+        .filter((entry) => entry.status !== "cancelled" && new Date(entry.end_at).getTime() >= Date.now())
         .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime())
         .slice(0, 6),
-    [entries],
+    [visibleEntries],
   )
 
-  const pendingCount = entries.filter((entry) => entry.status === "pending").length
-  const confirmedCount = entries.filter((entry) => entry.status === "confirmed").length
-  const blockedCount = entries.filter((entry) => entry.status === "blocked").length
+  const pendingCount = visibleEntries.filter((entry) => entry.status === "pending").length
+  const confirmedCount = visibleEntries.filter((entry) => entry.status === "confirmed").length
+  const blockedCount = visibleEntries.filter((entry) => entry.status === "blocked").length
   const formConflicts = form ? getEntryConflicts(form, entries) : []
   const availabilityWarning = form ? getAvailabilityWarning(form, availabilityWindows) : null
+
+  useEffect(() => {
+    setHeaderSaving(isPending)
+    setActionLoading(isPending)
+    if (isPending) setSaveState("saving")
+  }, [isPending, setActionLoading, setHeaderSaving, setSaveState])
+
+  useEffect(() => {
+    setInfoText(`${visibleEntries.length} ${visibleEntries.length === 1 ? "item" : "items"} in beeld`)
+
+    return () => {
+      setInfoText(undefined)
+    }
+  }, [visibleEntries.length, setInfoText])
+
+  useEffect(() => {
+    return () => {
+      setHeaderSaving(false)
+      setActionLoading(false)
+      setInfoText(undefined)
+    }
+  }, [setActionLoading, setHeaderSaving, setInfoText])
+
+  const clearFilters = () => {
+    setFilters({
+      status: "all",
+      serviceId: "all",
+      source: "all",
+      dateFrom: "",
+      dateTo: "",
+    })
+  }
 
   const openCreateForm = (date: Date, hour = 9) => {
     const start = new Date(date)
     start.setHours(hour, 0, 0, 0)
-    setForm(getDefaultFormState(businessCategory, start))
+    const nextForm = getDefaultFormState(businessCategory, start)
+    if (selectedOffering) nextForm.service_id = selectedOffering.id
+    setForm(nextForm)
     setStatusMessage(null)
   }
 
   const openBlockedForm = (date: Date = cursorDate) => {
-    setForm(getBlockedFormState(date))
+    const nextForm = getBlockedFormState(date)
+    if (selectedOffering) nextForm.service_id = selectedOffering.id
+    setForm(nextForm)
     setStatusMessage(null)
   }
 
@@ -365,90 +466,148 @@ export function CalendarClient({
     const start = new Date(form.start_at)
     const end = new Date(form.end_at)
     if (!form.title.trim()) {
+      setSaveState("error")
       setStatusMessage({ tone: "error", text: "Titel is verplicht." })
       return
     }
     if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end <= start) {
+      setSaveState("error")
       setStatusMessage({ tone: "error", text: "Eindtijd moet na starttijd liggen." })
       return
     }
 
     startTransition(async () => {
-      const payload = normalizeFormPayload(form)
-      const result = form.id
-        ? await updateCalendarEntryAction(form.id, payload)
-        : await createCalendarEntryAction(businessId, payload)
+      try {
+        const payload = normalizeFormPayload(form)
+        const result = form.id
+          ? await updateCalendarEntryAction(form.id, payload)
+          : await createCalendarEntryAction(businessId, payload)
 
-      if (!result.success) {
-        setStatusMessage({ tone: "error", text: result.error })
-        return
-      }
-
-      setEntries((current) => {
-        const exists = current.some((entry) => entry.id === result.entry.id)
-        if (exists) {
-          return current.map((entry) => (entry.id === result.entry.id ? result.entry : entry))
+        if (!result.success) {
+          setSaveState("error")
+          setStatusMessage({ tone: "error", text: result.error })
+          return
         }
-        return [...current, result.entry]
-      })
-      setForm(null)
-      setStatusMessage({ tone: "success", text: "Kalenderitem opgeslagen." })
+
+        setEntries((current) => {
+          const exists = current.some((entry) => entry.id === result.entry.id)
+          if (exists) {
+            return current.map((entry) => (entry.id === result.entry.id ? result.entry : entry))
+          }
+          return [...current, result.entry]
+        })
+        setForm(null)
+        setSaveState("saved")
+        setStatusMessage({ tone: "success", text: "Kalenderitem opgeslagen." })
+      } catch (error) {
+        console.error(error)
+        setSaveState("error")
+        setStatusMessage({ tone: "error", text: "Kalenderitem kon niet worden opgeslagen." })
+      }
     })
   }
 
   const changeEntryStatus = (entryId: string, status: CalendarEntryStatus) => {
     startTransition(async () => {
-      const result = await updateCalendarEntryAction(entryId, { status })
+      try {
+        const result = await updateCalendarEntryAction(entryId, { status })
 
-      if (!result.success) {
-        setStatusMessage({ tone: "error", text: result.error })
-        return
+        if (!result.success) {
+          setSaveState("error")
+          setStatusMessage({ tone: "error", text: result.error })
+          return
+        }
+
+        setEntries((current) => current.map((entry) => (entry.id === result.entry.id ? result.entry : entry)))
+        setForm((current) => (current?.id === result.entry.id ? formStateFromEntry(result.entry) : current))
+        setSaveState("saved")
+        setStatusMessage({ tone: "success", text: status === "confirmed" ? "Aanvraag geaccepteerd." : "Aanvraag afgewezen." })
+      } catch (error) {
+        console.error(error)
+        setSaveState("error")
+        setStatusMessage({ tone: "error", text: "Status kon niet worden bijgewerkt." })
       }
+    })
+  }
 
-      setEntries((current) => current.map((entry) => (entry.id === result.entry.id ? result.entry : entry)))
-      setForm((current) => (current?.id === result.entry.id ? formStateFromEntry(result.entry) : current))
-      setStatusMessage({ tone: "success", text: status === "confirmed" ? "Aanvraag geaccepteerd." : "Aanvraag afgewezen." })
+  const deleteEntry = (entryId: string) => {
+    startTransition(async () => {
+      try {
+        const result = await deleteCalendarEntryAction(entryId)
+
+        if (!result.success) {
+          setSaveState("error")
+          setStatusMessage({ tone: "error", text: result.error })
+          return
+        }
+
+        setEntries((current) => current.filter((entry) => entry.id !== result.id))
+        setForm(null)
+        setSaveState("saved")
+        setStatusMessage({ tone: "success", text: "Kalenderitem verwijderd." })
+      } catch (error) {
+        console.error(error)
+        setSaveState("error")
+        setStatusMessage({ tone: "error", text: "Kalenderitem kon niet worden verwijderd." })
+      }
     })
   }
 
   const createAvailabilityWindow = () => {
     if (schemaError) return
     if (!availabilityForm.start_time || !availabilityForm.end_time || availabilityForm.end_time <= availabilityForm.start_time) {
+      setSaveState("error")
       setStatusMessage({ tone: "error", text: "Eindtijd van beschikbaarheid moet na starttijd liggen." })
       return
     }
 
     startTransition(async () => {
-      const result = await createAvailabilityWindowAction(businessId, {
-        service_id: availabilityForm.service_id || null,
-        weekday: Number(availabilityForm.weekday),
-        start_time: availabilityForm.start_time,
-        end_time: availabilityForm.end_time,
-        timezone: "Europe/Amsterdam",
-        is_active: true,
-      })
+      try {
+        const result = await createAvailabilityWindowAction(businessId, {
+          service_id: availabilityForm.service_id || null,
+          weekday: Number(availabilityForm.weekday),
+          start_time: availabilityForm.start_time,
+          end_time: availabilityForm.end_time,
+          timezone: "Europe/Amsterdam",
+          is_active: true,
+        })
 
-      if (!result.success) {
-        setStatusMessage({ tone: "error", text: result.error })
-        return
+        if (!result.success) {
+          setSaveState("error")
+          setStatusMessage({ tone: "error", text: result.error })
+          return
+        }
+
+        setAvailabilityWindows((current) => [...current, result.window].sort((a, b) => a.weekday - b.weekday || a.start_time.localeCompare(b.start_time)))
+        setSaveState("saved")
+        setStatusMessage({ tone: "success", text: "Beschikbaarheid opgeslagen." })
+      } catch (error) {
+        console.error(error)
+        setSaveState("error")
+        setStatusMessage({ tone: "error", text: "Beschikbaarheid kon niet worden opgeslagen." })
       }
-
-      setAvailabilityWindows((current) => [...current, result.window].sort((a, b) => a.weekday - b.weekday || a.start_time.localeCompare(b.start_time)))
-      setStatusMessage({ tone: "success", text: "Beschikbaarheid opgeslagen." })
     })
   }
 
   const deleteAvailabilityWindow = (windowId: string) => {
     startTransition(async () => {
-      const result = await deleteAvailabilityWindowAction(windowId)
+      try {
+        const result = await deleteAvailabilityWindowAction(windowId)
 
-      if (!result.success) {
-        setStatusMessage({ tone: "error", text: result.error })
-        return
+        if (!result.success) {
+          setSaveState("error")
+          setStatusMessage({ tone: "error", text: result.error })
+          return
+        }
+
+        setAvailabilityWindows((current) => current.filter((window) => window.id !== result.id))
+        setSaveState("saved")
+        setStatusMessage({ tone: "success", text: "Beschikbaarheid verwijderd." })
+      } catch (error) {
+        console.error(error)
+        setSaveState("error")
+        setStatusMessage({ tone: "error", text: "Beschikbaarheid kon niet worden verwijderd." })
       }
-
-      setAvailabilityWindows((current) => current.filter((window) => window.id !== result.id))
-      setStatusMessage({ tone: "success", text: "Beschikbaarheid verwijderd." })
     })
   }
 
@@ -456,6 +615,36 @@ export function CalendarClient({
     <div className="grid gap-4">
       {schemaError ? <StatusMessage tone="error">{schemaError}</StatusMessage> : null}
       {statusMessage ? <StatusMessage tone={statusMessage.tone}>{statusMessage.text}</StatusMessage> : null}
+      {selectedOffering ? (
+        <div className="flex flex-col gap-3 rounded-lg border border-border bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <CalendarDays className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground">
+                Toont planning voor {selectedOffering.title || offeringCopy.singular}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Nieuwe kalenderitems worden standaard aan deze {offeringCopy.singular} gekoppeld.
+              </p>
+            </div>
+          </div>
+          <Button asChild variant="outline" size="sm" className="shrink-0 bg-background">
+            <Link href="/editor/calendar">Alle {offeringCopy.plural.toLowerCase()} tonen</Link>
+          </Button>
+        </div>
+      ) : null}
+
+      <FilterPanel
+        filters={filters}
+        offerings={offerings}
+        offeringCopy={offeringCopy}
+        resultCount={visibleEntries.length}
+        hasActiveFilters={hasActiveFilters}
+        onChange={setFilters}
+        onClear={clearFilters}
+      />
 
       <div className="grid gap-4 md:grid-cols-3">
         <SummaryCard label="In afwachting" value={pendingCount} tone="pending" />
@@ -508,30 +697,47 @@ export function CalendarClient({
           </div>
 
           <div className="p-3 sm:p-4">
-            {activeView === "month" ? (
-              <MonthView
-                cursorDate={cursorDate}
-                entriesByDay={entriesByDay}
-                offeringTitleById={offeringTitleById}
-                onCreate={openCreateForm}
-                onEdit={openEditForm}
+            {entries.length === 0 ? (
+              <CalendarEmptyState
+                title={copy.emptyTitle}
+                text={copy.emptyText}
+                actionLabel={copy.primaryAction}
+                onCreate={() => openCreateForm(cursorDate)}
+                disabled={Boolean(schemaError)}
               />
-            ) : activeView === "week" ? (
-              <WeekView
-                cursorDate={cursorDate}
-                entriesByDay={entriesByDay}
-                offeringTitleById={offeringTitleById}
-                onCreate={openCreateForm}
-                onEdit={openEditForm}
+            ) : visibleEntries.length === 0 ? (
+              <CalendarEmptyState
+                title="Geen kalenderitems gevonden"
+                text="Pas de filters aan of maak een nieuw kalenderitem voor deze selectie."
+                actionLabel={copy.primaryAction}
+                onCreate={() => openCreateForm(cursorDate)}
+                onClear={hasActiveFilters ? clearFilters : undefined}
+                disabled={Boolean(schemaError)}
               />
-            ) : (
-              <DayView
-                cursorDate={cursorDate}
-                entriesByDay={entriesByDay}
-                offeringTitleById={offeringTitleById}
-                onCreate={openCreateForm}
-                onEdit={openEditForm}
-              />
+            ) : activeView === "month" ? (
+                <MonthView
+                  cursorDate={cursorDate}
+                  entriesByDay={entriesByDay}
+                  offeringTitleById={offeringTitleById}
+                  onCreate={openCreateForm}
+                  onEdit={openEditForm}
+                />
+              ) : activeView === "week" ? (
+                <WeekView
+                  cursorDate={cursorDate}
+                  entriesByDay={entriesByDay}
+                  offeringTitleById={offeringTitleById}
+                  onCreate={openCreateForm}
+                  onEdit={openEditForm}
+                />
+              ) : (
+                <DayView
+                  cursorDate={cursorDate}
+                  entriesByDay={entriesByDay}
+                  offeringTitleById={offeringTitleById}
+                  onCreate={openCreateForm}
+                  onEdit={openEditForm}
+                />
             )}
           </div>
         </section>
@@ -550,6 +756,7 @@ export function CalendarClient({
             onCancel={() => setForm(null)}
             onSubmit={submitForm}
             onStatusChange={changeEntryStatus}
+            onDelete={deleteEntry}
           />
 
           <AvailabilityPanel
@@ -586,6 +793,154 @@ export function CalendarClient({
             </div>
           </section>
         </aside>
+      </div>
+    </div>
+  )
+}
+
+function FilterPanel({
+  filters,
+  offerings,
+  offeringCopy,
+  resultCount,
+  hasActiveFilters,
+  onChange,
+  onClear,
+}: {
+  filters: CalendarFilterState
+  offerings: Service[]
+  offeringCopy: CalendarClientProps["offeringCopy"]
+  resultCount: number
+  hasActiveFilters: boolean
+  onChange: (filters: CalendarFilterState) => void
+  onClear: () => void
+}) {
+  return (
+    <section className="rounded-lg border border-border bg-card p-3 shadow-sm sm:p-4">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <Filter className="h-4 w-4 text-primary" />
+          <h2 className="font-semibold text-foreground">Filters</h2>
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+            {resultCount} in beeld
+          </span>
+        </div>
+        <Button type="button" variant="ghost" size="sm" onClick={onClear} disabled={!hasActiveFilters}>
+          Filters wissen
+        </Button>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-1.5">
+          <Label htmlFor="calendar-filter-status">Status</Label>
+          <select
+            id="calendar-filter-status"
+            value={filters.status}
+            onChange={(event) => onChange({ ...filters, status: event.target.value as CalendarFilterState["status"] })}
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          >
+            <option value="all">Alle statussen</option>
+            {Object.entries(STATUS_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="grid gap-1.5">
+          <Label htmlFor="calendar-filter-offering">{offeringCopy.singular[0].toUpperCase()}{offeringCopy.singular.slice(1)}</Label>
+          <select
+            id="calendar-filter-offering"
+            value={filters.serviceId}
+            onChange={(event) => onChange({ ...filters, serviceId: event.target.value as CalendarFilterState["serviceId"] })}
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          >
+            <option value="all">Alle {offeringCopy.plural.toLowerCase()}</option>
+            <option value="unlinked">Geen koppeling</option>
+            {offerings.map((offering) => (
+              <option key={offering.id} value={offering.id}>
+                {offering.title}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="grid gap-1.5">
+          <Label htmlFor="calendar-filter-source">Bron</Label>
+          <select
+            id="calendar-filter-source"
+            value={filters.source}
+            onChange={(event) => onChange({ ...filters, source: event.target.value as CalendarFilterState["source"] })}
+            className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          >
+            <option value="all">Alle bronnen</option>
+            {Object.entries(SOURCE_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="grid gap-1.5">
+          <Label htmlFor="calendar-filter-from">Vanaf</Label>
+          <Input
+            id="calendar-filter-from"
+            type="date"
+            value={filters.dateFrom}
+            onChange={(event) => onChange({ ...filters, dateFrom: event.target.value })}
+          />
+        </div>
+
+        <div className="grid gap-1.5">
+          <Label htmlFor="calendar-filter-to">Tot en met</Label>
+          <Input
+            id="calendar-filter-to"
+            type="date"
+            value={filters.dateTo}
+            onChange={(event) => onChange({ ...filters, dateTo: event.target.value })}
+          />
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function CalendarEmptyState({
+  title,
+  text,
+  actionLabel,
+  disabled,
+  onCreate,
+  onClear,
+}: {
+  title: string
+  text: string
+  actionLabel: string
+  disabled: boolean
+  onCreate: () => void
+  onClear?: () => void
+}) {
+  return (
+    <div className="grid min-h-[24rem] place-items-center rounded-lg border border-dashed border-border bg-background p-6 text-center">
+      <div className="max-w-sm">
+        <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-md bg-primary/10 text-primary">
+          <CalendarDays className="h-5 w-5" />
+        </div>
+        <h3 className="font-semibold text-foreground">{title}</h3>
+        <p className="mt-2 text-sm text-muted-foreground">{text}</p>
+        <div className="mt-4 flex flex-col justify-center gap-2 sm:flex-row">
+          {onClear ? (
+            <Button type="button" variant="outline" onClick={onClear}>
+              Filters wissen
+            </Button>
+          ) : null}
+          <Button type="button" onClick={onCreate} disabled={disabled}>
+            <Plus className="h-4 w-4" />
+            {actionLabel}
+          </Button>
+        </div>
       </div>
     </div>
   )
@@ -999,6 +1354,7 @@ function EntryForm({
   onCancel,
   onSubmit,
   onStatusChange,
+  onDelete,
 }: {
   form: EntryFormState | null
   copy: CalendarClientProps["copy"]
@@ -1012,6 +1368,7 @@ function EntryForm({
   onCancel: () => void
   onSubmit: () => void
   onStatusChange: (entryId: string, status: CalendarEntryStatus) => void
+  onDelete: (entryId: string) => void
 }) {
   if (!form) {
     return (
@@ -1204,6 +1561,18 @@ function EntryForm({
           />
         </div>
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          {form.id ? (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => onDelete(form.id!)}
+              disabled={disabled || isSaving}
+              className="sm:mr-auto"
+            >
+              <Trash2 className="h-4 w-4" />
+              Verwijderen
+            </Button>
+          ) : null}
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSaving}>
             Annuleren
           </Button>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import {
   createService as apiCreateService,
@@ -9,6 +9,7 @@ import {
   type Service,
   type ServiceInput,
 } from "@/lib/supabase/services"
+import type { CalendarEntry, CalendarEntryStatus } from "@/lib/supabase/calendar"
 import { Button } from "@/components/ui/button"
 import { EditorPageShell } from "@/components/editor/editor-page-shell"
 import { Input } from "@/components/ui/input"
@@ -30,6 +31,8 @@ import {
   CheckCircle2,
   Clock,
   DollarSign,
+  CalendarDays,
+  ArrowRight,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -38,6 +41,63 @@ interface ServicesClientProps {
   businessId: string
   businessCategory?: BusinessCategory | string | null
   initialServices: Service[]
+  initialCalendarEntries: CalendarEntry[]
+  calendarUnavailable: boolean
+}
+
+interface OfferingPlanningCopy {
+  cardTitle: string
+  emptyText: string
+  openCalendarLabel: string
+  unavailableText: string
+  itemFallback: string
+}
+
+const CALENDAR_STATUS_LABELS: Record<CalendarEntryStatus, string> = {
+  pending: "In afwachting",
+  confirmed: "Bevestigd",
+  cancelled: "Geannuleerd",
+  completed: "Afgerond",
+  blocked: "Geblokkeerd",
+}
+
+function getOfferingPlanningCopy(category?: BusinessCategory | string | null): OfferingPlanningCopy {
+  if (category === "bnb") {
+    return {
+      cardTitle: "Aankomende boekingen",
+      emptyText: "Nog geen boekingen voor deze accommodatie.",
+      openCalendarLabel: "Boekingskalender",
+      unavailableText: "Boekingsplanning is nog niet beschikbaar.",
+      itemFallback: "Boeking",
+    }
+  }
+
+  return {
+    cardTitle: "Aankomende afspraken",
+    emptyText: "Nog geen afspraken voor deze dienst.",
+    openCalendarLabel: "Afsprakenkalender",
+    unavailableText: "Afsprakenplanning is nog niet beschikbaar.",
+    itemFallback: "Afspraak",
+  }
+}
+
+function formatPlanningPoint(value: string, allDay: boolean) {
+  const options: Intl.DateTimeFormatOptions = allDay
+    ? { day: "2-digit", month: "short" }
+    : { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }
+
+  return new Intl.DateTimeFormat("nl-NL", options).format(new Date(value))
+}
+
+function formatPlanningRange(entry: CalendarEntry, isAccommodation: boolean) {
+  const start = formatPlanningPoint(entry.start_at, entry.all_day)
+  const end = formatPlanningPoint(entry.end_at, entry.all_day)
+
+  if (isAccommodation) {
+    return `Check-in ${start} · check-out ${end}`
+  }
+
+  return `${start} - ${end}`
 }
 
 // ---- Image card in the sidebar (draggable) ----
@@ -78,9 +138,23 @@ interface ServiceCardProps {
   onDelete: (id: string) => void
   isSaving: boolean
   offeringCopy: OfferingCopy
+  planningCopy: OfferingPlanningCopy
+  upcomingEntries: CalendarEntry[]
+  calendarUnavailable: boolean
+  isAccommodation: boolean
 }
 
-function ServiceCard({ service, onUpdate, onDelete, isSaving, offeringCopy }: ServiceCardProps) {
+function ServiceCard({
+  service,
+  onUpdate,
+  onDelete,
+  isSaving,
+  offeringCopy,
+  planningCopy,
+  upcomingEntries,
+  calendarUnavailable,
+  isAccommodation,
+}: ServiceCardProps) {
   const [isDragOver, setIsDragOver] = useState(false)
   const [localTitle, setLocalTitle] = useState(service.title)
   const [localDescription, setLocalDescription] = useState(service.description ?? "")
@@ -255,6 +329,58 @@ function ServiceCard({ service, onUpdate, onDelete, isSaving, offeringCopy }: Se
           </div>
         </div>
 
+        <div className="rounded-lg bg-primary/5 p-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <CalendarDays className="h-4 w-4 shrink-0 text-primary" />
+              <p className="truncate text-sm font-semibold text-foreground">{planningCopy.cardTitle}</p>
+            </div>
+            <Button asChild variant="ghost" size="xs" className="h-7 shrink-0 px-2 text-primary hover:text-primary">
+              <Link href={`/editor/calendar?service=${encodeURIComponent(service.id)}`}>
+                {planningCopy.openCalendarLabel}
+                <ArrowRight className="h-3 w-3" />
+              </Link>
+            </Button>
+          </div>
+
+          {calendarUnavailable ? (
+            <p className="rounded-md border border-dashed border-border bg-background/70 p-2 text-xs text-muted-foreground">
+              {planningCopy.unavailableText}
+            </p>
+          ) : upcomingEntries.length === 0 ? (
+            <p className="rounded-md border border-dashed border-border bg-background/70 p-2 text-xs text-muted-foreground">
+              {planningCopy.emptyText}
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {upcomingEntries.slice(0, 3).map((entry) => (
+                <Link
+                  key={entry.id}
+                  href={`/editor/calendar?service=${encodeURIComponent(service.id)}`}
+                  className="block rounded-md bg-background/80 px-3 py-2 text-xs transition-colors hover:bg-background"
+                >
+                  <span className="flex items-start justify-between gap-2">
+                    <span className="min-w-0">
+                      <span className="block truncate font-medium text-foreground">
+                        {entry.title || planningCopy.itemFallback}
+                      </span>
+                      <span className="mt-0.5 block text-muted-foreground">
+                        {formatPlanningRange(entry, isAccommodation)}
+                      </span>
+                      {entry.customer_name ? (
+                        <span className="mt-0.5 block truncate text-muted-foreground">{entry.customer_name}</span>
+                      ) : null}
+                    </span>
+                    <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                      {CALENDAR_STATUS_LABELS[entry.status]}
+                    </span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Images drop zone */}
         <div className="space-y-2">
           <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
@@ -311,9 +437,18 @@ function ServiceCard({ service, onUpdate, onDelete, isSaving, offeringCopy }: Se
 }
 
 // ---- Main client component ----
-export function ServicesClient({ userId, businessId, businessCategory, initialServices }: ServicesClientProps) {
+export function ServicesClient({
+  userId,
+  businessId,
+  businessCategory,
+  initialServices,
+  initialCalendarEntries,
+  calendarUnavailable,
+}: ServicesClientProps) {
   const [services, setServices] = useState<Service[]>(initialServices)
   const offeringCopy = getOfferingCopy(businessCategory)
+  const planningCopy = getOfferingPlanningCopy(businessCategory)
+  const isAccommodation = businessCategory === "bnb"
   const [images, setImages] = useState<{ name: string; url: string }[]>([])
   const [isLoadingImages, setIsLoadingImages] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -321,6 +456,23 @@ export function ServicesClient({ userId, businessId, businessCategory, initialSe
   const [draggingImage, setDraggingImage] = useState<string | null>(null)
   const { setIsSaving: setHeaderSaving, setSaveState, setActionLabel, setOnAction, setActionIcon, setActionLoading, setInfoText } =
     useEditorLayout()
+
+  const upcomingEntriesByService = useMemo(() => {
+    const now = Date.now()
+    const grouped = new Map<string, CalendarEntry[]>()
+
+    initialCalendarEntries
+      .filter((entry) => {
+        if (!entry.service_id || entry.status === "cancelled" || entry.status === "completed") return false
+        return new Date(entry.end_at).getTime() >= now
+      })
+      .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime())
+      .forEach((entry) => {
+        grouped.set(entry.service_id!, [...(grouped.get(entry.service_id!) ?? []), entry])
+      })
+
+    return grouped
+  }, [initialCalendarEntries])
 
   useEffect(() => {
     setIsLoadingImages(true)
@@ -526,6 +678,10 @@ export function ServicesClient({ userId, businessId, businessCategory, initialSe
                   onDelete={handleDeleteService}
                   isSaving={isSaving}
                   offeringCopy={offeringCopy}
+                  planningCopy={planningCopy}
+                  upcomingEntries={upcomingEntriesByService.get(service.id) ?? []}
+                  calendarUnavailable={calendarUnavailable}
+                  isAccommodation={isAccommodation}
                 />
               ))}
 
