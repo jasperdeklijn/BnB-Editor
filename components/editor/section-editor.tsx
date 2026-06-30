@@ -806,6 +806,210 @@ export function SelectionEditor({
           </>
         )}
 
+        {selectedSection.type === "services" && (
+          <>
+            <Card className="p-4 space-y-3">
+              <Label className="flex items-center gap-2">
+                <Briefcase className="h-3.5 w-3.5" />
+                {offeringCopy.title}
+              </Label>
+              <div>
+                <Label className="text-xs mb-1.5 block">Sectietitel</Label>
+                <Input
+                  placeholder={offeringCopy.sectionTitle}
+                  value={(selectedSection.data as any).title || ""}
+                  onChange={(e) => updateField("title", e.target.value)}
+                />
+              </div>
+
+              <div className="pt-1 border-t border-border space-y-2">
+                <Label className="text-xs">{offeringCopy.title} selecteren</Label>
+                <p className="text-xs text-muted-foreground">
+                  Laat leeg om alle {offeringCopy.plural} te tonen.
+                </p>
+
+                {loadingDiensten ? (
+                  <div className="flex items-center justify-center py-5">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : availableDiensten.length === 0 ? (
+                  <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border py-5 text-center">
+                    <Briefcase className="h-7 w-7 text-muted-foreground/40" />
+                    <p className="text-xs text-muted-foreground">{offeringCopy.emptyTitle}</p>
+                    <Link
+                      href="/editor/services"
+                      className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      {offeringCopy.manageLabel}
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {availableDiensten.map((service) => {
+                      const selectedIds = ((selectedSection.data as any).serviceIds as string[]) ?? []
+                      const isExplicitlySelected = selectedIds.includes(service.id)
+
+                      return (
+                        <button
+                          key={service.id}
+                          type="button"
+                          onClick={() => toggleServiceId(service.id)}
+                          className={`w-full flex items-center gap-3 rounded-lg border p-2.5 text-left transition-all hover:scale-[1.01] ${
+                            isExplicitlySelected
+                              ? "border-primary bg-primary/5"
+                              : selectedIds.length === 0
+                                ? "border-border bg-muted/30"
+                                : "border-border bg-background opacity-50"
+                          }`}
+                        >
+                          <div className="relative h-9 w-9 flex-shrink-0 overflow-hidden rounded-md bg-primary/10">
+                            {service.images.length > 0 ? (
+                              <img src={service.images[0]} alt={service.name} className="h-full w-full object-cover" />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center">
+                                <Briefcase className="h-4 w-4 text-primary" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs font-medium">{service.name}</p>
+                            {service.price ? <p className="text-[10px] text-muted-foreground">{service.price}</p> : null}
+                          </div>
+                          <div
+                            className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded border transition-colors ${
+                              isExplicitlySelected
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border bg-background"
+                            }`}
+                          >
+                            {isExplicitlySelected ? <Check className="h-3 w-3" /> : null}
+                          </div>
+                        </button>
+                      )
+                    })}
+
+                    {((selectedSection.data as any).serviceIds as string[] | undefined)?.length ? (
+                      <button
+                        type="button"
+                        onClick={() => updateField("serviceIds", [])}
+                        className="w-full rounded-lg border border-dashed border-border py-2 text-xs text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors"
+                      >
+                        Selectie wissen
+                      </button>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            <Card className="p-4 space-y-3">
+              <Label className="flex items-center gap-2">
+                <Eye className="h-3.5 w-3.5" />
+                Meer info popup
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                De knop op elke kaart opent een popup met de actuele {offeringCopy.singular} en deze instellingen.
+              </p>
+
+              <div>
+                <Label className="text-xs mb-1.5 block">Knoptekst op kaart</Label>
+                <Input
+                  placeholder="Meer info"
+                  value={(selectedSection.data as any).moreInfoButtonLabel || ""}
+                  onChange={(e) => updateField("moreInfoButtonLabel", e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs mb-1.5 block">Label bovenaan popup</Label>
+                <Input
+                  placeholder={offeringCopy.title}
+                  value={(selectedSection.data as any).infoPopupEyebrow || ""}
+                  onChange={(e) => updateField("infoPopupEyebrow", e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs mb-1.5 block">Popup titel override</Label>
+                <Input
+                  placeholder={`Laat leeg voor naam van ${offeringCopy.singular}`}
+                  value={(selectedSection.data as any).infoPopupTitle || ""}
+                  onChange={(e) => updateField("infoPopupTitle", e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs mb-1.5 block">Intro override</Label>
+                <textarea
+                  placeholder={`Laat leeg voor beschrijving van ${offeringCopy.singular}`}
+                  value={(selectedSection.data as any).infoPopupIntro || ""}
+                  onChange={(e) => updateField("infoPopupIntro", e.target.value)}
+                  className="min-h-20 w-full resize-none rounded-lg border border-input bg-background p-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs mb-1.5 block">Hulptekst</Label>
+                <textarea
+                  placeholder="Neem contact op voor beschikbaarheid, planning en mogelijkheden."
+                  value={(selectedSection.data as any).infoPopupHelperText || ""}
+                  onChange={(e) => updateField("infoPopupHelperText", e.target.value)}
+                  className="min-h-16 w-full resize-none rounded-lg border border-input bg-background p-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs mb-1.5 block">CTA tekst</Label>
+                  <Input
+                    placeholder="Aanvragen"
+                    value={(selectedSection.data as any).infoPopupCtaLabel || ""}
+                    onChange={(e) => updateField("infoPopupCtaLabel", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs mb-1.5 block">CTA link</Label>
+                  <Input
+                    placeholder="#contact"
+                    value={(selectedSection.data as any).infoPopupCtaHref || ""}
+                    onChange={(e) => updateField("infoPopupCtaHref", e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                {[
+                  {
+                    key: "infoPopupShowImage",
+                    label: "Afbeelding",
+                    value: ((selectedSection.data as any).infoPopupShowImage as boolean | undefined) ?? true,
+                  },
+                  {
+                    key: "infoPopupShowPrice",
+                    label: "Prijs",
+                    value: ((selectedSection.data as any).infoPopupShowPrice as boolean | undefined) ?? true,
+                  },
+                ].map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    onClick={() => updateField(option.key, !option.value)}
+                    className={`flex items-center justify-center gap-2 rounded-lg border p-2 text-xs font-medium transition-colors ${
+                      option.value
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-background text-muted-foreground hover:border-primary/50"
+                    }`}
+                  >
+                    {option.value ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </Card>
+          </>
+        )}
+
         {showLegacyLayoutControls && selectedSection.type === "gallery" && (
           <>
             {/* Gallery Layout Selector */}

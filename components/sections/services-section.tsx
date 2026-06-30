@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import type { SectionStyles } from "@/lib/types"
 import Link from "next/link"
-import { Briefcase, Users, ChevronLeft, ChevronRight, DollarSign } from "lucide-react"
+import { Briefcase, Users, ChevronLeft, ChevronRight, DollarSign, X } from "lucide-react"
 import { normalizeSectionLayout } from "@/lib/section-layouts"
 
 export type ServicesLayout = "grid" | "list" | "featured" | "magazine" | "minimal" | "carousel"
@@ -36,6 +36,23 @@ interface ServiceDisplay {
   position?: number | null
   created_at?: string | null
   updated_at?: string | null
+}
+
+interface ServiceInfoPopupSettings {
+  buttonLabel: string
+  eyebrow: string
+  title: string
+  intro: string
+  ctaLabel: string
+  ctaHref: string
+  helperText: string
+  showImage: boolean
+  showPrice: boolean
+}
+
+interface ServiceLayoutActions {
+  buttonLabel: string
+  onMoreInfo: (service: ServiceDisplay) => void
 }
 
 // ---- Shared helpers ----
@@ -72,10 +89,12 @@ function ServiceImage({
 function GridLayout({
   services,
   textStyle,
+  buttonLabel,
+  onMoreInfo,
 }: {
   services: ServiceDisplay[]
   textStyle: React.CSSProperties
-}) {
+} & ServiceLayoutActions) {
   return (
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {services.map((service) => (
@@ -112,11 +131,15 @@ function GridLayout({
                 </span>
               )}
               <Button
+                type="button"
                 size="sm"
                 variant="outline"
                 className="border-amber-200 text-amber-800 hover:bg-amber-50 ml-auto"
+                onClick={() => {
+                  onMoreInfo(service)
+                }}
               >
-                Meer info
+                {buttonLabel}
               </Button>
             </div>
           </div>
@@ -131,10 +154,12 @@ function GridLayout({
 function ListLayout({
   services,
   textStyle,
+  buttonLabel,
+  onMoreInfo,
 }: {
   services: ServiceDisplay[]
   textStyle: React.CSSProperties
-}) {
+} & ServiceLayoutActions) {
   return (
     <div className="space-y-5">
       {services.map((service) => (
@@ -175,8 +200,15 @@ function ListLayout({
                   </span>
                 )}
               </div>
-              <Button size="sm" className="bg-amber-800 hover:bg-amber-700 text-white">
-                Bekijken
+              <Button
+                type="button"
+                size="sm"
+                className="bg-amber-800 hover:bg-amber-700 text-white"
+                onClick={() => {
+                  onMoreInfo(service)
+                }}
+              >
+                {buttonLabel}
               </Button>
             </div>
           </div>
@@ -191,10 +223,12 @@ function ListLayout({
 function FeaturedLayout({
   services,
   textStyle,
+  buttonLabel,
+  onMoreInfo,
 }: {
   services: ServiceDisplay[]
   textStyle: React.CSSProperties
-}) {
+} & ServiceLayoutActions) {
   const [featured, ...rest] = services
   if (!featured) return null
   return (
@@ -237,7 +271,15 @@ function FeaturedLayout({
                 </p>
               )}
             </div>
-            <Button className="bg-amber-800 hover:bg-amber-700 text-white">Bekijken</Button>
+            <Button
+              type="button"
+              className="bg-amber-800 hover:bg-amber-700 text-white"
+              onClick={() => {
+                onMoreInfo(featured)
+              }}
+            >
+              {buttonLabel}
+            </Button>
           </div>
         </div>
       </div>
@@ -269,11 +311,15 @@ function FeaturedLayout({
                     <span className="text-sm font-bold text-amber-900">{service.price}</span>
                   )}
                   <Button
+                    type="button"
                     size="sm"
                     variant="outline"
                     className="border-amber-200 text-amber-800 hover:bg-amber-50 text-xs"
+                    onClick={() => {
+                      onMoreInfo(service)
+                    }}
                   >
-                    Bekijk
+                    {buttonLabel}
                   </Button>
                 </div>
               </div>
@@ -290,10 +336,12 @@ function FeaturedLayout({
 function MagazineLayout({
   services,
   textStyle,
+  buttonLabel,
+  onMoreInfo,
 }: {
   services: ServiceDisplay[]
   textStyle: React.CSSProperties
-}) {
+} & ServiceLayoutActions) {
   return (
     <div className="space-y-8">
       {services.map((service, i) => {
@@ -338,8 +386,14 @@ function MagazineLayout({
                   </span>
                 )}
               </div>
-              <Button className="mt-6 w-fit bg-amber-800 hover:bg-amber-700 text-white">
-                Meer info
+              <Button
+                type="button"
+                className="mt-6 w-fit bg-amber-800 hover:bg-amber-700 text-white"
+                onClick={() => {
+                  onMoreInfo(service)
+                }}
+              >
+                {buttonLabel}
               </Button>
             </div>
           </div>
@@ -354,10 +408,12 @@ function MagazineLayout({
 function MinimalLayout({
   services,
   textStyle,
+  buttonLabel,
+  onMoreInfo,
 }: {
   services: ServiceDisplay[]
   textStyle: React.CSSProperties
-}) {
+} & ServiceLayoutActions) {
   return (
     <div className="divide-y divide-amber-100">
       {services.map((service) => (
@@ -393,11 +449,15 @@ function MinimalLayout({
               </span>
             )}
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               className="text-amber-700 hover:text-amber-900 hover:bg-amber-50"
+              onClick={() => {
+                onMoreInfo(service)
+              }}
             >
-              Bekijk &rarr;
+              {buttonLabel} &rarr;
             </Button>
           </div>
         </div>
@@ -411,10 +471,12 @@ function MinimalLayout({
 function CarouselLayout({
   services,
   textStyle,
+  buttonLabel,
+  onMoreInfo,
 }: {
   services: ServiceDisplay[]
   textStyle: React.CSSProperties
-}) {
+} & ServiceLayoutActions) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   const scroll = (dir: "left" | "right") => {
@@ -476,11 +538,15 @@ function CarouselLayout({
                   </span>
                 )}
                 <Button
+                  type="button"
                   size="sm"
                   variant="outline"
                   className="border-amber-200 text-amber-800 hover:bg-amber-50 ml-auto"
+                  onClick={() => {
+                    onMoreInfo(service)
+                  }}
                 >
-                  Bekijk
+                  {buttonLabel}
                 </Button>
               </div>
             </div>
@@ -500,15 +566,129 @@ function CarouselLayout({
   )
 }
 
+function ServiceInfoPopup({
+  service,
+  settings,
+  onClose,
+}: {
+  service: ServiceDisplay
+  settings: ServiceInfoPopupSettings
+  onClose: () => void
+}) {
+  const title = settings.title || service.name
+  const intro = settings.intro || service.description
+
+  return (
+    <div
+      className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/55 p-3 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="service-info-popup-title"
+      onClick={(event) => {
+        event.stopPropagation()
+        onClose()
+      }}
+    >
+      <div
+        className="max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-2xl border border-border bg-white shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-5">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+              {settings.eyebrow}
+            </p>
+            <h3 id="service-info-popup-title" className="truncate text-lg font-bold text-foreground">
+              {title}
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            aria-label="Popup sluiten"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="grid max-h-[calc(92vh-4rem)] overflow-y-auto md:grid-cols-[0.9fr_1.1fr]">
+          {settings.showImage ? (
+            <div className="min-h-64 bg-muted md:min-h-full">
+              <ServiceImage images={service.images} name={service.name} className="h-full min-h-64 w-full object-cover" />
+            </div>
+          ) : null}
+          <div className={`p-5 sm:p-6 ${settings.showImage ? "" : "md:col-span-2"}`}>
+            {service.name !== title ? (
+              <p className="mb-2 text-sm font-semibold text-primary">{service.name}</p>
+            ) : null}
+            {intro ? (
+              <p className="text-sm leading-7 text-muted-foreground">{intro}</p>
+            ) : (
+              <p className="text-sm leading-7 text-muted-foreground">
+                Bekijk de details en neem contact op voor meer informatie.
+              </p>
+            )}
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {settings.showPrice && service.price ? (
+                <div className="rounded-xl border border-border bg-muted/50 p-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-primary">Prijs</p>
+                  <p className="mt-1 font-bold text-foreground">{service.price}</p>
+                </div>
+              ) : null}
+              {service.capacity ? (
+                <div className="rounded-xl border border-border bg-muted/50 p-3">
+                  <p className="text-xs font-medium uppercase tracking-wide text-primary">Capaciteit</p>
+                  <p className="mt-1 font-bold text-foreground">{service.capacity} deelnemers</p>
+                </div>
+              ) : null}
+            </div>
+
+            {settings.helperText ? (
+              <p className="mt-5 rounded-xl bg-primary/10 p-3 text-xs leading-6 text-primary">
+                {settings.helperText}
+              </p>
+            ) : null}
+
+            {settings.ctaLabel ? (
+              <a
+                href={settings.ctaHref || "#contact"}
+                className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto"
+              >
+                {settings.ctaLabel}
+              </a>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ---- Main section component ----
 
 export function ServicesSection({ data, styles }: ServicesSectionProps) {
   const title = (data.title as string) || "Ons aanbod"
   const layout = (servicesLayoutMap[normalizeSectionLayout(data.layout)] ?? "grid") as ServicesLayout
   const serviceIds = data.serviceIds as string[] | undefined
+  const popupSettings: ServiceInfoPopupSettings = {
+    buttonLabel: (data.moreInfoButtonLabel as string) || "Meer info",
+    eyebrow: (data.infoPopupEyebrow as string) || "Aanbod",
+    title: (data.infoPopupTitle as string) || "",
+    intro: (data.infoPopupIntro as string) || "",
+    ctaLabel: (data.infoPopupCtaLabel as string) || "Aanvragen",
+    ctaHref: (data.infoPopupCtaHref as string) || "#contact",
+    helperText:
+      (data.infoPopupHelperText as string) ||
+      "Neem contact op voor beschikbaarheid, planning en mogelijkheden.",
+    showImage: (data.infoPopupShowImage as boolean | undefined) ?? true,
+    showPrice: (data.infoPopupShowPrice as boolean | undefined) ?? true,
+  }
 
   const [services, setServices] = useState<ServiceDisplay[]>([])
   const [loading, setLoading] = useState(true)
+  const [activeService, setActiveService] = useState<ServiceDisplay | null>(null)
 
   const businessId = (data.businessId) as string | null | undefined
   const serviceIdsKey = (serviceIds ?? []).join(",")
@@ -708,12 +888,61 @@ export function ServicesSection({ data, styles }: ServicesSectionProps) {
           {title}
         </h2>
 
-        {layout === "grid" && <GridLayout services={services} textStyle={textStyle} />}
-        {layout === "list" && <ListLayout services={services} textStyle={textStyle} />}
-        {layout === "featured" && <FeaturedLayout services={services} textStyle={textStyle} />}
-        {layout === "magazine" && <MagazineLayout services={services} textStyle={textStyle} />}
-        {layout === "minimal" && <MinimalLayout services={services} textStyle={textStyle} />}
-        {layout === "carousel" && <CarouselLayout services={services} textStyle={textStyle} />}
+        {layout === "grid" && (
+          <GridLayout
+            services={services}
+            textStyle={textStyle}
+            buttonLabel={popupSettings.buttonLabel}
+            onMoreInfo={setActiveService}
+          />
+        )}
+        {layout === "list" && (
+          <ListLayout
+            services={services}
+            textStyle={textStyle}
+            buttonLabel={popupSettings.buttonLabel}
+            onMoreInfo={setActiveService}
+          />
+        )}
+        {layout === "featured" && (
+          <FeaturedLayout
+            services={services}
+            textStyle={textStyle}
+            buttonLabel={popupSettings.buttonLabel}
+            onMoreInfo={setActiveService}
+          />
+        )}
+        {layout === "magazine" && (
+          <MagazineLayout
+            services={services}
+            textStyle={textStyle}
+            buttonLabel={popupSettings.buttonLabel}
+            onMoreInfo={setActiveService}
+          />
+        )}
+        {layout === "minimal" && (
+          <MinimalLayout
+            services={services}
+            textStyle={textStyle}
+            buttonLabel={popupSettings.buttonLabel}
+            onMoreInfo={setActiveService}
+          />
+        )}
+        {layout === "carousel" && (
+          <CarouselLayout
+            services={services}
+            textStyle={textStyle}
+            buttonLabel={popupSettings.buttonLabel}
+            onMoreInfo={setActiveService}
+          />
+        )}
+        {activeService ? (
+          <ServiceInfoPopup
+            service={activeService}
+            settings={popupSettings}
+            onClose={() => setActiveService(null)}
+          />
+        ) : null}
       </div>
     </section>
   )

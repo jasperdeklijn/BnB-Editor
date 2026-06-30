@@ -129,19 +129,80 @@ Customer and planning fields:
    - Failed saves show a clear error and do not lose local user input.
    - Loading states do not shift the layout.
 
-10. [ ] Verify and document
+10. [ ] Fix the missing authenticated mobile verification
 
-   Validate the implementation before marking the work complete.
+   Complete the check that could not be finished because the browser session reached `/auth/login`.
+
+   Done when:
+   - `/editor/calendar` is opened in a signed-in browser session.
+   - The calendar page is checked at mobile width, including filters, calendar controls, entry form, availability panel, and upcoming entries.
+   - There is no horizontal page overflow at mobile width.
+   - Any mobile-only layout issue found during the check is fixed before this task is marked complete.
+   - `npx tsc --noEmit` passes after any fix.
+
+   Verification notes:
+   - 2026-06-30: `npx tsc --noEmit` passed.
+   - 2026-06-30: Source check confirmed B&B calendar copy uses bookings, check-in, check-out, accommodations, and generic businesses use appointment/service wording.
+   - 2026-06-30: Source check confirmed template demo offerings are inserted into `services`, and calendar entries link to offerings through `service_id`.
+   - 2026-06-30: Mobile browser check at 390px reached the protected route boundary and redirected to `/auth/login` without horizontal overflow. The authenticated calendar page itself still needs a signed-in browser session.
+
+11. [ ] Define customizable booking space settings for the diensten section
+
+   Add a clear content model for a booking or appointment space inside the existing services/accommodations section.
+
+   Done when:
+   - The services section data can store whether the booking space is enabled.
+   - The settings support editable heading, intro text, button label, success text, and optional helper text.
+   - The settings support choosing between inline form, CTA button to the request form, or calendar-focused booking block.
+   - The settings can optionally limit booking to selected services/accommodations.
+   - B&B defaults use accommodation wording such as book a room, check-in, check-out, and bookings.
+   - Generic defaults use service wording such as appointment, date, time, and request.
+
+12. [ ] Add editor controls for the services booking space
+
+   Make the booking space configurable from the services section editor.
+
+   Done when:
+   - The services section editor has a compact toggle to enable or disable the booking space.
+   - Users can edit the booking space heading, text, CTA label, and helper text.
+   - Users can choose the booking space mode without cluttering the section editor.
+   - Controls use the existing editor patterns, icons, and deep-green styling from `docs/style-guide.md`.
+   - Empty or invalid settings fall back to category-appropriate defaults.
+   - The editor preview updates when settings change.
+
+13. [ ] Render the booking space on public diensten/accommodations sections
+
+   Show a polished booking area inside the public services section when it is enabled.
+
+   Done when:
+   - The booking space appears in `ServicesSection` without breaking existing grid, list, featured, magazine, minimal, and carousel layouts.
+   - The booking space is visually consistent with the deep-green B2B style and works on mobile.
+   - The booking space can show selected service/accommodation options when configured.
+   - B&B visitors see room/accommodation booking copy.
+   - Generic service visitors see appointment/request copy.
+   - Existing services sections without booking settings keep their current behavior.
+
+14. [ ] Connect the diensten booking space to calendar-ready requests
+
+   Let visitors start a booking or appointment from the services section and keep it linked to the selected offering.
+
+   Done when:
+   - A visitor can choose a service/accommodation from the booking space when selection is enabled.
+   - The selected offering is passed through to the request/contact flow.
+   - Requests with date information can still create pending `calendar_entries`.
+   - New calendar entries keep the correct `service_id`.
+   - If calendar creation fails, the public request still succeeds and the user sees the normal success state.
+   - The flow works for both B&B bookings and generic service appointments.
+
+15. [ ] Final verification and documentation
+
+   Validate the full calendar and booking-space workflow before closing this task list.
 
    Done when:
    - `npx tsc --noEmit` passes.
-   - Calendar page works at mobile width.
-   - A generic service business and a B&B business both show fitting labels.
-   - Template-generated demo offerings can be linked to calendar entries.
-   - This task file is updated with completed checkboxes.
-
-   Verification notes:
-   - 2026-06-30: `npx tsc --noEmit` passes.
-   - 2026-06-30: Source check confirms B&B calendar copy uses bookings, check-in, check-out, accommodations, and generic businesses use appointment/service wording.
-   - 2026-06-30: Source check confirms template demo offerings are inserted into `services`, and calendar entries link to offerings through `service_id`.
-   - 2026-06-30: Mobile browser check at 390px reached the protected route boundary and redirected to `/auth/login` without horizontal overflow. The authenticated calendar page itself still needs a signed-in browser session before this task can be checked off.
+   - `/editor/calendar` works at authenticated mobile width.
+   - `/editor/services` shows upcoming planning and calendar links for offerings.
+   - The services section booking space can be enabled, customized, previewed, and rendered publicly.
+   - A generic service business and a B&B business both show fitting labels across editor, public section, and calendar.
+   - Template-generated demo offerings can be selected in the booking space and linked to calendar entries.
+   - This task file is updated with completed checkboxes and any verification notes.
