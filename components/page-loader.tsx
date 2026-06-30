@@ -68,6 +68,7 @@ export async function loadPublicWebsitePage({
         ...(r.content ?? {}),
         businessId: websiteBusinessId,
         websiteId: website.id,
+        businessCategory: businessDetails?.category ?? null,
         // Set default recipientEmail if not already set
         recipientEmail: r.content?.recipientEmail || businessDetails?.email || userEmail,
       },

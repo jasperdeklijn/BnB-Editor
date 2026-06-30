@@ -177,6 +177,7 @@ export async function POST(request: NextRequest) {
     const email = getString(body.email)
     const phone = getString(body.phone)
     const service = getString(body.service)
+    const requestedServiceId = getString(body.serviceId)
     const preferredDate = getString(body.date || body.preferredDate)
     const budget = getString(body.budget)
     const message = getString(body.message)
@@ -197,6 +198,18 @@ export async function POST(request: NextRequest) {
       businessId,
       recipientEmail: getString(body.recipientEmail),
     })
+    let calendarServiceId: string | null = null
+
+    if (requestedServiceId && context.businessId) {
+      const { data: linkedService } = await context.supabase
+        .from("services")
+        .select("id")
+        .eq("id", requestedServiceId)
+        .eq("business_id", context.businessId)
+        .maybeSingle()
+
+      calendarServiceId = linkedService?.id ?? null
+    }
 
     const { data: contactRequest, error: insertError } = await context.supabase
       .from("contact_requests")
@@ -236,6 +249,7 @@ export async function POST(request: NextRequest) {
       const { error: calendarError } = await context.supabase.from("calendar_entries").insert({
         business_id: context.businessId,
         contact_request_id: contactRequest.id,
+        service_id: calendarServiceId,
         entry_type: getCalendarEntryType(requestType),
         status: "pending",
         source: "contact_request",
@@ -253,6 +267,7 @@ export async function POST(request: NextRequest) {
         metadata: {
           request_type: requestType,
           preferred_date: preferredDate,
+          service_id: calendarServiceId,
           source,
         },
       })

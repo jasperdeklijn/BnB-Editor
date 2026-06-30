@@ -37,6 +37,7 @@ import {
   Pin,
   Eye,
   EyeOff,
+  CalendarDays,
   AlignCenter,
   LayoutPanelLeft,
   Maximize,
@@ -117,8 +118,73 @@ const SECTION_STYLE_CONTROLS: Partial<Record<SectionType, StyleControl[]>> = {
   footer: ["backgroundColor", "textColor"],
 }
 
+const SECTION_TARGET_LABELS: Record<SectionType, string> = {
+  hero: "Home",
+  about: "Over",
+  services: "Aanbod",
+  gallery: "Galerij",
+  features: "Kenmerken",
+  contact: "Contact",
+  nav: "Navigatie",
+  footer: "Footer",
+  testimonials: "Recensies",
+  faq: "FAQ",
+  opening_hours: "Openingstijden",
+  pricing: "Tarieven",
+  map: "Locatie",
+  cta: "Actie",
+  request_form: "Aanvraag",
+}
+
+const SECTION_TARGET_TYPES: SectionType[] = [
+  "hero",
+  "about",
+  "services",
+  "gallery",
+  "features",
+  "contact",
+  "testimonials",
+  "faq",
+  "opening_hours",
+  "pricing",
+  "map",
+  "cta",
+  "request_form",
+]
+
 function getSectionStyleControls(type: SectionType): StyleControl[] {
   return SECTION_STYLE_CONTROLS[type] ?? DEFAULT_STYLE_CONTROLS
+}
+
+function getSectionTargetLabel(section: Section) {
+  const defaultLabel = SECTION_TARGET_LABELS[section.type]
+  const title = typeof section.data?.title === "string" ? section.data.title.trim() : ""
+
+  if (!title || title.toLowerCase() === defaultLabel.toLowerCase()) {
+    return defaultLabel
+  }
+
+  return `${title} (${defaultLabel})`
+}
+
+function getBookingSpaceDefaults(category?: BusinessCategory | null) {
+  return category === "bnb"
+    ? {
+        heading: "Boek je verblijf",
+        intro: "Kies een accommodatie en stuur een boekingsaanvraag met je gewenste check-in datum.",
+        buttonLabel: "Boeking aanvragen",
+        successText: "Boekingsaanvraag ontvangen. We nemen zo snel mogelijk contact met je op.",
+        helperText: "Je aanvraag wordt als voorlopige boeking in de planning gezet.",
+        requestType: "booking_request",
+      }
+    : {
+        heading: "Plan een afspraak",
+        intro: "Kies een dienst en stuur een aanvraag met je gewenste datum en tijd.",
+        buttonLabel: "Afspraak aanvragen",
+        successText: "Aanvraag ontvangen. We nemen zo snel mogelijk contact met je op.",
+        helperText: "Je aanvraag wordt als voorlopige afspraak in de planning gezet.",
+        requestType: "appointment",
+      }
 }
 
 export function SelectionEditor({
@@ -141,6 +207,7 @@ export function SelectionEditor({
   // Diensten selector state
   const [availableDiensten, setAvailableDiensten] = useState<AvailableService[]>([])
   const [loadingDiensten, setLoadingDiensten] = useState(false)
+  const bookingDefaults = getBookingSpaceDefaults(businessCategory)
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -282,6 +349,18 @@ export function SelectionEditor({
     setSaveTimeoutId(timeout)
   }
 
+  const updateFields = (values: Record<string, unknown>) => {
+    onUpdate(selectedSection.id, values)
+
+    if (saveTimeoutId) clearTimeout(saveTimeoutId)
+
+    const timeout = setTimeout(async () => {
+      await saveToDatabase({ ...selectedSection.data, ...values })
+    }, 800)
+
+    setSaveTimeoutId(timeout)
+  }
+
   const handleTransitionChange = (newType: string) => {
     const nextSectionIdx = sections.findIndex((s) => s.id === selectedSection.id) + 1
 
@@ -314,6 +393,15 @@ export function SelectionEditor({
     setSaveTimeoutId(timeout)
   }
 
+  const toggleBookingSpaceServiceId = (serviceId: string) => {
+    const current =
+      ((selectedSection.data as any).bookingSpaceServiceIds as string[]) ?? []
+    const next = current.includes(serviceId)
+      ? current.filter((id) => id !== serviceId)
+      : [...current, serviceId]
+    updateField("bookingSpaceServiceIds", next)
+  }
+
   const showLegacyLayoutControls = false
   const selectedLayout = normalizeSectionLayout((selectedSection.data as any).layout)
   const layoutOptions = getSectionLayoutOptions(selectedSection.type)
@@ -321,6 +409,18 @@ export function SelectionEditor({
   const LayoutIcon = getLayoutIcon(selectedLayout)
   const supportedStyleControls = getSectionStyleControls(selectedSection.type)
   const supportsStyleControl = (control: StyleControl) => supportedStyleControls.includes(control)
+  const popupTargetOptions = sections
+    .filter((section) => section.id !== selectedSection.id && SECTION_TARGET_TYPES.includes(section.type))
+    .map((section) => ({
+      label: getSectionTargetLabel(section),
+      value: `#section-${section.id}`,
+    }))
+  const selectedPopupTarget = ((selectedSection.data as any).infoPopupCtaHref as string | undefined) || ""
+  const hasSelectedPopupTarget =
+    !selectedPopupTarget || popupTargetOptions.some((option) => option.value === selectedPopupTarget)
+  const selectedBookingTarget = ((selectedSection.data as any).bookingSpaceTargetHref as string | undefined) || ""
+  const hasSelectedBookingTarget =
+    !selectedBookingTarget || popupTargetOptions.some((option) => option.value === selectedBookingTarget)
 
   const updateStyleValue = (key: StyleControl, value: string) => {
     const newStyles = { ...(selectedSection.styles || {}) }
@@ -969,12 +1069,22 @@ export function SelectionEditor({
                   />
                 </div>
                 <div>
-                  <Label className="text-xs mb-1.5 block">CTA link</Label>
-                  <Input
-                    placeholder="#contact"
-                    value={(selectedSection.data as any).infoPopupCtaHref || ""}
+                  <Label className="text-xs mb-1.5 block">CTA doel</Label>
+                  <select
+                    value={selectedPopupTarget}
                     onChange={(e) => updateField("infoPopupCtaHref", e.target.value)}
-                  />
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="">Kies sectie</option>
+                    {!hasSelectedPopupTarget ? (
+                      <option value={selectedPopupTarget}>{selectedPopupTarget}</option>
+                    ) : null}
+                    {popupTargetOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -1006,6 +1116,229 @@ export function SelectionEditor({
                   </button>
                 ))}
               </div>
+            </Card>
+
+            <Card className="p-4 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <Label className="flex items-center gap-2">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  Boekingsruimte
+                </Label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const enabled = !((selectedSection.data as any).bookingSpaceEnabled)
+                    updateFields({
+                      bookingSpaceEnabled: enabled,
+                      bookingSpaceRequestType:
+                        ((selectedSection.data as any).bookingSpaceRequestType as string | undefined) ||
+                        bookingDefaults.requestType,
+                    })
+                  }}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                    (selectedSection.data as any).bookingSpaceEnabled
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-background text-muted-foreground hover:border-primary/50"
+                  }`}
+                >
+                  {(selectedSection.data as any).bookingSpaceEnabled ? "Aan" : "Uit"}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Voeg een compacte aanvraag- of boekingsruimte toe onder deze {offeringCopy.title.toLowerCase()} sectie.
+              </p>
+
+              {(selectedSection.data as any).bookingSpaceEnabled ? (
+                <>
+                  <div>
+                    <Label className="text-xs mb-1.5 block">Type aanvraag</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { value: "appointment", label: "Afspraak" },
+                        { value: "booking_request", label: "Boeking" },
+                      ].map((option) => {
+                        const active =
+                          (((selectedSection.data as any).bookingSpaceRequestType as string | undefined) ||
+                            bookingDefaults.requestType) === option.value
+
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => updateField("bookingSpaceRequestType", option.value)}
+                            className={`rounded-lg border p-2 text-xs font-medium transition-colors ${
+                              active
+                                ? "border-primary bg-primary/10 text-primary"
+                                : "border-border bg-background text-muted-foreground hover:border-primary/50"
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs mb-1.5 block">Weergave</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { value: "inline", label: "Formulier" },
+                        { value: "cta", label: "Knop" },
+                        { value: "calendar", label: "Kalender" },
+                      ].map((option) => {
+                        const active = (((selectedSection.data as any).bookingSpaceMode as string | undefined) || "inline") === option.value
+
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => updateField("bookingSpaceMode", option.value)}
+                            className={`rounded-lg border p-2 text-xs font-medium transition-colors ${
+                              active
+                                ? "border-primary bg-primary/10 text-primary"
+                                : "border-border bg-background text-muted-foreground hover:border-primary/50"
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs mb-1.5 block">Titel</Label>
+                    <Input
+                      placeholder={bookingDefaults.heading}
+                      value={(selectedSection.data as any).bookingSpaceHeading || ""}
+                      onChange={(e) => updateField("bookingSpaceHeading", e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-xs mb-1.5 block">Intro</Label>
+                    <textarea
+                      placeholder={bookingDefaults.intro}
+                      value={(selectedSection.data as any).bookingSpaceIntro || ""}
+                      onChange={(e) => updateField("bookingSpaceIntro", e.target.value)}
+                      className="min-h-16 w-full resize-none rounded-lg border border-input bg-background p-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs mb-1.5 block">Knoptekst</Label>
+                      <Input
+                        placeholder={bookingDefaults.buttonLabel}
+                        value={(selectedSection.data as any).bookingSpaceButtonLabel || ""}
+                        onChange={(e) => updateField("bookingSpaceButtonLabel", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs mb-1.5 block">Succes tekst</Label>
+                      <Input
+                        placeholder={bookingDefaults.successText}
+                        value={(selectedSection.data as any).bookingSpaceSuccessText || ""}
+                        onChange={(e) => updateField("bookingSpaceSuccessText", e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs mb-1.5 block">Hulptekst</Label>
+                    <textarea
+                      placeholder={bookingDefaults.helperText}
+                      value={(selectedSection.data as any).bookingSpaceHelperText || ""}
+                      onChange={(e) => updateField("bookingSpaceHelperText", e.target.value)}
+                      className="min-h-14 w-full resize-none rounded-lg border border-input bg-background p-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    />
+                  </div>
+
+                  {((selectedSection.data as any).bookingSpaceMode as string | undefined) === "cta" ? (
+                    <div>
+                      <Label className="text-xs mb-1.5 block">Knopdoel</Label>
+                      <select
+                        value={selectedBookingTarget}
+                        onChange={(e) => updateField("bookingSpaceTargetHref", e.target.value)}
+                        className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                      >
+                        <option value="">Kies sectie</option>
+                        {!hasSelectedBookingTarget ? (
+                          <option value={selectedBookingTarget}>{selectedBookingTarget}</option>
+                        ) : null}
+                        {popupTargetOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : null}
+
+                  {availableDiensten.length > 0 ? (
+                    <div className="pt-1 border-t border-border space-y-2">
+                      <Label className="text-xs">{offeringCopy.title} voor boekingsruimte</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Laat leeg om dezelfde {offeringCopy.plural} als de sectie te gebruiken.
+                      </p>
+                      <div className="space-y-1.5">
+                        {availableDiensten.map((service) => {
+                          const selectedIds = ((selectedSection.data as any).bookingSpaceServiceIds as string[]) ?? []
+                          const isExplicitlySelected = selectedIds.includes(service.id)
+
+                          return (
+                            <button
+                              key={service.id}
+                              type="button"
+                              onClick={() => toggleBookingSpaceServiceId(service.id)}
+                              className={`w-full flex items-center gap-3 rounded-lg border p-2.5 text-left transition-all hover:scale-[1.01] ${
+                                isExplicitlySelected
+                                  ? "border-primary bg-primary/5"
+                                  : selectedIds.length === 0
+                                    ? "border-border bg-muted/30"
+                                    : "border-border bg-background opacity-50"
+                              }`}
+                            >
+                              <div className="relative h-9 w-9 flex-shrink-0 overflow-hidden rounded-md bg-primary/10">
+                                {service.images.length > 0 ? (
+                                  <img src={service.images[0]} alt={service.name} className="h-full w-full object-cover" />
+                                ) : (
+                                  <div className="flex h-full w-full items-center justify-center">
+                                    <Briefcase className="h-4 w-4 text-primary" />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-xs font-medium">{service.name}</p>
+                                {service.price ? <p className="text-[10px] text-muted-foreground">{service.price}</p> : null}
+                              </div>
+                              <div
+                                className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded border transition-colors ${
+                                  isExplicitlySelected
+                                    ? "border-primary bg-primary text-primary-foreground"
+                                    : "border-border bg-background"
+                                }`}
+                              >
+                                {isExplicitlySelected ? <Check className="h-3 w-3" /> : null}
+                              </div>
+                            </button>
+                          )
+                        })}
+                      </div>
+                      {((selectedSection.data as any).bookingSpaceServiceIds as string[] | undefined)?.length ? (
+                        <button
+                          type="button"
+                          onClick={() => updateField("bookingSpaceServiceIds", [])}
+                          className="w-full rounded-lg border border-dashed border-border py-2 text-xs text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors"
+                        >
+                          Selectie wissen
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
             </Card>
           </>
         )}

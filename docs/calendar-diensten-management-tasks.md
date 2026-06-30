@@ -145,8 +145,9 @@ Customer and planning fields:
    - 2026-06-30: Source check confirmed B&B calendar copy uses bookings, check-in, check-out, accommodations, and generic businesses use appointment/service wording.
    - 2026-06-30: Source check confirmed template demo offerings are inserted into `services`, and calendar entries link to offerings through `service_id`.
    - 2026-06-30: Mobile browser check at 390px reached the protected route boundary and redirected to `/auth/login` without horizontal overflow. The authenticated calendar page itself still needs a signed-in browser session.
+   - 2026-06-30: Local HTTP checks for `/editor/calendar` and `/editor/services` returned the protected-route `307` redirect. The in-app browser also reached `http://localhost:3000/auth/login`, so the authenticated mobile verification is still blocked on sign-in.
 
-11. [ ] Define customizable booking space settings for the diensten section
+11. [x] Define customizable booking space settings for the diensten section
 
    Add a clear content model for a booking or appointment space inside the existing services/accommodations section.
 
@@ -158,7 +159,11 @@ Customer and planning fields:
    - B&B defaults use accommodation wording such as book a room, check-in, check-out, and bookings.
    - Generic defaults use service wording such as appointment, date, time, and request.
 
-12. [ ] Add editor controls for the services booking space
+   Verification notes:
+   - 2026-06-30: Services section data now stores `bookingSpaceEnabled`, `bookingSpaceMode`, editable heading, intro, CTA label, success text, helper text, CTA target, request type, and optional service limits.
+   - 2026-06-30: Public rendering receives `businessCategory`, so B&B defaults use booking/check-in copy and generic businesses use appointment/date copy.
+
+12. [x] Add editor controls for the services booking space
 
    Make the booking space configurable from the services section editor.
 
@@ -170,7 +175,10 @@ Customer and planning fields:
    - Empty or invalid settings fall back to category-appropriate defaults.
    - The editor preview updates when settings change.
 
-13. [ ] Render the booking space on public diensten/accommodations sections
+   Verification notes:
+   - 2026-06-30: The services inspector has a compact booking-space card with enable/disable, request type, mode, copy fields, CTA section selector, and optional offering limiter using the existing deep-green editor controls.
+
+13. [x] Render the booking space on public diensten/accommodations sections
 
    Show a polished booking area inside the public services section when it is enabled.
 
@@ -182,7 +190,11 @@ Customer and planning fields:
    - Generic service visitors see appointment/request copy.
    - Existing services sections without booking settings keep their current behavior.
 
-14. [ ] Connect the diensten booking space to calendar-ready requests
+   Verification notes:
+   - 2026-06-30: `ServicesSection` renders an optional deep-green booking block below all existing services layouts. Disabled sections keep the previous rendering.
+   - 2026-06-30: Inline/calendar modes render a mobile-friendly request form; CTA mode links to a selected current section.
+
+14. [x] Connect the diensten booking space to calendar-ready requests
 
    Let visitors start a booking or appointment from the services section and keep it linked to the selected offering.
 
@@ -193,6 +205,10 @@ Customer and planning fields:
    - New calendar entries keep the correct `service_id`.
    - If calendar creation fails, the public request still succeeds and the user sees the normal success state.
    - The flow works for both B&B bookings and generic service appointments.
+
+   Verification notes:
+   - 2026-06-30: The booking block posts to `/api/requests` with `requestType`, selected service name, and `serviceId`.
+   - 2026-06-30: The request API validates the selected service against the business and writes `calendar_entries.service_id` for pending calendar entries. Calendar creation remains best-effort after the public request is stored.
 
 15. [ ] Final verification and documentation
 
@@ -206,3 +222,7 @@ Customer and planning fields:
    - A generic service business and a B&B business both show fitting labels across editor, public section, and calendar.
    - Template-generated demo offerings can be selected in the booking space and linked to calendar entries.
    - This task file is updated with completed checkboxes and any verification notes.
+
+   Verification notes:
+   - 2026-06-30: `npx tsc --noEmit` passed after the booking-space implementation.
+   - 2026-06-30: Final authenticated mobile browser verification remains blocked because both local HTTP and in-app browser checks redirect to `/auth/login`.

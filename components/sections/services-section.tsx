@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import type { SectionStyles } from "@/lib/types"
 import Link from "next/link"
-import { Briefcase, Users, ChevronLeft, ChevronRight, DollarSign, X } from "lucide-react"
+import { AlertCircle, Briefcase, CalendarDays, CheckCircle, ChevronLeft, ChevronRight, DollarSign, Send, Users, X } from "lucide-react"
 import { normalizeSectionLayout } from "@/lib/section-layouts"
 
 export type ServicesLayout = "grid" | "list" | "featured" | "magazine" | "minimal" | "carousel"
@@ -55,7 +55,99 @@ interface ServiceLayoutActions {
   onMoreInfo: (service: ServiceDisplay) => void
 }
 
+type BookingSpaceMode = "inline" | "cta" | "calendar"
+type BookingSpaceRequestType = "appointment" | "booking_request"
+
+interface BookingSpaceSettings {
+  enabled: boolean
+  mode: BookingSpaceMode
+  heading: string
+  intro: string
+  buttonLabel: string
+  successText: string
+  helperText: string
+  targetHref: string
+  requestType: BookingSpaceRequestType
+  serviceIds: string[]
+}
+
+interface BookingFormState {
+  name: string
+  email: string
+  phone: string
+  date: string
+  message: string
+  serviceId: string
+}
+
 // ---- Shared helpers ----
+
+function getBookingDefaults(isAccommodation: boolean) {
+  return isAccommodation
+    ? {
+        heading: "Boek je verblijf",
+        intro: "Kies een accommodatie en stuur een boekingsaanvraag met je gewenste check-in datum.",
+        buttonLabel: "Boeking aanvragen",
+        successText: "Boekingsaanvraag ontvangen. We nemen zo snel mogelijk contact met je op.",
+        helperText: "Je aanvraag wordt als voorlopige boeking in de planning gezet.",
+        requestType: "booking_request" as BookingSpaceRequestType,
+      }
+    : {
+        heading: "Plan een afspraak",
+        intro: "Kies een dienst en stuur een aanvraag met je gewenste datum en tijd.",
+        buttonLabel: "Afspraak aanvragen",
+        successText: "Aanvraag ontvangen. We nemen zo snel mogelijk contact met je op.",
+        helperText: "Je aanvraag wordt als voorlopige afspraak in de planning gezet.",
+        requestType: "appointment" as BookingSpaceRequestType,
+      }
+}
+
+function getBookingSpaceSettings(data: Record<string, unknown>): BookingSpaceSettings {
+  const isAccommodation = data.businessCategory === "bnb" || data.bookingSpaceRequestType === "booking_request"
+  const defaults = getBookingDefaults(isAccommodation)
+  const mode = data.bookingSpaceMode === "cta" || data.bookingSpaceMode === "calendar"
+    ? data.bookingSpaceMode
+    : "inline"
+  const serviceIds = Array.isArray(data.bookingSpaceServiceIds)
+    ? data.bookingSpaceServiceIds.filter((id): id is string => typeof id === "string")
+    : []
+
+  return {
+    enabled: Boolean(data.bookingSpaceEnabled),
+    mode,
+    heading: (data.bookingSpaceHeading as string) || defaults.heading,
+    intro: (data.bookingSpaceIntro as string) || defaults.intro,
+    buttonLabel: (data.bookingSpaceButtonLabel as string) || defaults.buttonLabel,
+    successText: (data.bookingSpaceSuccessText as string) || defaults.successText,
+    helperText: (data.bookingSpaceHelperText as string) || defaults.helperText,
+    targetHref: (data.bookingSpaceTargetHref as string) || "",
+    requestType: data.bookingSpaceRequestType === "booking_request" ? "booking_request" : defaults.requestType,
+    serviceIds,
+  }
+}
+
+function handleSectionAnchorClick(
+  event: React.MouseEvent<HTMLAnchorElement>,
+  href: string,
+  afterNavigate?: () => void,
+) {
+  if (!href.startsWith("#")) {
+    afterNavigate?.()
+    return
+  }
+
+  event.preventDefault()
+  const targetId = href.replace("#", "")
+  const element = document.getElementById(targetId)
+
+  afterNavigate?.()
+
+  if (element) {
+    window.requestAnimationFrame(() => {
+      element.scrollIntoView({ behavior: "smooth" })
+    })
+  }
+}
 
 function ServiceImage({
   images,
@@ -651,9 +743,10 @@ function ServiceInfoPopup({
               </p>
             ) : null}
 
-            {settings.ctaLabel ? (
+            {settings.ctaLabel && settings.ctaHref ? (
               <a
-                href={settings.ctaHref || "#contact"}
+                href={settings.ctaHref}
+                onClick={(event) => handleSectionAnchorClick(event, settings.ctaHref, onClose)}
                 className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto"
               >
                 {settings.ctaLabel}
@@ -666,19 +759,291 @@ function ServiceInfoPopup({
   )
 }
 
+function ServicesBookingSpace({
+  settings,
+  services,
+  businessId,
+  websiteId,
+  recipientEmail,
+  isPreview,
+}: {
+  settings: BookingSpaceSettings
+  services: ServiceDisplay[]
+  businessId?: string | null
+  websiteId?: string | null
+  recipientEmail?: string
+  isPreview?: boolean
+}) {
+  const [form, setForm] = useState<BookingFormState>({
+    name: "",
+    email: "",
+    phone: "",
+    date: "",
+    message: "",
+    serviceId: services[0]?.id ?? "",
+  })
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
+  const [errorMsg, setErrorMsg] = useState("")
+  const isAccommodation = settings.requestType === "booking_request"
+
+  useEffect(() => {
+    if (!form.serviceId && services[0]?.id) {
+      setForm((prev) => ({ ...prev, serviceId: services[0].id }))
+    }
+  }, [form.serviceId, services])
+
+  const update = (field: keyof BookingFormState, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const selectedService = services.find((service) => service.id === form.serviceId) ?? null
+
+  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setStatus("loading")
+    setErrorMsg("")
+
+    if (isPreview) {
+      setStatus("success")
+      return
+    }
+
+    try {
+      const res = await fetch("/api/requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          date: form.date,
+          message: form.message,
+          service: selectedService?.name ?? "",
+          serviceId: selectedService?.id ?? "",
+          requestType: settings.requestType,
+          businessId,
+          websiteId,
+          recipientEmail,
+          source: "services_booking_space",
+        }),
+      })
+      const json = await res.json()
+
+      if (!res.ok) {
+        setErrorMsg(json.error || "Aanvraag kon niet worden verzonden.")
+        setStatus("error")
+        return
+      }
+
+      setStatus("success")
+      setForm({
+        name: "",
+        email: "",
+        phone: "",
+        date: "",
+        message: "",
+        serviceId: services[0]?.id ?? "",
+      })
+    } catch {
+      setErrorMsg("Aanvraag kon niet worden verzonden. Probeer het opnieuw.")
+      setStatus("error")
+    }
+  }
+
+  if (!settings.enabled) return null
+
+  if (settings.mode === "cta") {
+    return (
+      <div className="mt-10 rounded-2xl border border-[#D6E0D9] bg-[#EAF1ED] p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-primary">
+              <CalendarDays className="h-3.5 w-3.5" />
+              {isAccommodation ? "Boeking" : "Afspraak"}
+            </div>
+            <h3 className="text-xl font-bold text-[#24382D]">{settings.heading}</h3>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-[#667085]">{settings.intro}</p>
+            {settings.helperText ? (
+              <p className="mt-2 text-xs font-medium text-primary">{settings.helperText}</p>
+            ) : null}
+          </div>
+          {settings.targetHref ? (
+            <a
+              href={settings.targetHref}
+              onClick={(event) => handleSectionAnchorClick(event, settings.targetHref)}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-[#24382D]"
+            >
+              <CalendarDays className="h-4 w-4" />
+              {settings.buttonLabel}
+            </a>
+          ) : null}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-10 overflow-hidden rounded-2xl border border-[#D6E0D9] bg-white shadow-sm">
+      <div className="grid gap-0 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="bg-[#EAF1ED] p-5 sm:p-6">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-primary">
+            <CalendarDays className="h-3.5 w-3.5" />
+            {isAccommodation ? "Boekingsaanvraag" : "Afspraakaanvraag"}
+          </div>
+          <h3 className="text-2xl font-bold text-[#24382D]">{settings.heading}</h3>
+          <p className="mt-3 text-sm leading-7 text-[#667085]">{settings.intro}</p>
+          {settings.helperText ? (
+            <p className="mt-4 rounded-xl border border-[#D6E0D9] bg-white p-3 text-xs leading-6 text-primary">
+              {settings.helperText}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="p-5 sm:p-6">
+          {status === "success" ? (
+            <div className="flex min-h-64 flex-col items-center justify-center gap-3 text-center">
+              <CheckCircle className="h-10 w-10 text-primary" />
+              <p className="font-semibold text-[#24382D]">{settings.successText}</p>
+            </div>
+          ) : (
+            <form onSubmit={submit} className="space-y-4">
+              {services.length > 0 ? (
+                <div className="space-y-1.5">
+                  <label htmlFor="services-booking-service" className="text-sm font-medium text-[#24382D]">
+                    {isAccommodation ? "Accommodatie" : "Dienst"}
+                  </label>
+                  <select
+                    id="services-booking-service"
+                    value={form.serviceId}
+                    onChange={(event) => update("serviceId", event.target.value)}
+                    className="h-11 w-full rounded-lg border border-[#D6E0D9] bg-white px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    required
+                  >
+                    {services.map((service) => (
+                      <option key={service.id} value={service.id}>
+                        {service.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label htmlFor="services-booking-name" className="text-sm font-medium text-[#24382D]">
+                    Naam *
+                  </label>
+                  <input
+                    id="services-booking-name"
+                    value={form.name}
+                    onChange={(event) => update("name", event.target.value)}
+                    className="h-11 w-full rounded-lg border border-[#D6E0D9] bg-white px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="services-booking-email" className="text-sm font-medium text-[#24382D]">
+                    E-mail *
+                  </label>
+                  <input
+                    id="services-booking-email"
+                    type="email"
+                    value={form.email}
+                    onChange={(event) => update("email", event.target.value)}
+                    className="h-11 w-full rounded-lg border border-[#D6E0D9] bg-white px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label htmlFor="services-booking-phone" className="text-sm font-medium text-[#24382D]">
+                    Telefoon
+                  </label>
+                  <input
+                    id="services-booking-phone"
+                    type="tel"
+                    value={form.phone}
+                    onChange={(event) => update("phone", event.target.value)}
+                    className="h-11 w-full rounded-lg border border-[#D6E0D9] bg-white px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="services-booking-date" className="text-sm font-medium text-[#24382D]">
+                    {isAccommodation ? "Check-in datum" : "Gewenste datum"} *
+                  </label>
+                  <input
+                    id="services-booking-date"
+                    type="date"
+                    value={form.date}
+                    onChange={(event) => update("date", event.target.value)}
+                    className="h-11 w-full rounded-lg border border-[#D6E0D9] bg-white px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="services-booking-message" className="text-sm font-medium text-[#24382D]">
+                  Bericht
+                </label>
+                <textarea
+                  id="services-booking-message"
+                  rows={3}
+                  value={form.message}
+                  onChange={(event) => update("message", event.target.value)}
+                  placeholder={isAccommodation ? "Aantal gasten, nachten of vragen..." : "Voorkeurstijd of korte toelichting..."}
+                  className="w-full resize-none rounded-lg border border-[#D6E0D9] bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+
+              {status === "error" ? (
+                <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  {errorMsg}
+                </div>
+              ) : null}
+
+              <Button
+                type="submit"
+                disabled={status === "loading"}
+                className="w-full rounded-full bg-primary text-primary-foreground hover:bg-[#24382D]"
+              >
+                {status === "loading" ? (
+                  <span className="flex items-center gap-2">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Verzenden...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Send className="h-4 w-4" />
+                    {settings.buttonLabel}
+                  </span>
+                )}
+              </Button>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ---- Main section component ----
 
-export function ServicesSection({ data, styles }: ServicesSectionProps) {
+export function ServicesSection({ data, styles, isPreview }: ServicesSectionProps) {
   const title = (data.title as string) || "Ons aanbod"
   const layout = (servicesLayoutMap[normalizeSectionLayout(data.layout)] ?? "grid") as ServicesLayout
   const serviceIds = data.serviceIds as string[] | undefined
+  const bookingSettings = getBookingSpaceSettings(data)
   const popupSettings: ServiceInfoPopupSettings = {
     buttonLabel: (data.moreInfoButtonLabel as string) || "Meer info",
     eyebrow: (data.infoPopupEyebrow as string) || "Aanbod",
     title: (data.infoPopupTitle as string) || "",
     intro: (data.infoPopupIntro as string) || "",
     ctaLabel: (data.infoPopupCtaLabel as string) || "Aanvragen",
-    ctaHref: (data.infoPopupCtaHref as string) || "#contact",
+    ctaHref: (data.infoPopupCtaHref as string) || "",
     helperText:
       (data.infoPopupHelperText as string) ||
       "Neem contact op voor beschikbaarheid, planning en mogelijkheden.",
@@ -691,6 +1056,8 @@ export function ServicesSection({ data, styles }: ServicesSectionProps) {
   const [activeService, setActiveService] = useState<ServiceDisplay | null>(null)
 
   const businessId = (data.businessId) as string | null | undefined
+  const websiteId = (data.websiteId) as string | null | undefined
+  const recipientEmail = data.recipientEmail as string | undefined
   const serviceIdsKey = (serviceIds ?? []).join(",")
 
   useEffect(() => {
@@ -936,6 +1303,16 @@ export function ServicesSection({ data, styles }: ServicesSectionProps) {
             onMoreInfo={setActiveService}
           />
         )}
+        <ServicesBookingSpace
+          settings={bookingSettings}
+          services={bookingSettings.serviceIds.length > 0
+            ? services.filter((service) => bookingSettings.serviceIds.includes(service.id))
+            : services}
+          businessId={businessId}
+          websiteId={websiteId}
+          recipientEmail={recipientEmail}
+          isPreview={isPreview}
+        />
         {activeService ? (
           <ServiceInfoPopup
             service={activeService}
