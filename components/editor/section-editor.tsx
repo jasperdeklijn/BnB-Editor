@@ -361,6 +361,41 @@ export function SelectionEditor({
     setSaveTimeoutId(timeout)
   }
 
+  const updateListItemField = (field: string, index: number, key: string, value: unknown, fallback: any[] = []) => {
+    const current = Array.isArray((selectedSection.data as any)[field])
+      ? ([...((selectedSection.data as any)[field] as any[])])
+      : [...fallback]
+    current[index] = { ...(current[index] ?? {}), [key]: value }
+    updateField(field, current)
+  }
+
+  const updateNestedListItemField = (
+    field: string,
+    index: number,
+    nestedField: string,
+    nestedIndex: number,
+    value: unknown,
+    fallback: any[] = [],
+  ) => {
+    const current = Array.isArray((selectedSection.data as any)[field])
+      ? ([...((selectedSection.data as any)[field] as any[])])
+      : [...fallback]
+    const item = { ...(current[index] ?? {}) }
+    const nested = Array.isArray(item[nestedField]) ? [...item[nestedField]] : []
+    nested[nestedIndex] = value
+    item[nestedField] = nested
+    current[index] = item
+    updateField(field, current)
+  }
+
+  const updateStringListItem = (field: string, index: number, value: string, fallback: string[] = []) => {
+    const current = Array.isArray((selectedSection.data as any)[field])
+      ? ([...((selectedSection.data as any)[field] as string[])])
+      : [...fallback]
+    current[index] = value
+    updateField(field, current)
+  }
+
   const handleTransitionChange = (newType: string) => {
     const nextSectionIdx = sections.findIndex((s) => s.id === selectedSection.id) + 1
 
@@ -1472,7 +1507,7 @@ export function SelectionEditor({
               value={(((selectedSection.data as any).features as string[] | undefined) || []).join(", ")}
               onChange={(e) =>
                 updateField(
-                  "items",
+                  "features",
                   e.target.value.split(",").map((s) => s.trim())
                 )
               }
@@ -1820,6 +1855,60 @@ export function SelectionEditor({
           </Card>
         )}
 
+        {selectedSection.type === "footer" && (
+          <Card className="p-4 space-y-3">
+            <Label className="flex items-center gap-2">
+              <Type className="h-3.5 w-3.5" />
+              Footer tekst
+            </Label>
+            <div>
+              <Label className="text-xs mb-1.5 block">Bedrijfsnaam</Label>
+              <Input
+                value={(selectedSection.data as any).companyName || (selectedSection.data as any).brandName || ""}
+                onChange={(e) => updateField("companyName", e.target.value)}
+                placeholder="Mijn bedrijf"
+              />
+            </div>
+            <div>
+              <Label className="text-xs mb-1.5 block">Beschrijving</Label>
+              <textarea
+                value={(selectedSection.data as any).companyDescription || ""}
+                onChange={(e) => updateField("companyDescription", e.target.value)}
+                placeholder="Korte footer beschrijving"
+                className="min-h-16 w-full resize-none rounded-lg border border-input bg-background p-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            {(((selectedSection.data as any).columns as any[]) || [
+              { title: "Product", links: [{ label: "Editor", href: "/editor" }, { label: "Features", href: "/" }, { label: "Pricing", href: "/" }] },
+              { title: "Company", links: [{ label: "About", href: "/" }, { label: "Blog", href: "/" }, { label: "Contact", href: "/" }] },
+            ]).map((column, columnIndex, fallbackColumns) => (
+              <div key={columnIndex} className="space-y-2 rounded-lg border border-border p-3">
+                <Input
+                  value={column.title || ""}
+                  onChange={(e) => updateListItemField("columns", columnIndex, "title", e.target.value, fallbackColumns)}
+                  placeholder="Kolomtitel"
+                />
+                {((column.links as any[]) || []).map((link, linkIndex) => (
+                  <Input
+                    key={linkIndex}
+                    value={link.label || ""}
+                    onChange={(e) => {
+                      const columns = Array.isArray((selectedSection.data as any).columns)
+                        ? ([...((selectedSection.data as any).columns as any[])])
+                        : [...fallbackColumns]
+                      const links = [...(columns[columnIndex]?.links || [])]
+                      links[linkIndex] = { ...(links[linkIndex] || {}), label: e.target.value }
+                      columns[columnIndex] = { ...(columns[columnIndex] || {}), links }
+                      updateField("columns", columns)
+                    }}
+                    placeholder="Linklabel"
+                  />
+                ))}
+              </div>
+            ))}
+          </Card>
+        )}
+
         {selectedSection.type === "testimonials" && (
           <Card className="p-4 space-y-3">
             <Label className="flex items-center gap-2">
@@ -1845,6 +1934,22 @@ export function SelectionEditor({
             <p className="text-xs text-muted-foreground">
               Recensies worden automatisch weergegeven vanuit de standaardinhoud. Koppeling aan een live database volgt in een volgende stap.
             </p>
+            {(((selectedSection.data as any).items as any[]) || [
+              { name: "Anna de Vries", role: "Vaste klant", quote: "Uitstekende service! Ik ben heel tevreden met het resultaat en de persoonlijke aanpak.", rating: 5 },
+              { name: "Mark Janssen", role: "Ondernemer", quote: "Professioneel, betrouwbaar en snel. Ik zou het iedereen aanraden.", rating: 5 },
+              { name: "Sophie Bakker", role: "Particuliere klant", quote: "Fijn contact en top vakwerk. We zijn meer dan tevreden met het eindresultaat.", rating: 5 },
+            ]).map((item, index, fallbackItems) => (
+              <div key={index} className="space-y-2 rounded-lg border border-border p-3">
+                <Input value={item.name || ""} onChange={(e) => updateListItemField("items", index, "name", e.target.value, fallbackItems)} placeholder="Naam" />
+                <Input value={item.role || ""} onChange={(e) => updateListItemField("items", index, "role", e.target.value, fallbackItems)} placeholder="Rol" />
+                <textarea
+                  value={item.quote || ""}
+                  onChange={(e) => updateListItemField("items", index, "quote", e.target.value, fallbackItems)}
+                  placeholder="Reviewtekst"
+                  className="min-h-16 w-full resize-none rounded-lg border border-input bg-background p-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+            ))}
           </Card>
         )}
 
@@ -1873,6 +1978,22 @@ export function SelectionEditor({
             <p className="text-xs text-muted-foreground">
               FAQ-items worden automatisch weergegeven vanuit de standaardinhoud. Beheer items via je bedrijfsprofiel.
             </p>
+            {(((selectedSection.data as any).items as any[]) || [
+              { question: "Hoe snel kan ik terecht?", answer: "In de meeste gevallen kunnen we binnen 1-3 werkdagen bij u terecht. Neem contact op voor een exacte planning." },
+              { question: "Wat zijn de kosten?", answer: "De kosten zijn afhankelijk van het type dienst en de omvang van het werk. We brengen graag een vrijblijvende offerte uit." },
+              { question: "Werken jullie met garantie?", answer: "Ja, op al ons werk geven wij garantie. De exacte voorwaarden bespreken we bij de opdrachtbevestiging." },
+              { question: "Hoe kan ik een afspraak maken?", answer: "U kunt ons bellen, mailen of het contactformulier op deze pagina gebruiken. We reageren zo snel mogelijk." },
+            ]).map((item, index, fallbackItems) => (
+              <div key={index} className="space-y-2 rounded-lg border border-border p-3">
+                <Input value={item.question || ""} onChange={(e) => updateListItemField("items", index, "question", e.target.value, fallbackItems)} placeholder="Vraag" />
+                <textarea
+                  value={item.answer || ""}
+                  onChange={(e) => updateListItemField("items", index, "answer", e.target.value, fallbackItems)}
+                  placeholder="Antwoord"
+                  className="min-h-16 w-full resize-none rounded-lg border border-input bg-background p-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+            ))}
           </Card>
         )}
 
@@ -1964,6 +2085,39 @@ export function SelectionEditor({
             <p className="text-xs text-muted-foreground">
               Prijskaarten worden automatisch weergegeven vanuit de standaardinhoud. Individuele pakketten zijn aanpasbaar via de API.
             </p>
+            {(((selectedSection.data as any).plans as any[]) || [
+              { name: "Basis", price: "EUR 49", period: "per keer", description: "Ideaal voor eenmalige klussen of kennismaking.", features: ["Persoonlijk adviesgesprek", "Standaard uitvoering", "E-mail support"], ctaText: "Kies basis" },
+              { name: "Standaard", price: "EUR 99", period: "per maand", description: "De meest gekozen optie voor reguliere klanten.", features: ["Alle voordelen van Basis", "Prioriteit inplanning", "Telefonische support", "Maandelijkse rapportage"], ctaText: "Kies standaard", highlighted: true },
+              { name: "Premium", price: "Op aanvraag", description: "Maatwerk voor grotere opdrachten of bedrijven.", features: ["Alle voordelen van Standaard", "Dedicated accountmanager", "SLA garantie", "Onbeperkt support"], ctaText: "Neem contact op" },
+            ]).map((plan, index, fallbackPlans) => (
+              <div key={index} className="space-y-2 rounded-lg border border-border p-3">
+                <Input value={plan.name || ""} onChange={(e) => updateListItemField("plans", index, "name", e.target.value, fallbackPlans)} placeholder="Pakketnaam" />
+                <div className="grid grid-cols-2 gap-2">
+                  <Input value={plan.price || ""} onChange={(e) => updateListItemField("plans", index, "price", e.target.value, fallbackPlans)} placeholder="Prijs" />
+                  <Input value={plan.period || ""} onChange={(e) => updateListItemField("plans", index, "period", e.target.value, fallbackPlans)} placeholder="Periode" />
+                </div>
+                <textarea
+                  value={plan.description || ""}
+                  onChange={(e) => updateListItemField("plans", index, "description", e.target.value, fallbackPlans)}
+                  placeholder="Beschrijving"
+                  className="min-h-14 w-full resize-none rounded-lg border border-input bg-background p-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                />
+                <Input
+                  value={(plan.features || []).join(", ")}
+                  onChange={(e) =>
+                    updateListItemField(
+                      "plans",
+                      index,
+                      "features",
+                      e.target.value.split(",").map((value) => value.trim()).filter(Boolean),
+                      fallbackPlans,
+                    )
+                  }
+                  placeholder="Voordelen, kommagescheiden"
+                />
+                <Input value={plan.ctaText || ""} onChange={(e) => updateListItemField("plans", index, "ctaText", e.target.value, fallbackPlans)} placeholder="Knoptekst" />
+              </div>
+            ))}
           </Card>
         )}
 
