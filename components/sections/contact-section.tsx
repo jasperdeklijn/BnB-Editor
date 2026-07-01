@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { normalizeSectionLayout } from "@/lib/section-layouts"
 
@@ -31,6 +32,14 @@ interface ContactSectionProps {
   data: Record<string, unknown>
   isPreview: boolean
   styles?: SectionStyles
+  onUpdate?: (newData: Record<string, unknown>) => void
+}
+
+type ContactLayoutProps = {
+  data: Record<string, unknown>
+  isPreview: boolean
+  styles?: SectionStyles
+  onUpdate?: (newData: Record<string, unknown>) => void
 }
 
 interface FormState {
@@ -217,7 +226,7 @@ function InfoBlock({ address, phone, email, textStyle }: { address?: string; pho
 
 // ─── Layout: Classic (2-col info + form) ────────────────────────────────────
 
-function ClassicLayout({ data, styles }: { data: Record<string, unknown>; styles?: SectionStyles }) {
+function ClassicLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps) {
   const sectionStyle: React.CSSProperties = {
     backgroundColor: styles?.backgroundColor,
     backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
@@ -229,14 +238,10 @@ function ClassicLayout({ data, styles }: { data: Record<string, unknown>; styles
   return (
     <section className={`bg-background px-4 py-12 sm:px-6 md:py-20 ${styles?.fontFamily || ""}`} style={sectionStyle}>
       <div className="mx-auto max-w-6xl">
-        <h2 className="mb-10 text-balance text-center text-3xl font-bold text-amber-950 md:text-4xl" style={textStyle}>
-          {data.title as string}
-        </h2>
+        <EditableText as="h2" data={data} path={["title"]} value={data.title as string} isPreview={isPreview} onUpdate={onUpdate} className="mb-10 text-balance text-center text-3xl font-bold text-amber-950 md:text-4xl" style={textStyle} />
         <div className="grid gap-10 md:grid-cols-2 md:gap-16">
           <div>
-            <p className="mb-6 text-muted-foreground" style={textStyle}>
-              {(data.subtitle as string) || "Neem gerust contact met ons op. We helpen je graag verder."}
-            </p>
+            <EditableText as="p" data={data} path={["subtitle"]} value={(data.subtitle as string) || "Neem gerust contact met ons op. We helpen je graag verder."} isPreview={isPreview} onUpdate={onUpdate} className="mb-6 text-muted-foreground" style={textStyle} multiline />
             <InfoBlock address={data.address as string} phone={data.phone as string} email={data.email as string} textStyle={textStyle} />
           </div>
           <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} />
@@ -248,7 +253,7 @@ function ClassicLayout({ data, styles }: { data: Record<string, unknown>; styles
 
 // ─── Layout: Split (dark left panel + white form) ────────────────────────────
 
-function SplitLayout({ data, styles }: { data: Record<string, unknown>; styles?: SectionStyles }) {
+function SplitLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps) {
   return (
     <section className={`overflow-hidden ${styles?.fontFamily || ""}`}>
       <div className="flex flex-col md:flex-row min-h-[520px]">
@@ -257,29 +262,25 @@ function SplitLayout({ data, styles }: { data: Record<string, unknown>; styles?:
           className="flex flex-col justify-center px-8 py-12 md:w-2/5 md:px-12"
           style={{ backgroundColor: styles?.backgroundColor || "#1c1410" }}
         >
-          <h2 className="mb-4 text-3xl font-bold text-white md:text-4xl" style={styles?.textColor ? { color: styles.textColor } : undefined}>
-            {data.title as string}
-          </h2>
-          <p className="mb-8 text-sm text-white/70">
-            {(data.subtitle as string) || "We staan voor je klaar."}
-          </p>
+          <EditableText as="h2" data={data} path={["title"]} value={data.title as string} isPreview={isPreview} onUpdate={onUpdate} className="mb-4 text-3xl font-bold text-white md:text-4xl" style={styles?.textColor ? { color: styles.textColor } : undefined} />
+          <EditableText as="p" data={data} path={["subtitle"]} value={(data.subtitle as string) || "We staan voor je klaar."} isPreview={isPreview} onUpdate={onUpdate} className="mb-8 text-sm text-white/70" multiline />
           <div className="space-y-5">
             {(data.address as string) && (
               <div className="flex items-center gap-3 text-white/80">
                 <MapPin className="h-4 w-4 flex-shrink-0 text-amber-400" />
-                <span className="text-sm">{data.address as string}</span>
+                <EditableText data={data} path={["address"]} value={data.address as string} isPreview={isPreview} onUpdate={onUpdate} className="text-sm" multiline />
               </div>
             )}
             {(data.phone as string) && (
               <div className="flex items-center gap-3 text-white/80">
                 <Phone className="h-4 w-4 flex-shrink-0 text-amber-400" />
-                <span className="text-sm">{data.phone as string}</span>
+                <EditableText data={data} path={["phone"]} value={data.phone as string} isPreview={isPreview} onUpdate={onUpdate} className="text-sm" />
               </div>
             )}
             {(data.email as string) && (
               <div className="flex items-center gap-3 text-white/80">
                 <Mail className="h-4 w-4 flex-shrink-0 text-amber-400" />
-                <span className="text-sm">{data.email as string}</span>
+                <EditableText data={data} path={["email"]} value={data.email as string} isPreview={isPreview} onUpdate={onUpdate} className="text-sm" />
               </div>
             )}
           </div>
@@ -296,7 +297,7 @@ function SplitLayout({ data, styles }: { data: Record<string, unknown>; styles?:
 
 // ─── Layout: Minimal (clean, text-forward) ───────────────────────────────────
 
-function MinimalLayout({ data, styles }: { data: Record<string, unknown>; styles?: SectionStyles }) {
+function MinimalLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps) {
   const sectionStyle: React.CSSProperties = {
     backgroundColor: styles?.backgroundColor,
     backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
@@ -309,30 +310,26 @@ function MinimalLayout({ data, styles }: { data: Record<string, unknown>; styles
     <section className={`px-4 py-16 sm:px-6 md:py-24 ${styles?.fontFamily || ""}`} style={sectionStyle}>
       <div className="mx-auto max-w-2xl text-center">
         <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-amber-600">Contact</p>
-        <h2 className="mb-4 text-3xl font-bold text-amber-950 md:text-5xl" style={textStyle}>
-          {data.title as string}
-        </h2>
-        <p className="mb-10 text-muted-foreground" style={textStyle}>
-          {(data.subtitle as string) || "We horen graag van je."}
-        </p>
+        <EditableText as="h2" data={data} path={["title"]} value={data.title as string} isPreview={isPreview} onUpdate={onUpdate} className="mb-4 text-3xl font-bold text-amber-950 md:text-5xl" style={textStyle} />
+        <EditableText as="p" data={data} path={["subtitle"]} value={(data.subtitle as string) || "We horen graag van je."} isPreview={isPreview} onUpdate={onUpdate} className="mb-10 text-muted-foreground" style={textStyle} multiline />
         {/* Inline contact info row */}
         <div className="mb-10 flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
           {(data.phone as string) && (
             <a href={`tel:${data.phone}`} className="flex items-center gap-1.5 hover:text-amber-700 transition-colors">
               <Phone className="h-3.5 w-3.5" />
-              {data.phone as string}
+              <EditableText data={data} path={["phone"]} value={data.phone as string} isPreview={isPreview} onUpdate={onUpdate} />
             </a>
           )}
           {(data.email as string) && (
             <a href={`mailto:${data.email}`} className="flex items-center gap-1.5 hover:text-amber-700 transition-colors">
               <Mail className="h-3.5 w-3.5" />
-              {data.email as string}
+              <EditableText data={data} path={["email"]} value={data.email as string} isPreview={isPreview} onUpdate={onUpdate} />
             </a>
           )}
           {(data.address as string) && (
             <span className="flex items-center gap-1.5">
               <MapPin className="h-3.5 w-3.5" />
-              {data.address as string}
+              <EditableText data={data} path={["address"]} value={data.address as string} isPreview={isPreview} onUpdate={onUpdate} multiline />
             </span>
           )}
         </div>
@@ -346,7 +343,7 @@ function MinimalLayout({ data, styles }: { data: Record<string, unknown>; styles
 
 // ─── Layout: Card (centered card with shadow) ────────────────────────────────
 
-function CardLayout({ data, styles }: { data: Record<string, unknown>; styles?: SectionStyles }) {
+function CardLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps) {
   const sectionStyle: React.CSSProperties = {
     backgroundColor: styles?.backgroundColor || "#fef9f0",
     backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
@@ -363,29 +360,25 @@ function CardLayout({ data, styles }: { data: Record<string, unknown>; styles?: 
             {/* Info sidebar */}
             <div className="flex flex-col justify-between bg-amber-700 px-8 py-10 md:col-span-2">
               <div>
-                <h2 className="mb-3 text-2xl font-bold text-white" style={textStyle}>
-                  {data.title as string}
-                </h2>
-                <p className="mb-8 text-sm text-amber-100">
-                  {(data.subtitle as string) || "Wij zijn beschikbaar om je vragen te beantwoorden."}
-                </p>
+                <EditableText as="h2" data={data} path={["title"]} value={data.title as string} isPreview={isPreview} onUpdate={onUpdate} className="mb-3 text-2xl font-bold text-white" style={textStyle} />
+                <EditableText as="p" data={data} path={["subtitle"]} value={(data.subtitle as string) || "Wij zijn beschikbaar om je vragen te beantwoorden."} isPreview={isPreview} onUpdate={onUpdate} className="mb-8 text-sm text-amber-100" multiline />
                 <div className="space-y-4">
                   {(data.phone as string) && (
                     <div className="flex items-start gap-3">
                       <Phone className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-200" />
-                      <span className="text-sm text-amber-100">{data.phone as string}</span>
+                      <EditableText data={data} path={["phone"]} value={data.phone as string} isPreview={isPreview} onUpdate={onUpdate} className="text-sm text-amber-100" />
                     </div>
                   )}
                   {(data.email as string) && (
                     <div className="flex items-start gap-3">
                       <Mail className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-200" />
-                      <span className="text-sm text-amber-100">{data.email as string}</span>
+                      <EditableText data={data} path={["email"]} value={data.email as string} isPreview={isPreview} onUpdate={onUpdate} className="text-sm text-amber-100" />
                     </div>
                   )}
                   {(data.address as string) && (
                     <div className="flex items-start gap-3">
                       <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-200" />
-                      <span className="text-sm text-amber-100">{data.address as string}</span>
+                      <EditableText data={data} path={["address"]} value={data.address as string} isPreview={isPreview} onUpdate={onUpdate} className="text-sm text-amber-100" multiline />
                     </div>
                   )}
                 </div>
@@ -409,7 +402,7 @@ function CardLayout({ data, styles }: { data: Record<string, unknown>; styles?: 
 
 // ─── Layout: Fullwidth (hero-style banner + centered form below) ─────────────
 
-function FullwidthLayout({ data, styles }: { data: Record<string, unknown>; styles?: SectionStyles }) {
+function FullwidthLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps) {
   const textStyle: React.CSSProperties = { color: styles?.textColor }
 
   return (
@@ -432,18 +425,14 @@ function FullwidthLayout({ data, styles }: { data: Record<string, unknown>; styl
             <MessageSquare className="h-3.5 w-3.5" />
             Contacteer ons
           </div>
-          <h2 className="mb-4 text-4xl font-bold text-white md:text-5xl" style={textStyle}>
-            {data.title as string}
-          </h2>
-          <p className="mx-auto max-w-md text-white/80">
-            {(data.subtitle as string) || "We staan voor je klaar."}
-          </p>
+          <EditableText as="h2" data={data} path={["title"]} value={data.title as string} isPreview={isPreview} onUpdate={onUpdate} className="mb-4 text-4xl font-bold text-white md:text-5xl" style={textStyle} />
+          <EditableText as="p" data={data} path={["subtitle"]} value={(data.subtitle as string) || "We staan voor je klaar."} isPreview={isPreview} onUpdate={onUpdate} className="mx-auto max-w-md text-white/80" multiline />
           <div className="mt-6 flex flex-wrap justify-center gap-6 text-sm text-white/80">
             {(data.phone as string) && (
-              <span className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />{data.phone as string}</span>
+              <span className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" /><EditableText data={data} path={["phone"]} value={data.phone as string} isPreview={isPreview} onUpdate={onUpdate} /></span>
             )}
             {(data.email as string) && (
-              <span className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" />{data.email as string}</span>
+              <span className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" /><EditableText data={data} path={["email"]} value={data.email as string} isPreview={isPreview} onUpdate={onUpdate} /></span>
             )}
           </div>
         </div>
@@ -460,7 +449,7 @@ function FullwidthLayout({ data, styles }: { data: Record<string, unknown>; styl
 
 // ─── Layout: Centered (icon-forward symmetric layout) ────────────────────────
 
-function CenteredLayout({ data, styles }: { data: Record<string, unknown>; styles?: SectionStyles }) {
+function CenteredLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps) {
   const sectionStyle: React.CSSProperties = {
     backgroundColor: styles?.backgroundColor,
     backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
@@ -473,12 +462,8 @@ function CenteredLayout({ data, styles }: { data: Record<string, unknown>; style
     <section className={`px-4 py-16 sm:px-6 md:py-20 ${styles?.fontFamily || ""}`} style={sectionStyle}>
       <div className="mx-auto max-w-4xl">
         <div className="mb-12 text-center">
-          <h2 className="mb-3 text-3xl font-bold text-amber-950 md:text-4xl" style={textStyle}>
-            {data.title as string}
-          </h2>
-          <p className="text-muted-foreground" style={textStyle}>
-            {(data.subtitle as string) || "Neem contact met ons op."}
-          </p>
+          <EditableText as="h2" data={data} path={["title"]} value={data.title as string} isPreview={isPreview} onUpdate={onUpdate} className="mb-3 text-3xl font-bold text-amber-950 md:text-4xl" style={textStyle} />
+          <EditableText as="p" data={data} path={["subtitle"]} value={(data.subtitle as string) || "Neem contact met ons op."} isPreview={isPreview} onUpdate={onUpdate} className="text-muted-foreground" style={textStyle} multiline />
         </div>
         {/* 3-col info cards */}
         <div className="mb-12 grid gap-4 sm:grid-cols-3">
@@ -514,23 +499,23 @@ function CenteredLayout({ data, styles }: { data: Record<string, unknown>; style
 
 // ─── Main Export ──────────────────────────────────────────────────────────────
 
-export function ContactSection({ data, styles }: ContactSectionProps) {
+export function ContactSection({ data, isPreview, styles, onUpdate }: ContactSectionProps) {
   const layout = (contactLayoutMap[normalizeSectionLayout(data.layout)] ?? "classic") as ContactLayout
 
   switch (layout) {
     case "split":
-      return <SplitLayout data={data} styles={styles} />
+      return <SplitLayout data={data} isPreview={isPreview} styles={styles} onUpdate={onUpdate} />
     case "minimal":
-      return <MinimalLayout data={data} styles={styles} />
+      return <MinimalLayout data={data} isPreview={isPreview} styles={styles} onUpdate={onUpdate} />
     case "card":
-      return <CardLayout data={data} styles={styles} />
+      return <CardLayout data={data} isPreview={isPreview} styles={styles} onUpdate={onUpdate} />
     case "fullwidth":
-      return <FullwidthLayout data={data} styles={styles} />
+      return <FullwidthLayout data={data} isPreview={isPreview} styles={styles} onUpdate={onUpdate} />
     case "centered":
-      return <CenteredLayout data={data} styles={styles} />
+      return <CenteredLayout data={data} isPreview={isPreview} styles={styles} onUpdate={onUpdate} />
     case "classic":
     default:
-      return <ClassicLayout data={data} styles={styles} />
+      return <ClassicLayout data={data} isPreview={isPreview} styles={styles} onUpdate={onUpdate} />
   }
 }
 

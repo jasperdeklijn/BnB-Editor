@@ -1,6 +1,7 @@
 "use client"
 
 import { Check } from "lucide-react"
+import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
 
@@ -20,6 +21,7 @@ interface PricingSectionProps {
   data: Record<string, unknown>
   isPreview: boolean
   styles?: SectionStyles
+  onUpdate?: (newData: Record<string, unknown>) => void
 }
 
 const DEFAULT_PLANS: PricingPlan[] = [
@@ -62,13 +64,17 @@ const DEFAULT_PLANS: PricingPlan[] = [
   },
 ]
 
-export function PricingSection({ data, styles }: PricingSectionProps) {
+export function PricingSection({ data, isPreview, styles, onUpdate }: PricingSectionProps) {
   const title = (data.title as string) || "Onze tarieven"
   const subtitle = data.subtitle as string | undefined
   const plans: PricingPlan[] =
     Array.isArray(data.plans) && (data.plans as PricingPlan[]).length > 0
       ? (data.plans as PricingPlan[])
       : DEFAULT_PLANS
+  const editableData =
+    Array.isArray(data.plans) && (data.plans as PricingPlan[]).length > 0
+      ? data
+      : { ...data, plans }
   const layout = getLayoutClasses(data.layout)
 
   const sectionStyle: React.CSSProperties = {
@@ -89,16 +95,18 @@ export function PricingSection({ data, styles }: PricingSectionProps) {
           <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-amber-600">
             Tarieven
           </p>
-          <h2
+          <EditableText
+            as="h2"
+            data={data}
+            path={["title"]}
+            value={title}
+            isPreview={isPreview}
+            onUpdate={onUpdate}
             className="mb-3 text-balance text-3xl font-bold text-amber-950 md:text-4xl"
             style={textStyle}
-          >
-            {title}
-          </h2>
+          />
           {subtitle && (
-            <p className="mx-auto max-w-xl text-muted-foreground" style={textStyle}>
-              {subtitle}
-            </p>
+            <EditableText as="p" data={data} path={["subtitle"]} value={subtitle} isPreview={isPreview} onUpdate={onUpdate} className="mx-auto max-w-xl text-muted-foreground" style={textStyle} multiline />
           )}
         </div>
 
@@ -126,33 +134,46 @@ export function PricingSection({ data, styles }: PricingSectionProps) {
                     plan.highlighted ? "text-amber-200" : "text-amber-700"
                   }`}
                 >
-                  {plan.name}
+                  <EditableText data={editableData} path={["plans", idx, "name"]} value={plan.name} isPreview={isPreview} onUpdate={onUpdate} />
                 </p>
                 <div className="flex items-baseline gap-1">
-                  <span
+                  <EditableText
+                    as="span"
+                    data={editableData}
+                    path={["plans", idx, "price"]}
+                    value={plan.price}
+                    isPreview={isPreview}
+                    onUpdate={onUpdate}
                     className={`text-4xl font-bold ${
                       plan.highlighted ? "text-white" : "text-amber-950"
                     }`}
                     style={!plan.highlighted ? textStyle : undefined}
-                  >
-                    {plan.price}
-                  </span>
+                  />
                   {plan.period && (
-                    <span
+                    <EditableText
+                      as="span"
+                      data={editableData}
+                      path={["plans", idx, "period"]}
+                      value={plan.period}
+                      isPreview={isPreview}
+                      onUpdate={onUpdate}
                       className={`text-sm ${plan.highlighted ? "text-amber-200" : "text-muted-foreground"}`}
-                    >
-                      {plan.period}
-                    </span>
+                    />
                   )}
                 </div>
                 {plan.description && (
-                  <p
+                  <EditableText
+                    as="p"
+                    data={editableData}
+                    path={["plans", idx, "description"]}
+                    value={plan.description}
+                    isPreview={isPreview}
+                    onUpdate={onUpdate}
+                    multiline
                     className={`mt-2 text-sm ${
                       plan.highlighted ? "text-amber-100" : "text-muted-foreground"
                     }`}
-                  >
-                    {plan.description}
-                  </p>
+                  />
                 )}
               </div>
 
@@ -164,9 +185,7 @@ export function PricingSection({ data, styles }: PricingSectionProps) {
                         plan.highlighted ? "text-amber-300" : "text-amber-600"
                       }`}
                     />
-                    <span className={plan.highlighted ? "text-amber-100" : "text-muted-foreground"}>
-                      {feature}
-                    </span>
+                    <EditableText data={editableData} path={["plans", idx, "features", fIdx]} value={feature} isPreview={isPreview} onUpdate={onUpdate} className={plan.highlighted ? "text-amber-100" : "text-muted-foreground"} />
                   </li>
                 ))}
               </ul>
@@ -180,7 +199,7 @@ export function PricingSection({ data, styles }: PricingSectionProps) {
                       : "bg-amber-700 text-white hover:bg-amber-800"
                   }`}
                 >
-                  {plan.ctaText}
+                  <EditableText data={editableData} path={["plans", idx, "ctaText"]} value={plan.ctaText} isPreview={isPreview} onUpdate={onUpdate} />
                 </a>
               )}
             </div>

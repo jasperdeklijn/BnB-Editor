@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
 
@@ -23,6 +24,7 @@ interface RequestFormSectionProps {
   data: Record<string, unknown>
   isPreview: boolean
   styles?: SectionStyles
+  onUpdate?: (newData: Record<string, unknown>) => void
 }
 
 const REQUEST_TYPE_CONFIG: Record<
@@ -108,7 +110,7 @@ const FIELD_LABELS: Record<FieldKey, string> = {
   message: "Bericht",
 }
 
-export function RequestFormSection({ data, styles, isPreview }: RequestFormSectionProps) {
+export function RequestFormSection({ data, styles, isPreview, onUpdate }: RequestFormSectionProps) {
   const title = (data.title as string) || "Stuur een aanvraag"
   const subtitle = data.subtitle as string | undefined
   const requestType = ((data.requestType as RequestType) || "contact") satisfies RequestType
@@ -146,13 +148,9 @@ export function RequestFormSection({ data, styles, isPreview }: RequestFormSecti
             <PhoneIcon className="h-4 w-4" />
             WhatsApp
           </div>
-          <h2 className="mb-3 text-balance text-3xl font-bold text-amber-950 md:text-4xl" style={textStyle}>
-            {title}
-          </h2>
+          <EditableText as="h2" data={data} path={["title"]} value={title} isPreview={isPreview} onUpdate={onUpdate} className="mb-3 text-balance text-3xl font-bold text-amber-950 md:text-4xl" style={textStyle} />
           {subtitle && (
-            <p className="mb-8 text-muted-foreground" style={textStyle}>
-              {subtitle}
-            </p>
+            <EditableText as="p" data={data} path={["subtitle"]} value={subtitle} isPreview={isPreview} onUpdate={onUpdate} className="mb-8 text-muted-foreground" style={textStyle} multiline />
           )}
           <a
             href={waUrl}
@@ -184,16 +182,18 @@ export function RequestFormSection({ data, styles, isPreview }: RequestFormSecti
             <Icon className="h-4 w-4" />
             {config.label}
           </div>
-          <h2
+          <EditableText
+            as="h2"
+            data={data}
+            path={["title"]}
+            value={title}
+            isPreview={isPreview}
+            onUpdate={onUpdate}
             className="mb-2 text-balance text-3xl font-bold text-amber-950 md:text-4xl"
             style={textStyle}
-          >
-            {title}
-          </h2>
+          />
           {subtitle && (
-            <p className="text-muted-foreground" style={textStyle}>
-              {subtitle}
-            </p>
+            <EditableText as="p" data={data} path={["subtitle"]} value={subtitle} isPreview={isPreview} onUpdate={onUpdate} className="text-muted-foreground" style={textStyle} multiline />
           )}
         </div>
 

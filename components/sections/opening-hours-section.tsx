@@ -1,6 +1,7 @@
 "use client"
 
 import { Clock } from "lucide-react"
+import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
 
@@ -14,6 +15,7 @@ interface OpeningHoursSectionProps {
   data: Record<string, unknown>
   isPreview: boolean
   styles?: SectionStyles
+  onUpdate?: (newData: Record<string, unknown>) => void
 }
 
 const DEFAULT_HOURS: OpeningHoursDay[] = [
@@ -59,7 +61,7 @@ function getToday(): string {
   return days[new Date().getDay()]
 }
 
-export function OpeningHoursSection({ data, styles }: OpeningHoursSectionProps) {
+export function OpeningHoursSection({ data, isPreview, styles, onUpdate }: OpeningHoursSectionProps) {
   const title = (data.title as string) || "Openingstijden"
   const subtitle = data.subtitle as string | undefined
   const note = data.note as string | undefined
@@ -123,16 +125,18 @@ export function OpeningHoursSection({ data, styles }: OpeningHoursSectionProps) 
             <Clock className="h-4 w-4" />
             Openingstijden
           </div>
-          <h2
+          <EditableText
+            as="h2"
+            data={data}
+            path={["title"]}
+            value={title}
+            isPreview={isPreview}
+            onUpdate={onUpdate}
             className="mb-2 text-balance text-3xl font-bold text-amber-950 md:text-4xl"
             style={textStyle}
-          >
-            {title}
-          </h2>
+          />
           {subtitle && (
-            <p className="text-muted-foreground" style={textStyle}>
-              {subtitle}
-            </p>
+            <EditableText as="p" data={data} path={["subtitle"]} value={subtitle} isPreview={isPreview} onUpdate={onUpdate} className="text-muted-foreground" style={textStyle} multiline />
           )}
         </div>
 
@@ -159,16 +163,24 @@ export function OpeningHoursSection({ data, styles }: OpeningHoursSectionProps) 
                 className={row.closed ? "text-muted-foreground italic" : "text-muted-foreground"}
                 style={textStyle}
               >
-                {row.closed ? "Gesloten" : row.hours}
+                {row.closed ? (
+                  "Gesloten"
+                ) : (
+                  <EditableText
+                    data={data}
+                    path={[DAY_KEYS[idx], "hours"]}
+                    value={row.hours}
+                    isPreview={isPreview}
+                    onUpdate={onUpdate}
+                  />
+                )}
               </span>
             </div>
           ))}
         </div>
 
         {note && (
-          <p className="mt-4 text-center text-xs text-muted-foreground" style={textStyle}>
-            {note}
-          </p>
+          <EditableText as="p" data={data} path={["note"]} value={note} isPreview={isPreview} onUpdate={onUpdate} className="mt-4 text-center text-xs text-muted-foreground" style={textStyle} multiline />
         )}
       </div>
     </section>

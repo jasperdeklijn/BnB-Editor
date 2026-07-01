@@ -1,6 +1,7 @@
 "use client"
 
 import { MapPin, Phone, Mail, ExternalLink } from "lucide-react"
+import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
 
@@ -8,6 +9,7 @@ interface MapSectionProps {
   data: Record<string, unknown>
   isPreview: boolean
   styles?: SectionStyles
+  onUpdate?: (newData: Record<string, unknown>) => void
 }
 
 function buildEmbedUrl(embedUrl?: string, address?: string): string | null {
@@ -18,7 +20,7 @@ function buildEmbedUrl(embedUrl?: string, address?: string): string | null {
   return null
 }
 
-export function MapSection({ data, styles, isPreview }: MapSectionProps) {
+export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProps) {
   const title = (data.title as string) || "Onze locatie"
   const subtitle = data.subtitle as string | undefined
   const address = data.address as string | undefined
@@ -51,16 +53,18 @@ export function MapSection({ data, styles, isPreview }: MapSectionProps) {
           <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-amber-600">
             Locatie
           </p>
-          <h2
+          <EditableText
+            as="h2"
+            data={data}
+            path={["title"]}
+            value={title}
+            isPreview={isPreview}
+            onUpdate={onUpdate}
             className="mb-2 text-balance text-3xl font-bold text-amber-950 md:text-4xl"
             style={textStyle}
-          >
-            {title}
-          </h2>
+          />
           {subtitle && (
-            <p className="text-muted-foreground" style={textStyle}>
-              {subtitle}
-            </p>
+            <EditableText as="p" data={data} path={["subtitle"]} value={subtitle} isPreview={isPreview} onUpdate={onUpdate} className="text-muted-foreground" style={textStyle} multiline />
           )}
         </div>
 
@@ -74,7 +78,7 @@ export function MapSection({ data, styles, isPreview }: MapSectionProps) {
                 <div className="flex items-start gap-3">
                   <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-300" />
                   <div>
-                    <p className="text-sm text-amber-100">{address}</p>
+                    <EditableText as="p" data={data} path={["address"]} value={address} isPreview={isPreview} onUpdate={onUpdate} className="text-sm text-amber-100" multiline />
                     {mapsHref && (
                       <a
                         href={mapsHref}
@@ -97,7 +101,7 @@ export function MapSection({ data, styles, isPreview }: MapSectionProps) {
                     href={`tel:${phone}`}
                     className="text-sm text-amber-100 hover:text-white transition-colors"
                   >
-                    {phone}
+                    <EditableText data={data} path={["phone"]} value={phone} isPreview={isPreview} onUpdate={onUpdate} />
                   </a>
                 </div>
               )}
@@ -109,7 +113,7 @@ export function MapSection({ data, styles, isPreview }: MapSectionProps) {
                     href={`mailto:${email}`}
                     className="text-sm text-amber-100 hover:text-white transition-colors"
                   >
-                    {email}
+                    <EditableText data={data} path={["email"]} value={email} isPreview={isPreview} onUpdate={onUpdate} />
                   </a>
                 </div>
               )}
@@ -140,7 +144,11 @@ export function MapSection({ data, styles, isPreview }: MapSectionProps) {
                   <div className="text-center text-muted-foreground">
                     <MapPin className="mx-auto mb-2 h-8 w-8 text-amber-300" />
                     <p className="text-sm">
-                      {address ? address : "Voer een adres in om de kaart te tonen"}
+                      {address ? (
+                        <EditableText data={data} path={["address"]} value={address} isPreview={isPreview} onUpdate={onUpdate} />
+                      ) : (
+                        "Voer een adres in om de kaart te tonen"
+                      )}
                     </p>
                   </div>
                 </div>

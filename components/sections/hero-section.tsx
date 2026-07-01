@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { Button } from "@/components/ui/button"
+import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { normalizeSectionLayout } from "@/lib/section-layouts"
 
@@ -21,9 +22,10 @@ interface HeroSectionProps {
   data: Record<string, unknown>
   isPreview: boolean
   styles?: SectionStyles
+  onUpdate?: (newData: Record<string, unknown>) => void
 }
 
-export function HeroSection({ data, styles }: HeroSectionProps) {
+export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionProps) {
   const title = data.title as string
   const subtitle = data.subtitle as string
   const ctaText = data.ctaText as string
@@ -55,20 +57,35 @@ export function HeroSection({ data, styles }: HeroSectionProps) {
         {/* Subtle decorative element */}
         <div className="absolute inset-0 bg-gradient-to-br from-amber-50 to-orange-100 opacity-80" />
         <div className="relative z-10 max-w-3xl px-2 text-center">
-          <h1
+          <EditableText
+            as="h1"
+            data={data}
+            path={["title"]}
+            value={title}
+            isPreview={isPreview}
+            onUpdate={onUpdate}
             className="mb-4 text-balance text-3xl font-bold tracking-tight text-amber-950 sm:mb-6 sm:text-4xl md:text-5xl lg:text-6xl"
             style={textStyle}
-          >
-            {title}
-          </h1>
-          <p
+          />
+          <EditableText
+            as="p"
+            data={data}
+            path={["subtitle"]}
+            value={subtitle}
+            isPreview={isPreview}
+            onUpdate={onUpdate}
+            multiline
             className="mb-6 text-pretty text-base text-amber-900 sm:mb-8 sm:text-lg md:text-xl"
             style={textStyle}
-          >
-            {subtitle}
-          </p>
+          />
           <Button size="lg" className="bg-amber-700 text-amber-50 hover:bg-amber-800">
-            {ctaText}
+            <EditableText
+              data={data}
+              path={["ctaText"]}
+              value={ctaText}
+              isPreview={isPreview}
+              onUpdate={onUpdate}
+            />
           </Button>
         </div>
       </section>
@@ -102,21 +119,30 @@ export function HeroSection({ data, styles }: HeroSectionProps) {
             className="flex w-full flex-col justify-center px-8 py-12 md:w-1/2 md:px-12 lg:px-16"
             style={{ backgroundColor: styles?.backgroundColor || "#fffbeb" }}
           >
-            <h1
+            <EditableText
+              as="h1"
+              data={data}
+              path={["title"]}
+              value={title}
+              isPreview={isPreview}
+              onUpdate={onUpdate}
               className="mb-4 text-balance text-3xl font-bold tracking-tight text-amber-950 sm:text-4xl md:text-5xl"
               style={textStyle}
-            >
-              {title}
-            </h1>
-            <p
+            />
+            <EditableText
+              as="p"
+              data={data}
+              path={["subtitle"]}
+              value={subtitle}
+              isPreview={isPreview}
+              onUpdate={onUpdate}
+              multiline
               className="mb-6 text-pretty text-base text-amber-800 sm:text-lg md:text-xl"
               style={textStyle}
-            >
-              {subtitle}
-            </p>
+            />
             <div>
               <Button size="lg" className="bg-amber-700 text-amber-50 hover:bg-amber-800">
-                {ctaText}
+                <EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} />
               </Button>
             </div>
           </div>
@@ -143,20 +169,29 @@ export function HeroSection({ data, styles }: HeroSectionProps) {
 
         {/* Content */}
         <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
-          <h1
+          <EditableText
+            as="h1"
+            data={data}
+            path={["title"]}
+            value={title}
+            isPreview={isPreview}
+            onUpdate={onUpdate}
             className="mb-6 text-balance text-4xl font-bold tracking-tight text-white drop-shadow-lg sm:text-5xl md:text-6xl lg:text-7xl"
             style={styles?.textColor ? textStyle : undefined}
-          >
-            {title}
-          </h1>
-          <p
+          />
+          <EditableText
+            as="p"
+            data={data}
+            path={["subtitle"]}
+            value={subtitle}
+            isPreview={isPreview}
+            onUpdate={onUpdate}
+            multiline
             className="mb-8 text-pretty text-lg text-white/90 drop-shadow-md sm:text-xl md:text-2xl"
             style={styles?.textColor ? textStyle : undefined}
-          >
-            {subtitle}
-          </p>
+          />
           <Button size="lg" className="bg-white text-amber-900 shadow-lg hover:bg-white/95 hover:shadow-xl transition-all">
-            {ctaText}
+            <EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} />
           </Button>
         </div>
       </section>
@@ -173,20 +208,29 @@ export function HeroSection({ data, styles }: HeroSectionProps) {
         }}
       >
         <div className="max-w-3xl px-2 text-center">
-          <h1
+          <EditableText
+            as="h1"
+            data={data}
+            path={["title"]}
+            value={title}
+            isPreview={isPreview}
+            onUpdate={onUpdate}
             className="mb-4 text-balance text-3xl font-bold tracking-tight sm:mb-6 sm:text-4xl md:text-5xl lg:text-6xl"
             style={textStyle}
-          >
-            {title}
-          </h1>
-          <p
+          />
+          <EditableText
+            as="p"
+            data={data}
+            path={["subtitle"]}
+            value={subtitle}
+            isPreview={isPreview}
+            onUpdate={onUpdate}
+            multiline
             className="mb-6 text-pretty text-base sm:mb-8 sm:text-lg md:text-xl"
             style={textStyle}
-          >
-            {subtitle}
-          </p>
+          />
           <Button size="lg" className="bg-amber-700 text-amber-50 hover:bg-amber-800">
-            {ctaText}
+            <EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} />
           </Button>
         </div>
       </section>
@@ -211,20 +255,29 @@ export function HeroSection({ data, styles }: HeroSectionProps) {
 
         {/* Content Card */}
         <div className="relative z-10 mx-auto max-w-lg bg-white/95 backdrop-blur-sm rounded-lg p-8 shadow-xl">
-          <h1
+          <EditableText
+            as="h1"
+            data={data}
+            path={["title"]}
+            value={title}
+            isPreview={isPreview}
+            onUpdate={onUpdate}
             className="mb-4 text-balance text-2xl font-bold tracking-tight text-amber-950 sm:text-3xl md:text-4xl"
             style={textStyle}
-          >
-            {title}
-          </h1>
-          <p
+          />
+          <EditableText
+            as="p"
+            data={data}
+            path={["subtitle"]}
+            value={subtitle}
+            isPreview={isPreview}
+            onUpdate={onUpdate}
+            multiline
             className="mb-6 text-pretty text-sm text-amber-800 sm:text-base"
             style={textStyle}
-          >
-            {subtitle}
-          </p>
+          />
           <Button size="lg" className="bg-amber-700 text-amber-50 hover:bg-amber-800 w-full">
-            {ctaText}
+            <EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} />
           </Button>
         </div>
       </section>
@@ -243,21 +296,30 @@ export function HeroSection({ data, styles }: HeroSectionProps) {
             className="flex w-full flex-col justify-center px-8 py-12 md:w-1/2 md:px-12 lg:px-16"
             style={{ backgroundColor: styles?.backgroundColor || "#fffbeb" }}
           >
-            <h1
+            <EditableText
+              as="h1"
+              data={data}
+              path={["title"]}
+              value={title}
+              isPreview={isPreview}
+              onUpdate={onUpdate}
               className="mb-4 text-balance text-3xl font-bold tracking-tight text-amber-950 sm:text-4xl md:text-5xl"
               style={textStyle}
-            >
-              {title}
-            </h1>
-            <p
+            />
+            <EditableText
+              as="p"
+              data={data}
+              path={["subtitle"]}
+              value={subtitle}
+              isPreview={isPreview}
+              onUpdate={onUpdate}
+              multiline
               className="mb-6 text-pretty text-base text-amber-800 sm:text-lg md:text-xl"
               style={textStyle}
-            >
-              {subtitle}
-            </p>
+            />
             <div>
               <Button size="lg" className="bg-amber-700 text-amber-50 hover:bg-amber-800">
-                {ctaText}
+                <EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} />
               </Button>
             </div>
           </div>

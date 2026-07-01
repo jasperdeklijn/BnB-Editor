@@ -129,7 +129,7 @@ Customer and planning fields:
    - Failed saves show a clear error and do not lose local user input.
    - Loading states do not shift the layout.
 
-10. [ ] Fix the missing authenticated mobile verification
+10. [x] Fix the missing authenticated mobile verification
 
    Complete the check that could not be finished because the browser session reached `/auth/login`.
 
@@ -146,6 +146,8 @@ Customer and planning fields:
    - 2026-06-30: Source check confirmed template demo offerings are inserted into `services`, and calendar entries link to offerings through `service_id`.
    - 2026-06-30: Mobile browser check at 390px reached the protected route boundary and redirected to `/auth/login` without horizontal overflow. The authenticated calendar page itself still needs a signed-in browser session.
    - 2026-06-30: Local HTTP checks for `/editor/calendar` and `/editor/services` returned the protected-route `307` redirect. The in-app browser also reached `http://localhost:3000/auth/login`, so the authenticated mobile verification is still blocked on sign-in.
+   - 2026-07-01: Rechecked on a clean dev server at `localhost:3001`; shell requests still return `307` to `/auth/login`, and the in-app browser at 390px reached `http://localhost:3001/auth/login` with no login-page horizontal overflow. The authenticated calendar page itself is still blocked on sign-in.
+   - 2026-07-01: Rechecked after signing in through the in-app browser. `/editor/calendar` opened at 390px, showed filters, status counters, month/week/day controls, the add-entry form, availability management, and upcoming appointments without horizontal overflow. `npx tsc --noEmit` passed.
 
 11. [x] Define customizable booking space settings for the diensten section
 
@@ -210,7 +212,7 @@ Customer and planning fields:
    - 2026-06-30: The booking block posts to `/api/requests` with `requestType`, selected service name, and `serviceId`.
    - 2026-06-30: The request API validates the selected service against the business and writes `calendar_entries.service_id` for pending calendar entries. Calendar creation remains best-effort after the public request is stored.
 
-15. [ ] Final verification and documentation
+15. [x] Final verification and documentation
 
    Validate the full calendar and booking-space workflow before closing this task list.
 
@@ -226,3 +228,7 @@ Customer and planning fields:
    Verification notes:
    - 2026-06-30: `npx tsc --noEmit` passed after the booking-space implementation.
    - 2026-06-30: Final authenticated mobile browser verification remains blocked because both local HTTP and in-app browser checks redirect to `/auth/login`.
+   - 2026-07-01: `npx tsc --noEmit` passed. A clean dev server on `localhost:3001` starts successfully, but `/editor/calendar` and `/editor/services` both return `307` to `/auth/login`; the in-app browser also lands on the login page at 390px. Task 15 cannot be marked complete until the browser is signed in and the authenticated mobile calendar/editor flows can be checked.
+   - 2026-07-01: Authenticated in-app browser verification passed at 390px. `/editor/calendar` showed usable filters, calendar controls, entry form, availability panel, and upcoming appointments without horizontal overflow.
+   - 2026-07-01: `/editor/services` opened at 390px, showed upcoming planning for each dienst, and exposed filtered `Afsprakenkalender` links such as `/editor/calendar?service=...` without horizontal overflow.
+   - 2026-07-01: Source and browser checks confirm the services booking space can be configured through the services inspector, rendered in `ServicesSection`, uses category-aware generic/B&B defaults, and posts selected `serviceId` through the request API so pending calendar entries remain linked to offerings. `npx tsc --noEmit` passed.

@@ -4,6 +4,7 @@ import type React from "react"
 import { useState } from "react"
 import type { Section, SectionStyles, SectionType } from "@/lib/types"
 import { Menu, X } from "lucide-react"
+import { EditableText } from "@/components/editor/inline-editable-text"
 import { normalizeSectionLayout } from "@/lib/section-layouts"
 
 interface NavLink {
@@ -16,6 +17,7 @@ interface NavSectionProps {
   data: Record<string, unknown>
   isPreview: boolean
   styles?: SectionStyles
+  onUpdate?: (newData: Record<string, unknown>) => void
   allSections?: Section[]
   device?: "desktop" | "tablet" | "mobile"
 }
@@ -56,7 +58,7 @@ const navigableSectionTypes: SectionType[] = [
   "contact",
 ]
 
-export function NavSection({ data, styles, allSections, device }: NavSectionProps) {
+export function NavSection({ data, isPreview, styles, onUpdate, allSections, device }: NavSectionProps) {
   const brandName = (data.brandName as string) || "Mijn bedrijf"
   const isSticky = (data.isSticky as boolean) ?? true
   const navLinks = data.navLinks as NavLink[] | undefined
@@ -100,6 +102,14 @@ export function NavSection({ data, styles, allSections, device }: NavSectionProp
   }
 
   const links = getNavLinks()
+  const editableData = {
+    ...data,
+    navLinks: links.map((link) => ({
+      sectionId: link.sectionId,
+      label: link.label,
+      enabled: true,
+    })),
+  }
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault()
@@ -132,7 +142,7 @@ export function NavSection({ data, styles, allSections, device }: NavSectionProp
               }}
               className="text-2xl font-bold cursor-pointer"
             >
-              {brandName}
+              <EditableText data={data} path={["brandName"]} value={brandName} isPreview={isPreview} onUpdate={onUpdate} />
             </a>
           </div>
 
@@ -145,7 +155,7 @@ export function NavSection({ data, styles, allSections, device }: NavSectionProp
                 onClick={(e) => handleNavClick(e, link.href)}
                 className="hover:opacity-75 transition font-medium"
               >
-                {link.label}
+                <EditableText data={editableData} path={["navLinks", idx, "label"]} value={link.label} isPreview={isPreview} onUpdate={onUpdate} />
               </a>
             ))}
           </div>
@@ -176,7 +186,7 @@ export function NavSection({ data, styles, allSections, device }: NavSectionProp
                 onClick={(e) => handleNavClick(e, link.href)}
                 className="px-3 py-3 rounded-md hover:bg-black/5 active:bg-black/10 transition font-medium text-base"
               >
-                {link.label}
+                <EditableText data={editableData} path={["navLinks", idx, "label"]} value={link.label} isPreview={isPreview} onUpdate={onUpdate} />
               </a>
             ))}
           </div>

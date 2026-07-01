@@ -4,6 +4,7 @@ import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
+import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import Link from "next/link"
 import { AlertCircle, Briefcase, CalendarDays, CheckCircle, ChevronLeft, ChevronRight, DollarSign, Send, Users, X } from "lucide-react"
@@ -24,6 +25,7 @@ interface ServicesSectionProps {
   data: Record<string, unknown>
   isPreview: boolean
   styles?: SectionStyles
+  onUpdate?: (newData: Record<string, unknown>) => void
 }
 
 interface ServiceDisplay {
@@ -1032,7 +1034,7 @@ function ServicesBookingSpace({
 
 // ---- Main section component ----
 
-export function ServicesSection({ data, styles, isPreview }: ServicesSectionProps) {
+export function ServicesSection({ data, styles, isPreview, onUpdate }: ServicesSectionProps) {
   const title = (data.title as string) || "Ons aanbod"
   const layout = (servicesLayoutMap[normalizeSectionLayout(data.layout)] ?? "grid") as ServicesLayout
   const serviceIds = data.serviceIds as string[] | undefined
@@ -1213,9 +1215,7 @@ export function ServicesSection({ data, styles, isPreview }: ServicesSectionProp
         <div className="mb-5 inline-flex items-center rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-2 text-sm font-medium text-violet-400">
           Aanbod beheren
         </div>
-        <h2 className="mb-6 text-4xl font-extrabold tracking-tight text-white" style={textStyle}>
-          {title}
-        </h2>
+        <EditableText as="h2" data={data} path={["title"]} value={title} isPreview={isPreview} onUpdate={onUpdate} className="mb-6 text-4xl font-extrabold tracking-tight text-white" style={textStyle} />
         <div className="relative overflow-hidden rounded-[32px] border border-indigo-500/20 bg-[#050b2c]/95 p-12 shadow-[0_25px_80px_rgba(0,0,0,0.45)]">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-violet-500/10 to-fuchsia-500/5 pointer-events-none" />
           <div className="relative flex flex-col items-center">
@@ -1248,12 +1248,16 @@ export function ServicesSection({ data, styles, isPreview }: ServicesSectionProp
       style={sectionStyle}
     >
       <div className="mx-auto max-w-6xl">
-        <h2
+        <EditableText
+          as="h2"
+          data={data}
+          path={["title"]}
+          value={title}
+          isPreview={isPreview}
+          onUpdate={onUpdate}
           className="mb-8 text-balance text-center text-2xl font-bold text-amber-950 sm:mb-10 sm:text-3xl md:mb-12 md:text-4xl"
           style={textStyle}
-        >
-          {title}
-        </h2>
+        />
 
         {layout === "grid" && (
           <GridLayout

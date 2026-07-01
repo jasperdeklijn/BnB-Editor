@@ -4,6 +4,7 @@ import type React from "react"
 import { useState } from "react"
 import { toast } from "sonner"
 
+import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { normalizeSectionLayout } from "@/lib/section-layouts"
 
@@ -167,12 +168,16 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
     return (
       <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle}>
         <div className="mx-auto max-w-6xl">
-          <h2
+          <EditableText
+            as="h2"
+            data={data}
+            path={["title"]}
+            value={title}
+            isPreview={isPreview}
+            onUpdate={onUpdate}
             className="mb-8 text-balance text-center text-2xl font-bold text-amber-950 sm:mb-10 sm:text-3xl md:mb-12 md:text-4xl"
             style={textStyle}
-          >
-            {title}
-          </h2>
+          />
           <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
             {images.map((image, index) => (
               <div
@@ -209,19 +214,28 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
           <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
             {/* Text Side */}
             <div className="flex-1">
-              <h2
+              <EditableText
+                as="h2"
+                data={data}
+                path={["title"]}
+                value={title}
+                isPreview={isPreview}
+                onUpdate={onUpdate}
                 className="mb-4 text-balance text-2xl font-bold text-amber-950 sm:text-3xl md:text-4xl"
                 style={textStyle}
-              >
-                {title}
-              </h2>
+              />
               {subtitle && (
-                <p
+                <EditableText
+                  as="p"
+                  data={data}
+                  path={["subtitle"]}
+                  value={subtitle}
+                  isPreview={isPreview}
+                  onUpdate={onUpdate}
+                  multiline
                   className="text-pretty text-base text-amber-800 sm:text-lg"
                   style={textStyle}
-                >
-                  {subtitle}
-                </p>
+                />
               )}
             </div>
             {/* Carousel Side */}
@@ -263,12 +277,16 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
     return (
       <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle}>
         <div className="mx-auto max-w-6xl">
-          <h2
+          <EditableText
+            as="h2"
+            data={data}
+            path={["title"]}
+            value={title}
+            isPreview={isPreview}
+            onUpdate={onUpdate}
             className="mb-8 text-balance text-center text-2xl font-bold text-amber-950 sm:mb-10 sm:text-3xl md:mb-12 md:text-4xl"
             style={textStyle}
-          >
-            {title}
-          </h2>
+          />
           <div className="overflow-x-auto">
             <div className="flex space-x-4 pb-4">
               {images.map((image, index) => (
@@ -304,12 +322,16 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
     return (
       <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle}>
         <div className="mx-auto max-w-6xl">
-          <h2
+          <EditableText
+            as="h2"
+            data={data}
+            path={["title"]}
+            value={title}
+            isPreview={isPreview}
+            onUpdate={onUpdate}
             className="mb-8 text-balance text-center text-2xl font-bold text-amber-950 sm:mb-10 sm:text-3xl md:mb-12 md:text-4xl"
             style={textStyle}
-          >
-            {title}
-          </h2>
+          />
           <div className="columns-2 gap-3 sm:columns-3 sm:gap-4 md:columns-4">
             {images.map((image, index) => (
               <div
@@ -343,12 +365,16 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
     return (
       <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle}>
         <div className="mx-auto max-w-6xl">
-          <h2
+          <EditableText
+            as="h2"
+            data={data}
+            path={["title"]}
+            value={title}
+            isPreview={isPreview}
+            onUpdate={onUpdate}
             className="mb-8 text-balance text-center text-2xl font-bold text-amber-950 sm:mb-10 sm:text-3xl md:mb-12 md:text-4xl"
             style={textStyle}
-          >
-            {title}
-          </h2>
+          />
           <div className="space-y-4">
             {/* Main Image */}
             <div
@@ -424,12 +450,16 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
           <div className="absolute inset-0 bg-black/30" />
           {/* Title */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <h2
+            <EditableText
+              as="h2"
+              data={data}
+              path={["title"]}
+              value={title}
+              isPreview={isPreview}
+              onUpdate={onUpdate}
               className="text-balance text-center text-3xl font-bold text-white drop-shadow-lg sm:text-4xl md:text-5xl lg:text-6xl"
               style={styles?.textColor ? textStyle : undefined}
-            >
-              {title}
-            </h2>
+            />
           </div>
           {/* Navigation */}
           <button

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { ChevronDown } from "lucide-react"
+import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
 
@@ -15,6 +16,7 @@ interface FaqSectionProps {
   data: Record<string, unknown>
   isPreview: boolean
   styles?: SectionStyles
+  onUpdate?: (newData: Record<string, unknown>) => void
 }
 
 const DEFAULT_FAQS: FaqItem[] = [
@@ -46,9 +48,17 @@ const DEFAULT_FAQS: FaqItem[] = [
 
 function FaqRow({
   item,
+  data,
+  index,
+  isPreview,
+  onUpdate,
   textStyle,
 }: {
   item: FaqItem
+  data: Record<string, unknown>
+  index: number
+  isPreview: boolean
+  onUpdate?: (newData: Record<string, unknown>) => void
   textStyle?: React.CSSProperties
 }) {
   const [open, setOpen] = useState(false)
@@ -60,9 +70,7 @@ function FaqRow({
         onClick={() => setOpen((s) => !s)}
         className="flex w-full items-center justify-between gap-4 py-5 text-left"
       >
-        <span className="text-sm font-medium md:text-base" style={textStyle}>
-          {item.question}
-        </span>
+        <EditableText data={data} path={["items", index, "question"]} value={item.question} isPreview={isPreview} onUpdate={onUpdate} className="text-sm font-medium md:text-base" style={textStyle} />
         <ChevronDown
           className={`h-4 w-4 flex-shrink-0 text-amber-600 transition-transform duration-200 ${
             open ? "rotate-180" : ""
@@ -70,24 +78,33 @@ function FaqRow({
         />
       </button>
       {open && (
-        <p
+        <EditableText
+          as="p"
+          data={data}
+          path={["items", index, "answer"]}
+          value={item.answer}
+          isPreview={isPreview}
+          onUpdate={onUpdate}
+          multiline
           className="pb-5 text-sm leading-relaxed text-muted-foreground"
           style={textStyle}
-        >
-          {item.answer}
-        </p>
+        />
       )}
     </div>
   )
 }
 
-export function FaqSection({ data, styles }: FaqSectionProps) {
+export function FaqSection({ data, isPreview, styles, onUpdate }: FaqSectionProps) {
   const title = (data.title as string) || "Veelgestelde vragen"
   const subtitle = data.subtitle as string | undefined
   const items: FaqItem[] =
     Array.isArray(data.items) && (data.items as FaqItem[]).length > 0
       ? (data.items as FaqItem[])
       : DEFAULT_FAQS
+  const editableData =
+    Array.isArray(data.items) && (data.items as FaqItem[]).length > 0
+      ? data
+      : { ...data, items }
   const layout = getLayoutClasses(data.layout)
 
   const sectionStyle: React.CSSProperties = {
@@ -108,22 +125,24 @@ export function FaqSection({ data, styles }: FaqSectionProps) {
           <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-amber-600">
             FAQ
           </p>
-          <h2
+          <EditableText
+            as="h2"
+            data={data}
+            path={["title"]}
+            value={title}
+            isPreview={isPreview}
+            onUpdate={onUpdate}
             className="mb-3 text-balance text-3xl font-bold text-amber-950 md:text-4xl"
             style={textStyle}
-          >
-            {title}
-          </h2>
+          />
           {subtitle && (
-            <p className="text-muted-foreground" style={textStyle}>
-              {subtitle}
-            </p>
+            <EditableText as="p" data={data} path={["subtitle"]} value={subtitle} isPreview={isPreview} onUpdate={onUpdate} className="text-muted-foreground" style={textStyle} multiline />
           )}
         </div>
 
         <div className={`${layout.layout === "split" ? "columns-1 md:columns-2 md:gap-6" : ""} rounded-2xl border border-border bg-white/70 px-6 shadow-sm backdrop-blur`}>
           {items.map((item, idx) => (
-            <FaqRow key={item.id ?? idx} item={item} textStyle={textStyle} />
+            <FaqRow key={item.id ?? idx} item={item} data={editableData} index={idx} isPreview={isPreview} onUpdate={onUpdate} textStyle={textStyle} />
           ))}
         </div>
       </div>
