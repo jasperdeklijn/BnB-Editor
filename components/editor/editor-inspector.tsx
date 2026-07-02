@@ -13,6 +13,8 @@ interface EditorInspectorProps {
   selectedSection: Section | null
   sections: Section[]
   transitions: Transition[]
+  onSectionSelect?: (id: string) => void
+  onOpenCanvas?: () => void
   onUpdate: (id: string, data: Record<string, unknown>) => void
   onStyleUpdate: (styles: SectionStyles) => void
   onDelete: (id: string) => void
@@ -31,6 +33,8 @@ export function EditorInspector({
   selectedSection,
   sections,
   transitions,
+  onSectionSelect,
+  onOpenCanvas,
   onUpdate,
   onStyleUpdate,
   onDelete,
@@ -63,6 +67,8 @@ export function EditorInspector({
           selectedSection={selectedSection}
           sections={sections}
           transitions={transitions}
+          onSectionSelect={onSectionSelect}
+          onOpenCanvas={onOpenCanvas}
           onUpdate={onUpdate}
           onStyleUpdate={onStyleUpdate}
           onDelete={onDelete}

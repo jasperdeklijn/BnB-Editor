@@ -7,11 +7,11 @@ import { EditorInspector } from "./editor-inspector"
 import { useEditorLayout } from "./editor-layout-context"
 import type { Section, SectionStyles, SectionType, Transition } from "@/lib/types"
 import { DEFAULT_SITE_TITLE } from "@/lib/business-naming"
-import { getDefaultSectionData as getRegistryDefaultSectionData } from "@/components/editor/section-registry"
+import { getDefaultSectionData as getRegistryDefaultSectionData, getSectionDefinition } from "@/components/editor/section-registry"
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Globe2, Layers, LayoutTemplate, Loader2, Paintbrush, Plus, Sparkles } from "lucide-react"
+import { AlertCircle, CheckCircle2, ExternalLink, Globe2, Layers, LayoutTemplate, Loader2, Paintbrush, Plus, Sparkles } from "lucide-react"
 import type { ThemeConfig } from "@/lib/themes"
 import type { BusinessCategory } from "@/lib/business/categories"
 import { Button } from "@/components/ui/button"
@@ -51,11 +51,12 @@ export function EditorClient({ userId }: EditorClientProps) {
   const [websiteMessage, setWebsiteMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null)
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("canvas")
+  const [pendingMobileSectionType, setPendingMobileSectionType] = useState<SectionType | null>(null)
   const [isMobileDraggingNewSection, setIsMobileDraggingNewSection] = useState(false)
   const [isMobileDraggingImage, setIsMobileDraggingImage] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { isPreview, setIsPreview, isSaving, setIsSaving, setSaveState, device, setDevice, setOnPublish, setOnLogout } = useEditorLayout()
+  const { isPreview, setIsPreview, isSaving, setIsSaving, saveState, setSaveState, device, setDevice, setOnPublish, setOnLogout } = useEditorLayout()
   const requestedWebsiteId = searchParams.get("websiteId")
 
   // Switch to canvas on mobile when a touch drag starts
@@ -131,6 +132,7 @@ export function EditorClient({ userId }: EditorClientProps) {
       setBusinessId(website.business_id ?? resolvedBusinessId)
       setThemeConfig((website.theme_config as ThemeConfig | null) ?? null)
       setSelectedSectionId(null)
+      setPendingMobileSectionType(null)
 
       // Load normalized sections from website_sections
       const { data: rows, error: listErr } = await websiteSections.listSections(website.id, supabase)
@@ -189,6 +191,7 @@ export function EditorClient({ userId }: EditorClientProps) {
             created_at: newWebsite.created_at,
           },
         ])
+        setPendingMobileSectionType(null)
       }
     }
   }, [userId])
@@ -307,7 +310,12 @@ export function EditorClient({ userId }: EditorClientProps) {
           : website,
       ),
     )
-    setWebsiteMessage({ type: "success", text: `Websitenaam opgeslagen. Live URL: ${updatedWebsite.slug}.${PLATFORM_DOMAIN}.` })
+    setWebsiteMessage({
+      type: "success",
+      text: updatedWebsite.published
+        ? `Websitenaam opgeslagen. De live link is bijgewerkt naar ${updatedWebsite.slug}.${PLATFORM_DOMAIN}.`
+        : "Websitenaam opgeslagen. Deze website staat nog offline tot u hem live zet.",
+    })
   }
 
   // Persist sections immediately when updated from children
@@ -423,7 +431,7 @@ export function EditorClient({ userId }: EditorClientProps) {
         published: website.id === websiteId,
       })),
     )
-    setWebsiteMessage({ type: "success", text: "Deze website is live gezet." })
+    setWebsiteMessage({ type: "success", text: "Deze website is live gezet. Opgeslagen wijzigingen zijn nu zichtbaar via de live link." })
     router.push("/editor")
   }, [router, websiteId])
 
@@ -521,7 +529,7 @@ export function EditorClient({ userId }: EditorClientProps) {
     setMobilePanel("canvas")
   }
 
-  const handleAddSection = (type: SectionType) => {
+  const insertSectionAt = (type: SectionType, index: number) => {
     const section: Section = {
       id: `section-${Date.now()}`,
       type,
@@ -529,9 +537,29 @@ export function EditorClient({ userId }: EditorClientProps) {
       styles: {},
     }
 
-    persistSections([...sections, section])
+    const nextSections = [...sections]
+    const safeIndex = Math.max(0, Math.min(index, nextSections.length))
+    nextSections.splice(safeIndex, 0, section)
+
+    persistSections(nextSections)
     setSelectedSectionId(section.id)
+    setPendingMobileSectionType(null)
     setMobilePanel("canvas")
+  }
+
+  const handleAddSection = (type: SectionType) => {
+    if (typeof window !== "undefined" && window.innerWidth < 768 && sections.length > 0) {
+      setPendingMobileSectionType(type)
+      setMobilePanel("canvas")
+      return
+    }
+
+    insertSectionAt(type, sections.length)
+  }
+
+  const handleInsertPendingSection = (index: number) => {
+    if (!pendingMobileSectionType) return
+    insertSectionAt(pendingMobileSectionType, index)
   }
 
   const handleStartTutorial = () => {
@@ -544,8 +572,9 @@ export function EditorClient({ userId }: EditorClientProps) {
     }))
 
     persistSections(starterSections)
-    setSelectedSectionId(starterSections[0]?.id ?? null)
-    setMobilePanel("canvas")
+    const firstSectionId = starterSections[0]?.id ?? null
+    setSelectedSectionId(firstSectionId)
+    setMobilePanel(typeof window !== "undefined" && window.innerWidth < 768 ? "style" : "canvas")
   }
 
   const handleSectionSelect = (id: string | null) => {
@@ -557,15 +586,29 @@ export function EditorClient({ userId }: EditorClientProps) {
   }
 
   const selectedSection = sections.find((s) => s.id === selectedSectionId) || null
+  const pendingMobileSectionLabel = pendingMobileSectionType
+    ? getSectionDefinition(pendingMobileSectionType)?.label ?? pendingMobileSectionType.replace("_", " ")
+    : ""
   const selectedWebsite = websites.find((website) => website.id === websiteId)
   const selectedWebsiteLiveUrl = selectedWebsite
     ? selectedWebsite.customDomain || `${selectedWebsite.slug}.${PLATFORM_DOMAIN}`
     : ""
+  const selectedWebsiteLiveHref = selectedWebsiteLiveUrl
+    ? selectedWebsiteLiveUrl.startsWith("http")
+      ? selectedWebsiteLiveUrl
+      : `https://${selectedWebsiteLiveUrl}`
+    : ""
+  const liveStatusDescription = selectedWebsite?.published
+    ? "Online: opgeslagen wijzigingen staan op de live site."
+    : "Offline: wijzigingen zijn alleen zichtbaar in de editor."
+  const saveStatusLabel =
+    isSaving || saveState === "saving" ? "Wijzigingen opslaan..." : saveState === "error" ? "Niet opgeslagen" : "Wijzigingen opgeslagen"
+  const SaveStatusIcon = isSaving || saveState === "saving" ? Loader2 : saveState === "error" ? AlertCircle : CheckCircle2
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-muted">
       <div className="border-b border-border bg-background px-2 py-2 md:px-4">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2">
+        <div className="mx-auto hidden max-w-7xl flex-wrap items-center gap-2 md:flex">
           <label htmlFor="website-selector" className="sr-only">
             Website
           </label>
@@ -593,14 +636,14 @@ export function EditorClient({ userId }: EditorClientProps) {
           />
           <Button type="button" size="xs" onClick={handleSave} disabled={!websiteId || isRenamingWebsite}>
             {isRenamingWebsite ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-            Opslaan
+            Naam opslaan
           </Button>
           <Button type="button" variant="outline" size="xs" onClick={handleCreateWebsite} disabled={isCreatingWebsite}>
             {isCreatingWebsite ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
             Nieuw
           </Button>
           {selectedWebsite ? (
-            <div className="ml-auto flex min-w-0 items-center gap-2 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs">
+            <div className="ml-auto flex min-w-0 items-center gap-2 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-xs">
               <span
                 className={`h-2.5 w-2.5 rounded-full ring-2 ${
                   selectedWebsite.published
@@ -609,16 +652,109 @@ export function EditorClient({ userId }: EditorClientProps) {
                 }`}
                 aria-hidden="true"
               />
-              <span className="font-medium text-foreground">{selectedWebsite.published ? "Online" : "Offline"}</span>
+              <span className="shrink-0 font-medium text-foreground">{selectedWebsite.published ? "Live" : "Offline"}</span>
+              <span className="hidden text-muted-foreground lg:inline">{liveStatusDescription}</span>
               {selectedWebsite.published ? (
-                <>
-                  <span className="text-muted-foreground">/</span>
+                <a
+                  href={selectedWebsiteLiveHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex min-w-0 items-center gap-1 rounded border border-border bg-background px-2 py-1 font-medium text-primary hover:bg-accent"
+                  title={selectedWebsiteLiveUrl}
+                >
                   <Globe2 className="h-3.5 w-3.5 shrink-0 text-primary" />
-                  <span className="max-w-[42vw] truncate font-mono text-muted-foreground sm:max-w-64">
+                  <span className="max-w-[28vw] truncate font-mono">
                     {selectedWebsiteLiveUrl}
                   </span>
+                  <ExternalLink className="h-3 w-3 shrink-0" />
+                </a>
+              ) : (
+                <Button type="button" size="xs" onClick={handlePublish} disabled={!websiteId || isSaving}>
+                  Live zetten
+                </Button>
+              )}
+            </div>
+          ) : null}
+        </div>
+        <div className="mx-auto flex max-w-7xl flex-col gap-2 md:hidden">
+          <div className="flex min-w-0 items-center gap-2">
+            <label htmlFor="website-selector-mobile" className="sr-only">
+              Website
+            </label>
+            <select
+              id="website-selector-mobile"
+              value={websiteId ?? ""}
+              onChange={(event) => handleWebsiteChange(event.target.value)}
+              className="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-xs font-medium text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+            >
+              {websites.map((website) => (
+                <option key={website.id} value={website.id}>
+                  {website.title || DEFAULT_SITE_TITLE}
+                </option>
+              ))}
+            </select>
+            <div
+              className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium ${
+                saveState === "error"
+                  ? "border-warning/30 bg-warning/10 text-warning"
+                  : "border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
+              }`}
+              aria-live="polite"
+            >
+              <SaveStatusIcon className={`h-3.5 w-3.5 ${isSaving || saveState === "saving" ? "animate-spin" : ""}`} />
+              <span>{saveStatusLabel}</span>
+            </div>
+          </div>
+
+          <div className="flex min-w-0 items-center gap-2">
+            <label htmlFor="website-name-mobile" className="sr-only">
+              Websitenaam
+            </label>
+            <input
+              id="website-name-mobile"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              className="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-sm text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              placeholder="Websitenaam"
+            />
+            <Button type="button" size="sm" onClick={handleSave} disabled={!websiteId || isRenamingWebsite}>
+              {isRenamingWebsite ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+              Naam opslaan
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              onClick={handleCreateWebsite}
+              disabled={isCreatingWebsite}
+              aria-label="Nieuwe website maken"
+              title="Nieuwe website maken"
+            >
+              {isCreatingWebsite ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+            </Button>
+          </div>
+
+          {selectedWebsite ? (
+            <div className="flex min-w-0 items-center gap-2 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-xs">
+              <span
+                className={`h-2.5 w-2.5 shrink-0 rounded-full ring-2 ${
+                  selectedWebsite.published
+                    ? "bg-emerald-500 ring-emerald-500/20"
+                    : "bg-red-500 ring-red-500/20"
+                }`}
+                aria-hidden="true"
+              />
+              <span className="shrink-0 font-medium text-foreground">
+                {selectedWebsite.published ? "Online" : "Offline"}
+              </span>
+              {selectedWebsite.published ? (
+                <>
+                  <Globe2 className="h-3.5 w-3.5 shrink-0 text-primary" />
+                  <span className="min-w-0 truncate font-mono text-muted-foreground">{selectedWebsiteLiveUrl}</span>
                 </>
-              ) : null}
+              ) : (
+                <span className="min-w-0 truncate text-muted-foreground">Nog niet live gezet</span>
+              )}
             </div>
           ) : null}
         </div>
@@ -630,7 +766,7 @@ export function EditorClient({ userId }: EditorClientProps) {
       </div>
       {/* Desktop layout: side-by-side panels */}
       <div className="hidden md:flex flex-1 overflow-hidden">
-        {!isPreview && <SectionsSelector userId={userId} />}
+        {!isPreview && <SectionsSelector userId={userId} onAddSection={handleAddSection} />}
         <EditorCanvas
           sections={sections}
           setSections={persistSections}
@@ -650,6 +786,8 @@ export function EditorClient({ userId }: EditorClientProps) {
             selectedSection={selectedSection}
             sections={sections}
             transitions={transitions}
+            onSectionSelect={handleSectionSelect}
+            onOpenCanvas={() => setMobilePanel("canvas")}
             onUpdate={handleSectionUpdate}
             onStyleUpdate={handleStyleUpdate}
             onDelete={handleDelete}
@@ -668,7 +806,47 @@ export function EditorClient({ userId }: EditorClientProps) {
       {/* Mobile layout: single panel with bottom tab bar */}
       <div className="flex md:hidden flex-1 overflow-hidden flex-col">
         {/* Panel content */}
-        <div className="flex min-h-0 flex-1 overflow-hidden pb-[calc(4.5rem+env(safe-area-inset-bottom))]">
+        <div className="relative flex min-h-0 flex-1 overflow-hidden pb-[calc(4.5rem+env(safe-area-inset-bottom))]">
+          {pendingMobileSectionType && mobilePanel === "canvas" && !isPreview ? (
+            <div className="absolute inset-x-3 top-3 z-30 rounded-md border border-primary/30 bg-background p-3 shadow-lg">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">{pendingMobileSectionLabel} toevoegen</p>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    Kies waar deze sectie in uw pagina moet komen.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  onClick={() => setPendingMobileSectionType(null)}
+                  aria-label="Toevoegen annuleren"
+                  title="Toevoegen annuleren"
+                >
+                  Annuleren
+                </Button>
+              </div>
+              <div className="mt-3 grid gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => handleInsertPendingSection(0)}>
+                  Bovenaan plaatsen
+                </Button>
+                {selectedSection ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleInsertPendingSection(sections.findIndex((section) => section.id === selectedSection.id) + 1)}
+                  >
+                    Na geselecteerde sectie plaatsen
+                  </Button>
+                ) : null}
+                <Button type="button" size="sm" onClick={() => handleInsertPendingSection(sections.length)}>
+                  Onderaan plaatsen
+                </Button>
+              </div>
+            </div>
+          ) : null}
           {mobilePanel === "sections" && !isPreview && (
             <SectionsSelector
               userId={userId}
@@ -698,6 +876,8 @@ export function EditorClient({ userId }: EditorClientProps) {
               selectedSection={selectedSection}
               sections={sections}
               transitions={transitions}
+              onSectionSelect={handleSectionSelect}
+              onOpenCanvas={() => setMobilePanel("canvas")}
               onUpdate={handleSectionUpdate}
               onStyleUpdate={handleStyleUpdate}
               onDelete={handleDelete}
@@ -717,6 +897,8 @@ export function EditorClient({ userId }: EditorClientProps) {
               selectedSection={selectedSection}
               sections={sections}
               transitions={transitions}
+              onSectionSelect={handleSectionSelect}
+              onOpenCanvas={() => setMobilePanel("canvas")}
               onUpdate={handleSectionUpdate}
               onStyleUpdate={handleStyleUpdate}
               onDelete={handleDelete}
@@ -739,6 +921,8 @@ export function EditorClient({ userId }: EditorClientProps) {
             <button
               type="button"
               onClick={() => setMobilePanel("sections")}
+              aria-label="Secties toevoegen"
+              title="Secties toevoegen"
               className={`flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
                 mobilePanel === "sections"
                   ? "text-primary border-t-2 border-primary -mt-px"
@@ -751,6 +935,8 @@ export function EditorClient({ userId }: EditorClientProps) {
             <button
               type="button"
               onClick={() => setMobilePanel("canvas")}
+              aria-label="Canvas bekijken"
+              title="Canvas bekijken"
               className={`flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
                 mobilePanel === "canvas"
                   ? "text-primary border-t-2 border-primary -mt-px"
@@ -763,6 +949,8 @@ export function EditorClient({ userId }: EditorClientProps) {
             <button
               type="button"
               onClick={() => setMobilePanel("style")}
+              aria-label="Sectie stijl aanpassen"
+              title="Sectie stijl aanpassen"
               className={`flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
                 mobilePanel === "style"
                   ? "text-primary border-t-2 border-primary -mt-px"
@@ -775,6 +963,8 @@ export function EditorClient({ userId }: EditorClientProps) {
             <button
               type="button"
               onClick={() => setMobilePanel("site")}
+              aria-label="Site ontwerp aanpassen"
+              title="Site ontwerp aanpassen"
               className={`flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
                 mobilePanel === "site"
                   ? "text-primary border-t-2 border-primary -mt-px"

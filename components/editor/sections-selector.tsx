@@ -36,28 +36,40 @@ function SectionCard({ type, label, Icon, description, collapsed, isDragging, on
   return (
     <div
       draggable
-      onClick={() => onAdd?.(type)}
       onDragStart={(e) => onDragStart(e, type)}
       onDragEnd={onDragEnd}
       onTouchStart={(e) => onTouchStart(e, label)}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       style={{ touchAction: "none" }}
-      className={`group relative flex cursor-move items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-primary active:scale-95 select-none ${
+      className={`group relative flex cursor-grab items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-primary active:cursor-grabbing active:scale-95 select-none ${
         collapsed ? "justify-center px-2 py-3" : ""
       } ${isDragging ? "opacity-50 scale-95" : ""}`}
-      title={collapsed ? `${label}: ${description}` : label}
+      title={`${label}: ${description}`}
     >
       <div className="flex-shrink-0 rounded-md bg-primary/10 p-2 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
         <Icon className="h-5 w-5" />
       </div>
       {!collapsed && (
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1">
-            <span className="text-sm font-medium">{label}</span>
-            <Plus className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+        <div className="flex-1 min-w-0 space-y-2">
+          <div>
+            <div className="text-sm font-medium">{label}</div>
+            <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
           </div>
-          <p className="text-xs text-muted-foreground truncate">{description}</p>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation()
+              onAdd?.(type)
+            }}
+            onTouchStart={(event) => event.stopPropagation()}
+            className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label={`${label} toevoegen`}
+            title={`${label} toevoegen`}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Toevoegen
+          </button>
         </div>
       )}
       <div
@@ -184,7 +196,6 @@ export function SectionsSelector({ className = "", userId, onAddSection, onSecti
   }
 
   const handleAddSection = (type: SectionType) => {
-    if (typeof window !== "undefined" && window.innerWidth >= 768) return
     onAddSection?.(type)
     onSectionAdded?.()
   }
@@ -283,9 +294,9 @@ export function SectionsSelector({ className = "", userId, onAddSection, onSecti
 
         <TabsContent value="sections">
           <div className={`mb-4 ${collapsed ? "sr-only" : "opacity-100 transition-opacity delay-100"}`}>
-            <h3 className={`${collapsed ? "sr-only" : "mb-1 text-sm font-semibold"}`}>Secties Toevoegen</h3>
+            <h3 className={`${collapsed ? "sr-only" : "mb-1 text-sm font-semibold"}`}>Secties toevoegen</h3>
             <p className={`${collapsed ? "sr-only" : "text-xs text-muted-foreground"}`}>
-              Sleep of tik om toe te voegen
+              Gebruik Toevoegen of sleep een sectie naar de gewenste plek.
             </p>
           </div>
 
@@ -309,7 +320,7 @@ export function SectionsSelector({ className = "", userId, onAddSection, onSecti
           {!collapsed && (
             <div className="mt-6 rounded-xl border border-dashed border-border bg-secondary/70 p-3 text-center animate-in fade-in slide-in-from-left-2 duration-300">
               <p className="text-xs text-muted-foreground">
-                Sleep secties naar het canvas om uw site te bouwen
+                Op mobiel kiest u na Toevoegen waar de nieuwe sectie komt.
               </p>
             </div>
           )}

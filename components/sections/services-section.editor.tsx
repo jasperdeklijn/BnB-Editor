@@ -289,7 +289,7 @@ export function ServicesSectionEditor({
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <Label className="text-xs mb-1.5 block">CTA tekst</Label>
+            <Label className="text-xs mb-1.5 block">Knoptekst</Label>
             <Input
               placeholder="Aanvragen"
               value={(section.data as any).infoPopupCtaLabel || ""}
@@ -297,7 +297,7 @@ export function ServicesSectionEditor({
             />
           </div>
           <div>
-            <Label className="text-xs mb-1.5 block">CTA doel</Label>
+            <Label className="text-xs mb-1.5 block">Knoplink</Label>
             <select
               value={selectedPopupTarget}
               onChange={(event) => updateField("infoPopupCtaHref", event.target.value)}

@@ -3,7 +3,7 @@
 import type { TemplatePreset } from "./category-presets"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { ArrowRight, CheckCircle2 } from "lucide-react"
+import { Eye, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getOfferingCopy } from "@/lib/business/categories"
 
@@ -83,7 +83,7 @@ export function TemplatePreviewCard({
           variant={isSelected ? "default" : "outline"}
         >
           {isSelected ? "Geselecteerd" : actionLabel}
-          <ArrowRight className="h-4 w-4" />
+          <Eye className="h-4 w-4" />
         </Button>
       </div>
     </Card>

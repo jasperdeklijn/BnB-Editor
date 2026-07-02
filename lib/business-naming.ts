@@ -13,8 +13,8 @@ export const SECTION_COPY: Record<
     description: "Bovenste navigatiebalk",
   },
   hero: {
-    label: "Hero",
-    description: "Hoofdsectie met intro en actieknop",
+    label: "Intro bovenaan",
+    description: "Eerste blok met titel, tekst en knop",
     defaultTitle: "Welkom bij ons bedrijf",
   },
   about: {

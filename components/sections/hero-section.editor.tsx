@@ -30,7 +30,7 @@ export function HeroSectionEditor({ section, updateField }: SectionEditorProps) 
         />
       </div>
       <div>
-        <Label className="text-xs mb-1.5 block">CTA-knoptekst</Label>
+        <Label className="text-xs mb-1.5 block">Knoptekst</Label>
         <Input
           placeholder="bijv., Neem contact op"
           value={(section.data as any).ctaText || ""}

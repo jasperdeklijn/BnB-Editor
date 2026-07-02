@@ -14,7 +14,6 @@ import {
   COLOR_PALETTES,
   FONT_PAIRS,
   THEME_PRESETS,
-  SPACING_VALUES,
   RADIUS_VALUES,
   getPresetsForCategory,
   type ThemeConfig,
@@ -37,6 +36,64 @@ const DEFAULT_THEME: ThemeConfig = {
   spacing: 'comfortable',
   radius: 'medium',
 };
+
+const PRESET_LABELS: Record<string, string> = {
+  'corporate-classic': 'Zakelijk klassiek',
+  'tech-startup': 'Moderne techniek',
+  'wellness-calm': 'Rustige wellness',
+  'natural-organic': 'Natuurlijk groen',
+  'creative-bold': 'Creatief opvallend',
+  'elegant-studio': 'Elegante studio',
+  'restaurant-warm': 'Warm restaurant',
+  'bistro-chic': 'Stijlvolle bistro',
+  'beauty-rose': 'Zachte schoonheid',
+  'salon-modern': 'Moderne salon',
+  'construction-bold': 'Sterk vakwerk',
+  'professional-trade': 'Betrouwbare dienst',
+  'midnight-premium': 'Donker premium',
+  'dark-minimal': 'Donker minimalistisch',
+  'sunset-energy': 'Energiek warm',
+  'classic-burgundy': 'Klassiek bordeaux',
+};
+
+const PALETTE_LABELS: Record<string, string> = {
+  'slate-modern': 'Modern leigrijs',
+  'ocean-blue': 'Oceaanblauw',
+  'forest-green': 'Bosgroen',
+  'warm-earth': 'Warme aarde',
+  'rose-elegant': 'Zacht roos',
+  midnight: 'Nachtblauw',
+  charcoal: 'Antraciet',
+  terracotta: 'Terracotta',
+  burgundy: 'Bordeaux',
+  'steel-blue': 'Staalblauw',
+  'teal-fresh': 'Fris zeegroen',
+  'pure-minimal': 'Puur minimalistisch',
+  'warm-neutral': 'Warm neutraal',
+  electric: 'Fel creatief',
+  sunset: 'Zonsondergang',
+};
+
+const SPACING_LABELS: Record<ThemeSpacing, string> = {
+  compact: 'Compact',
+  comfortable: 'Comfortabel',
+  spacious: 'Ruim',
+};
+
+const RADIUS_OPTIONS: Array<{ value: ThemeRadius; label: string }> = [
+  { value: 'none', label: 'Recht' },
+  { value: 'small', label: 'Klein' },
+  { value: 'medium', label: 'Rond' },
+  { value: 'large', label: 'Extra rond' },
+];
+
+function getPresetLabel(preset: (typeof THEME_PRESETS)[0]) {
+  return PRESET_LABELS[preset.id] ?? preset.name;
+}
+
+function getPaletteLabel(palette: ThemePalette) {
+  return PALETTE_LABELS[palette.id] ?? palette.name;
+}
 
 export function ThemePanel({
   websiteId,
@@ -141,13 +198,18 @@ export function ThemePanel({
   const recommendedPresets = businessCategory
     ? getPresetsForCategory(businessCategory)
     : THEME_PRESETS.slice(0, 6);
+  const visibleRecommendedPresets = recommendedPresets.slice(0, 4);
+  const visibleRecommendedPresetIds = new Set(visibleRecommendedPresets.map((preset) => preset.id));
+  const otherPresets = businessCategory
+    ? THEME_PRESETS.filter((preset) => !visibleRecommendedPresetIds.has(preset.id))
+    : THEME_PRESETS;
 
   return (
     <div className={cn('flex h-full min-h-0 flex-col overflow-hidden', className)}>
       <div className="flex min-w-0 items-center justify-between gap-2 px-3 py-3 border-b sm:px-4">
         <div className="flex min-w-0 items-center gap-2">
           <Palette className="h-4 w-4 text-primary" />
-          <span className="truncate font-medium text-sm">Website Thema</span>
+          <span className="truncate font-medium text-sm">Website thema</span>
         </div>
         {isSaving && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
       </div>
@@ -156,13 +218,13 @@ export function ThemePanel({
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <TabsList className="mx-3 mt-3 grid grid-cols-3 sm:mx-4">
           <TabsTrigger value="presets" className="text-xs">
-            Presets
+            Thema&apos;s
           </TabsTrigger>
           <TabsTrigger value="colors" className="text-xs">
             Kleuren
           </TabsTrigger>
           <TabsTrigger value="fonts" className="text-xs">
-            Fonts
+            Letters
           </TabsTrigger>
         </TabsList>
 
@@ -176,7 +238,7 @@ export function ThemePanel({
                     <Label className="text-xs text-muted-foreground">Aanbevolen voor jouw bedrijf</Label>
                   </div>
                   <div className="grid grid-cols-1 gap-2 mb-4 sm:grid-cols-2">
-                    {recommendedPresets.slice(0, 4).map((preset) => (
+                    {visibleRecommendedPresets.map((preset) => (
                       <PresetCard
                         key={preset.id}
                         preset={preset}
@@ -189,9 +251,11 @@ export function ThemePanel({
                 </div>
               )}
 
-              <Label className="text-xs text-muted-foreground mb-3 block">Alle thema&apos;s</Label>
+              <Label className="text-xs text-muted-foreground mb-3 block">
+                {businessCategory && recommendedPresets.length > 0 ? 'Andere thema\'s' : 'Alle thema\'s'}
+              </Label>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {THEME_PRESETS.map((preset) => (
+                {otherPresets.map((preset) => (
                   <PresetCard
                     key={preset.id}
                     preset={preset}
@@ -248,26 +312,27 @@ export function ThemePanel({
                 className="text-xs"
                 onClick={() => handleSpacingChange(s)}
               >
-                {s === 'compact' ? 'Compact' : s === 'comfortable' ? 'Comfortabel' : 'Ruim'}
+                {SPACING_LABELS[s]}
               </Button>
             ))}
           </div>
         </div>
         <div>
           <Label className="text-xs text-muted-foreground mb-2 block">Hoeken</Label>
-          <div className="grid grid-cols-4 gap-1">
-            {(['none', 'small', 'medium', 'large'] as ThemeRadius[]).map((r) => (
+          <div className="grid grid-cols-2 gap-1 min-[420px]:grid-cols-4">
+            {RADIUS_OPTIONS.map((option) => (
               <Button
-                key={r}
-                variant={theme.radius === r ? 'default' : 'outline'}
+                key={option.value}
+                variant={theme.radius === option.value ? 'default' : 'outline'}
                 size="sm"
-                className="text-xs px-2"
-                onClick={() => handleRadiusChange(r)}
+                className="h-auto flex-col gap-1 px-2 py-2 text-xs"
+                onClick={() => handleRadiusChange(option.value)}
               >
                 <div
                   className="w-4 h-4 border-2 border-current"
-                  style={{ borderRadius: RADIUS_VALUES[r] }}
+                  style={{ borderRadius: RADIUS_VALUES[option.value] }}
                 />
+                <span>{option.label}</span>
               </Button>
             ))}
           </div>
@@ -327,7 +392,7 @@ function PresetCard({
         />
       </div>
 
-      <div className="font-medium text-xs truncate">{preset.name}</div>
+      <div className="font-medium text-xs truncate">{getPresetLabel(preset)}</div>
     </button>
   );
 }
@@ -362,7 +427,7 @@ function PaletteCard({
         <div className="w-5 h-5 rounded border" style={{ backgroundColor: palette.colors.accent }} />
       </div>
 
-      <div className="font-medium text-xs truncate">{palette.name}</div>
+      <div className="font-medium text-xs truncate">{getPaletteLabel(palette)}</div>
     </button>
   );
 }

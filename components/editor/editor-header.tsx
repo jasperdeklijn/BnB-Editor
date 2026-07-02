@@ -78,6 +78,11 @@ export function EditorHeader({
   const menuRef = useRef<HTMLDivElement>(null)
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const accountMenuRef = useRef<HTMLDivElement>(null)
+  const deviceLabels: Record<typeof device, string> = {
+    desktop: "Desktop preview",
+    tablet: "Tablet preview",
+    mobile: "Telefoon preview",
+  }
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -110,6 +115,8 @@ export function EditorHeader({
           />
           <Link
             href="/editor"
+            aria-label="Terug naar editor"
+            title="Terug naar editor"
             className="hidden md:inline-flex items-center gap-2 rounded-full border border-[var(--editor-header-accent)] bg-[var(--editor-header)] px-3 py-2 text-xs md:text-sm font-medium text-[var(--editor-header-fg)] transition-colors hover:bg-[var(--editor-header-accent)]/25"
           >
             <ArrowLeft className="h-3 w-3 md:h-4 md:w-4" />
@@ -142,6 +149,8 @@ export function EditorHeader({
             onClick={() => setMenuOpen((o) => !o)}
             aria-haspopup="menu"
             aria-expanded={menuOpen}
+            aria-label="Mijn website menu openen"
+            title="Mijn website menu"
           >
             <Home className="h-3.5 w-3.5 md:h-4 md:w-4" />
             <span className="hidden sm:inline ml-1.5">Mijn website</span>
@@ -266,6 +275,9 @@ export function EditorHeader({
                 variant="ghost"
                 size="sm"
                 onClick={() => onDeviceChange(d)}
+                aria-label={deviceLabels[d]}
+                aria-pressed={device === d}
+                title={deviceLabels[d]}
                 className={`h-8 px-2 transition-colors ${
                   device === d
                     ? "bg-[var(--editor-header-fg)]/15 text-[var(--editor-header-fg)]"
@@ -285,6 +297,8 @@ export function EditorHeader({
             size="sm"
             onClick={onAction}
             disabled={actionLoading}
+            aria-label={actionLabel}
+            title={actionLabel}
             className="h-8 md:h-10 rounded-md px-2 md:px-3 text-xs md:text-sm"
           >
             {actionIcon ? <span className="flex-shrink-0 hidden md:block">{actionIcon}</span> : null}
@@ -300,6 +314,8 @@ export function EditorHeader({
             onClick={() => setAccountMenuOpen((o) => !o)}
             aria-haspopup="menu"
             aria-expanded={accountMenuOpen}
+            aria-label="Account menu openen"
+            title="Account menu"
           >
             {avatarUrl ? (
               <span className="inline-flex h-6 w-6 md:h-8 md:w-8 overflow-hidden rounded-full bg-muted flex-shrink-0">

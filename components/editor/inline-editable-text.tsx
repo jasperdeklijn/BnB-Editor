@@ -102,7 +102,7 @@ export function EditableText({
       style,
       contentEditable: isEditing,
       suppressContentEditableWarning: true,
-      title: editable ? "Double-click to edit" : undefined,
+      title: editable ? "Dubbelklik om tekst te bewerken" : undefined,
       onDoubleClick: editable
         ? (event: React.MouseEvent<HTMLElement>) => {
             event.preventDefault()

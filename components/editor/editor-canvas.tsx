@@ -7,7 +7,7 @@ import type { Section, SectionType, Transition } from "@/lib/types"
 import {
   DEFAULT_GALLERY_IMAGES,
 } from "@/lib/business-naming"
-import { getDefaultSectionData as getRegistryDefaultSectionData } from "@/components/editor/section-registry"
+import { getDefaultSectionData as getRegistryDefaultSectionData, getSectionDefinition } from "@/components/editor/section-registry"
 import { SectionRenderer } from "./section-renderer"
 import { useEditorLayout } from "./editor-layout-context"
 import websiteSections from "@/lib/supabase/websiteSections"
@@ -317,6 +317,11 @@ export function EditorCanvas({
   const getDefaultSectionData = (type: SectionType): Record<string, unknown> =>
     getRegistryDefaultSectionData(type, { businessId })
 
+  const selectSection = (id: string) => {
+    if (isPreview) return
+    onSectionSelect(id)
+  }
+
   const handleDropOnGap = async (e: React.DragEvent, index: number) => {
     e.preventDefault()
 
@@ -568,27 +573,27 @@ export function EditorCanvas({
                   <BookOpen className="h-6 w-6" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground">Start met een korte tutorial</h3>
+                  <h3 className="text-lg font-semibold text-foreground">Start met een basisopzet</h3>
                   <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                    Deze website heeft nog geen ingevulde secties. Start met een basisopzet of sleep zelf secties vanaf links.
+                    Deze website heeft nog geen inhoud. Maak in een keer een duidelijke startpagina en pas daarna meteen de eerste tekst aan.
                   </p>
                 </div>
                 <div className="grid gap-2 rounded-md border border-border bg-muted/50 p-3 text-left text-sm text-muted-foreground">
                   <div className="flex gap-2">
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    <span>Voegt een hero, over-ons, aanbod en contactsectie toe.</span>
+                    <span>Voegt vier blokken toe: intro bovenaan, over ons, aanbod en contact.</span>
                   </div>
                   <div className="flex gap-2">
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    <span>Gebruikt standaardinhoud die u daarna direct kunt aanpassen.</span>
+                    <span>Opent daarna direct de intro zodat u de titel en knoptekst kunt aanpassen.</span>
                   </div>
                 </div>
                 <div className="flex flex-col justify-center gap-2 sm:flex-row">
                   <Button type="button" onClick={onStartTutorial} disabled={!onStartTutorial}>
-                    Tutorial starten
+                    Basisopzet maken
                   </Button>
                   <Button type="button" variant="outline" onClick={() => setTutorialDismissed(true)}>
-                    Zelf beginnen
+                    Zelf secties kiezen
                   </Button>
                 </div>
               </div>
@@ -620,6 +625,8 @@ export function EditorCanvas({
             const transitionToNext = hasTransitionToNext 
               ? transitions.find(t => t.fromSectionId === section.id && t.toSectionId === next.id)
               : null
+            const sectionLabel = getSectionDefinition(section.type)?.label ?? section.type.replace("_", " ")
+            const isSelected = selectedSectionId === section.id
 
             const content = (
               <React.Fragment>
@@ -629,11 +636,28 @@ export function EditorCanvas({
                     else sectionRefs.current.delete(section.id)
                   }}
                   data-section-id={section.id}
+                  aria-label={`${sectionLabel} sectie${isSelected ? ", geselecteerd" : ""}`}
+                  aria-selected={isSelected}
                   className={`group relative ${!isPreview ? "mb-4" : ""} ${
                     draggingSectionIndex === i ? "opacity-50" : ""
                   } ${showImageDropTargets ? "rounded-lg ring-2 ring-primary/50 ring-offset-2" : ""
                   } transition-all duration-200`}
                   draggable={!isPreview}
+                  tabIndex={isPreview ? undefined : 0}
+                  onClickCapture={(event) => {
+                    if (isPreview) return
+                    if (suppressNextSectionClickRef.current) {
+                      suppressNextSectionClickRef.current = false
+                      event.stopPropagation()
+                      return
+                    }
+                    selectSection(section.id)
+                  }}
+                  onFocus={() => {
+                    if (!isPreview && selectedSectionId !== section.id) {
+                      onSectionSelect(section.id)
+                    }
+                  }}
                   onDragStart={(e) => handleDragStart(e, i)}
                   onDragEnd={handleDragEnd}
                   onDragOver={handleDragOverSection}
@@ -647,7 +671,13 @@ export function EditorCanvas({
                           : "-translate-y-2 opacity-0 pointer-events-none"
                       }`}
                     >
-                      <Button size="icon" variant="ghost" className="h-7 w-7 cursor-grab active:cursor-grabbing popup-btn">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 cursor-grab active:cursor-grabbing popup-btn"
+                        aria-label={`${sectionLabel} verslepen`}
+                        title={`${sectionLabel} verslepen`}
+                      >
                         <GripVertical className="h-4 w-4" />
                       </Button>
                       <div className="h-6 w-px bg-border" />
@@ -657,6 +687,8 @@ export function EditorCanvas({
                         onClick={() => moveSectionAnimated(i, i - 1)}
                         disabled={i === 0}
                         className="h-7 w-7 popup-btn"
+                        aria-label={`${sectionLabel} omhoog verplaatsen`}
+                        title={`${sectionLabel} omhoog verplaatsen`}
                       >
                         <ChevronUp className="h-4 w-4" />
                       </Button>
@@ -666,6 +698,8 @@ export function EditorCanvas({
                         onClick={() => moveSectionAnimated(i, i + 1)}
                         disabled={i === sections.length - 1}
                         className="h-7 w-7 popup-btn"
+                        aria-label={`${sectionLabel} omlaag verplaatsen`}
+                        title={`${sectionLabel} omlaag verplaatsen`}
                       >
                         <ChevronDown className="h-4 w-4" />
                       </Button>
@@ -675,11 +709,19 @@ export function EditorCanvas({
                         variant="ghost"
                         className="h-7 w-7 text-destructive hover:bg-destructive/10 popup-btn"
                         onClick={() => handleDelete(section.id)}
+                        aria-label={`${sectionLabel} verwijderen`}
+                        title={`${sectionLabel} verwijderen`}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   )}
+
+                  {isSelected && !isPreview ? (
+                    <div className="pointer-events-none absolute left-3 top-3 z-10 rounded-full bg-primary px-2.5 py-1 text-[11px] font-medium text-primary-foreground shadow-sm">
+                      Geselecteerd: {sectionLabel}
+                    </div>
+                  ) : null}
 
                   <div
                     id={isPreview && section.type !== "nav" && section.type !== "footer" ? `section-${section.id}` : undefined}
@@ -688,16 +730,11 @@ export function EditorCanvas({
                         ? "border-primary bg-primary/5 shadow-lg"
                         : ""
                     } ${
-                      selectedSectionId === section.id && !isPreview
+                      isSelected && !isPreview
                         ? "ring-2 ring-primary ring-offset-2 shadow-lg"
                         : ""
                     }`}
-                    onClick={() =>
-                      !isPreview &&
-                      (suppressNextSectionClickRef.current
-                        ? (suppressNextSectionClickRef.current = false)
-                        : onSectionSelect(section.id))
-                    }
+                    onClick={() => selectSection(section.id)}
                   >
                     <SectionRenderer
                       section={section}

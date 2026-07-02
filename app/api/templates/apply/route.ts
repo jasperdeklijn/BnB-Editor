@@ -120,13 +120,56 @@ export async function POST(request: NextRequest) {
 
     const { data: websiteTheme, error: websiteThemeError } = await supabase
       .from("websites")
-      .select("theme_config")
+      .select("business_id, theme_config")
       .eq("id", resolvedWebsiteId)
       .eq("user_id", user.id)
       .single()
 
     if (websiteThemeError) {
       return NextResponse.json({ error: "Failed to load website theme" }, { status: 500 })
+    }
+
+    const { data: currentSections, error: currentSectionsError } = await supabase
+      .from("website_sections")
+      .select("id, type, content, styles, position")
+      .eq("website_id", resolvedWebsiteId)
+      .order("position", { ascending: true })
+
+    if (currentSectionsError) {
+      return NextResponse.json({ error: "Failed to create restore point" }, { status: 500 })
+    }
+
+    const currentSectionIds = (currentSections || []).map((section) => section.id)
+    const { data: currentTransitions, error: currentTransitionsError } = currentSectionIds.length > 0
+      ? await supabase
+          .from("section_transitions")
+          .select("from_section_id, to_section_id, transition")
+          .eq("website_id", resolvedWebsiteId)
+          .in("from_section_id", currentSectionIds)
+      : { data: [], error: null }
+
+    if (currentTransitionsError) {
+      return NextResponse.json({ error: "Failed to create restore point" }, { status: 500 })
+    }
+
+    const { data: currentServices, error: currentServicesError } = resolvedBusinessId
+      ? await supabase
+          .from("services")
+          .select("id, business_id, title, description, price, duration, capacity, image_urls, tags, position, is_featured")
+          .eq("business_id", resolvedBusinessId)
+          .order("position", { ascending: true })
+      : { data: [], error: null }
+
+    if (currentServicesError) {
+      return NextResponse.json({ error: "Failed to create restore point" }, { status: 500 })
+    }
+
+    const checkpoint = {
+      websiteId: resolvedWebsiteId,
+      businessId: resolvedBusinessId ?? websiteTheme.business_id ?? null,
+      sections: currentSections || [],
+      transitions: currentTransitions || [],
+      services: currentServices || [],
     }
 
     const themeConfig = (websiteTheme.theme_config as ThemeConfig | null) ?? null
@@ -171,6 +214,7 @@ export async function POST(request: NextRequest) {
       websiteId: resolvedWebsiteId,
       businessId: resolvedBusinessId,
       sectionsCount: sections.length,
+      checkpoint,
     })
   } catch (error) {
     console.error("Error applying template:", error)

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
+import Link from "next/link"
 import {
   AlignCenter,
   Check,
@@ -24,6 +25,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { getSectionDefinition } from "@/components/editor/section-registry"
 import { getSectionEditor } from "@/components/editor/section-editor-registry"
 import { SectionRenderer } from "@/components/editor/section-renderer"
 import type { SectionTargetOption } from "@/components/editor/section-editor-types"
@@ -38,6 +40,8 @@ interface SelectionEditorProps {
   selectedSection: Section | null
   sections: Section[]
   transitions: Transition[]
+  onSectionSelect?: (id: string) => void
+  onOpenCanvas?: () => void
   onUpdate: (id: string, data: Record<string, unknown>) => void
   onStyleUpdate: (styles: SectionStyles) => void
   onDelete: (id: string) => void
@@ -50,6 +54,13 @@ interface SelectionEditorProps {
 type StyleControl = keyof Pick<SectionStyles, "fontFamily" | "backgroundColor" | "textColor" | "backgroundImage">
 
 const DEFAULT_STYLE_CONTROLS: StyleControl[] = ["fontFamily", "backgroundColor", "textColor", "backgroundImage"]
+
+const FONT_OPTIONS = [
+  { label: "Standaard lettertype", value: "" },
+  { label: "Rustig en modern", value: "font-sans" },
+  { label: "Klassiek", value: "font-serif" },
+  { label: "Strak technisch", value: "font-mono" },
+]
 
 const SECTION_STYLE_CONTROLS: Partial<Record<SectionType, StyleControl[]>> = {
   nav: ["backgroundColor", "textColor"],
@@ -127,6 +138,8 @@ export function SelectionEditor({
   selectedSection,
   sections,
   transitions,
+  onSectionSelect,
+  onOpenCanvas,
   onUpdate,
   onStyleUpdate,
   onDelete,
@@ -147,13 +160,56 @@ export function SelectionEditor({
 
   if (!selectedSection) {
     return (
-      <div className="h-full min-h-0 w-full border-border bg-[var(--editor-panel)] p-4 md:border-l md:p-6">
-        <div className="flex h-full flex-col items-center justify-center text-center">
-          <div className="mb-4 rounded-full bg-primary/10 p-4">
-            <Wand2 className="h-8 w-8 text-primary" />
+      <div className="h-full min-h-0 w-full overflow-hidden border-border bg-[var(--editor-panel)] p-4 md:border-l md:p-6">
+        <div className="flex h-full min-h-0 flex-col">
+          <div className="mx-auto flex max-w-sm flex-col items-center text-center">
+            <div className="mb-4 rounded-full bg-primary/10 p-4">
+              <Wand2 className="h-8 w-8 text-primary" />
+            </div>
+            <p className="text-sm font-semibold text-foreground">Kies een sectie om te bewerken</p>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              Selecteer hieronder een blok van uw pagina, of ga terug naar het doek en tik op het blok zelf.
+            </p>
           </div>
-          <p className="text-sm font-medium text-muted-foreground">Geen sectie geselecteerd</p>
-          <p className="mt-2 text-xs text-muted-foreground">Klik op een sectie om aan te passen</p>
+
+          {sections.length > 0 ? (
+            <div className="mt-5 min-h-0 flex-1 overflow-y-auto pr-1">
+              <div className="space-y-2">
+                {sections.map((section, index) => {
+                  const label = getSectionTargetLabel(section)
+
+                  return (
+                    <button
+                      key={section.id}
+                      type="button"
+                      onClick={() => onSectionSelect?.(section.id)}
+                      className="flex w-full items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-3 text-left text-sm shadow-sm transition-colors hover:border-primary/60 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium text-foreground">
+                          {index + 1}. {label}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-muted-foreground">Tekst en uiterlijk aanpassen</span>
+                      </span>
+                      <span className="shrink-0 rounded-full bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary">
+                        Kies
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="mt-5 rounded-md border border-dashed border-border bg-background/60 p-4 text-center text-sm text-muted-foreground">
+              Voeg eerst een sectie toe voordat u de stijl kunt aanpassen.
+            </div>
+          )}
+
+          {onOpenCanvas ? (
+            <Button type="button" variant="outline" className="mt-4 w-full" onClick={onOpenCanvas}>
+              Op doek kiezen
+            </Button>
+          ) : null}
         </div>
       </div>
     )
@@ -272,6 +328,7 @@ export function SelectionEditor({
   }
 
   const selectedLayout = normalizeSectionLayout((selectedSection.data as any).layout)
+  const selectedSectionLabel = getSectionDefinition(selectedSection.type)?.label ?? selectedSection.type.replace("_", " ")
   const layoutOptions = getSectionLayoutOptions(selectedSection.type)
   const selectedLayoutOption = layoutOptions.find((option) => option.value === selectedLayout) ?? layoutOptions[0]
   const LayoutIcon = getLayoutIcon(selectedLayout)
@@ -310,7 +367,7 @@ export function SelectionEditor({
             <div className="rounded-md bg-primary/15 p-1.5 text-primary">
               <Type className="h-4 w-4" />
             </div>
-            <h2 className="text-lg font-semibold capitalize">{selectedSection.type}</h2>
+            <h2 className="text-lg font-semibold">{selectedSectionLabel}</h2>
           </div>
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -318,7 +375,8 @@ export function SelectionEditor({
                 variant="ghost"
                 size="icon-sm"
                 className="text-destructive hover:bg-destructive/10 transition-all hover:scale-110"
-                aria-label="Sectie verwijderen"
+                aria-label={`${selectedSectionLabel} verwijderen`}
+                title={`${selectedSectionLabel} verwijderen`}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -339,14 +397,14 @@ export function SelectionEditor({
             </AlertDialogContent>
           </AlertDialog>
         </div>
-        <p className="text-xs text-muted-foreground">Inhoud en styling aanpassen</p>
+        <p className="text-xs text-muted-foreground">Pas de tekst en het uiterlijk van dit blok aan.</p>
       </div>
 
       <div className="space-y-4">
         <Card className="p-4 space-y-3">
           <Label className="flex items-center gap-2">
             <Type className="h-3.5 w-3.5" />
-            Layoutstijl
+            Indeling
           </Label>
           <button
             type="button"
@@ -359,7 +417,7 @@ export function SelectionEditor({
               </span>
               <span className="min-w-0">
                 <span className="block truncate font-medium">{selectedLayoutOption.label}</span>
-                <span className="block text-xs text-muted-foreground">Bekijk layout opties</span>
+                <span className="block text-xs text-muted-foreground">Bekijk voorbeelden</span>
               </span>
             </span>
             <Eye className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
@@ -379,9 +437,9 @@ export function SelectionEditor({
                   <div className="flex items-center justify-between border-b border-border px-4 py-3">
                     <div>
                       <h3 id="layout-dialog-title" className="text-sm font-semibold">
-                        Layoutstijl kiezen
+                        Indeling kiezen
                       </h3>
-                      <p className="text-xs text-muted-foreground">{selectedSection.type.replace("_", " ")}</p>
+                      <p className="text-xs text-muted-foreground">{selectedSectionLabel}</p>
                     </div>
                     <Button type="button" variant="ghost" size="icon-sm" onClick={() => setLayoutDialogOpen(false)} aria-label="Sluiten">
                       <X className="h-4 w-4" />
@@ -475,17 +533,23 @@ export function SelectionEditor({
         <Card className="p-4 space-y-3">
           <Label className="flex items-center gap-2">
             <Palette className="h-3.5 w-3.5" />
-            Stijlen
+            Uiterlijk
           </Label>
           <div className="space-y-3">
             {supportsStyleControl("fontFamily") ? (
               <div>
-                <Label className="mb-2 text-xs">Lettertypefamilie</Label>
-                <Input
-                  placeholder="bijv. font-serif"
+                <Label className="mb-2 text-xs">Lettertype</Label>
+                <select
                   value={selectedSection.styles?.fontFamily || ""}
                   onChange={(event) => updateStyleValue("fontFamily", event.target.value)}
-                />
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                >
+                  {FONT_OPTIONS.map((option) => (
+                    <option key={option.value || "default"} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             ) : null}
 
@@ -495,7 +559,7 @@ export function SelectionEditor({
                   <div className="flex-1">
                     <Label className="mb-2 flex items-center gap-1 text-xs">
                       <div className="h-3 w-3 rounded border bg-muted" />
-                      Achtergrond
+                      Achtergrondkleur
                     </Label>
                     <input
                       type="color"
@@ -510,7 +574,7 @@ export function SelectionEditor({
                   <div className="flex-1">
                     <Label className="mb-2 flex items-center gap-1 text-xs">
                       <Type className="h-3 w-3" />
-                      Tekst
+                      Tekstkleur
                     </Label>
                     <input
                       type="color"
@@ -528,11 +592,12 @@ export function SelectionEditor({
               <div>
                 <Label className="mb-2 flex items-center gap-1 text-xs">
                   <ImageIcon className="h-3 w-3" />
-                  Achtergrondafbeelding
+                  Afbeelding als achtergrond
                 </Label>
                 <div className="flex gap-2">
                   <Input
-                    placeholder="https://..."
+                    aria-label="Link naar achtergrondafbeelding"
+                    placeholder="Plak een afbeeldingslink"
                     value={selectedSection.styles?.backgroundImage || ""}
                     onChange={(event) => updateStyleValue("backgroundImage", event.target.value)}
                   />
@@ -542,11 +607,17 @@ export function SelectionEditor({
                     </Button>
                   ) : null}
                 </div>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <span>Gebruik een afbeeldingslink of kies eerst een afbeelding uit de beeldbank.</span>
+                  <Button variant="outline" size="xs" asChild>
+                    <Link href="/editor/images">Afbeeldingen openen</Link>
+                  </Button>
+                </div>
               </div>
             ) : null}
 
             <p className="text-[11px] leading-relaxed text-muted-foreground">
-              Beschikbare stijlopties voor deze {selectedSection.type.replace("_", " ")} sectie.
+              Beschikbare uiterlijkopties voor {selectedSectionLabel}.
             </p>
           </div>
         </Card>
