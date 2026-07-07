@@ -7,7 +7,6 @@ import { CheckCircle2, X, ArrowRight } from "lucide-react"
 import { handleUpgrade, handleDowngrade } from "@/lib/stripe-placeholder"
 import { toast } from "sonner"
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 
 interface PlanComparisonTableProps {
   currentPlanId: PlanId
@@ -24,7 +23,6 @@ export function PlanComparisonTable({
 }: PlanComparisonTableProps) {
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
 
   const mainPlans = [PRICING_PLANS.lite, PRICING_PLANS.growth]
 

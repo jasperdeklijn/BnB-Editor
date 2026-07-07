@@ -15,9 +15,9 @@ Scope: UX issues only. No calendar entries, availability windows, or services we
 
 ## Checklist
 
-- [ ] Task 1: Make visible item counts match the current calendar view
-- [ ] Task 2: Add labels and tooltips to icon-only calendar buttons
-- [ ] Task 3: Improve mobile month-grid touch targets
+- [x] Task 1: Make visible item counts match the current calendar view
+- [x] Task 2: Add labels and tooltips to icon-only calendar buttons
+- [x] Task 3: Improve mobile month-grid touch targets
 - [ ] Task 4: Replace dense week-grid add buttons with a clearer mobile interaction
 - [ ] Task 5: Make filters collapsible and less dominant on mobile
 - [ ] Task 6: Present the add/edit form as a focused drawer or modal
@@ -26,7 +26,7 @@ Scope: UX issues only. No calendar entries, availability windows, or services we
 
 ## Task 1: Make visible item counts match the current calendar view
 
-Status: Open
+Status: Done
 Priority: High
 Likely files:
 - `components/calendar/calendar-client.tsx`
@@ -42,9 +42,13 @@ Done when:
 - Month, week, and day views show a range-specific count such as `0 items deze dag` or `2 items deze maand`.
 - Empty calendar states explain whether filters, date range, or the selected service caused the empty view.
 
+Implementation notes:
+- The navbar/header copy now separates the filtered total from the active month/week/day range total.
+- Range-empty states explain that matching filtered items exist outside the selected calendar range and offer period/filter recovery actions.
+
 ## Task 2: Add labels and tooltips to icon-only calendar buttons
 
-Status: Open
+Status: Done
 Priority: High
 Likely files:
 - `components/calendar/calendar-client.tsx`
@@ -60,9 +64,13 @@ Done when:
 - Availability delete buttons expose a specific label such as `Beschikbaarheid op maandag verwijderen`.
 - Every icon-only calendar button has an accessible name, tooltip, and visible focus state.
 
+Implementation notes:
+- Previous/next, month add, availability delete, and form close icon buttons now expose accessible names and native tooltips.
+- Existing button focus styles are reused; raw calendar icon buttons received explicit focus-visible rings.
+
 ## Task 3: Improve mobile month-grid touch targets
 
-Status: Open
+Status: Done
 Priority: High
 Likely file:
 - `components/calendar/calendar-client.tsx`
@@ -76,6 +84,10 @@ Done when:
 - Calendar day cells have stable mobile touch targets of at least 40px.
 - Adding an appointment uses one clear cell action instead of a separate tiny plus/add target.
 - Existing day entries and empty-day add states remain readable at 390px.
+
+Implementation notes:
+- Month cells now use one full-width day add button with a fixed 40px height and visible plus icon.
+- The separate tiny add button was removed so the date and add action share one clear touch target.
 
 ## Task 4: Replace dense week-grid add buttons with a clearer mobile interaction
 

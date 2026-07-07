@@ -2,18 +2,15 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Check, Palette, Type, Maximize2, Circle } from 'lucide-react';
+import { Check, Maximize2, Circle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   COLOR_PALETTES,
   FONT_PAIRS,
   THEME_PRESETS,
-  SPACING_VALUES,
-  RADIUS_VALUES,
   type ThemeConfig,
   type ThemeSpacing,
   type ThemeRadius,

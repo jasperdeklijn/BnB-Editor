@@ -5,9 +5,6 @@ import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import {
   ArrowLeft,
-  Eye,
-  EyeOff,
-  Upload,
   Monitor,
   Tablet,
   Smartphone,
@@ -52,9 +49,6 @@ interface EditorHeaderProps {
 }
 
 export function EditorHeader({
-  isPreview,
-  onPreviewToggle,
-  onPublish,
   onLogout,
   isSaving,
   saveState = isSaving ? "saving" : "saved",

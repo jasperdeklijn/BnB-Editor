@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { Button } from "@/components/ui/button"
 import { EditorPageShell } from "@/components/editor/editor-page-shell"
 import { useEditorLayout } from "@/components/editor/editor-layout-context"
 import { toast } from "sonner"

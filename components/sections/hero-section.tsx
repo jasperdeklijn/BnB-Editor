@@ -31,13 +31,6 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
   const ctaText = data.ctaText as string
   const layout = (heroLayoutMap[normalizeSectionLayout(data.layout)] ?? "centered") as HeroLayout
 
-  const sectionStyle: React.CSSProperties = {
-    backgroundColor: styles?.backgroundColor,
-    backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  }
-
   const textStyle: React.CSSProperties = {
     color: styles?.textColor,
   }

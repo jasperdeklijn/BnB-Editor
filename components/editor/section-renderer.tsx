@@ -39,8 +39,6 @@ export function TransitionWrapper({
   const transitionDecoration = (t?: string, isTop?: boolean) => {
     if (!t || t === "none") return null
     
-    const gradientId = `grad-${t}-${isTop ? "top" : "bottom"}-${Math.random().toString(36).substr(2, 9)}`
-    
     // For top position, we want fromColor -> toColor (previous section color to current)
     // For bottom position, we want toColor -> fromColor (current section color to next)
     const startColor = isTop ? fromColor : toColor

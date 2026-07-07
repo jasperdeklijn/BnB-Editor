@@ -356,7 +356,7 @@ export function EditorCanvas({
         if (created && created.id) {
           setSections(sections.map((s) => (s.id === tempId ? { ...s, id: created.id } : s)))
         }
-      } catch (err) {
+      } catch {
         // ignore persistence errors for now
       }
       return
@@ -418,14 +418,6 @@ export function EditorCanvas({
      Section actions
   ------------------------------ */
 
-  const moveSection = (from: number, to: number) => {
-    if (to < 0 || to >= sections.length) return
-    const newSections = [...sections]
-    const [item] = newSections.splice(from, 1)
-    newSections.splice(to, 0, item)
-    setSections(newSections)
-  }
-
   // Animate reordering using FLIP when triggered by up/down buttons
   const moveSectionAnimated = async (from: number, to: number) => {
     if (to < 0 || to >= sections.length) return
@@ -458,7 +450,7 @@ export function EditorCanvas({
       el.style.transform = `translateY(${deltaY}px)`
 
       // force reflow to make the transform take effect
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+       
       el.getBoundingClientRect()
 
       // then animate to natural position
@@ -471,7 +463,7 @@ export function EditorCanvas({
         try {
           el.style.transition = ''
           el.style.transform = ''
-        } catch (e) {
+        } catch {
           /* ignore */
         }
         el.removeEventListener('transitionend', cleanup)

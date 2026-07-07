@@ -157,6 +157,39 @@ function formatDayLabel(date: Date) {
   return new Intl.DateTimeFormat("nl-NL", { weekday: "long", day: "2-digit", month: "long" }).format(date)
 }
 
+function formatItemCount(count: number, suffix: string) {
+  return `${count} ${count === 1 ? "item" : "items"} ${suffix}`
+}
+
+function getCalendarViewRange(view: CalendarView, cursorDate: Date) {
+  if (view === "month") {
+    return {
+      start: new Date(cursorDate.getFullYear(), cursorDate.getMonth(), 1),
+      end: new Date(cursorDate.getFullYear(), cursorDate.getMonth() + 1, 1),
+      countSuffix: "deze maand",
+      emptyRangeLabel: "deze maand",
+    }
+  }
+
+  if (view === "week") {
+    const start = startOfWeek(cursorDate)
+    return {
+      start,
+      end: addDays(start, 7),
+      countSuffix: "deze week",
+      emptyRangeLabel: "deze week",
+    }
+  }
+
+  const start = startOfDay(cursorDate)
+  return {
+    start,
+    end: addDays(start, 1),
+    countSuffix: "deze dag",
+    emptyRangeLabel: "deze dag",
+  }
+}
+
 function formatEntryTime(entry: CalendarEntry) {
   if (entry.all_day) return "Hele dag"
   const formatter = new Intl.DateTimeFormat("nl-NL", { hour: "2-digit", minute: "2-digit" })
@@ -179,6 +212,11 @@ function isSameDay(a: Date, b: Date) {
 
 function rangesOverlap(startA: Date, endA: Date, startB: Date, endB: Date) {
   return startA < endB && endA > startB
+}
+
+function startsWithinRange(entry: CalendarEntry, start: Date, end: Date) {
+  const entryStart = new Date(entry.start_at)
+  return entryStart >= start && entryStart < end
 }
 
 function servicesOverlap(a: string | null | undefined, b: string | null | undefined) {
@@ -361,6 +399,14 @@ export function CalendarClient({
     () => entries.filter((entry) => matchesCalendarFilters(entry, filters)),
     [entries, filters],
   )
+  const calendarViewRange = useMemo(() => getCalendarViewRange(activeView, cursorDate), [activeView, cursorDate])
+  const visibleRangeEntries = useMemo(
+    () =>
+      visibleEntries.filter((entry) =>
+        startsWithinRange(entry, calendarViewRange.start, calendarViewRange.end),
+      ),
+    [calendarViewRange, visibleEntries],
+  )
   const hasActiveFilters =
     filters.status !== "all" ||
     filters.serviceId !== "all" ||
@@ -394,6 +440,14 @@ export function CalendarClient({
   const pendingCount = visibleEntries.filter((entry) => entry.status === "pending").length
   const confirmedCount = visibleEntries.filter((entry) => entry.status === "confirmed").length
   const blockedCount = visibleEntries.filter((entry) => entry.status === "blocked").length
+  const filteredCountLabel = formatItemCount(visibleEntries.length, "binnen filters")
+  const rangeCountLabel = formatItemCount(visibleRangeEntries.length, calendarViewRange.countSuffix)
+  const rangeEmptyFilterText = selectedOffering
+    ? ` voor ${selectedOffering.title || offeringCopy.singular}`
+    : hasActiveFilters
+      ? " binnen de huidige filters"
+      : ""
+  const rangeEmptyText = `Er zijn ${filteredCountLabel}${rangeEmptyFilterText}, maar geen daarvan valt in ${calendarViewRange.emptyRangeLabel}. Kies een andere periode${hasActiveFilters ? " of pas de filters aan" : ""}.`
   const formConflicts = form ? getEntryConflicts(form, entries) : []
   const availabilityWarning = form ? getAvailabilityWarning(form, availabilityWindows) : null
 
@@ -404,12 +458,12 @@ export function CalendarClient({
   }, [isPending, setActionLoading, setHeaderSaving, setSaveState])
 
   useEffect(() => {
-    setInfoText(`${visibleEntries.length} ${visibleEntries.length === 1 ? "item" : "items"} in beeld`)
+    setInfoText(`${filteredCountLabel}; ${rangeCountLabel}`)
 
     return () => {
       setInfoText(undefined)
     }
-  }, [visibleEntries.length, setInfoText])
+  }, [filteredCountLabel, rangeCountLabel, setInfoText])
 
   useEffect(() => {
     return () => {
@@ -640,7 +694,7 @@ export function CalendarClient({
         filters={filters}
         offerings={offerings}
         offeringCopy={offeringCopy}
-        resultCount={visibleEntries.length}
+        resultLabel={filteredCountLabel}
         hasActiveFilters={hasActiveFilters}
         onChange={setFilters}
         onClear={clearFilters}
@@ -657,7 +711,9 @@ export function CalendarClient({
           <div className="flex flex-col gap-3 border-b border-border px-3 py-3 sm:px-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
               <h2 className="font-semibold text-foreground">Kalenderoverzicht</h2>
-              <p className="text-xs text-muted-foreground">{copy.description}</p>
+              <p className="text-xs text-muted-foreground">
+                {copy.description} {filteredCountLabel}; {rangeCountLabel}.
+              </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <div className="inline-flex rounded-md border border-border bg-background p-0.5">
@@ -676,13 +732,27 @@ export function CalendarClient({
                   </button>
                 ))}
               </div>
-              <Button type="button" variant="outline" size="sm" onClick={() => moveCursor(-1)}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => moveCursor(-1)}
+                aria-label="Vorige periode"
+                title="Vorige periode"
+              >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <Button type="button" variant="outline" size="sm" onClick={() => setCursorDate(new Date())}>
                 Vandaag
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => moveCursor(1)}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => moveCursor(1)}
+                aria-label="Volgende periode"
+                title="Volgende periode"
+              >
                 <ChevronRight className="h-4 w-4" />
               </Button>
               <Button type="button" size="sm" onClick={() => openCreateForm(cursorDate)} disabled={Boolean(schemaError)}>
@@ -714,10 +784,20 @@ export function CalendarClient({
                 onClear={hasActiveFilters ? clearFilters : undefined}
                 disabled={Boolean(schemaError)}
               />
+            ) : visibleRangeEntries.length === 0 ? (
+              <CalendarEmptyState
+                title={rangeCountLabel}
+                text={rangeEmptyText}
+                actionLabel={copy.primaryAction}
+                onCreate={() => openCreateForm(cursorDate)}
+                onClear={hasActiveFilters ? clearFilters : undefined}
+                disabled={Boolean(schemaError)}
+              />
             ) : activeView === "month" ? (
                 <MonthView
                   cursorDate={cursorDate}
                   entriesByDay={entriesByDay}
+                  rangeCountLabel={rangeCountLabel}
                   offeringTitleById={offeringTitleById}
                   onCreate={openCreateForm}
                   onEdit={openEditForm}
@@ -726,6 +806,7 @@ export function CalendarClient({
                 <WeekView
                   cursorDate={cursorDate}
                   entriesByDay={entriesByDay}
+                  rangeCountLabel={rangeCountLabel}
                   offeringTitleById={offeringTitleById}
                   onCreate={openCreateForm}
                   onEdit={openEditForm}
@@ -734,6 +815,7 @@ export function CalendarClient({
                 <DayView
                   cursorDate={cursorDate}
                   entriesByDay={entriesByDay}
+                  rangeCountLabel={rangeCountLabel}
                   offeringTitleById={offeringTitleById}
                   onCreate={openCreateForm}
                   onEdit={openEditForm}
@@ -802,7 +884,7 @@ function FilterPanel({
   filters,
   offerings,
   offeringCopy,
-  resultCount,
+  resultLabel,
   hasActiveFilters,
   onChange,
   onClear,
@@ -810,7 +892,7 @@ function FilterPanel({
   filters: CalendarFilterState
   offerings: Service[]
   offeringCopy: CalendarClientProps["offeringCopy"]
-  resultCount: number
+  resultLabel: string
   hasActiveFilters: boolean
   onChange: (filters: CalendarFilterState) => void
   onClear: () => void
@@ -822,7 +904,7 @@ function FilterPanel({
           <Filter className="h-4 w-4 text-primary" />
           <h2 className="font-semibold text-foreground">Filters</h2>
           <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-            {resultCount} in beeld
+            {resultLabel}
           </span>
         </div>
         <Button type="button" variant="ghost" size="sm" onClick={onClear} disabled={!hasActiveFilters}>
@@ -966,12 +1048,14 @@ function SummaryCard({ label, value, tone }: { label: string; value: number; ton
 function MonthView({
   cursorDate,
   entriesByDay,
+  rangeCountLabel,
   offeringTitleById,
   onCreate,
   onEdit,
 }: {
   cursorDate: Date
   entriesByDay: Map<string, CalendarEntry[]>
+  rangeCountLabel: string
   offeringTitleById: Map<string, string>
   onCreate: (date: Date) => void
   onEdit: (entry: CalendarEntry) => void
@@ -984,6 +1068,7 @@ function MonthView({
       <div className="mb-3 flex items-center gap-2">
         <CalendarDays className="h-4 w-4 text-primary" />
         <h3 className="font-semibold capitalize text-foreground">{formatMonthLabel(cursorDate)}</h3>
+        <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">{rangeCountLabel}</span>
       </div>
       <div className="grid grid-cols-7 overflow-hidden rounded-lg border border-border">
         {WEEKDAY_LABELS.map((label) => (
@@ -996,33 +1081,27 @@ function MonthView({
           const dayEntries = entriesByDay.get(key) ?? []
           const isCurrentMonth = day.getMonth() === cursorDate.getMonth()
           const isToday = isSameDay(day, new Date())
+          const addLabel = `Toevoegen op ${formatDayLabel(day)}`
 
           return (
             <div
               key={key}
-              className={`min-h-28 border-b border-r border-border p-2 text-left align-top transition-colors hover:bg-primary/5 ${
+              className={`min-h-28 border-b border-r border-border p-0.5 text-left align-top transition-colors hover:bg-primary/5 sm:p-2 ${
                 isCurrentMonth ? "bg-background" : "bg-muted/30 text-muted-foreground"
               }`}
             >
-              <div className="flex items-center justify-between gap-1">
-                <button
-                  type="button"
-                  onClick={() => onCreate(day)}
-                  className={`inline-flex h-6 min-w-6 items-center justify-center rounded text-xs font-medium transition-colors hover:bg-primary/10 ${
-                    isToday ? "bg-primary text-primary-foreground hover:bg-primary" : ""
-                  }`}
-                >
-                  {day.getDate()}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onCreate(day)}
-                  aria-label={`Toevoegen op ${day.getDate()}`}
-                  className="inline-flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => onCreate(day)}
+                aria-label={addLabel}
+                title={addLabel}
+                className={`flex h-10 w-full items-center justify-between gap-1 rounded-md px-1.5 text-xs font-medium transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:px-2 ${
+                  isToday ? "bg-primary text-primary-foreground hover:bg-primary" : ""
+                }`}
+              >
+                <span>{day.getDate()}</span>
+                <Plus className="h-3.5 w-3.5 shrink-0" />
+              </button>
               <div className="mt-2 space-y-1">
                 {dayEntries.slice(0, 3).map((entry) => (
                   <EntryPill
@@ -1047,12 +1126,14 @@ function MonthView({
 function WeekView({
   cursorDate,
   entriesByDay,
+  rangeCountLabel,
   offeringTitleById,
   onCreate,
   onEdit,
 }: {
   cursorDate: Date
   entriesByDay: Map<string, CalendarEntry[]>
+  rangeCountLabel: string
   offeringTitleById: Map<string, string>
   onCreate: (date: Date, hour?: number) => void
   onEdit: (entry: CalendarEntry) => void
@@ -1061,7 +1142,13 @@ function WeekView({
   const days = Array.from({ length: 7 }, (_, index) => addDays(first, index))
 
   return (
-    <div className="overflow-x-auto">
+    <div>
+      <div className="mb-3 flex items-center gap-2">
+        <CalendarDays className="h-4 w-4 text-primary" />
+        <h3 className="font-semibold text-foreground">Week van {formatDayLabel(first)}</h3>
+        <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">{rangeCountLabel}</span>
+      </div>
+      <div className="overflow-x-auto">
       <div className="grid min-w-[760px] grid-cols-[4.5rem_repeat(7,minmax(0,1fr))] overflow-hidden rounded-lg border border-border">
         <div className="border-b border-r border-border bg-muted p-2 text-xs font-medium text-muted-foreground">Tijd</div>
         {days.map((day) => (
@@ -1106,6 +1193,7 @@ function WeekView({
           </Fragment>
         ))}
       </div>
+      </div>
     </div>
   )
 }
@@ -1113,12 +1201,14 @@ function WeekView({
 function DayView({
   cursorDate,
   entriesByDay,
+  rangeCountLabel,
   offeringTitleById,
   onCreate,
   onEdit,
 }: {
   cursorDate: Date
   entriesByDay: Map<string, CalendarEntry[]>
+  rangeCountLabel: string
   offeringTitleById: Map<string, string>
   onCreate: (date: Date, hour?: number) => void
   onEdit: (entry: CalendarEntry) => void
@@ -1130,6 +1220,7 @@ function DayView({
       <div className="mb-3 flex items-center gap-2">
         <CalendarDays className="h-4 w-4 text-primary" />
         <h3 className="font-semibold capitalize text-foreground">{formatDayLabel(cursorDate)}</h3>
+        <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">{rangeCountLabel}</span>
       </div>
       <div className="overflow-hidden rounded-lg border border-border">
         {DAY_HOURS.map((hour) => {
@@ -1328,7 +1419,15 @@ function AvailabilityPanel({
                       {offeringTitle || `Alle ${offeringCopy.plural.toLowerCase()}`}
                     </p>
                   </div>
-                  <Button type="button" variant="ghost" size="icon-sm" onClick={() => onDelete(window.id)} disabled={disabled}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => onDelete(window.id)}
+                    disabled={disabled}
+                    aria-label={`Beschikbaarheid op ${WEEKDAY_FULL_LABELS[window.weekday - 1].toLowerCase()} verwijderen`}
+                    title={`Beschikbaarheid op ${WEEKDAY_FULL_LABELS[window.weekday - 1].toLowerCase()} verwijderen`}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -1393,7 +1492,7 @@ function EntryForm({
           <h2 className="font-semibold text-foreground">{form.id ? "Kalenderitem bewerken" : copy.primaryAction}</h2>
           <p className="text-xs text-muted-foreground">Wijzig titel, tijd, status en gekoppeld aanbod.</p>
         </div>
-        <Button type="button" variant="ghost" size="icon-sm" onClick={onCancel}>
+        <Button type="button" variant="ghost" size="icon-sm" onClick={onCancel} aria-label="Formulier sluiten" title="Formulier sluiten">
           <X className="h-4 w-4" />
         </Button>
       </div>

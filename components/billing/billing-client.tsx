@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { MockUserBillingData } from "@/lib/types/pricing"
-import { getPlanById, calculateMonthlyPrice } from "@/lib/pricing"
+import { getPlanById } from "@/lib/pricing"
 import { BillingStatusBadge } from "@/components/billing/billing-status-badge"
 import { PlanComparisonTable } from "@/components/billing/plan-comparison-table"
 import { InvoiceHistoryTable } from "@/components/billing/invoice-history-table"
@@ -33,7 +33,6 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
   const currentPlan = getPlanById(billingData.currentPlan)
   const basePrice = billingData.currentPrice
   const addonsPrice = addonStates.bookingAddon ? 19 : 0
-  const totalPrice = basePrice + addonsPrice
 
   if (!mounted) {
     return (

@@ -140,7 +140,6 @@ export async function loadPublicWebsitePage({
       
       // Nav sections need to be rendered without wrapper for sticky positioning
       const isNavSection = section.type === "nav"
-      const navIsSticky = isNavSection && ((section.data?.isSticky as boolean) ?? true)
 
       if (isNavSection) {
         // Render nav directly without wrapper to preserve sticky positioning

@@ -209,7 +209,7 @@ export async function handleCancelSubscription(userId: string): Promise<void> {
  * - Update Supabase status
  * - Notify user of result
  */
-export async function handleRetryPayment(invoiceId: string, userId: string): Promise<void> {
+export async function handleRetryPayment(invoiceId: string, _userId: string): Promise<void> {
   console.warn(
     `[PLACEHOLDER] handleRetryPayment: Would retry payment for invoice ${invoiceId}`
   )
@@ -270,7 +270,7 @@ export function setupStripeWebhooks(): void {
  */
 export async function ensureStripeCustomer(
   userId: string,
-  email: string
+  _email: string
 ): Promise<string> {
   console.warn(
     `[PLACEHOLDER] ensureStripeCustomer: Would ensure Stripe customer exists for ${userId}`
@@ -308,7 +308,7 @@ export async function ensureStripeCustomer(
  */
 export async function syncSubscriptionFromStripe(
   userId: string,
-  stripeSubscriptionId: string
+  _stripeSubscriptionId: string
 ): Promise<void> {
   console.warn(
     `[PLACEHOLDER] syncSubscriptionFromStripe: Would sync subscription from Stripe for ${userId}`

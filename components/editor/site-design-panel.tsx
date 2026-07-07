@@ -139,9 +139,9 @@ export function SiteDesignPanel({
           <div className="flex flex-col gap-2">
             <span>Sjabloon toegepast. Er is een herstelpunt gemaakt voor de vorige inhoud.</span>
             {checkpoint ? (
-              <Button type="button" variant="outline" size="xs" className="w-fit" onClick={() => restoreCheckpoint(checkpoint)}>
+              <Button type="button" variant="outline" size="xs" className="w-fit" onClick={() => restoreCheckpoint(checkpoint)} disabled={isRestoring}>
                 <RotateCcw className="h-3 w-3" />
-                Vorige inhoud terugzetten
+                {isRestoring ? "Terugzetten..." : "Vorige inhoud terugzetten"}
               </Button>
             ) : null}
           </div>

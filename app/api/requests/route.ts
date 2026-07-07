@@ -75,7 +75,7 @@ async function resolveRequestContext(input: {
   recipientEmail?: string
 }) {
   const supabase = await createAdminClient()
-  let websiteId = input.websiteId || null
+  const websiteId = input.websiteId || null
   let businessId = input.businessId || null
   let userId: string | null = null
   let businessEmail = ""

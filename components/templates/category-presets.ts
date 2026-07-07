@@ -1,6 +1,5 @@
 import type { SectionType } from "@/lib/types"
 import type { BusinessCategory } from "@/lib/business/categories"
-import { getDefaultSectionData } from "@/components/editor/section-registry"
 
 export interface ServiceItem {
   title: string

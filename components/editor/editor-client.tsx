@@ -44,7 +44,6 @@ export function EditorClient({ userId }: EditorClientProps) {
   const [businessId, setBusinessId] = useState<string | null>(null)
   const [businessCategory, setBusinessCategory] = useState<BusinessCategory | null>(null)
   const [title, setTitle] = useState(DEFAULT_SITE_TITLE)
-  const [slug, setSlug] = useState("")
   const [themeConfig, setThemeConfig] = useState<ThemeConfig | null>(null)
   const [isCreatingWebsite, setIsCreatingWebsite] = useState(false)
   const [isRenamingWebsite, setIsRenamingWebsite] = useState(false)
@@ -56,7 +55,7 @@ export function EditorClient({ userId }: EditorClientProps) {
   const [isMobileDraggingImage, setIsMobileDraggingImage] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { isPreview, setIsPreview, isSaving, setIsSaving, saveState, setSaveState, device, setDevice, setOnPublish, setOnLogout } = useEditorLayout()
+  const { isPreview, isSaving, setIsSaving, saveState, setSaveState, device, setOnPublish, setOnLogout } = useEditorLayout()
   const requestedWebsiteId = searchParams.get("websiteId")
 
   // Switch to canvas on mobile when a touch drag starts
@@ -128,7 +127,6 @@ export function EditorClient({ userId }: EditorClientProps) {
         websiteRows[0]
       setWebsiteId(website.id)
       setTitle(website.title)
-      setSlug(website.slug)
       setBusinessId(website.business_id ?? resolvedBusinessId)
       setThemeConfig((website.theme_config as ThemeConfig | null) ?? null)
       setSelectedSectionId(null)
@@ -179,7 +177,6 @@ export function EditorClient({ userId }: EditorClientProps) {
       if (newWebsite && !error) {
         setWebsiteId(newWebsite.id)
         setTitle(newWebsite.title || DEFAULT_SITE_TITLE)
-        setSlug(newSlug)
         setThemeConfig(null)
         setWebsites([
           {
@@ -295,7 +292,6 @@ export function EditorClient({ userId }: EditorClientProps) {
       created_at?: string
     }
     setTitle(updatedWebsite.title || DEFAULT_SITE_TITLE)
-    setSlug(updatedWebsite.slug)
     setWebsites((current) =>
       current.map((website) =>
         website.id === updatedWebsite.id
@@ -433,7 +429,7 @@ export function EditorClient({ userId }: EditorClientProps) {
     )
     setWebsiteMessage({ type: "success", text: "Deze website is live gezet. Opgeslagen wijzigingen zijn nu zichtbaar via de live link." })
     router.push("/editor")
-  }, [router, websiteId])
+  }, [router, setIsSaving, setSaveState, websiteId])
 
   const handleLogout = useCallback(async () => {
     const supabase = createClient()
