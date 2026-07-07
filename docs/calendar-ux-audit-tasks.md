@@ -21,8 +21,8 @@ Scope: UX issues only. No calendar entries, availability windows, or services we
 - [x] Task 4: Replace dense week-grid add buttons with a clearer mobile interaction
 - [x] Task 5: Make filters collapsible and less dominant on mobile
 - [x] Task 6: Present the add/edit form as a focused drawer or modal
-- [ ] Task 7: Make upcoming appointments explain why nothing is shown
-- [ ] Task 8: Separate availability settings from day-to-day appointment work
+- [x] Task 7: Make upcoming appointments explain why nothing is shown
+- [x] Task 8: Separate availability settings from day-to-day appointment work
 
 ## Task 1: Make visible item counts match the current calendar view
 
@@ -158,7 +158,7 @@ Implementation notes:
 
 ## Task 7: Make upcoming appointments explain why nothing is shown
 
-Status: Open
+Status: Done
 Priority: Medium
 Likely file:
 - `components/calendar/calendar-client.tsx`
@@ -172,9 +172,14 @@ Done when:
 - If no upcoming items match, the empty state explains the mismatch with the visible calendar count.
 - The panel links back to the relevant filter or date range when possible.
 
+Implementation notes:
+- The upcoming panel now states that it shows the coming 30 days within the current filters, excluding cancelled items.
+- The empty state explains when filtered items exist but none fall in the upcoming window.
+- Recovery actions link back to today and clear filters when filters are active.
+
 ## Task 8: Separate availability settings from day-to-day appointment work
 
-Status: Open
+Status: Done
 Priority: Medium
 Likely file:
 - `components/calendar/calendar-client.tsx`
@@ -188,3 +193,8 @@ Done when:
 - Availability gets a distinct panel, tab, or collapsed settings area.
 - Day-to-day planning stays focused on appointments, bookings, and requests.
 - Destructive availability actions have labels, confirmation, and clear context.
+
+Implementation notes:
+- Upcoming appointments now appear before availability settings in the support column.
+- Availability is collapsed by default as a distinct settings panel with explanatory copy.
+- Availability deletion now starts with a labelled `Verwijderen` action and requires an inline confirm/cancel choice.

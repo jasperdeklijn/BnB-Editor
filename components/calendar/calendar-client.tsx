@@ -429,13 +429,23 @@ export function CalendarClient({
     [offerings],
   )
 
+  const upcomingRange = useMemo(() => {
+    const start = new Date()
+    return {
+      start,
+      end: addDays(startOfDay(start), 30),
+    }
+  }, [])
   const upcomingEntries = useMemo(
     () =>
       [...visibleEntries]
-        .filter((entry) => entry.status !== "cancelled" && new Date(entry.end_at).getTime() >= Date.now())
+        .filter((entry) =>
+          entry.status !== "cancelled" &&
+          rangesOverlap(new Date(entry.start_at), new Date(entry.end_at), upcomingRange.start, upcomingRange.end),
+        )
         .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime())
         .slice(0, 6),
-    [visibleEntries],
+    [upcomingRange, visibleEntries],
   )
 
   const pendingCount = visibleEntries.filter((entry) => entry.status === "pending").length
@@ -449,6 +459,10 @@ export function CalendarClient({
       ? " binnen de huidige filters"
       : ""
   const rangeEmptyText = `Er zijn ${filteredCountLabel}${rangeEmptyFilterText}, maar geen daarvan valt in ${calendarViewRange.emptyRangeLabel}. Kies een andere periode${hasActiveFilters ? " of pas de filters aan" : ""}.`
+  const upcomingRuleText = `Komende 30 dagen binnen huidige filters, zonder geannuleerde items.`
+  const upcomingEmptyText = visibleEntries.length === 0
+    ? "Er zijn geen kalenderitems binnen de huidige filters. Pas de filters aan om meer items te zien."
+    : `Er zijn ${filteredCountLabel}, maar geen actieve items in de komende 30 dagen. Kies een andere periode in de kalender${hasActiveFilters ? " of pas de filters aan" : ""}.`
   const formConflicts = form ? getEntryConflicts(form, entries) : []
   const availabilityWarning = form ? getAvailabilityWarning(form, availabilityWindows) : null
 
@@ -846,26 +860,32 @@ export function CalendarClient({
             />
           </div>
 
-          <AvailabilityPanel
-            form={availabilityForm}
-            windows={availabilityWindows}
-            offerings={offerings}
-            offeringCopy={offeringCopy}
-            disabled={Boolean(schemaError) || isPending}
-            onChange={setAvailabilityForm}
-            onCreate={createAvailabilityWindow}
-            onDelete={deleteAvailabilityWindow}
-          />
-
           <section className="rounded-lg border border-border bg-card shadow-sm">
             <div className="border-b border-border px-4 py-3">
-              <h2 className="font-semibold text-foreground">{copy.upcomingTitle}</h2>
-              <p className="text-xs text-muted-foreground">Gekoppeld aan {offeringCopy.plural.toLowerCase()} waar mogelijk.</p>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="font-semibold text-foreground">{copy.upcomingTitle}</h2>
+                  <p className="text-xs text-muted-foreground">{upcomingRuleText}</p>
+                </div>
+                <span className="shrink-0 rounded-full border border-border bg-background px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                  {formatItemCount(upcomingEntries.length, "komend")}
+                </span>
+              </div>
             </div>
             <div className="space-y-3 p-4">
               {upcomingEntries.length === 0 ? (
                 <div className="rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground">
-                  Er staan nog geen kalenderitems klaar.
+                  <p>{upcomingEmptyText}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => setCursorDate(new Date())}>
+                      Vandaag bekijken
+                    </Button>
+                    {hasActiveFilters ? (
+                      <Button type="button" variant="ghost" size="sm" onClick={clearFilters}>
+                        Filters wissen
+                      </Button>
+                    ) : null}
+                  </div>
                 </div>
               ) : (
                 upcomingEntries.map((entry) => (
@@ -879,6 +899,17 @@ export function CalendarClient({
               )}
             </div>
           </section>
+
+          <AvailabilityPanel
+            form={availabilityForm}
+            windows={availabilityWindows}
+            offerings={offerings}
+            offeringCopy={offeringCopy}
+            disabled={Boolean(schemaError) || isPending}
+            onChange={setAvailabilityForm}
+            onCreate={createAvailabilityWindow}
+            onDelete={deleteAvailabilityWindow}
+          />
         </aside>
       </div>
 
@@ -1448,13 +1479,37 @@ function AvailabilityPanel({
   onCreate: () => void
   onDelete: (windowId: string) => void
 }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+
+  const handleDelete = (windowId: string) => {
+    onDelete(windowId)
+    setConfirmDeleteId(null)
+  }
+
   return (
     <section className="rounded-lg border border-border bg-card shadow-sm">
-      <div className="border-b border-border px-4 py-3">
-        <h2 className="font-semibold text-foreground">Beschikbaarheid</h2>
-        <p className="text-xs text-muted-foreground">Stel vaste openingstijden per dag en {offeringCopy.singular} in.</p>
-      </div>
-      <div className="grid gap-3 p-4">
+      <button
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+        className="flex w-full items-start justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/60"
+        aria-expanded={isOpen}
+      >
+        <span>
+          <span className="block font-semibold text-foreground">Beschikbaarheidsinstellingen</span>
+          <span className="mt-1 block text-xs text-muted-foreground">
+            Vaste openingstijden staan los van de dagelijkse afsprakenlijst.
+          </span>
+        </span>
+        <span className="flex shrink-0 items-center gap-2 text-xs font-medium text-muted-foreground">
+          {formatItemCount(windows.length, "ingesteld")}
+          <ChevronRight className={`h-4 w-4 transition-transform ${isOpen ? "rotate-90" : ""}`} />
+        </span>
+      </button>
+      <div className={`${isOpen ? "grid" : "hidden"} gap-3 border-t border-border p-4`}>
+        <div className="rounded-md border border-dashed border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+          Gebruik dit alleen voor vaste weekregels. Nieuwe afspraken, boekingen en aanvragen blijven bovenaan in de planning staan.
+        </div>
         <div className="grid gap-1.5">
           <Label htmlFor="availability-service">{offeringCopy.singular[0].toUpperCase()}{offeringCopy.singular.slice(1)}</Label>
           <select
@@ -1536,17 +1591,36 @@ function AvailabilityPanel({
                       {offeringTitle || `Alle ${offeringCopy.plural.toLowerCase()}`}
                     </p>
                   </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => onDelete(window.id)}
-                    disabled={disabled}
-                    aria-label={`Beschikbaarheid op ${WEEKDAY_FULL_LABELS[window.weekday - 1].toLowerCase()} verwijderen`}
-                    title={`Beschikbaarheid op ${WEEKDAY_FULL_LABELS[window.weekday - 1].toLowerCase()} verwijderen`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {confirmDeleteId === window.id ? (
+                    <div className="flex shrink-0 items-center gap-1">
+                      <Button type="button" variant="ghost" size="xs" onClick={() => setConfirmDeleteId(null)} disabled={disabled}>
+                        Annuleren
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="xs"
+                        onClick={() => handleDelete(window.id)}
+                        disabled={disabled}
+                      >
+                        Verwijderen
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setConfirmDeleteId(window.id)}
+                      disabled={disabled}
+                      aria-label={`Beschikbaarheid op ${WEEKDAY_FULL_LABELS[window.weekday - 1].toLowerCase()} verwijderen`}
+                      title={`Beschikbaarheid op ${WEEKDAY_FULL_LABELS[window.weekday - 1].toLowerCase()} verwijderen`}
+                      className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Verwijderen
+                    </Button>
+                  )}
                 </div>
               )
             })
