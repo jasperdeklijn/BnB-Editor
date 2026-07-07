@@ -1148,51 +1148,111 @@ function WeekView({
         <h3 className="font-semibold text-foreground">Week van {formatDayLabel(first)}</h3>
         <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">{rangeCountLabel}</span>
       </div>
-      <div className="overflow-x-auto">
-      <div className="grid min-w-[760px] grid-cols-[4.5rem_repeat(7,minmax(0,1fr))] overflow-hidden rounded-lg border border-border">
-        <div className="border-b border-r border-border bg-muted p-2 text-xs font-medium text-muted-foreground">Tijd</div>
-        {days.map((day) => (
-          <div key={dateKey(day)} className="border-b border-r border-border bg-muted p-2 text-center">
-            <p className="text-xs font-medium text-muted-foreground">{WEEKDAY_LABELS[(day.getDay() + 6) % 7]}</p>
-            <p className="text-sm font-semibold text-foreground">{day.getDate()}</p>
-          </div>
-        ))}
-        {DAY_HOURS.map((hour) => (
-          <Fragment key={hour}>
-            <div className="border-b border-r border-border bg-muted/40 p-2 text-xs text-muted-foreground">
-              {String(hour).padStart(2, "0")}:00
-            </div>
-            {days.map((day) => {
-              const entries = (entriesByDay.get(dateKey(day)) ?? []).filter((entry) => new Date(entry.start_at).getHours() === hour)
 
-              return (
-                <div
-                  key={`${dateKey(day)}-${hour}`}
-                  className="min-h-20 border-b border-r border-border bg-background p-1.5 text-left transition-colors hover:bg-primary/5"
-                >
-                  <div className="space-y-1">
-                    {entries.map((entry) => (
-                      <EntryPill
-                        key={entry.id}
-                        entry={entry}
-                        offeringTitle={entry.service_id ? offeringTitleById.get(entry.service_id) : undefined}
-                        onClick={onEdit}
-                      />
-                    ))}
+      <div className="grid gap-3 md:hidden">
+        {days.map((day) => {
+          const dayEntries = [...(entriesByDay.get(dateKey(day)) ?? [])].sort(
+            (a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime(),
+          )
+
+          return (
+            <section key={dateKey(day)} className="rounded-lg border border-border bg-background p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h4 className="text-sm font-semibold capitalize text-foreground">{formatDayLabel(day)}</h4>
+                  <p className="text-xs text-muted-foreground">
+                    {dayEntries.length === 0
+                      ? "Geen items gepland"
+                      : `${dayEntries.length} ${dayEntries.length === 1 ? "item" : "items"}`}
+                  </p>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={() => onCreate(day, 9)} className="shrink-0">
+                  <Plus className="h-4 w-4" />
+                  09:00
+                </Button>
+              </div>
+
+              {dayEntries.length > 0 ? (
+                <div className="mt-3 space-y-2">
+                  {dayEntries.map((entry) => (
+                    <EntryPill
+                      key={entry.id}
+                      entry={entry}
+                      offeringTitle={entry.service_id ? offeringTitleById.get(entry.service_id) : undefined}
+                      onClick={onEdit}
+                    />
+                  ))}
+                </div>
+              ) : null}
+
+              <details className="mt-3 rounded-md border border-dashed border-border">
+                <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+                  Ander tijdstip kiezen
+                </summary>
+                <div className="grid grid-cols-3 gap-2 border-t border-border p-2">
+                  {DAY_HOURS.map((hour) => (
                     <button
+                      key={hour}
                       type="button"
                       onClick={() => onCreate(day, hour)}
-                      className="block w-full rounded border border-dashed border-transparent px-2 py-1 text-left text-[11px] text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+                      aria-label={`${formatDayLabel(day)} om ${String(hour).padStart(2, "0")}:00 toevoegen`}
+                      className="min-h-10 rounded-md border border-border bg-card px-2 py-2 text-xs font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                     >
-                      Toevoegen
+                      {String(hour).padStart(2, "0")}:00
                     </button>
-                  </div>
+                  ))}
                 </div>
-              )
-            })}
-          </Fragment>
-        ))}
+              </details>
+            </section>
+          )
+        })}
       </div>
+
+      <div className="hidden overflow-x-auto md:block">
+        <div className="grid min-w-[760px] grid-cols-[4.5rem_repeat(7,minmax(0,1fr))] overflow-hidden rounded-lg border border-border">
+          <div className="border-b border-r border-border bg-muted p-2 text-xs font-medium text-muted-foreground">Tijd</div>
+          {days.map((day) => (
+            <div key={dateKey(day)} className="border-b border-r border-border bg-muted p-2 text-center">
+              <p className="text-xs font-medium text-muted-foreground">{WEEKDAY_LABELS[(day.getDay() + 6) % 7]}</p>
+              <p className="text-sm font-semibold text-foreground">{day.getDate()}</p>
+            </div>
+          ))}
+          {DAY_HOURS.map((hour) => (
+            <Fragment key={hour}>
+              <div className="border-b border-r border-border bg-muted/40 p-2 text-xs text-muted-foreground">
+                {String(hour).padStart(2, "0")}:00
+              </div>
+              {days.map((day) => {
+                const entries = (entriesByDay.get(dateKey(day)) ?? []).filter((entry) => new Date(entry.start_at).getHours() === hour)
+
+                return (
+                  <div
+                    key={`${dateKey(day)}-${hour}`}
+                    className="min-h-20 border-b border-r border-border bg-background p-1.5 text-left transition-colors hover:bg-primary/5"
+                  >
+                    <div className="space-y-1">
+                      {entries.map((entry) => (
+                        <EntryPill
+                          key={entry.id}
+                          entry={entry}
+                          offeringTitle={entry.service_id ? offeringTitleById.get(entry.service_id) : undefined}
+                          onClick={onEdit}
+                        />
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => onCreate(day, hour)}
+                        className="block w-full rounded border border-dashed border-transparent px-2 py-1 text-left text-[11px] text-muted-foreground transition-colors hover:border-border hover:bg-muted/50 hover:text-foreground"
+                      >
+                        Toevoegen
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </Fragment>
+          ))}
+        </div>
       </div>
     </div>
   )

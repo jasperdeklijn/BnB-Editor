@@ -18,7 +18,7 @@ Scope: UX issues only. No calendar entries, availability windows, or services we
 - [x] Task 1: Make visible item counts match the current calendar view
 - [x] Task 2: Add labels and tooltips to icon-only calendar buttons
 - [x] Task 3: Improve mobile month-grid touch targets
-- [ ] Task 4: Replace dense week-grid add buttons with a clearer mobile interaction
+- [x] Task 4: Replace dense week-grid add buttons with a clearer mobile interaction
 - [ ] Task 5: Make filters collapsible and less dominant on mobile
 - [ ] Task 6: Present the add/edit form as a focused drawer or modal
 - [ ] Task 7: Make upcoming appointments explain why nothing is shown
@@ -91,7 +91,7 @@ Implementation notes:
 
 ## Task 4: Replace dense week-grid add buttons with a clearer mobile interaction
 
-Status: Open
+Status: Done
 Priority: High
 Likely file:
 - `components/calendar/calendar-client.tsx`
@@ -105,6 +105,11 @@ Done when:
 - Mobile week view uses a compact agenda/list layout or collapses empty hours by default.
 - Empty slots do not repeat identical visible labels dozens of times.
 - Users can still add an appointment to a specific day/time through a clear secondary action.
+
+Implementation notes:
+- Mobile week view now renders one agenda card per day instead of the 12-by-7 time grid.
+- Each day exposes a primary 09:00 add action and a collapsed `Ander tijdstip kiezen` control for specific time slots.
+- The full week time grid remains available from tablet/desktop widths.
 
 ## Task 5: Make filters collapsible and less dominant on mobile
 
