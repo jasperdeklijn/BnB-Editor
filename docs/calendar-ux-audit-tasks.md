@@ -19,8 +19,8 @@ Scope: UX issues only. No calendar entries, availability windows, or services we
 - [x] Task 2: Add labels and tooltips to icon-only calendar buttons
 - [x] Task 3: Improve mobile month-grid touch targets
 - [x] Task 4: Replace dense week-grid add buttons with a clearer mobile interaction
-- [ ] Task 5: Make filters collapsible and less dominant on mobile
-- [ ] Task 6: Present the add/edit form as a focused drawer or modal
+- [x] Task 5: Make filters collapsible and less dominant on mobile
+- [x] Task 6: Present the add/edit form as a focused drawer or modal
 - [ ] Task 7: Make upcoming appointments explain why nothing is shown
 - [ ] Task 8: Separate availability settings from day-to-day appointment work
 
@@ -113,7 +113,7 @@ Implementation notes:
 
 ## Task 5: Make filters collapsible and less dominant on mobile
 
-Status: Open
+Status: Done
 Priority: Medium
 Likely file:
 - `components/calendar/calendar-client.tsx`
@@ -128,9 +128,14 @@ Done when:
 - Active filters remain visible without pushing the calendar below the fold.
 - Disabled reset controls are visually quiet or hidden until a filter changes.
 
+Implementation notes:
+- Mobile now shows a compact filter summary and a `Filters` toggle; full filter fields expand only when requested.
+- `Filters wissen` is only shown when filters are active.
+- Desktop keeps the expanded filter controls.
+
 ## Task 6: Present the add/edit form as a focused drawer or modal
 
-Status: Open
+Status: Done
 Priority: Medium
 Likely file:
 - `components/calendar/calendar-client.tsx`
@@ -145,6 +150,11 @@ Done when:
 - Save and cancel actions stay visible while editing.
 - The calendar behind the form is visually de-emphasized until the form is closed.
 - Validation and conflict warnings remain inside the focused form surface.
+
+Implementation notes:
+- Mobile add/edit now opens in a bottom sheet with a backdrop while desktop keeps the side-panel workflow.
+- Form actions are sticky at the bottom of the form surface.
+- Conflict and availability warnings remain inside the same focused form surface.
 
 ## Task 7: Make upcoming appointments explain why nothing is shown
 

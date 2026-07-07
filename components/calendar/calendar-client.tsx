@@ -379,6 +379,7 @@ export function CalendarClient({
     dateTo: "",
   })
   const [form, setForm] = useState<EntryFormState | null>(null)
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   const [availabilityForm, setAvailabilityForm] = useState<AvailabilityFormState>({
     service_id: initialOfferingId ?? "",
     weekday: "1",
@@ -696,6 +697,8 @@ export function CalendarClient({
         offeringCopy={offeringCopy}
         resultLabel={filteredCountLabel}
         hasActiveFilters={hasActiveFilters}
+        isMobileOpen={mobileFiltersOpen}
+        onMobileOpenChange={setMobileFiltersOpen}
         onChange={setFilters}
         onClear={clearFilters}
       />
@@ -825,21 +828,23 @@ export function CalendarClient({
         </section>
 
         <aside className="grid gap-4">
-          <EntryForm
-            form={form}
-            copy={copy}
-            offeringCopy={offeringCopy}
-            offerings={offerings}
-            conflicts={formConflicts}
-            availabilityWarning={availabilityWarning}
-            isSaving={isPending}
-            disabled={Boolean(schemaError)}
-            onChange={setForm}
-            onCancel={() => setForm(null)}
-            onSubmit={submitForm}
-            onStatusChange={changeEntryStatus}
-            onDelete={deleteEntry}
-          />
+          <div className="hidden md:block">
+            <EntryForm
+              form={form}
+              copy={copy}
+              offeringCopy={offeringCopy}
+              offerings={offerings}
+              conflicts={formConflicts}
+              availabilityWarning={availabilityWarning}
+              isSaving={isPending}
+              disabled={Boolean(schemaError)}
+              onChange={setForm}
+              onCancel={() => setForm(null)}
+              onSubmit={submitForm}
+              onStatusChange={changeEntryStatus}
+              onDelete={deleteEntry}
+            />
+          </div>
 
           <AvailabilityPanel
             form={availabilityForm}
@@ -876,6 +881,29 @@ export function CalendarClient({
           </section>
         </aside>
       </div>
+
+      {form ? (
+        <div className="fixed inset-0 z-50 flex items-end bg-black/45 md:hidden" role="dialog" aria-modal="true">
+          <button type="button" className="absolute inset-0 cursor-default" onClick={() => setForm(null)} aria-label="Formulier sluiten" />
+          <div className="relative max-h-[92vh] w-full overflow-y-auto rounded-t-xl bg-background shadow-2xl">
+            <EntryForm
+              form={form}
+              copy={copy}
+              offeringCopy={offeringCopy}
+              offerings={offerings}
+              conflicts={formConflicts}
+              availabilityWarning={availabilityWarning}
+              isSaving={isPending}
+              disabled={Boolean(schemaError)}
+              onChange={setForm}
+              onCancel={() => setForm(null)}
+              onSubmit={submitForm}
+              onStatusChange={changeEntryStatus}
+              onDelete={deleteEntry}
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -886,6 +914,8 @@ function FilterPanel({
   offeringCopy,
   resultLabel,
   hasActiveFilters,
+  isMobileOpen,
+  onMobileOpenChange,
   onChange,
   onClear,
 }: {
@@ -894,9 +924,24 @@ function FilterPanel({
   offeringCopy: CalendarClientProps["offeringCopy"]
   resultLabel: string
   hasActiveFilters: boolean
+  isMobileOpen: boolean
+  onMobileOpenChange: (open: boolean) => void
   onChange: (filters: CalendarFilterState) => void
   onClear: () => void
 }) {
+  const activeFilterLabels = [
+    filters.status !== "all" ? STATUS_LABELS[filters.status] : null,
+    filters.serviceId === "unlinked"
+      ? "Geen koppeling"
+      : filters.serviceId !== "all"
+        ? offerings.find((offering) => offering.id === filters.serviceId)?.title ?? offeringCopy.singular
+        : null,
+    filters.source !== "all" ? SOURCE_LABELS[filters.source] : null,
+    filters.dateFrom ? `Vanaf ${filters.dateFrom}` : null,
+    filters.dateTo ? `Tot ${filters.dateTo}` : null,
+  ].filter(Boolean)
+  const filterSummary = activeFilterLabels.length > 0 ? activeFilterLabels.join(" / ") : "Alle items"
+
   return (
     <section className="rounded-lg border border-border bg-card p-3 shadow-sm sm:p-4">
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -907,12 +952,24 @@ function FilterPanel({
             {resultLabel}
           </span>
         </div>
-        <Button type="button" variant="ghost" size="sm" onClick={onClear} disabled={!hasActiveFilters}>
-          Filters wissen
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => onMobileOpenChange(!isMobileOpen)} className="sm:hidden">
+            <Filter className="h-4 w-4" />
+            Filters
+          </Button>
+          {hasActiveFilters ? (
+            <Button type="button" variant="ghost" size="sm" onClick={onClear}>
+              Filters wissen
+            </Button>
+          ) : null}
+        </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="mb-3 rounded-md border border-border bg-background px-3 py-2 text-xs text-muted-foreground sm:hidden">
+        {filterSummary}
+      </div>
+
+      <div className={`${isMobileOpen ? "grid" : "hidden"} gap-3 sm:grid sm:grid-cols-2 xl:grid-cols-5`}>
         <div className="grid gap-1.5">
           <Label htmlFor="calendar-filter-status">Status</Label>
           <select
@@ -1719,7 +1776,7 @@ function EntryForm({
             onChange={(event) => onChange({ ...form, internal_notes: event.target.value })}
           />
         </div>
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <div className="sticky bottom-0 z-10 -mx-4 -mb-4 flex flex-col-reverse gap-2 border-t border-border bg-card p-4 sm:flex-row sm:justify-end md:static md:m-0 md:border-0 md:bg-transparent md:p-0">
           {form.id ? (
             <Button
               type="button"
