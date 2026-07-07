@@ -284,26 +284,30 @@ export async function POST(request: NextRequest) {
 
     if (transporter) {
       const requestLabel = REQUEST_LABELS[requestType]
-      await transporter.sendMail({
-        from: `${FROM_NAME} <${process.env.SMTP_FROM?.trim() || process.env.SMTP_USER || FROM_EMAIL}>`,
-        to: context.recipientEmail,
-        replyTo: `${name} <${email}>`,
-        subject: `${requestLabel} van ${name}`,
-        html: buildEmailHtml({
-          requestLabel,
-          businessName: context.businessName,
-          name,
-          email,
-          phone,
-          service,
-          preferredDate,
-          budget,
-          message,
-          recipientEmail: context.recipientEmail,
-        }),
-        text: `${requestLabel}\n\nNaam: ${name}\nE-mail: ${email}${phone ? `\nTelefoon: ${phone}` : ""}${service ? `\nDienst: ${service}` : ""}${preferredDate ? `\nGewenste datum: ${preferredDate}` : ""}${budget ? `\nBudget: ${budget}` : ""}\n\nBericht:\n${message || "Geen bericht ingevuld."}`,
-      })
-      emailSent = true
+      try {
+        await transporter.sendMail({
+          from: `${FROM_NAME} <${process.env.SMTP_FROM?.trim() || process.env.SMTP_USER || FROM_EMAIL}>`,
+          to: context.recipientEmail,
+          replyTo: `${name} <${email}>`,
+          subject: `${requestLabel} van ${name}`,
+          html: buildEmailHtml({
+            requestLabel,
+            businessName: context.businessName,
+            name,
+            email,
+            phone,
+            service,
+            preferredDate,
+            budget,
+            message,
+            recipientEmail: context.recipientEmail,
+          }),
+          text: `${requestLabel}\n\nNaam: ${name}\nE-mail: ${email}${phone ? `\nTelefoon: ${phone}` : ""}${service ? `\nDienst: ${service}` : ""}${preferredDate ? `\nGewenste datum: ${preferredDate}` : ""}${budget ? `\nBudget: ${budget}` : ""}\n\nBericht:\n${message || "Geen bericht ingevuld."}`,
+        })
+        emailSent = true
+      } catch (emailError) {
+        console.error("[requests] Failed to send notification email:", emailError)
+      }
     }
 
     return NextResponse.json({ success: true, emailSent, calendarEntryCreated })

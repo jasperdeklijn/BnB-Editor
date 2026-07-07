@@ -14,8 +14,8 @@ Retry note: development-only Next.js UI, including the small `N` badge/menu, was
 - [x] Task 5: Improve mobile editing flow
 - [x] Task 6: Make destructive template changes safer
 - [x] Task 7: Reduce repetition and mixed language in site design options
-- [ ] Task 8: Make adding sections easier to understand
-- [ ] Task 9: Clarify save, publish, and live-site status
+- [x] Task 8: Make adding sections easier to understand
+- [x] Task 9: Clarify save, publish, and live-site status
 
 ## Task 1: Make section selection obvious and reliable
 
@@ -171,6 +171,7 @@ Verified:
 
 ## Task 8: Make adding sections easier to understand
 
+Status: Done
 Priority: Medium
 
 Observed issue:
@@ -183,8 +184,16 @@ Done when:
 - Truncated descriptions are avoided or available through a tooltip/details state.
 - Mobile add-section flow asks where to insert the new section, or shows an insertion preview before adding.
 
+Verified:
+- Section cards now show a visible "Toevoegen" button instead of relying on the whole card as an invisible tap target.
+- Section descriptions now wrap inside the card instead of being truncated in the narrow sidebar.
+- Desktop users can add a section with the button or drag it to a specific spot.
+- Mobile users who tap "Toevoegen" are returned to the canvas and asked whether to place the section at the top, after the selected section, or at the bottom.
+- `npx tsc --noEmit` passed.
+
 ## Task 9: Clarify save, publish, and live-site status
 
+Status: Done
 Priority: Medium
 
 Observed issue:
@@ -196,3 +205,10 @@ Done when:
 - Save status and manual save behavior are explained by placement and copy.
 - "Online" clearly distinguishes draft/editor changes from live published changes.
 - The live URL is presented as a single readable link or preview action.
+
+Verified:
+- The manual website-name save button is now labeled "Naam opslaan" to distinguish it from editor autosave status.
+- The save status copy now says "Wijzigingen opgeslagen", "Wijzigingen opslaan...", or "Niet opgeslagen" in the editor status row.
+- Offline state now explains that changes are only visible in the editor and offers "Live zetten".
+- Live state is labeled "Live" and presents the live URL as one readable link with an external-link icon.
+- `npx tsc --noEmit` passed.

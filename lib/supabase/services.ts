@@ -54,7 +54,7 @@ function toServicePayload(service: Partial<ServiceInput>): Record<string, unknow
   if (service.title !== undefined) payload.title = service.title
   if (service.description !== undefined) payload.description = service.description
   if (service.price !== undefined) payload.price = service.price
-  if (service.duration !== undefined) payload.duration = service.duration
+  if (service.duration !== undefined) payload.duration = service.duration ?? ""
   if (service.capacity !== undefined) payload.capacity = service.capacity
   if (service.image_urls !== undefined) payload.image_urls = service.image_urls
   if (service.position !== undefined) payload.position = service.position

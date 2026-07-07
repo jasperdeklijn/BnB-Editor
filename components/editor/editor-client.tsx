@@ -745,15 +745,27 @@ export function EditorClient({ userId }: EditorClientProps) {
                 aria-hidden="true"
               />
               <span className="shrink-0 font-medium text-foreground">
-                {selectedWebsite.published ? "Online" : "Offline"}
+                {selectedWebsite.published ? "Live" : "Offline"}
               </span>
               {selectedWebsite.published ? (
-                <>
+                <a
+                  href={selectedWebsiteLiveHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex min-w-0 items-center gap-1 rounded border border-border bg-background px-2 py-1 font-medium text-primary"
+                  title={selectedWebsiteLiveUrl}
+                >
                   <Globe2 className="h-3.5 w-3.5 shrink-0 text-primary" />
-                  <span className="min-w-0 truncate font-mono text-muted-foreground">{selectedWebsiteLiveUrl}</span>
-                </>
+                  <span className="min-w-0 truncate font-mono">{selectedWebsiteLiveUrl}</span>
+                  <ExternalLink className="h-3 w-3 shrink-0" />
+                </a>
               ) : (
-                <span className="min-w-0 truncate text-muted-foreground">Nog niet live gezet</span>
+                <>
+                  <span className="min-w-0 truncate text-muted-foreground">Alleen zichtbaar in editor</span>
+                  <Button type="button" size="xs" onClick={handlePublish} disabled={!websiteId || isSaving}>
+                    Live zetten
+                  </Button>
+                </>
               )}
             </div>
           ) : null}
