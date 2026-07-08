@@ -23,6 +23,7 @@ import {
   Plus,
 } from "lucide-react"
 import Link from "next/link"
+import { PLATFORM_BRAND_NAME } from "@/lib/platform"
 
 interface EditorHeaderProps {
   isPreview: boolean
@@ -101,10 +102,10 @@ export function EditorHeader({
         {showBackButton ? (
           <div className="flex items-center gap-1 md:gap-2">
           <Image
-            src="/favicon.png"
-            alt="Website maker"
-            width={32}
-            height={32}
+            src="/icon.png"
+            alt={PLATFORM_BRAND_NAME}
+            width={1024}
+            height={1024}
             className="h-7 w-7 md:h-8 md:w-8"
           />
           <Link
@@ -120,18 +121,18 @@ export function EditorHeader({
         ) : (
           <div className="flex items-center gap-2">
             <Image
-              src="/favicon.png"
-              alt="Website maker"
-              width={32}
-              height={32}
+              src="/icon.png"
+              alt={PLATFORM_BRAND_NAME}
+              width={1024}
+              height={1024}
               className="h-7 w-7 md:hidden"
             />
             <Image
               src="/logo_klein.png"
-              alt="Website maker"
-              width={160}
-              height={32}
-              className="hidden md:block h-10 md:h-12 w-auto"
+              alt={PLATFORM_BRAND_NAME}
+              width={1536}
+              height={1024}
+              className="hidden md:block h-10 md:h-12 w-auto object-contain"
             />
           </div>
         )}

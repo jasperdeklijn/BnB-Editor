@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { logAuditEvent } from "@/lib/audit-log"
 import { createClient } from "@/lib/supabase/server"
 
 export async function POST(request: Request) {
@@ -43,6 +44,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: unpublishError.message }, { status: 500 })
     }
 
+    await logAuditEvent({
+      userId: user.id,
+      websiteId,
+      action: "website.unpublished",
+      metadata: {
+        title: targetWebsite.title,
+        slug: targetWebsite.slug,
+        previousPublished: targetWebsite.published,
+      },
+      request,
+    })
+
     return NextResponse.json({ success: true, websiteId, published: false })
   }
 
@@ -77,6 +90,18 @@ export async function POST(request: Request) {
   if (publishError) {
     return NextResponse.json({ error: publishError.message }, { status: 500 })
   }
+
+  await logAuditEvent({
+    userId: user.id,
+    websiteId,
+    action: "website.published",
+    metadata: {
+      title: targetWebsite.title,
+      slug: targetWebsite.slug,
+      previousPublished: targetWebsite.published,
+    },
+    request,
+  })
 
   return NextResponse.json({ success: true, websiteId, published: true })
 }

@@ -29,6 +29,7 @@ export default function LoginPage() {
         password,
       })
       if (error) throw error
+      await fetch("/api/auth/login-event", { method: "POST" }).catch(() => null)
       router.push("/editor")
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "Er is een fout opgetreden")

@@ -13,11 +13,11 @@ export function SharedHeader({ title }: SharedHeaderProps) {
         {/* Logo */}
         <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
           <Image
-            src="/logo.png"
+            src="/logo_klein.png"
             alt={PLATFORM_BRAND_NAME}
-            width={160}
-            height={48}
-            className="h-12 w-auto"
+            width={1536}
+            height={1024}
+            className="h-12 w-auto object-contain"
           />
         </Link>
 

@@ -47,6 +47,19 @@ export function PlanComparisonTable({
         toast.success("Plan succesvol teruggezet!")
       }
 
+      await fetch("/api/audit/billing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "subscription.changed",
+          metadata: {
+            previousPlan: currentPlanId,
+            nextPlan: newPlanId,
+            source: "billing_plan_comparison",
+          },
+        }),
+      }).catch(() => null)
+
       // Reset selection
       setSelectedPlan(null)
     } catch (error) {

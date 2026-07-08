@@ -1,11 +1,12 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
-import { PLATFORM_BRAND_INITIALS, PLATFORM_BRAND_NAME } from "@/lib/platform"
+import { PLATFORM_BRAND_NAME } from "@/lib/platform"
 
 export function LandingNav() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -66,12 +67,14 @@ export function LandingNav() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <div className="flex items-center">
           <Link href="/" className="flex items-center gap-3" aria-label={`${PLATFORM_BRAND_NAME} homepage`}>
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--landing-primary)] text-sm font-bold text-white shadow-sm">
-              {PLATFORM_BRAND_INITIALS}
-            </span>
-            <span className="text-base font-bold text-[var(--landing-secondary)]">
-              {PLATFORM_BRAND_NAME}
-            </span>
+            <Image
+              src="/logo_klein.png"
+              alt={PLATFORM_BRAND_NAME}
+              width={1536}
+              height={1024}
+              priority
+              className="h-12 w-auto object-contain"
+            />
           </Link>
         </div>
 

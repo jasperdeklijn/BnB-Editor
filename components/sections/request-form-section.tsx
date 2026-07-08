@@ -53,9 +53,11 @@ interface FormState {
   service: string
   budget: string
   message: string
+  company: string
 }
 
 type FieldKey = keyof FormState
+type VisibleFieldKey = Exclude<FieldKey, "company">
 
 function useRequestForm(recipientEmail?: string, requestType: RequestType = "contact", businessId?: string, websiteId?: string) {
   const [form, setForm] = useState<FormState>({
@@ -66,6 +68,7 @@ function useRequestForm(recipientEmail?: string, requestType: RequestType = "con
     service: "",
     budget: "",
     message: "",
+    company: "",
   })
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [errorMsg, setErrorMsg] = useState("")
@@ -89,7 +92,7 @@ function useRequestForm(recipientEmail?: string, requestType: RequestType = "con
         setStatus("error")
       } else {
         setStatus("success")
-        setForm({ name: "", email: "", phone: "", date: "", service: "", budget: "", message: "" })
+        setForm({ name: "", email: "", phone: "", date: "", service: "", budget: "", message: "", company: "" })
       }
     } catch {
       setErrorMsg("Er is een fout opgetreden. Probeer het opnieuw.")
@@ -100,7 +103,7 @@ function useRequestForm(recipientEmail?: string, requestType: RequestType = "con
   return { form, update, submit, status, errorMsg }
 }
 
-const FIELD_LABELS: Record<FieldKey, string> = {
+const FIELD_LABELS: Record<VisibleFieldKey, string> = {
   name: "Naam",
   email: "E-mailadres",
   phone: "Telefoonnummer",
@@ -118,7 +121,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
   const businessId = data.businessId as string | undefined
   const websiteId = data.websiteId as string | undefined
   const whatsappNumber = data.whatsappNumber as string | undefined
-  const fields = (data.fields as FieldKey[]) || ["name", "email", "phone", "message"]
+  const fields = (data.fields as VisibleFieldKey[]) || ["name", "email", "phone", "message"]
   const layout = getLayoutClasses(data.layout)
 
   const config = REQUEST_TYPE_CONFIG[requestType] ?? REQUEST_TYPE_CONFIG.contact
@@ -208,6 +211,17 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
             </div>
           ) : (
             <form onSubmit={submit} className="space-y-4">
+              <div className="hidden" aria-hidden="true">
+                <Label htmlFor="req-company">Bedrijf</Label>
+                <Input
+                  id="req-company"
+                  name="company"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={form.company}
+                  onChange={(e) => update("company", e.target.value)}
+                />
+              </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 {fields.includes("name") && (
                   <div className="space-y-1.5">
@@ -217,6 +231,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
                       placeholder="Jouw naam"
                       value={form.name}
                       onChange={(e) => update("name", e.target.value)}
+                      maxLength={120}
                       required
                     />
                   </div>
@@ -230,6 +245,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
                       placeholder="jouw@email.nl"
                       value={form.email}
                       onChange={(e) => update("email", e.target.value)}
+                      maxLength={254}
                       required
                     />
                   </div>
@@ -245,6 +261,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
                     placeholder="+31 6 00000000"
                     value={form.phone}
                     onChange={(e) => update("phone", e.target.value)}
+                    maxLength={40}
                   />
                 </div>
               )}
@@ -257,6 +274,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
                     placeholder="Welke dienst wil je aanvragen?"
                     value={form.service}
                     onChange={(e) => update("service", e.target.value)}
+                    maxLength={160}
                   />
                 </div>
               )}
@@ -281,6 +299,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
                     placeholder="bijv. € 500 – € 1000"
                     value={form.budget}
                     onChange={(e) => update("budget", e.target.value)}
+                    maxLength={80}
                   />
                 </div>
               )}
@@ -296,6 +315,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
                     rows={4}
                     value={form.message}
                     onChange={(e) => update("message", e.target.value)}
+                    maxLength={3000}
                     required={requestType === "contact"}
                   />
                 </div>

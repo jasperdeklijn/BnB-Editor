@@ -144,6 +144,17 @@ create table public.website_sections (
   updated_at timestamptz not null default now()
 );
 
+create table public.audit_logs (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete set null,
+  website_id uuid references public.websites(id) on delete set null,
+  action text not null,
+  metadata jsonb,
+  ip_address text,
+  user_agent text,
+  created_at timestamp with time zone not null default now()
+);
+
 create table public.contact_requests (
   id uuid primary key default gen_random_uuid(),
   website_id uuid references public.websites(id) on delete set null,
@@ -330,6 +341,13 @@ create index idx_section_transitions_website_id on public.section_transitions (w
 create index idx_section_transitions_from_section on public.section_transitions (from_section_id);
 create index idx_section_transitions_to_section on public.section_transitions (to_section_id);
 
+create index idx_audit_logs_created_at on public.audit_logs (created_at desc);
+create index idx_audit_logs_user_created_at on public.audit_logs (user_id, created_at desc)
+  where user_id is not null;
+create index idx_audit_logs_website_created_at on public.audit_logs (website_id, created_at desc)
+  where website_id is not null;
+create index idx_audit_logs_action_created_at on public.audit_logs (action, created_at desc);
+
 -- ------------------------------------------------------------
 -- Row Level Security
 -- ------------------------------------------------------------
@@ -343,6 +361,7 @@ alter table public.contact_requests enable row level security;
 alter table public.calendar_entries enable row level security;
 alter table public.calendar_availability_windows enable row level security;
 alter table public.leads enable row level security;
+alter table public.audit_logs enable row level security;
 
 -- Businesses
 create policy "Anyone can view published website businesses"

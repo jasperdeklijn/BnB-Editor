@@ -47,10 +47,11 @@ interface FormState {
   email: string
   phone: string
   message: string
+  company: string
 }
 
 function useContactForm(recipientEmail?: string, businessId?: string, websiteId?: string) {
-  const [form, setForm] = useState<FormState>({ name: "", email: "", phone: "", message: "" })
+  const [form, setForm] = useState<FormState>({ name: "", email: "", phone: "", message: "", company: "" })
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [errorMsg, setErrorMsg] = useState("")
 
@@ -73,7 +74,7 @@ function useContactForm(recipientEmail?: string, businessId?: string, websiteId?
         setStatus("error")
       } else {
         setStatus("success")
-        setForm({ name: "", email: "", phone: "", message: "" })
+        setForm({ name: "", email: "", phone: "", message: "", company: "" })
       }
     } catch {
       setErrorMsg("Er is een fout opgetreden. Probeer het opnieuw.")
@@ -110,6 +111,17 @@ function ContactForm({ recipientEmail, businessId, websiteId, accentColor, butto
 
   return (
     <form onSubmit={submit} className="space-y-4">
+      <div className="hidden" aria-hidden="true">
+        <Label htmlFor="contact-company">Bedrijf</Label>
+        <Input
+          id="contact-company"
+          name="company"
+          tabIndex={-1}
+          autoComplete="off"
+          value={form.company}
+          onChange={(e) => update("company", e.target.value)}
+        />
+      </div>
       <div className={`grid gap-4 ${compact ? "" : "sm:grid-cols-2"}`}>
         <div className="space-y-1.5">
           <Label htmlFor="contact-name">Naam *</Label>
@@ -118,6 +130,7 @@ function ContactForm({ recipientEmail, businessId, websiteId, accentColor, butto
             placeholder="Jouw naam"
             value={form.name}
             onChange={(e) => update("name", e.target.value)}
+            maxLength={120}
             required
           />
         </div>
@@ -129,6 +142,7 @@ function ContactForm({ recipientEmail, businessId, websiteId, accentColor, butto
             placeholder="jouw@email.nl"
             value={form.email}
             onChange={(e) => update("email", e.target.value)}
+            maxLength={254}
             required
           />
         </div>
@@ -141,6 +155,7 @@ function ContactForm({ recipientEmail, businessId, websiteId, accentColor, butto
           placeholder="+31 6 00000000"
           value={form.phone}
           onChange={(e) => update("phone", e.target.value)}
+          maxLength={40}
         />
       </div>
       <div className="space-y-1.5">
@@ -151,6 +166,7 @@ function ContactForm({ recipientEmail, businessId, websiteId, accentColor, butto
           rows={compact ? 3 : 4}
           value={form.message}
           onChange={(e) => update("message", e.target.value)}
+          maxLength={3000}
           required
         />
       </div>

@@ -80,6 +80,7 @@ interface BookingFormState {
   date: string
   message: string
   serviceId: string
+  company: string
 }
 
 // ---- Shared helpers ----
@@ -783,6 +784,7 @@ function ServicesBookingSpace({
     date: "",
     message: "",
     serviceId: services[0]?.id ?? "",
+    company: "",
   })
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [errorMsg, setErrorMsg] = useState("")
@@ -822,6 +824,7 @@ function ServicesBookingSpace({
           message: form.message,
           service: selectedService?.name ?? "",
           serviceId: selectedService?.id ?? "",
+          company: form.company,
           requestType: settings.requestType,
           businessId,
           websiteId,
@@ -845,6 +848,7 @@ function ServicesBookingSpace({
         date: "",
         message: "",
         serviceId: services[0]?.id ?? "",
+        company: "",
       })
     } catch {
       setErrorMsg("Aanvraag kon niet worden verzonden. Probeer het opnieuw.")
@@ -909,6 +913,17 @@ function ServicesBookingSpace({
             </div>
           ) : (
             <form onSubmit={submit} className="space-y-4">
+              <div className="hidden" aria-hidden="true">
+                <label htmlFor="services-booking-company">Bedrijf</label>
+                <input
+                  id="services-booking-company"
+                  name="company"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={form.company}
+                  onChange={(event) => update("company", event.target.value)}
+                />
+              </div>
               {services.length > 0 ? (
                 <div className="space-y-1.5">
                   <label htmlFor="services-booking-service" className="text-sm font-medium text-[#24382D]">
@@ -939,6 +954,7 @@ function ServicesBookingSpace({
                     id="services-booking-name"
                     value={form.name}
                     onChange={(event) => update("name", event.target.value)}
+                    maxLength={120}
                     className="h-11 w-full rounded-lg border border-[#D6E0D9] bg-white px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
                     required
                   />
@@ -952,6 +968,7 @@ function ServicesBookingSpace({
                     type="email"
                     value={form.email}
                     onChange={(event) => update("email", event.target.value)}
+                    maxLength={254}
                     className="h-11 w-full rounded-lg border border-[#D6E0D9] bg-white px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
                     required
                   />
@@ -968,6 +985,7 @@ function ServicesBookingSpace({
                     type="tel"
                     value={form.phone}
                     onChange={(event) => update("phone", event.target.value)}
+                    maxLength={40}
                     className="h-11 w-full rounded-lg border border-[#D6E0D9] bg-white px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
@@ -995,6 +1013,7 @@ function ServicesBookingSpace({
                   rows={3}
                   value={form.message}
                   onChange={(event) => update("message", event.target.value)}
+                  maxLength={3000}
                   placeholder={isAccommodation ? "Aantal gasten, nachten of vragen..." : "Voorkeurstijd of korte toelichting..."}
                   className="w-full resize-none rounded-lg border border-[#D6E0D9] bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />

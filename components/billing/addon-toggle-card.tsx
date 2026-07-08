@@ -54,6 +54,18 @@ export function AddonToggleCard({
 
     try {
       await handleAddonToggle(addonId, pendingState, userId)
+      await fetch("/api/audit/billing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "subscription.changed",
+          metadata: {
+            addonId,
+            enabled: pendingState,
+            source: "billing_addon_toggle",
+          },
+        }),
+      }).catch(() => null)
 
       if (onToggle) {
         onToggle(pendingState)

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { logAuditEvent } from "@/lib/audit-log"
 import { createClient } from "@/lib/supabase/server"
 
 function normalizeDomain(domain: string | null | undefined) {
@@ -58,6 +59,20 @@ export async function POST(request: Request) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  if (normalized !== currentDomain) {
+    await logAuditEvent({
+      userId: user.id,
+      websiteId: website.id,
+      action: normalized ? "domain.added" : "domain.removed",
+      metadata: {
+        previousDomain: currentDomain,
+        domain: normalized,
+        slug: website.slug,
+      },
+      request,
+    })
   }
 
   const vercelToken = process.env.VERCEL_ACCESS_TOKEN

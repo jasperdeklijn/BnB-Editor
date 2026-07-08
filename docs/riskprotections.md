@@ -128,6 +128,8 @@ Moet bevatten:
 
 # 2. Footer links toevoegen
 
+Status: uitgevoerd op 2026-07-08. De algemene `SharedFooter` linkt nu responsive naar `/terms`, `/privacy`, `/cookies`, `/processor-agreement`, `/acceptable-use`, `/disclaimer` en `/status`.
+
 Voeg in de algemene site-footer links toe naar:
 
 * Algemene voorwaarden
@@ -185,6 +187,8 @@ Maak dit later makkelijk uitbreidbaar naar databasebeheer.
 ---
 
 # 4. Audit logging toevoegen
+
+Status: uitgevoerd op 2026-07-08. Toegevoegd: `audit_logs` tabel + migratie, `logAuditEvent` helper met try/catch, en logging voor huidige actiepunten: login, logout, website aangemaakt, website gepubliceerd/ongepubliceerd, sectie toegevoegd/verwijderd, domein toegevoegd/verwijderd, domeinverificatie gestart/gelukt/mislukt en abonnement gewijzigd via de huidige billing-UI. Actienamen voor `website.deleted`, `account.deleted` en `payment.failed` zijn voorbereid; die worden pas daadwerkelijk gelogd zodra de bijbehorende delete-flow of Stripe webhook bestaat.
 
 Maak een Supabase tabel voor audit logs.
 
@@ -322,6 +326,8 @@ Als er nog geen Redis/Upstash is, maak dan een duidelijke TODO en documenteer we
 
 # 8. Contactformulier veiliger maken
 
+Status: uitgevoerd op 2026-07-08. `/api/contact` loopt via `/api/requests`; die handler valideert nu naam/e-mail/bericht, max-lengtes, honeypotvelden, simpele spamkenmerken en een MVP in-memory rate limit. Publieke formulieren sturen een verborgen honeypot mee, mislukte pogingen worden server-side gelogd en gebruikers krijgen alleen niet-technische foutmeldingen.
+
 Controleer `/api/contact`.
 
 Voeg toe:
@@ -339,6 +345,8 @@ Contactformulier mag nooit secrets of stacktraces tonen aan de gebruiker.
 ---
 
 # 9. Custom domain risico’s afdekken
+
+Status: uitgevoerd op 2026-07-08. De domeinbeheer-UI toont nu expliciete risico-uitleg over eigendom, DNS-verantwoordelijkheid, offline-risico, SSL-tijd en DNS-propagatie. Domein toevoegen/verwijderen en verificatie gestart/gelukt/mislukt worden gelogd via audit logging, inclusief websitekoppeling bij verificatie vanuit het dashboard.
 
 Controleer domain management code.
 

@@ -7,7 +7,7 @@ import { EditorInspector } from "./editor-inspector"
 import { useEditorLayout } from "./editor-layout-context"
 import type { Section, SectionStyles, SectionType, Transition } from "@/lib/types"
 import { DEFAULT_SITE_TITLE } from "@/lib/business-naming"
-import { getDefaultSectionData as getRegistryDefaultSectionData, getSectionDefinition } from "@/components/editor/section-registry"
+import { getDefaultSectionData as getRegistryDefaultSectionData } from "@/components/editor/section-registry"
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -32,6 +32,27 @@ type WebsiteSummary = {
 const getDefaultSectionData = (type: SectionType, businessId?: string | null): Record<string, unknown> =>
   getRegistryDefaultSectionData(type, { businessId })
 
+async function logWebsiteCreated(websiteId: string) {
+  await fetch("/api/audit/website-created", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ websiteId }),
+  }).catch(() => null)
+}
+
+async function logSectionAudit(action: "section.added" | "section.deleted", websiteId: string, section: Pick<Section, "id" | "type">) {
+  await fetch("/api/audit/section", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action,
+      websiteId,
+      sectionId: section.id,
+      sectionType: section.type,
+    }),
+  }).catch(() => null)
+}
+
 interface EditorClientProps {
   userId: string
 }
@@ -50,7 +71,6 @@ export function EditorClient({ userId }: EditorClientProps) {
   const [websiteMessage, setWebsiteMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null)
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("canvas")
-  const [pendingMobileSectionType, setPendingMobileSectionType] = useState<SectionType | null>(null)
   const [isMobileDraggingNewSection, setIsMobileDraggingNewSection] = useState(false)
   const [isMobileDraggingImage, setIsMobileDraggingImage] = useState(false)
   const router = useRouter()
@@ -130,7 +150,6 @@ export function EditorClient({ userId }: EditorClientProps) {
       setBusinessId(website.business_id ?? resolvedBusinessId)
       setThemeConfig((website.theme_config as ThemeConfig | null) ?? null)
       setSelectedSectionId(null)
-      setPendingMobileSectionType(null)
 
       // Load normalized sections from website_sections
       const { data: rows, error: listErr } = await websiteSections.listSections(website.id, supabase)
@@ -175,6 +194,7 @@ export function EditorClient({ userId }: EditorClientProps) {
         .single()
 
       if (newWebsite && !error) {
+        await logWebsiteCreated(newWebsite.id)
         setWebsiteId(newWebsite.id)
         setTitle(newWebsite.title || DEFAULT_SITE_TITLE)
         setThemeConfig(null)
@@ -188,7 +208,6 @@ export function EditorClient({ userId }: EditorClientProps) {
             created_at: newWebsite.created_at,
           },
         ])
-        setPendingMobileSectionType(null)
       }
     }
   }, [userId])
@@ -244,6 +263,8 @@ export function EditorClient({ userId }: EditorClientProps) {
       setWebsiteMessage({ type: "error", text: error?.message || "Nieuwe website kon niet worden aangemaakt." })
       return
     }
+
+    await logWebsiteCreated(newWebsite.id)
 
     setWebsites((current) => [
       {
@@ -332,7 +353,11 @@ export function EditorClient({ userId }: EditorClientProps) {
       const removed = prevIds.filter((id) => !newIds.includes(id))
       for (const id of removed) {
         if (!id.startsWith('section-')) {
-          await websiteSections.deleteSection(id, supabase)
+          const deletedSection = prevSections.find((section) => section.id === id)
+          const { error } = await websiteSections.deleteSection(id, supabase)
+          if (!error && deletedSection) {
+            await logSectionAudit("section.deleted", websiteId, deletedSection)
+          }
         }
       }
 
@@ -354,6 +379,7 @@ export function EditorClient({ userId }: EditorClientProps) {
           if (created) {
             finalIds.push(created.id)
             idMapping.set(s.id, created.id)
+            await logSectionAudit("section.added", websiteId, { id: created.id, type: s.type })
             // replace temp id in local state
             setSections((prev) => prev.map((p) => (p.id === s.id ? { ...p, id: created.id } : p)))
           }
@@ -432,8 +458,10 @@ export function EditorClient({ userId }: EditorClientProps) {
   }, [router, setIsSaving, setSaveState, websiteId])
 
   const handleLogout = useCallback(async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
+    await fetch("/api/auth/logout", { method: "POST" }).catch(async () => {
+      const supabase = createClient()
+      await supabase.auth.signOut()
+    })
     router.push("/auth/login")
   }, [router])
 
@@ -525,39 +553,6 @@ export function EditorClient({ userId }: EditorClientProps) {
     setMobilePanel("canvas")
   }
 
-  const insertSectionAt = (type: SectionType, index: number) => {
-    const section: Section = {
-      id: `section-${Date.now()}`,
-      type,
-      data: getDefaultSectionData(type, businessId),
-      styles: {},
-    }
-
-    const nextSections = [...sections]
-    const safeIndex = Math.max(0, Math.min(index, nextSections.length))
-    nextSections.splice(safeIndex, 0, section)
-
-    persistSections(nextSections)
-    setSelectedSectionId(section.id)
-    setPendingMobileSectionType(null)
-    setMobilePanel("canvas")
-  }
-
-  const handleAddSection = (type: SectionType) => {
-    if (typeof window !== "undefined" && window.innerWidth < 768 && sections.length > 0) {
-      setPendingMobileSectionType(type)
-      setMobilePanel("canvas")
-      return
-    }
-
-    insertSectionAt(type, sections.length)
-  }
-
-  const handleInsertPendingSection = (index: number) => {
-    if (!pendingMobileSectionType) return
-    insertSectionAt(pendingMobileSectionType, index)
-  }
-
   const handleStartTutorial = () => {
     const starterTypes: SectionType[] = ["hero", "about", "services", "contact"]
     const starterSections: Section[] = starterTypes.map((type, index) => ({
@@ -582,9 +577,6 @@ export function EditorClient({ userId }: EditorClientProps) {
   }
 
   const selectedSection = sections.find((s) => s.id === selectedSectionId) || null
-  const pendingMobileSectionLabel = pendingMobileSectionType
-    ? getSectionDefinition(pendingMobileSectionType)?.label ?? pendingMobileSectionType.replace("_", " ")
-    : ""
   const selectedWebsite = websites.find((website) => website.id === websiteId)
   const selectedWebsiteLiveUrl = selectedWebsite
     ? selectedWebsite.customDomain || `${selectedWebsite.slug}.${PLATFORM_DOMAIN}`
@@ -774,7 +766,7 @@ export function EditorClient({ userId }: EditorClientProps) {
       </div>
       {/* Desktop layout: side-by-side panels */}
       <div className="hidden md:flex flex-1 overflow-hidden">
-        {!isPreview && <SectionsSelector userId={userId} onAddSection={handleAddSection} />}
+        {!isPreview && <SectionsSelector userId={userId} />}
         <EditorCanvas
           sections={sections}
           setSections={persistSections}
@@ -815,51 +807,10 @@ export function EditorClient({ userId }: EditorClientProps) {
       <div className="flex md:hidden flex-1 overflow-hidden flex-col">
         {/* Panel content */}
         <div className="relative flex min-h-0 flex-1 overflow-hidden pb-[calc(4.5rem+env(safe-area-inset-bottom))]">
-          {pendingMobileSectionType && mobilePanel === "canvas" && !isPreview ? (
-            <div className="absolute inset-x-3 top-3 z-30 rounded-md border border-primary/30 bg-background p-3 shadow-lg">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-foreground">{pendingMobileSectionLabel} toevoegen</p>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                    Kies waar deze sectie in uw pagina moet komen.
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="xs"
-                  onClick={() => setPendingMobileSectionType(null)}
-                  aria-label="Toevoegen annuleren"
-                  title="Toevoegen annuleren"
-                >
-                  Annuleren
-                </Button>
-              </div>
-              <div className="mt-3 grid gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => handleInsertPendingSection(0)}>
-                  Bovenaan plaatsen
-                </Button>
-                {selectedSection ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleInsertPendingSection(sections.findIndex((section) => section.id === selectedSection.id) + 1)}
-                  >
-                    Na geselecteerde sectie plaatsen
-                  </Button>
-                ) : null}
-                <Button type="button" size="sm" onClick={() => handleInsertPendingSection(sections.length)}>
-                  Onderaan plaatsen
-                </Button>
-              </div>
-            </div>
-          ) : null}
           {mobilePanel === "sections" && !isPreview && (
             <SectionsSelector
               userId={userId}
               className="w-full h-full border-r-0"
-              onAddSection={handleAddSection}
               onSectionAdded={() => setMobilePanel("canvas")}
             />
           )}

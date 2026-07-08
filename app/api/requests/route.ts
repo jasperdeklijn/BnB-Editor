@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import nodemailer from "nodemailer"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
 import { PLATFORM_EMAILS } from "@/lib/platform"
 
 const FROM_EMAIL = process.env.SMTP_FROM?.trim() || PLATFORM_EMAILS.info
@@ -16,6 +17,36 @@ const REQUEST_LABELS: Record<RequestType, string> = {
   whatsapp: "WhatsApp aanvraag",
 }
 
+const FIELD_LIMITS = {
+  name: 120,
+  email: 254,
+  phone: 40,
+  service: 160,
+  serviceId: 80,
+  date: 80,
+  preferredDate: 80,
+  budget: 80,
+  message: 3000,
+  websiteId: 80,
+  businessId: 80,
+  recipientEmail: 254,
+  source: 80,
+}
+
+const GENERIC_ERROR = "Aanvraag kon niet worden verzonden. Controleer de velden en probeer het opnieuw."
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const URL_PATTERN = /https?:\/\/|www\.|\.ru\b|\.cn\b|\.zip\b/gi
+const SPAM_TERMS = [
+  "casino",
+  "crypto",
+  "forex",
+  "loan",
+  "viagra",
+  "porn",
+  "seo backlinks",
+  "guest post",
+]
+
 function normalizeRequestType(value: unknown): RequestType {
   if (value === "quote" || value === "appointment" || value === "booking_request" || value === "whatsapp") {
     return value
@@ -25,6 +56,53 @@ function normalizeRequestType(value: unknown): RequestType {
 
 function getString(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
+}
+
+function limitString(value: unknown, maxLength: number) {
+  return getString(value).slice(0, maxLength)
+}
+
+function getTooLongFields(body: Record<string, unknown>) {
+  return Object.entries(FIELD_LIMITS)
+    .filter(([field, maxLength]) => getString(body[field]).length > maxLength)
+    .map(([field]) => field)
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;")
+}
+
+function hasHoneypotValue(body: Record<string, unknown>) {
+  return ["company", "website", "url", "hp_field", "confirmEmail"].some((field) => getString(body[field]).length > 0)
+}
+
+function looksLikeSpam(input: {
+  name: string
+  email: string
+  phone: string
+  service: string
+  budget: string
+  message: string
+}) {
+  const combined = `${input.name} ${input.email} ${input.phone} ${input.service} ${input.budget} ${input.message}`.toLowerCase()
+  const linkCount = combined.match(URL_PATTERN)?.length ?? 0
+  const spamTermHit = SPAM_TERMS.some((term) => combined.includes(term))
+
+  return linkCount > 3 || spamTermHit
+}
+
+function logRejectedRequest(reason: string, request: NextRequest, metadata: Record<string, unknown> = {}) {
+  console.warn("[requests] Rejected public request", {
+    reason,
+    ip: getRateLimitKey(request, "contact_form").replace("contact_form:", ""),
+    userAgent: request.headers.get("user-agent"),
+    ...metadata,
+  })
 }
 
 function parsePreferredDate(value: string) {
@@ -115,7 +193,7 @@ async function resolveRequestContext(input: {
     userEmail = data?.user?.email || ""
   }
 
-  const recipientEmail = input.recipientEmail || businessEmail || userEmail || FROM_EMAIL
+  const recipientEmail = businessEmail || userEmail || input.recipientEmail || FROM_EMAIL
 
   return { supabase, websiteId, businessId, userId, recipientEmail, businessName }
 }
@@ -171,32 +249,60 @@ function buildEmailHtml(input: {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const requestType = normalizeRequestType(body.requestType)
-    const name = getString(body.name)
-    const email = getString(body.email)
-    const phone = getString(body.phone)
-    const service = getString(body.service)
-    const requestedServiceId = getString(body.serviceId)
-    const preferredDate = getString(body.date || body.preferredDate)
-    const budget = getString(body.budget)
-    const message = getString(body.message)
-    const websiteId = getString(body.websiteId)
-    const businessId = getString(body.businessId)
-    const source = getString(body.source) || "website_form"
+    const rateLimit = checkRateLimit(getRateLimitKey(request, "contact_form"), 8, 10 * 60 * 1000)
+    if (!rateLimit.allowed) {
+      logRejectedRequest("rate_limited", request, { resetAt: rateLimit.resetAt })
+      return NextResponse.json({ error: "Te veel aanvragen. Probeer het later opnieuw." }, { status: 429 })
+    }
 
-    if (!name || !email) {
-      return NextResponse.json({ error: "Naam en e-mail zijn verplicht." }, { status: 400 })
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== "object") {
+      logRejectedRequest("invalid_json", request)
+      return NextResponse.json({ error: GENERIC_ERROR }, { status: 400 })
+    }
+
+    if (hasHoneypotValue(body as Record<string, unknown>)) {
+      logRejectedRequest("honeypot", request)
+      return NextResponse.json({ error: GENERIC_ERROR }, { status: 400 })
+    }
+
+    const tooLongFields = getTooLongFields(body as Record<string, unknown>)
+    if (tooLongFields.length > 0) {
+      logRejectedRequest("field_length", request, { fields: tooLongFields })
+      return NextResponse.json({ error: "Een of meer velden zijn te lang." }, { status: 400 })
+    }
+
+    const requestType = normalizeRequestType(body.requestType)
+    const name = limitString(body.name, FIELD_LIMITS.name)
+    const email = limitString(body.email, FIELD_LIMITS.email).toLowerCase()
+    const phone = limitString(body.phone, FIELD_LIMITS.phone)
+    const service = limitString(body.service, FIELD_LIMITS.service)
+    const requestedServiceId = limitString(body.serviceId, FIELD_LIMITS.serviceId)
+    const preferredDate = limitString(body.date || body.preferredDate, FIELD_LIMITS.preferredDate)
+    const budget = limitString(body.budget, FIELD_LIMITS.budget)
+    const message = limitString(body.message, FIELD_LIMITS.message)
+    const websiteId = limitString(body.websiteId, FIELD_LIMITS.websiteId)
+    const businessId = limitString(body.businessId, FIELD_LIMITS.businessId)
+    const source = limitString(body.source, FIELD_LIMITS.source) || "website_form"
+
+    if (!name || !email || !EMAIL_PATTERN.test(email)) {
+      logRejectedRequest("invalid_required_fields", request, { requestType, hasName: Boolean(name), hasEmail: Boolean(email) })
+      return NextResponse.json({ error: "Vul een geldige naam en e-mailadres in." }, { status: 400 })
     }
 
     if (requestType === "contact" && !message) {
       return NextResponse.json({ error: "Bericht is verplicht." }, { status: 400 })
     }
 
+    if (looksLikeSpam({ name, email, phone, service, budget, message })) {
+      logRejectedRequest("spam_pattern", request, { requestType, websiteId, businessId })
+      return NextResponse.json({ error: GENERIC_ERROR }, { status: 400 })
+    }
+
     const context = await resolveRequestContext({
       websiteId,
       businessId,
-      recipientEmail: getString(body.recipientEmail),
+      recipientEmail: limitString(body.recipientEmail, FIELD_LIMITS.recipientEmail),
     })
     let calendarServiceId: string | null = null
 
@@ -225,7 +331,15 @@ export async function POST(request: NextRequest) {
         preferred_date: preferredDate,
         budget,
         message,
-        payload: body ?? {},
+        payload: {
+          requestType,
+          phone,
+          service,
+          serviceId: requestedServiceId,
+          preferredDate,
+          budget,
+          source,
+        },
         recipient_email: context.recipientEmail,
         source,
       })
@@ -292,15 +406,15 @@ export async function POST(request: NextRequest) {
           subject: `${requestLabel} van ${name}`,
           html: buildEmailHtml({
             requestLabel,
-            businessName: context.businessName,
-            name,
-            email,
-            phone,
-            service,
-            preferredDate,
-            budget,
-            message,
-            recipientEmail: context.recipientEmail,
+            businessName: escapeHtml(context.businessName),
+            name: escapeHtml(name),
+            email: escapeHtml(email),
+            phone: escapeHtml(phone),
+            service: escapeHtml(service),
+            preferredDate: escapeHtml(preferredDate),
+            budget: escapeHtml(budget),
+            message: escapeHtml(message),
+            recipientEmail: escapeHtml(context.recipientEmail),
           }),
           text: `${requestLabel}\n\nNaam: ${name}\nE-mail: ${email}${phone ? `\nTelefoon: ${phone}` : ""}${service ? `\nDienst: ${service}` : ""}${preferredDate ? `\nGewenste datum: ${preferredDate}` : ""}${budget ? `\nBudget: ${budget}` : ""}\n\nBericht:\n${message || "Geen bericht ingevuld."}`,
         })

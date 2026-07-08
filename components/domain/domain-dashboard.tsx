@@ -202,7 +202,7 @@ export function DomainDashboard({ websites }: DomainDashboardProps) {
     setMessage(null)
     const domain = savedDomain || customDomain.trim()
     if (!domain) return
-    const res = await fetch(`/api/domain/verify?domain=${encodeURIComponent(domain)}`)
+    const res = await fetch(`/api/domain/verify?domain=${encodeURIComponent(domain)}&websiteId=${encodeURIComponent(selectedWebsite.id)}`)
     const json = await res.json()
     if (json.connected) {
       setVerifyStatus("connected")
@@ -328,6 +328,15 @@ export function DomainDashboard({ websites }: DomainDashboardProps) {
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-foreground">Eigen domein</h2>
         <div className="space-y-4 rounded-lg border border-border bg-card p-4">
+          <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-3 text-xs leading-relaxed text-secondary-foreground">
+            <p className="font-semibold text-foreground">Belangrijk voordat u een domein koppelt</p>
+            <ul className="mt-2 list-disc space-y-1 pl-4">
+              <li>U blijft zelf eigenaar van uw domein en beheert dit bij uw domeinprovider.</li>
+              <li>DNS-instellingen zijn uw verantwoordelijkheid; verkeerde DNS-records kunnen uw website offline zetten.</li>
+              <li>SSL-certificaten worden automatisch geregeld, maar activatie kan enige tijd duren.</li>
+              <li>DNS-wijzigingen kunnen door propagatie vertraagd zichtbaar zijn, soms tot 24 uur.</li>
+            </ul>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="custom-domain" className="text-sm">
               Domeinnaam

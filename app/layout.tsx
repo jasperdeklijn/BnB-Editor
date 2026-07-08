@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   description: 'Bouw eenvoudig een professionele website voor jouw kleine bedrijf. Geen code nodig, direct online.',
   generator: 'v0.app',
   icons: [
-    { rel: 'icon', url: '/favicon_48x48.png', sizes: '48x48' },
+    { rel: 'icon', url: '/icon.png', sizes: '1024x1024', type: 'image/png' },
   ],
 }
 

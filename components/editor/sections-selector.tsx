@@ -7,7 +7,6 @@ import {
   ChevronRight,
   ImageIcon,
   Layers,
-  Plus,
   ExternalLink,
 } from "lucide-react"
 import Link from "next/link"
@@ -26,12 +25,11 @@ interface SectionCardProps {
   description: string
   collapsed: boolean
   isDragging: boolean
-  onAdd?: (type: SectionType) => void
   onDragStart: (e: React.DragEvent, type: SectionType) => void
   onDragEnd: () => void
 }
 
-function SectionCard({ type, label, Icon, description, collapsed, isDragging, onAdd, onDragStart, onDragEnd }: SectionCardProps) {
+function SectionCard({ type, label, Icon, description, collapsed, isDragging, onDragStart, onDragEnd }: SectionCardProps) {
   const { onTouchStart, onTouchMove, onTouchEnd } = useTouchDrag({ payload: { sectionType: type } })
   return (
     <div
@@ -51,25 +49,9 @@ function SectionCard({ type, label, Icon, description, collapsed, isDragging, on
         <Icon className="h-5 w-5" />
       </div>
       {!collapsed && (
-        <div className="flex-1 min-w-0 space-y-2">
-          <div>
-            <div className="text-sm font-medium">{label}</div>
-            <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
-          </div>
-          <button
-            type="button"
-            onClick={(event) => {
-              event.stopPropagation()
-              onAdd?.(type)
-            }}
-            onTouchStart={(event) => event.stopPropagation()}
-            className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label={`${label} toevoegen`}
-            title={`${label} toevoegen`}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Toevoegen
-          </button>
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-medium">{label}</div>
+          <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
         </div>
       )}
       <div
@@ -119,12 +101,11 @@ function ImageCard({ name, url, collapsed, isDragging, onDragStart, onDragEnd }:
 interface SectionsSelectorProps {
   className?: string
   userId?: string
-  onAddSection?: (type: SectionType) => void
   /** Called on mobile after a touch-drag drop so the parent can switch back to the canvas panel */
   onSectionAdded?: () => void
 }
 
-export function SectionsSelector({ className = "", userId, onAddSection, onSectionAdded }: SectionsSelectorProps) {
+export function SectionsSelector({ className = "", userId, onSectionAdded }: SectionsSelectorProps) {
   const [collapsed, setCollapsed] = useState(false)
   const [draggingType, setDraggingType] = useState<SectionType | null>(null)
   const [tab, setTab] = useState("sections")
@@ -193,11 +174,6 @@ export function SectionsSelector({ className = "", userId, onAddSection, onSecti
 
   const handleDragEnd = () => {
     setDraggingType(null)
-  }
-
-  const handleAddSection = (type: SectionType) => {
-    onAddSection?.(type)
-    onSectionAdded?.()
   }
 
   const handleImageDragStart = (e: React.DragEvent, url: string) => {
@@ -296,7 +272,7 @@ export function SectionsSelector({ className = "", userId, onAddSection, onSecti
           <div className={`mb-4 ${collapsed ? "sr-only" : "opacity-100 transition-opacity delay-100"}`}>
             <h3 className={`${collapsed ? "sr-only" : "mb-1 text-sm font-semibold"}`}>Secties toevoegen</h3>
             <p className={`${collapsed ? "sr-only" : "text-xs text-muted-foreground"}`}>
-              Gebruik Toevoegen of sleep een sectie naar de gewenste plek.
+              Sleep een sectie naar de gewenste plek.
             </p>
           </div>
 
@@ -310,7 +286,6 @@ export function SectionsSelector({ className = "", userId, onAddSection, onSecti
                 description={description}
                 collapsed={collapsed}
                 isDragging={draggingType === type}
-                onAdd={handleAddSection}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
               />
@@ -320,7 +295,7 @@ export function SectionsSelector({ className = "", userId, onAddSection, onSecti
           {!collapsed && (
             <div className="mt-6 rounded-xl border border-dashed border-border bg-secondary/70 p-3 text-center animate-in fade-in slide-in-from-left-2 duration-300">
               <p className="text-xs text-muted-foreground">
-                Op mobiel kiest u na Toevoegen waar de nieuwe sectie komt.
+                Op mobiel kunt u secties naar het canvas slepen.
               </p>
             </div>
           )}

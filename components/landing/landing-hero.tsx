@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { PLATFORM_BRAND_NAME } from "@/lib/platform"
 
@@ -18,8 +19,16 @@ export function LandingHero() {
 
       <div className="relative z-10 mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[0.9fr_1.1fr]">
         <div>
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--landing-border)] bg-white px-4 py-1.5 text-sm font-medium text-[var(--landing-primary-dark)] shadow-sm">
-            Praktische website software voor kleine bedrijven
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[var(--landing-border)] bg-white py-1.5 pl-2 pr-4 text-sm font-medium text-[var(--landing-primary-dark)] shadow-sm">
+            <Image
+              src="/icon.png"
+              alt=""
+              width={1024}
+              height={1024}
+              className="h-7 w-7 rounded-full object-contain"
+              aria-hidden="true"
+            />
+            <span>Praktische website software voor kleine bedrijven</span>
           </div>
 
           <h1 className="mb-6 text-balance text-5xl font-extrabold leading-[1.05] text-[var(--landing-secondary)] md:text-6xl">
@@ -62,8 +71,16 @@ export function LandingHero() {
               <div className="h-3 w-3 rounded-full bg-red-400/70" aria-hidden="true" />
               <div className="h-3 w-3 rounded-full bg-yellow-400/70" aria-hidden="true" />
               <div className="h-3 w-3 rounded-full bg-green-500/70" aria-hidden="true" />
-              <div className="mx-3 flex-1 rounded-md bg-white px-3 py-1 text-xs text-slate-500">
-                {PLATFORM_BRAND_NAME} / editor
+              <div className="mx-3 flex min-w-0 flex-1 items-center gap-2 rounded-md bg-white px-3 py-1 text-xs text-slate-500">
+                <Image
+                  src="/icon.png"
+                  alt=""
+                  width={1024}
+                  height={1024}
+                  className="h-4 w-4 shrink-0 rounded object-contain"
+                  aria-hidden="true"
+                />
+                <span className="truncate">{PLATFORM_BRAND_NAME} / editor</span>
               </div>
             </div>
             <video
