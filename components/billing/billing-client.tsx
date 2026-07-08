@@ -1,29 +1,21 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { MockUserBillingData } from "@/lib/types/pricing"
-import { getPlanById } from "@/lib/pricing"
+import { useEffect, useState } from "react"
+
 import { BillingStatusBadge } from "@/components/billing/billing-status-badge"
-import { PlanComparisonTable } from "@/components/billing/plan-comparison-table"
-import { InvoiceHistoryTable } from "@/components/billing/invoice-history-table"
-import { AddonToggleCard } from "@/components/billing/addon-toggle-card"
 import { BillingSummarySidebar } from "@/components/billing/billing-summary-sidebar"
+import { InvoiceHistoryTable } from "@/components/billing/invoice-history-table"
+import { PlanComparisonTable } from "@/components/billing/plan-comparison-table"
 import { Card } from "@/components/ui/card"
+import { getPlanById } from "@/lib/pricing"
+import { MockUserBillingData } from "@/lib/types/pricing"
 
 interface BillingClientProps {
   billingData: MockUserBillingData
   userId: string
 }
 
-/**
- * Billing Dashboard Client Component
- * Main client component that orchestrates the billing dashboard
- */
 export function BillingClient({ billingData, userId }: BillingClientProps) {
-  const [addonStates, setAddonStates] = useState({
-    bookingAddon: billingData.addons.bookingAddon,
-  })
-
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -31,8 +23,6 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
   }, [])
 
   const currentPlan = getPlanById(billingData.currentPlan)
-  const basePrice = billingData.currentPrice
-  const addonsPrice = addonStates.bookingAddon ? 19 : 0
 
   if (!mounted) {
     return (
@@ -45,107 +35,57 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
 
   return (
     <div className="space-y-8 pb-20">
-      {/* Current Plan Card */}
       <Card className="rounded-xl border border-border bg-secondary/70 p-8 shadow-sm animate-in fade-in duration-700">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+            <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Huidig abonnement
             </p>
-            <h2 className="text-3xl font-bold text-foreground">
-              {currentPlan.name}
-            </h2>
-            <p className="text-muted-foreground mt-1">
-              {currentPlan.description}
-            </p>
+            <h2 className="text-3xl font-bold text-foreground">{currentPlan.name}</h2>
+            <p className="mt-1 text-muted-foreground">{currentPlan.description}</p>
           </div>
 
           <BillingStatusBadge status={billingData.status} />
         </div>
       </Card>
 
-      {/* Main content grid */}
-      <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
-          {/* Plan Comparison */}
+      <div className="grid gap-8 lg:grid-cols-3">
+        <div className="space-y-8 lg:col-span-2">
           <div className="animate-in fade-in duration-700 delay-200">
-            <h3 className="text-xl font-semibold text-foreground mb-4">
-              Pläne vergleichen
+            <h3 className="mb-4 text-xl font-semibold text-foreground">
+              Abonnementen vergelijken
             </h3>
-            <PlanComparisonTable
-              currentPlanId={billingData.currentPlan}
-              userId={userId}
-            />
+            <PlanComparisonTable currentPlanId={billingData.currentPlan} userId={userId} />
           </div>
 
-          {/* Add-on Card */}
           <div className="animate-in fade-in duration-700 delay-300">
-            <h3 className="text-xl font-semibold text-foreground mb-4">
-              Add-ons
-            </h3>
-            <AddonToggleCard
-              addonId="bookingAddon"
-              addonName="Booking Add-on"
-              isEnabled={addonStates.bookingAddon}
-              monthlyPrice={19}
-              features={[
-                "Aanvragen van klanten",
-                "Beschikbaarheidskalender",
-                "Reserveringsbeheer",
-                "Gastcommunicatie",
-                "Automatische bevestigingsmails",
-              ]}
-              userId={userId}
-              onToggle={(enabled) =>
-                setAddonStates((prev) => ({
-                  ...prev,
-                  bookingAddon: enabled,
-                }))
-              }
-            />
-          </div>
-
-          {/* Invoice History */}
-          <div className="animate-in fade-in duration-700 delay-400">
-            <h3 className="text-xl font-semibold text-foreground mb-4">
+            <h3 className="mb-4 text-xl font-semibold text-foreground">
               Factuuroverzicht
             </h3>
             <InvoiceHistoryTable invoices={billingData.invoices} />
           </div>
         </div>
 
-        {/* Sidebar */}
-        <div className="lg:col-span-1 animate-in fade-in duration-700 delay-300">
+        <div className="animate-in fade-in duration-700 delay-300 lg:col-span-1">
           <BillingSummarySidebar
             currentPlan={currentPlan}
             nextBillingDate={billingData.nextBillingDate}
-            monthlyCharge={basePrice}
-            addonsPrice={addonsPrice}
+            monthlyCharge={billingData.currentPrice}
           />
         </div>
       </div>
 
-      {/* Info box */}
       <div className="mt-12 rounded-xl border border-border bg-card p-6 shadow-sm animate-in fade-in duration-700 delay-500">
-        <h4 className="font-semibold text-foreground mb-2">
-          Info zum Abonnement
+        <h4 className="mb-2 font-semibold text-foreground">
+          Informatie over uw abonnement
         </h4>
         <ul className="space-y-2 text-sm text-muted-foreground">
-          <li>
-            ✓ Je kunt op elk moment van abonnement wisselen
-          </li>
-          <li>
-            ✓ Je abonnement wordt automatisch maandelijks verlengd
-          </li>
-          <li>
-            ✓ Je ontvangt 30 dagen geld-terug-garantie
-          </li>
-          <li>
-            ✓ 24/7 klantenondersteuning is beschikbaar
-          </li>
+          <li>U kunt op elk moment van abonnement wisselen.</li>
+          <li>Uw abonnement wordt automatisch maandelijks verlengd.</li>
+          <li>Gold bevat online afspraken, beschikbaarheid en boekingsbeheer.</li>
+          <li>Priority support is inbegrepen bij Gold.</li>
         </ul>
       </div>
     </div>
   )
 }
-

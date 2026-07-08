@@ -37,7 +37,7 @@ export default async function BillingPage() {
   return (
     <EditorPageShell
       title="Facturering"
-      description="Beheer uw abonnement, add-ons, betaalgegevens en factuuroverzicht."
+      description="Beheer uw abonnement, betaalgegevens en factuuroverzicht."
       maxWidth="7xl"
     >
       <BillingClient billingData={billingData} userId={data.user.id} />

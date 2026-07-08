@@ -27,7 +27,7 @@ export function SharedFooter() {
               <Link href="/auth/login" className="text-xs text-white/60 transition-colors hover:text-white">
                 Inloggen
               </Link>
-              <Link href="#prijzen" className="text-xs text-white/60 transition-colors hover:text-white">
+              <Link href="/pricing" className="text-xs text-white/60 transition-colors hover:text-white">
                 Prijzen
               </Link>
             </nav>

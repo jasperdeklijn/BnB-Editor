@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button"
 import { ArrowRight, CheckCircle2 } from "lucide-react"
 import type { PlanId, PricingPlan } from "@/lib/types/pricing"
 import { cn } from "@/lib/utils"
+import { formatPrice } from "@/lib/pricing"
+import Link from "next/link"
 
 interface PricingCardProps {
   plan: PricingPlan
@@ -21,6 +23,13 @@ export function PricingCard({
   const handleClick = () => {
     onSelectPlan?.(plan.id)
   }
+
+  const buttonClasses = cn(
+    "group/btn w-full gap-2 rounded-full transition-all duration-300",
+    isPopular
+      ? "bg-[var(--landing-primary)] text-white shadow-[0_10px_24px_rgba(36,56,45,0.18)] hover:bg-[var(--landing-primary-dark)]"
+      : "bg-[var(--landing-secondary)] text-white hover:bg-[var(--landing-primary-dark)]"
+  )
 
   return (
     <div
@@ -51,13 +60,10 @@ export function PricingCard({
         <div className="mb-8">
           <div className="flex items-baseline gap-1">
             <span className="text-4xl font-bold text-[var(--landing-secondary)]">
-              EUR {plan.monthlyPrice}
+              {formatPrice(plan.monthlyPrice)}
             </span>
             <span className="text-sm text-[var(--landing-muted)]">/maand</span>
           </div>
-          {plan.isAddon && (
-            <p className="mt-2 text-xs text-amber-700">Voeg toe aan elk plan</p>
-          )}
         </div>
 
         <div className="mb-8 flex-1">
@@ -71,18 +77,19 @@ export function PricingCard({
           </ul>
         </div>
 
-        <Button
-          onClick={handleClick}
-          className={cn(
-            "group/btn w-full gap-2 rounded-full transition-all duration-300",
-            isPopular
-              ? "bg-[var(--landing-primary)] text-white shadow-[0_10px_24px_rgba(36,56,45,0.18)] hover:bg-[var(--landing-primary-dark)]"
-              : "bg-[var(--landing-secondary)] text-white hover:bg-[var(--landing-primary-dark)]"
-          )}
-        >
-          {plan.cta}
-          <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
-        </Button>
+        {onSelectPlan ? (
+          <Button onClick={handleClick} className={buttonClasses}>
+            {plan.cta}
+            <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+          </Button>
+        ) : (
+          <Button asChild className={buttonClasses}>
+            <Link href={`/auth/sign-up?plan=${plan.id}`}>
+              {plan.cta}
+              <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+            </Link>
+          </Button>
+        )}
 
         <p className="mt-4 text-center text-xs text-[var(--landing-muted)]">
           Maandelijks gefactureerd. Upgraden of downgraden wanneer je wilt.

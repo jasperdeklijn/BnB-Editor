@@ -7,7 +7,7 @@
 
 // ===== PLANS =====
 
-export type PlanId = "lite" | "growth" | "booking-addon"
+export type PlanId = "bronze" | "silver" | "gold"
 
 export interface PricingPlan {
   id: PlanId
@@ -39,7 +39,7 @@ export interface Subscription {
   nextBillingDate: Date
   createdAt: Date
   updatedAt: Date
-  // Addons
+  // Kept for existing billing records while pricing is plan-based.
   addons: {
     bookingAddon: boolean
   }
@@ -70,9 +70,9 @@ export interface Invoice {
 
 export interface FeatureComparison {
   feature: string
-  lite: boolean | string
-  growth: boolean | string
-  bookingAddon: boolean | string
+  bronze: boolean | string
+  silver: boolean | string
+  gold: boolean | string
 }
 
 // ===== API RESPONSES =====

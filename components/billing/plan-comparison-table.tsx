@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { PRICING_PLANS, FEATURE_COMPARISON, formatPrice } from "@/lib/pricing"
+import { FEATURE_COMPARISON, PLAN_ORDER, formatPrice, getMainPlans } from "@/lib/pricing"
 import { PlanId } from "@/lib/types/pricing"
 import { CheckCircle2, X, ArrowRight } from "lucide-react"
 import { handleUpgrade, handleDowngrade } from "@/lib/stripe-placeholder"
@@ -24,7 +24,7 @@ export function PlanComparisonTable({
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const mainPlans = [PRICING_PLANS.lite, PRICING_PLANS.growth]
+  const mainPlans = getMainPlans()
 
   const handlePlanChange = async (newPlanId: PlanId) => {
     if (newPlanId === currentPlanId) {
@@ -36,12 +36,13 @@ export function PlanComparisonTable({
     setIsLoading(true)
 
     try {
-      if (newPlanId === "growth") {
-        // Upgrade
+      const currentPlanIndex = PLAN_ORDER.indexOf(currentPlanId)
+      const newPlanIndex = PLAN_ORDER.indexOf(newPlanId)
+
+      if (newPlanIndex > currentPlanIndex) {
         await handleUpgrade(newPlanId, userId)
         toast.success("Plan succesvol bijgewerkt!")
-      } else if (newPlanId === "lite") {
-        // Downgrade
+      } else {
         await handleDowngrade(newPlanId, userId)
         toast.success("Plan succesvol teruggezet!")
       }
@@ -91,8 +92,7 @@ export function PlanComparisonTable({
                 {row.feature}
               </td>
               {mainPlans.map((plan) => {
-                const value =
-                  plan.id === "lite" ? row.lite : row.growth
+                const value = row[plan.id]
                 return (
                   <td
                     key={`${row.feature}-${plan.id}`}
@@ -131,7 +131,9 @@ export function PlanComparisonTable({
                     disabled={isLoading && selectedPlan === plan.id}
                     className="gap-2"
                   >
-                    {plan.id === "growth" ? "Upgraden" : "Downgraden"}
+                    {PLAN_ORDER.indexOf(plan.id) > PLAN_ORDER.indexOf(currentPlanId)
+                      ? "Upgraden"
+                      : "Downgraden"}
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 )}

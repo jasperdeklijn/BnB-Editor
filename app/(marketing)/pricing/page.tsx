@@ -1,122 +1,190 @@
+import Link from "next/link"
+import { ArrowLeft, ArrowRight, CheckCircle2, ShieldCheck, X } from "lucide-react"
+
 import { PricingCard } from "@/components/pricing/pricing-card"
 import { PricingFaq } from "@/components/pricing/pricing-faq"
-import { TrustSection } from "@/components/pricing/trust-section"
-import { getMainPlans } from "@/lib/pricing"
-import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
+import { SharedFooter } from "@/components/layout/shared-footer"
+import { FEATURE_COMPARISON, formatPrice, getMainPlans } from "@/lib/pricing"
+import { PLATFORM_BRAND_INITIALS, PLATFORM_BRAND_NAME } from "@/lib/platform"
+import type { PlanId } from "@/lib/types/pricing"
 
 export const metadata = {
-  title: "Pricing | Website Maker",
+  title: `Prijzen | ${PLATFORM_BRAND_NAME}`,
   description:
-    "Transparante prijzen voor onze websitebouwer. Kies het plan dat bij jouw bedrijf past. Upgraden of downgraden kan altijd — geen verborgen kosten.",
+    "Transparante abonnementen voor uw website: Bronze, Silver en Gold. Kies de functies die passen bij uw bedrijf.",
 }
 
-/**
- * Public Pricing Page
- * Shows all pricing plans, comparison, FAQ, and trust information
- */
+const planPosition: Record<PlanId, number> = {
+  bronze: 1,
+  silver: 2,
+  gold: 3,
+}
+
+function ComparisonValue({ value }: { value: boolean | string }) {
+  if (typeof value === "boolean") {
+    return value ? (
+      <CheckCircle2 className="mx-auto h-5 w-5 text-[var(--landing-primary)]" aria-label="Inbegrepen" />
+    ) : (
+      <X className="mx-auto h-5 w-5 text-slate-300" aria-label="Niet inbegrepen" />
+    )
+  }
+
+  return <span className="text-sm font-medium text-[var(--landing-secondary)]">{value}</span>
+}
+
 export default function PricingPage() {
   const plans = getMainPlans()
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 dark:from-slate-950 dark:to-slate-900">
-      {/* Header */}
-      <header className="border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950">
-        <div className="max-w-6xl mx-auto px-6 py-6 flex items-center gap-4">
+    <div className="min-h-screen bg-white text-[var(--landing-secondary)]">
+      <header className="sticky top-0 z-50 border-b border-[var(--landing-border)] bg-white/92 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <Link href="/" className="flex items-center gap-3" aria-label={`${PLATFORM_BRAND_NAME} homepage`}>
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--landing-primary)] text-sm font-bold text-white shadow-sm">
+              {PLATFORM_BRAND_INITIALS}
+            </span>
+            <span className="text-base font-bold">{PLATFORM_BRAND_NAME}</span>
+          </Link>
+
+          <nav className="hidden items-center gap-8 md:flex" aria-label="Prijzen navigatie">
+            <Link href="/#functies" className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
+              Functies
+            </Link>
+            <Link href="/#hoe-het-werkt" className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
+              Hoe het werkt
+            </Link>
+            <Link href="/pricing" className="text-sm font-medium text-[var(--landing-primary-dark)]">
+              Prijzen
+            </Link>
+          </nav>
+
           <Link
             href="/"
-            className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition-colors hover:text-[var(--landing-primary-dark)]"
           >
             <ArrowLeft className="h-4 w-4" />
-            Terug naar homepage
+            Terug
           </Link>
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="max-w-6xl mx-auto px-6 py-20">
-        {/* Section header */}
-        <div className="text-center mb-16">
-          <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">
-            Transparante Prijzen
-          </h1>
-          <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            Kies het plan dat bij jouw bedrijf past. Upgraden of downgraden kan altijd — geen verborgen kosten.
-          </p>
-        </div>
+      <main>
+        <section className="bg-[linear-gradient(180deg,#FFFFFF_0%,#F6F8F5_100%)] px-6 pb-20 pt-24">
+          <div className="mx-auto max-w-6xl">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-[var(--landing-primary)]">
+                Prijzen
+              </p>
+              <h1 className="text-balance text-5xl font-extrabold leading-[1.05] text-[var(--landing-secondary)] md:text-6xl">
+                Duidelijke abonnementen voor elke groeifase
+              </h1>
+              <p className="mt-5 text-lg leading-relaxed text-[var(--landing-muted)]">
+                Bronze zet uw bedrijf online, Silver helpt meer aanvragen binnen te krijgen en Gold voegt online afspraken en boekingsbeheer toe.
+              </p>
+            </div>
 
-        {/* Pricing cards grid */}
-        <div className="grid md:grid-cols-2 gap-8 mb-20">
-          {plans.map((plan) => (
-            <PricingCard
-              key={plan.id}
-              plan={plan}
-              isPopular={plan.isPopular}
-            />
-          ))}
-        </div>
+            <div className="mt-14 grid gap-8 lg:grid-cols-3">
+              {plans.map((plan) => (
+                <PricingCard key={plan.id} plan={plan} isPopular={plan.isPopular} />
+              ))}
+            </div>
+          </div>
+        </section>
 
-        {/* Booking addon highlight */}
-        <div className="mb-20 rounded-xl border-2 border-dashed border-amber-400/50 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-12 text-center">
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">
-            Booking Add-on — €19/Maand
-          </h2>
-          <p className="text-lg text-slate-600 dark:text-slate-400 mb-6">
-            Voeg bookingfunctionaliteiten toe aan elk plan. Beheer verzoeken,
-            beschikbaarheid en reserveringen rechtstreeks in het dashboard.
-          </p>
-          <ul className="inline-flex flex-col gap-3 text-left text-slate-700 dark:text-slate-300">
-            <li className="flex items-center gap-2">
-              <span className="inline-flex items-center justify-center w-5 h-5 bg-amber-500 text-white rounded-full text-xs">
-                ✓
-              </span>
-              Bookingaanvragen beheren
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="inline-flex items-center justify-center w-5 h-5 bg-amber-500 text-white rounded-full text-xs">
-                ✓
-              </span>
-              Beschikbaarheidskalender
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="inline-flex items-center justify-center w-5 h-5 bg-amber-500 text-white rounded-full text-xs">
-                ✓
-              </span>
-              Reserveringen beheren
-            </li>
-            <li className="flex items-center gap-2">
-              <span className="inline-flex items-center justify-center w-5 h-5 bg-amber-500 text-white rounded-full text-xs">
-                ✓
-              </span>
-              Gast communicatie en automatische e-mails
-            </li>
-          </ul>
-        </div>
+        <section className="bg-white px-6 py-24">
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-10 max-w-2xl">
+              <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-[var(--landing-primary)]">
+                Vergelijking
+              </p>
+              <h2 className="text-balance text-4xl font-bold tracking-tight text-[var(--landing-secondary)] md:text-5xl">
+                Bekijk wat elk plan toevoegt
+              </h2>
+              <p className="mt-4 text-lg leading-relaxed text-[var(--landing-muted)]">
+                De pakketten zijn opgebouwd rond functionaliteit: eerst online staan, daarna aanvragen ontvangen en vervolgens boekingen beheren.
+              </p>
+            </div>
 
-        {/* FAQ Section */}
-        <div className="mb-20">
+            <div className="overflow-x-auto rounded-3xl border border-[var(--landing-border)] bg-white shadow-[0_16px_40px_rgba(31,41,51,0.06)]">
+              <table className="w-full min-w-[760px]">
+                <thead>
+                  <tr className="border-b border-[var(--landing-border)] bg-[var(--landing-primary-light)]">
+                    <th className="px-6 py-5 text-left text-sm font-bold text-[var(--landing-secondary)]">
+                      Functie
+                    </th>
+                    {plans.map((plan) => (
+                      <th key={plan.id} className="px-6 py-5 text-center text-sm font-bold text-[var(--landing-secondary)]">
+                        <span>{plan.name}</span>
+                        <span className="mt-1 block text-xs font-semibold text-[var(--landing-muted)]">
+                          {formatPrice(plan.monthlyPrice)}/maand
+                        </span>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {FEATURE_COMPARISON.map((row, index) => (
+                    <tr key={row.feature} className={index % 2 === 0 ? "bg-white" : "bg-[var(--landing-soft)]"}>
+                      <td className="border-r border-[var(--landing-border)] px-6 py-4 text-sm font-medium text-slate-700">
+                        {row.feature}
+                      </td>
+                      {plans.map((plan) => (
+                        <td key={`${row.feature}-${plan.id}`} className="px-6 py-4 text-center">
+                          <ComparisonValue value={row[plan.id]} />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-[var(--landing-soft)] px-6 py-24">
+          <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-3">
+            {plans.map((plan) => (
+              <div
+                key={`position-${plan.id}`}
+                className="rounded-3xl border border-[var(--landing-border)] bg-white p-7 shadow-[0_16px_40px_rgba(31,41,51,0.06)]"
+              >
+                <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--landing-primary-light)] text-sm font-bold text-[var(--landing-primary-dark)]">
+                  {planPosition[plan.id]}
+                </div>
+                <h3 className="mb-2 text-xl font-bold text-[var(--landing-secondary)]">{plan.name}</h3>
+                <p className="text-sm leading-relaxed text-[var(--landing-muted)]">{plan.description}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="bg-white px-6 py-24">
           <PricingFaq />
-        </div>
+        </section>
 
-        {/* Trust Section */}
-        <TrustSection />
-
-        {/* CTA */}
-        <div className="mt-24 text-center">
-          <Link
-            href="/auth/sign-up"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-lg hover:from-amber-600 hover:to-orange-600 transition-all shadow-lg shadow-amber-500/25"
-          >
-            Begin nu gratis
-            <span>→</span>
-          </Link>
-          <p className="mt-4 text-slate-600 dark:text-slate-400">
-            14 dagen gratis. Geen creditcard nodig.
-          </p>
-        </div>
+        <section className="bg-white px-6 pb-24">
+          <div className="mx-auto max-w-6xl rounded-[32px] bg-[var(--landing-primary)] px-8 py-12 text-center text-white md:px-16 md:py-16">
+            <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/12">
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <h2 className="text-balance text-3xl font-bold md:text-4xl">
+              Klaar om uw website professioneel online te zetten?
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-white/78">
+              Kies het abonnement dat nu past. U kunt later uitbreiden wanneer u meer aanvragen of online boekingen nodig heeft.
+            </p>
+            <Link
+              href="/auth/sign-up"
+              className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-base font-bold text-[var(--landing-primary-dark)] transition-colors hover:bg-[var(--landing-primary-light)]"
+            >
+              Gratis proberen
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </section>
       </main>
+
+      <SharedFooter />
     </div>
   )
 }
-
-
