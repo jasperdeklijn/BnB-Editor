@@ -21,6 +21,7 @@ create extension if not exists "pgcrypto";
 drop table if exists public.contact_requests cascade;
 drop table if exists public.calendar_availability_windows cascade;
 drop table if exists public.calendar_entries cascade;
+drop table if exists public.leads cascade;
 drop table if exists public.section_transitions cascade;
 drop table if exists public.website_sections cascade;
 drop table if exists public.services cascade;
@@ -203,6 +204,50 @@ create table public.calendar_availability_windows (
   constraint calendar_availability_windows_time_range_check check (end_time > start_time)
 );
 
+create table public.leads (
+  id uuid primary key default gen_random_uuid(),
+  company_name text not null,
+  category text,
+  city text,
+  website text,
+  phone text,
+  email text,
+  google_place_id text,
+  google_rating numeric,
+  google_reviews_count integer,
+  has_website boolean not null default false,
+  has_https boolean not null default false,
+  has_mobile_meta boolean not null default false,
+  has_contact_form boolean not null default false,
+  has_clear_cta boolean not null default false,
+  pagespeed_score integer,
+  seo_title text,
+  seo_description text,
+  lead_score integer not null default 0,
+  reason text,
+  outreach_draft text,
+  status text not null default 'new',
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint leads_google_place_id_unique unique (google_place_id),
+  constraint leads_website_unique unique (website),
+  constraint leads_google_place_id_not_blank_check
+    check (google_place_id is null or btrim(google_place_id) <> ''),
+  constraint leads_website_not_blank_check
+    check (website is null or btrim(website) <> ''),
+  constraint leads_google_rating_check
+    check (google_rating is null or (google_rating >= 0 and google_rating <= 5)),
+  constraint leads_google_reviews_count_check
+    check (google_reviews_count is null or google_reviews_count >= 0),
+  constraint leads_pagespeed_score_check
+    check (pagespeed_score is null or (pagespeed_score >= 0 and pagespeed_score <= 100)),
+  constraint leads_lead_score_check
+    check (lead_score >= 0 and lead_score <= 100),
+  constraint leads_status_check
+    check (status in ('new', 'interesting', 'contacted', 'not_interested', 'customer', 'ignored'))
+);
+
 create table public.section_transitions (
   id uuid primary key default gen_random_uuid(),
   website_id uuid not null references public.websites(id) on delete cascade,
@@ -232,6 +277,10 @@ create trigger set_calendar_entries_updated_at
 
 create trigger set_calendar_availability_windows_updated_at
   before update on public.calendar_availability_windows
+  for each row execute procedure public.set_updated_at();
+
+create trigger set_leads_updated_at
+  before update on public.leads
   for each row execute procedure public.set_updated_at();
 
 -- ------------------------------------------------------------
@@ -273,6 +322,10 @@ create index idx_calendar_availability_service_weekday
   on public.calendar_availability_windows (service_id, weekday, start_time)
   where service_id is not null;
 
+create index idx_leads_city on public.leads (city);
+create index idx_leads_category on public.leads (category);
+create index idx_leads_status on public.leads (status);
+
 create index idx_section_transitions_website_id on public.section_transitions (website_id);
 create index idx_section_transitions_from_section on public.section_transitions (from_section_id);
 create index idx_section_transitions_to_section on public.section_transitions (to_section_id);
@@ -289,6 +342,7 @@ alter table public.section_transitions enable row level security;
 alter table public.contact_requests enable row level security;
 alter table public.calendar_entries enable row level security;
 alter table public.calendar_availability_windows enable row level security;
+alter table public.leads enable row level security;
 
 -- Businesses
 create policy "Anyone can view published website businesses"

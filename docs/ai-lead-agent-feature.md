@@ -97,12 +97,12 @@ ignored
 
 Checklist:
 
-* [ ] Maak tabel `leads`
-* [ ] Voeg index toe op `google_place_id`
-* [ ] Voeg index toe op `city`
-* [ ] Voeg index toe op `category`
-* [ ] Voeg index toe op `status`
-* [ ] Zorg dat dubbele leads worden voorkomen op basis van `google_place_id` of `website`
+* [x] Maak tabel `leads`
+* [x] Voeg index toe op `google_place_id`
+* [x] Voeg index toe op `city`
+* [x] Voeg index toe op `category`
+* [x] Voeg index toe op `status`
+* [x] Zorg dat dubbele leads worden voorkomen op basis van `google_place_id` of `website`
 
 ---
 
@@ -118,9 +118,9 @@ OPENAI_API_KEY=
 
 Checklist:
 
-* [ ] Voeg env vars toe
-* [ ] Controleer dat keys alleen server-side gebruikt worden
-* [ ] Nooit API keys naar client sturen
+* [x] Voeg env vars toe
+* [x] Controleer dat keys alleen server-side gebruikt worden
+* [x] Nooit API keys naar client sturen
 
 ---
 
@@ -477,7 +477,7 @@ Checklist later:
 
 Bouw eerst alleen dit:
 
-* [ ] Supabase tabel `leads`
+* [x] Supabase tabel `leads`
 * [ ] API route om leads te zoeken
 * [ ] Website analyse
 * [ ] Lead score
