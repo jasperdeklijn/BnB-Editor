@@ -1,129 +1,74 @@
-import { SharedHeader } from "@/components/layout/shared-header"
-import { SharedFooter } from "@/components/layout/shared-footer"
 import Link from "next/link"
+import { legalDocuments } from "@/components/legal/legal-documents"
+import { SharedFooter } from "@/components/layout/shared-footer"
+import { SharedHeader } from "@/components/layout/shared-header"
+import { PLATFORM_BRAND_NAME, PLATFORM_EMAILS } from "@/lib/platform"
 
 export const metadata = {
-  title: "Juridisch | Website Maker",
-  description: "Juridische informatie en documentatie",
+  title: `Juridisch | ${PLATFORM_BRAND_NAME}`,
+  description: `Juridische documenten van ${PLATFORM_BRAND_NAME}.`,
 }
 
-export default function LegalIndexPage() {
-  const legalPages = [
-    {
-      title: "Algemene Voorwaarden",
-      description: "Onze algemene voorwaarden en serviceagreement",
-      href: "/legal/terms",
-      icon: "📋"
-    },
-    {
-      title: "Privacyverklaring",
-      description: "Hoe we uw persoonsgegevens verwerken",
-      href: "/legal/privacy",
-      icon: "🔒"
-    },
-    {
-      title: "Acceptable Use Policy",
-      description: "Regels voor het gebruik van het platform",
-      href: "/legal/aup",
-      icon: "⚠️"
-    },
-    {
-      title: "Notice & Takedown",
-      description: "Procedure voor het melden van illegale content",
-      href: "/legal/takedown",
-      icon: "🚨"
-    },
-    {
-      title: "Disclaimer",
-      description: "Aansprakelijkheidsbeperkingen",
-      href: "/legal/disclaimer",
-      icon: "⚖️"
-    }
-  ]
+const pages = [
+  legalDocuments.terms,
+  legalDocuments.privacy,
+  legalDocuments.cookies,
+  legalDocuments.processorAgreement,
+  legalDocuments.acceptableUse,
+  legalDocuments.disclaimer,
+  {
+    title: "Status",
+    description: `Status en incidentinformatie van ${PLATFORM_BRAND_NAME}.`,
+    path: "/status",
+  },
+]
 
+export default function LegalIndexPage() {
   return (
-    <div className="flex flex-col min-h-screen bg-[var(--hero-bg)]">
+    <div className="flex min-h-screen flex-col bg-[var(--hero-bg)]">
       <SharedHeader title="Juridisch" />
 
-      <main className="flex-1 mx-auto max-w-6xl px-6 py-12 w-full">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-12">
         <div className="mb-12">
-          <h1 className="text-4xl font-bold text-white mb-4">Juridische Documenten</h1>
-          <p className="text-white/70 max-w-2xl">
-            Lees onze juridische documenten en richtlijnen. Bij vragen over privacy, voorwaarden of misbruik, 
-            kunt u altijd contact met ons opnemen.
+          <h1 className="mb-4 text-4xl font-bold text-white">Juridische documenten</h1>
+          <p className="max-w-2xl text-white/70">
+            Praktische templates en beleidsdocumenten voor {PLATFORM_BRAND_NAME}. Laat deze teksten juridisch controleren voordat ze definitief worden gebruikt.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {legalPages.map((page) => (
+        <div className="mb-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {pages.map((page) => (
             <Link
-              key={page.href}
-              href={page.href}
-              className="group rounded-lg border border-[#B7D1C2]/20 bg-white/5 p-6 text-white transition-all duration-300 hover:border-[#B7D1C2]/45 hover:bg-white/10"
+              key={page.path}
+              href={page.path}
+              className="group rounded-lg border border-[#B7D1C2]/20 bg-white/5 p-6 text-white transition-colors hover:border-[#B7D1C2]/45 hover:bg-white/10"
             >
-              <div className="text-4xl mb-4">{page.icon}</div>
-              <h2 className="text-xl font-semibold text-white mb-2 group-hover:text-[#B7D1C2] transition-colors">
+              <h2 className="mb-2 text-xl font-semibold transition-colors group-hover:text-[#B7D1C2]">
                 {page.title}
               </h2>
-              <p className="text-white/60">
-                {page.description}
-              </p>
-              <div className="mt-4 flex items-center text-[#B7D1C2] transition-colors group-hover:text-white">
-                <span className="text-sm font-medium">Lees meer</span>
-                <span className="ml-2">→</span>
-              </div>
+              <p className="text-sm leading-6 text-white/65">{page.description}</p>
+              <p className="mt-4 text-sm font-medium text-[#B7D1C2]">Openen</p>
             </Link>
           ))}
         </div>
 
-        <div className="bg-white/5 border border-[#B7D1C2]/20 rounded-lg p-8">
-          <h2 className="text-2xl font-bold text-white mb-4">Veel gestelde vragen</h2>
-          
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-2">Bent u verantwoordelijk voor content van gebruikers?</h3>
-              <p className="text-white/70">
-                Nee. Website Maker biedt alleen technische hosting. Gebruikers zijn volledig verantwoordelijk 
-                voor hun eigen content. Zie onze Disclaimer voor meer informatie.
-              </p>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-2">Hoe meld ik illegale content?</h3>
-              <p className="text-white/70">
-                Stuur een e-mail naar{" "}
-                <a href="mailto:abuse@websitebouwer.nl" className="text-[#B7D1C2] hover:text-white hover:underline">
-                  abuse@websitebouwer.nl
-                </a>
-                {" "}met details van de content. Zie onze Notice & Takedown procedure.
-              </p>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-2">Hoe kan ik mijn privacy-gegevens inzien?</h3>
-              <p className="text-white/70">
-                Stuur een verzoek naar{" "}
-                <a href="mailto:privacy@websitebouwer.nl" className="text-[#B7D1C2] hover:text-white hover:underline">
-                  privacy@websitebouwer.nl
-                </a>
-                {" "}met uw identiteitskaart. We reageren binnen 30 dagen.
-              </p>
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-2">Wat zijn jullie contactgegevens?</h3>
-              <p className="text-white/70">
-                <strong>Support:</strong> support@websitebouwer.nl<br/>
-                <strong>Privacy:</strong> privacy@websitebouwer.nl<br/>
-                <strong>Abuse/Takedown:</strong> abuse@websitebouwer.nl
-              </p>
-            </div>
-          </div>
-        </div>
+        <section className="rounded-lg border border-[#B7D1C2]/20 bg-white/5 p-6 text-white">
+          <h2 className="mb-3 text-2xl font-bold">Contact</h2>
+          <p className="text-white/70">
+            Voor privacyvragen:{" "}
+            <a href={`mailto:${PLATFORM_EMAILS.privacy}`} className="text-[#B7D1C2] hover:underline">
+              {PLATFORM_EMAILS.privacy}
+            </a>
+            . Voor misbruikmeldingen:{" "}
+            <a href={`mailto:${PLATFORM_EMAILS.abuse}`} className="text-[#B7D1C2] hover:underline">
+              {PLATFORM_EMAILS.abuse}
+            </a>
+            .
+          </p>
+        </section>
       </main>
 
       <SharedFooter />
     </div>
   )
 }
-

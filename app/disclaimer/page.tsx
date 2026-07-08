@@ -1,12 +1,12 @@
 import { LegalDocumentPage, getLegalMetadata } from "@/components/legal/legal-documents"
 import { LegalLayout } from "@/components/layout/legal-layout"
 
-export const metadata = getLegalMetadata("terms")
+export const metadata = getLegalMetadata("disclaimer")
 
-export default function LegalTermsPage() {
+export default function DisclaimerPage() {
   return (
-    <LegalLayout title="Algemene voorwaarden">
-      <LegalDocumentPage documentKey="terms" />
+    <LegalLayout title="Disclaimer">
+      <LegalDocumentPage documentKey="disclaimer" />
     </LegalLayout>
   )
 }

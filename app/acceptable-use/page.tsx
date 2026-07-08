@@ -3,7 +3,7 @@ import { LegalLayout } from "@/components/layout/legal-layout"
 
 export const metadata = getLegalMetadata("acceptableUse")
 
-export default function LegalAcceptableUsePage() {
+export default function AcceptableUsePage() {
   return (
     <LegalLayout title="Acceptable Use Policy">
       <LegalDocumentPage documentKey="acceptableUse" />

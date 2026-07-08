@@ -26,6 +26,8 @@ Maak dit praktisch en MVP-gericht. Bouw geen enterprise compliance-systeem. Het 
 
 # 1. Juridische pagina’s uitbreiden
 
+Status: uitgevoerd op 2026-07-08 voor flexpagina.nl. De routes `/terms`, `/privacy`, `/cookies`, `/processor-agreement`, `/acceptable-use`, `/disclaimer` en `/status` bestaan nu met Nederlandse MVP-templatecontent en een duidelijke controlewaarschuwing voor juridische review.
+
 Controleer of de volgende routes bestaan. Maak ze aan als ze nog ontbreken:
 
 * `/terms`

@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
+import { PLATFORM_BRAND_NAME } from "@/lib/platform"
 
 export const metadata: Metadata = {
-  title: 'Juridisch | Website Maker',
-  description: 'Juridische documenten van Website Maker',
+  title: `Juridisch | ${PLATFORM_BRAND_NAME}`,
+  description: `Juridische documenten van ${PLATFORM_BRAND_NAME}`,
 }
 
 export default function LegalLayout({
