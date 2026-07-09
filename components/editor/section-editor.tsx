@@ -51,7 +51,7 @@ interface SelectionEditorProps {
   businessCategory?: BusinessCategory | null
 }
 
-type StyleControl = keyof Pick<SectionStyles, "fontFamily" | "backgroundColor" | "textColor" | "backgroundImage">
+type StyleControl = keyof Pick<SectionStyles, "fontFamily" | "backgroundColor" | "textColor" | "backgroundImage" | "logo">
 
 const DEFAULT_STYLE_CONTROLS: StyleControl[] = ["fontFamily", "backgroundColor", "textColor", "backgroundImage"]
 
@@ -63,7 +63,7 @@ const FONT_OPTIONS = [
 ]
 
 const SECTION_STYLE_CONTROLS: Partial<Record<SectionType, StyleControl[]>> = {
-  nav: ["backgroundColor", "textColor"],
+  nav: ["backgroundColor", "textColor", "logo"],
   footer: ["backgroundColor", "textColor"],
 }
 
@@ -609,6 +609,34 @@ export function SelectionEditor({
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                   <span>Gebruik een afbeeldingslink of kies eerst een afbeelding uit de beeldbank.</span>
+                  <Button variant="outline" size="xs" asChild>
+                    <Link href="/editor/images">Afbeeldingen openen</Link>
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+
+            {supportsStyleControl("logo") ? (
+              <div>
+                <Label className="mb-2 flex items-center gap-1 text-xs">
+                  <ImageIcon className="h-3 w-3" />
+                  Logo (optioneel)
+                </Label>
+                <div className="flex gap-2">
+                  <Input
+                    aria-label="Link naar logo"
+                    placeholder="Plak een logolink"
+                    value={selectedSection.styles?.logo || ""}
+                    onChange={(event) => updateStyleValue("logo", event.target.value)}
+                  />
+                  {selectedSection.styles?.logo ? (
+                    <Button type="button" variant="outline" size="sm" className="h-10 shrink-0" onClick={() => updateStyleValue("logo", "")}>
+                      Wis
+                    </Button>
+                  ) : null}
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                  <span>Gebruik een afbeeldingslink of kies eerst een logo uit de beeldbank.</span>
                   <Button variant="outline" size="xs" asChild>
                     <Link href="/editor/images">Afbeeldingen openen</Link>
                   </Button>

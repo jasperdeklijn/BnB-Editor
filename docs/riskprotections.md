@@ -310,7 +310,6 @@ Voeg rate limiting toe of bereid dit voor voor:
 * wachtwoord reset;
 * publicatie endpoint;
 * domein-verificatie endpoint;
-* AI-generatie endpoint indien aanwezig.
 
 Maak een centrale helper:
 

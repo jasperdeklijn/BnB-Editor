@@ -31,6 +31,7 @@ export interface SectionStyles {
   textColor?: string
   backgroundColor?: string
   backgroundImage?: string
+  logo?: string
 }
 
 export interface Transition {

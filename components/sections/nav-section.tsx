@@ -60,6 +60,7 @@ const navigableSectionTypes: SectionType[] = [
 
 export function NavSection({ data, isPreview, styles, onUpdate, allSections, device }: NavSectionProps) {
   const brandName = (data.brandName as string) || "Mijn bedrijf"
+  const logo = typeof styles?.logo === "string" ? styles.logo.trim() : ""
   const isSticky = (data.isSticky as boolean) ?? true
   const navLinks = data.navLinks as NavLink[] | undefined
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -140,8 +141,15 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
                 e.preventDefault()
                 window.scrollTo({ top: 0, behavior: "smooth" })
               }}
-              className="text-2xl font-bold cursor-pointer"
+              className="flex cursor-pointer items-center gap-3 text-2xl font-bold"
             >
+              {logo ? (
+                <img
+                  src={logo}
+                  alt=""
+                  className={`${layout === "compact" ? "h-7" : "h-9"} w-auto max-w-[9rem] flex-shrink-0 object-contain`}
+                />
+              ) : null}
               <EditableText data={data} path={["brandName"]} value={brandName} isPreview={isPreview} onUpdate={onUpdate} />
             </a>
           </div>
