@@ -140,7 +140,7 @@ export function EditorHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 rounded-full bg-white text-primary hover:bg-secondary px-2 md:px-3 text-xs md:text-sm shadow-sm"
+            className="h-11 min-w-11 rounded-full bg-white px-3 text-xs text-primary shadow-sm hover:bg-secondary md:h-8 md:min-w-0 md:px-3 md:text-sm"
             onClick={() => setMenuOpen((o) => !o)}
             aria-haspopup="menu"
             aria-expanded={menuOpen}
@@ -294,7 +294,7 @@ export function EditorHeader({
             disabled={actionLoading}
             aria-label={actionLabel}
             title={actionLabel}
-            className="h-8 md:h-10 rounded-md px-2 md:px-3 text-xs md:text-sm"
+            className="h-11 min-w-11 rounded-md px-2 text-xs md:h-10 md:min-w-0 md:px-3 md:text-sm"
           >
             {actionIcon ? <span className="flex-shrink-0 hidden md:block">{actionIcon}</span> : null}
             <span className="hidden md:inline">{actionLabel}</span>
@@ -305,7 +305,7 @@ export function EditorHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 md:h-10 rounded-full text-[var(--editor-header-fg)]/85 hover:bg-[var(--editor-header-accent)]/25 hover:text-white px-2 md:px-3"
+            className="h-11 min-w-11 rounded-full px-3 text-[var(--editor-header-fg)]/85 hover:bg-[var(--editor-header-accent)]/25 hover:text-white md:h-10 md:min-w-0 md:px-3"
             onClick={() => setAccountMenuOpen((o) => !o)}
             aria-haspopup="menu"
             aria-expanded={accountMenuOpen}

@@ -73,6 +73,10 @@ export function SiteDesignPanel({
   const [isApplying, setIsApplying] = useState(false)
   const [isRestoring, setIsRestoring] = useState(false)
   const [status, setStatus] = useState<{ tone: "success" | "error"; content: ReactNode } | null>(null)
+  const sitePanelOptions = [
+    { value: "themes", label: "Thema aanpassen" },
+    { value: "templates", label: "Sjabloon kiezen" },
+  ]
 
   const templateGroups = useMemo(() => {
     const presets = getAllTemplatePresets()
@@ -193,11 +197,26 @@ export function SiteDesignPanel({
     <div className={cn("flex h-full min-h-0 flex-col overflow-hidden", className)}>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex h-full min-h-0 flex-col overflow-hidden">
         <div className="border-b border-border bg-background px-3 py-3 sm:px-4">
-          <div className="mb-3 flex min-w-0 items-center gap-2">
+          <div className="mb-3 flex min-w-0 items-center gap-2 md:mb-3">
             <Sparkles className="h-4 w-4 shrink-0 text-primary" />
             <span className="truncate text-sm font-medium">Site ontwerp</span>
           </div>
-          <TabsList className="grid w-full grid-cols-2">
+          <label htmlFor="site-design-mobile-mode" className="sr-only">
+            Site ontwerp onderdeel
+          </label>
+          <select
+            id="site-design-mobile-mode"
+            value={activeTab}
+            onChange={(event) => setActiveTab(event.target.value)}
+            className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm font-medium text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 md:hidden"
+          >
+            {sitePanelOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <TabsList className="hidden w-full grid-cols-2 md:grid">
             <TabsTrigger value="themes" className="gap-1 text-xs">
               <Palette className="h-3.5 w-3.5" />
               Thema

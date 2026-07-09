@@ -26,6 +26,7 @@ interface EditorInspectorProps {
   onThemeChange: (config: ThemeConfig) => void
   onTemplateApplied: (websiteId?: string | null) => Promise<void> | void
   defaultTab?: "section" | "site"
+  singlePanel?: "section" | "site"
   className?: string
 }
 
@@ -46,8 +47,46 @@ export function EditorInspector({
   onThemeChange,
   onTemplateApplied,
   defaultTab = "section",
+  singlePanel,
   className,
 }: EditorInspectorProps) {
+  const sectionPanel = (
+    <SelectionEditor
+      selectedSection={selectedSection}
+      sections={sections}
+      transitions={transitions}
+      onSectionSelect={onSectionSelect}
+      onOpenCanvas={onOpenCanvas}
+      onUpdate={onUpdate}
+      onStyleUpdate={onStyleUpdate}
+      onDelete={onDelete}
+      onTransitionUpdate={onTransitionUpdate}
+      websiteId={websiteId}
+      businessId={businessId}
+      businessCategory={businessCategory}
+    />
+  )
+
+  const sitePanel = (
+    <SiteDesignPanel
+      websiteId={websiteId}
+      businessId={businessId}
+      businessCategory={businessCategory}
+      currentTheme={currentTheme}
+      onThemeChange={onThemeChange}
+      onTemplateApplied={onTemplateApplied}
+      className="h-full min-h-0"
+    />
+  )
+
+  if (singlePanel) {
+    return (
+      <div className={cn("flex h-full min-h-0 flex-col overflow-hidden", className)}>
+        {singlePanel === "section" ? sectionPanel : sitePanel}
+      </div>
+    )
+  }
+
   return (
     <Tabs defaultValue={defaultTab} className={cn("flex h-full min-h-0 flex-col overflow-hidden", className)}>
       <div className="border-b border-border bg-background px-3 py-2 sm:px-4">
@@ -63,31 +102,10 @@ export function EditorInspector({
         </TabsList>
       </div>
       <TabsContent value="section" className="min-h-0 flex-1 overflow-hidden">
-        <SelectionEditor
-          selectedSection={selectedSection}
-          sections={sections}
-          transitions={transitions}
-          onSectionSelect={onSectionSelect}
-          onOpenCanvas={onOpenCanvas}
-          onUpdate={onUpdate}
-          onStyleUpdate={onStyleUpdate}
-          onDelete={onDelete}
-          onTransitionUpdate={onTransitionUpdate}
-          websiteId={websiteId}
-          businessId={businessId}
-          businessCategory={businessCategory}
-        />
+        {sectionPanel}
       </TabsContent>
       <TabsContent value="site" className="min-h-0 flex-1 overflow-hidden">
-        <SiteDesignPanel
-          websiteId={websiteId}
-          businessId={businessId}
-          businessCategory={businessCategory}
-          currentTheme={currentTheme}
-          onThemeChange={onThemeChange}
-          onTemplateApplied={onTemplateApplied}
-          className="h-full min-h-0"
-        />
+        {sitePanel}
       </TabsContent>
     </Tabs>
   )

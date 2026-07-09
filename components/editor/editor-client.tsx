@@ -7,7 +7,7 @@ import { EditorInspector } from "./editor-inspector"
 import { useEditorLayout } from "./editor-layout-context"
 import type { Section, SectionStyles, SectionType, Transition } from "@/lib/types"
 import { DEFAULT_SITE_TITLE } from "@/lib/business-naming"
-import { getDefaultSectionData as getRegistryDefaultSectionData } from "@/components/editor/section-registry"
+import { getDefaultSectionData as getRegistryDefaultSectionData, getSectionDefinition } from "@/components/editor/section-registry"
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -71,6 +71,7 @@ export function EditorClient({ userId }: EditorClientProps) {
   const [websiteMessage, setWebsiteMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null)
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("canvas")
+  const [pendingMobileSectionType, setPendingMobileSectionType] = useState<SectionType | null>(null)
   const [isMobileDraggingNewSection, setIsMobileDraggingNewSection] = useState(false)
   const [isMobileDraggingImage, setIsMobileDraggingImage] = useState(false)
   const router = useRouter()
@@ -568,6 +569,38 @@ export function EditorClient({ userId }: EditorClientProps) {
     setMobilePanel(typeof window !== "undefined" && window.innerWidth < 768 ? "style" : "canvas")
   }
 
+  const addSectionAt = (type: SectionType, index: number) => {
+    const tempId = `section-${Date.now()}`
+    const newSection: Section = {
+      id: tempId,
+      type,
+      data: getDefaultSectionData(type, businessId),
+      styles: {},
+    }
+    const nextSections = [...sections]
+    const safeIndex = Math.max(0, Math.min(index, nextSections.length))
+    nextSections.splice(safeIndex, 0, newSection)
+    persistSections(nextSections)
+    setSelectedSectionId(tempId)
+    setPendingMobileSectionType(null)
+    setMobilePanel("canvas")
+  }
+
+  const handleSectionAddRequest = (type: SectionType) => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setPendingMobileSectionType(type)
+      setMobilePanel("canvas")
+      return
+    }
+
+    addSectionAt(type, sections.length)
+  }
+
+  const handleMobileSectionPlacement = (index: number) => {
+    if (!pendingMobileSectionType) return
+    addSectionAt(pendingMobileSectionType, index)
+  }
+
   const handleSectionSelect = (id: string | null) => {
     setSelectedSectionId(id)
     // On mobile, jump to the style panel when a section is tapped
@@ -577,6 +610,12 @@ export function EditorClient({ userId }: EditorClientProps) {
   }
 
   const selectedSection = sections.find((s) => s.id === selectedSectionId) || null
+  const pendingMobileSectionLabel = pendingMobileSectionType
+    ? getSectionDefinition(pendingMobileSectionType)?.label ?? pendingMobileSectionType
+    : ""
+  const selectedSectionIndex = selectedSectionId
+    ? sections.findIndex((section) => section.id === selectedSectionId)
+    : -1
   const selectedWebsite = websites.find((website) => website.id === websiteId)
   const selectedWebsiteLiveUrl = selectedWebsite
     ? selectedWebsite.customDomain || `${selectedWebsite.slug}.${PLATFORM_DOMAIN}`
@@ -591,6 +630,8 @@ export function EditorClient({ userId }: EditorClientProps) {
     : "Offline: wijzigingen zijn alleen zichtbaar in de editor."
   const saveStatusLabel =
     isSaving || saveState === "saving" ? "Wijzigingen opslaan..." : saveState === "error" ? "Niet opgeslagen" : "Wijzigingen opgeslagen"
+  const mobileSaveStatusLabel =
+    isSaving || saveState === "saving" ? "Opslaan..." : saveState === "error" ? "Niet opgeslagen" : "Opgeslagen"
   const SaveStatusIcon = isSaving || saveState === "saving" ? Loader2 : saveState === "error" ? AlertCircle : CheckCircle2
 
   return (
@@ -673,7 +714,7 @@ export function EditorClient({ userId }: EditorClientProps) {
               id="website-selector-mobile"
               value={websiteId ?? ""}
               onChange={(event) => handleWebsiteChange(event.target.value)}
-              className="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-xs font-medium text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              className="h-11 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm font-medium text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             >
               {websites.map((website) => (
                 <option key={website.id} value={website.id}>
@@ -682,16 +723,29 @@ export function EditorClient({ userId }: EditorClientProps) {
               ))}
             </select>
             <div
-              className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-2.5 text-xs font-medium ${
+              className={`flex h-11 max-w-[9.5rem] shrink-0 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium ${
                 saveState === "error"
                   ? "border-warning/30 bg-warning/10 text-warning"
                   : "border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
               }`}
               aria-live="polite"
+              title={saveStatusLabel}
             >
               <SaveStatusIcon className={`h-3.5 w-3.5 ${isSaving || saveState === "saving" ? "animate-spin" : ""}`} />
-              <span>{saveStatusLabel}</span>
+              <span className="truncate">{mobileSaveStatusLabel}</span>
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="size-11"
+              onClick={handleCreateWebsite}
+              disabled={isCreatingWebsite}
+              aria-label="Nieuwe website maken"
+              title="Nieuwe website maken"
+            >
+              {isCreatingWebsite ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            </Button>
           </div>
 
           <div className="flex min-w-0 items-center gap-2">
@@ -702,61 +756,49 @@ export function EditorClient({ userId }: EditorClientProps) {
               id="website-name-mobile"
               value={title}
               onChange={(event) => setTitle(event.target.value)}
-              className="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-sm text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+              className="h-11 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
               placeholder="Websitenaam"
             />
-            <Button type="button" size="sm" onClick={handleSave} disabled={!websiteId || isRenamingWebsite}>
+            <Button
+              type="button"
+              size="default"
+              className="h-11 px-3 text-xs"
+              onClick={handleSave}
+              disabled={!websiteId || isRenamingWebsite}
+              aria-label="Websitenaam opslaan"
+              title="Websitenaam opslaan"
+            >
               {isRenamingWebsite ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
               Naam opslaan
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon-sm"
-              onClick={handleCreateWebsite}
-              disabled={isCreatingWebsite}
-              aria-label="Nieuwe website maken"
-              title="Nieuwe website maken"
-            >
-              {isCreatingWebsite ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
-            </Button>
-          </div>
-
-          {selectedWebsite ? (
-            <div className="flex min-w-0 items-center gap-2 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-xs">
-              <span
-                className={`h-2.5 w-2.5 shrink-0 rounded-full ring-2 ${
-                  selectedWebsite.published
-                    ? "bg-emerald-500 ring-emerald-500/20"
-                    : "bg-red-500 ring-red-500/20"
-                }`}
-                aria-hidden="true"
-              />
-              <span className="shrink-0 font-medium text-foreground">
-                {selectedWebsite.published ? "Live" : "Offline"}
-              </span>
-              {selectedWebsite.published ? (
+            {selectedWebsite ? (
+              selectedWebsite.published ? (
                 <a
                   href={selectedWebsiteLiveHref}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex min-w-0 items-center gap-1 rounded border border-border bg-background px-2 py-1 font-medium text-primary"
+                  className="inline-flex h-11 shrink-0 items-center justify-center gap-1 rounded-md border border-border bg-background px-3 text-xs font-medium text-primary shadow-sm"
                   title={selectedWebsiteLiveUrl}
+                  aria-label={`Live site openen: ${selectedWebsiteLiveUrl}`}
                 >
                   <Globe2 className="h-3.5 w-3.5 shrink-0 text-primary" />
-                  <span className="min-w-0 truncate font-mono">{selectedWebsiteLiveUrl}</span>
+                  <span>Live</span>
                   <ExternalLink className="h-3 w-3 shrink-0" />
                 </a>
               ) : (
-                <>
-                  <span className="min-w-0 truncate text-muted-foreground">Alleen zichtbaar in editor</span>
-                  <Button type="button" size="xs" onClick={handlePublish} disabled={!websiteId || isSaving}>
-                    Live zetten
-                  </Button>
-                </>
-              )}
-            </div>
-          ) : null}
+                <Button
+                  type="button"
+                  size="default"
+                  className="h-11 px-3 text-xs"
+                  onClick={handlePublish}
+                  disabled={!websiteId || isSaving}
+                  title={liveStatusDescription}
+                >
+                  Live zetten
+                </Button>
+              )
+            ) : null}
+          </div>
         </div>
         {websiteMessage ? (
           <StatusMessage tone={websiteMessage.type} className="mx-auto mt-2 max-w-7xl text-xs">
@@ -812,6 +854,7 @@ export function EditorClient({ userId }: EditorClientProps) {
               userId={userId}
               className="w-full h-full border-r-0"
               onSectionAdded={() => setMobilePanel("canvas")}
+              onSectionAddRequest={handleSectionAddRequest}
             />
           )}
           {(mobilePanel === "canvas" || isPreview) && (
@@ -848,6 +891,7 @@ export function EditorClient({ userId }: EditorClientProps) {
               onThemeChange={setThemeConfig}
               onTemplateApplied={handleTemplateApplied}
               defaultTab="section"
+              singlePanel="section"
               className="h-full w-full bg-background"
             />
           )}
@@ -869,9 +913,55 @@ export function EditorClient({ userId }: EditorClientProps) {
               onThemeChange={setThemeConfig}
               onTemplateApplied={handleTemplateApplied}
               defaultTab="site"
+              singlePanel="site"
               className="h-full w-full bg-background"
             />
           )}
+          {pendingMobileSectionType ? (
+            <div className="absolute inset-x-3 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-30 rounded-lg border border-border bg-background p-3 shadow-xl">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <Layers className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    Waar wilt u {pendingMobileSectionLabel} plaatsen?
+                  </h3>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    Kies eerst de plek. Daarna zetten we de sectie op het doek.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-3 grid gap-2">
+                {sections.length === 0 ? (
+                  <Button type="button" onClick={() => handleMobileSectionPlacement(0)}>
+                    Als eerste sectie plaatsen
+                  </Button>
+                ) : (
+                  <>
+                    <Button type="button" onClick={() => handleMobileSectionPlacement(0)}>
+                      Bovenaan plaatsen
+                    </Button>
+                    {selectedSectionIndex >= 0 ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => handleMobileSectionPlacement(selectedSectionIndex + 1)}
+                      >
+                        Na geselecteerde sectie plaatsen
+                      </Button>
+                    ) : null}
+                    <Button type="button" variant="outline" onClick={() => handleMobileSectionPlacement(sections.length)}>
+                      Onderaan plaatsen
+                    </Button>
+                  </>
+                )}
+                <Button type="button" variant="ghost" onClick={() => setPendingMobileSectionType(null)}>
+                  Annuleren
+                </Button>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         {/* Bottom tab bar */}

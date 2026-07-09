@@ -27,20 +27,38 @@ interface SectionCardProps {
   isDragging: boolean
   onDragStart: (e: React.DragEvent, type: SectionType) => void
   onDragEnd: () => void
+  onAddSection?: (type: SectionType) => void
 }
 
-function SectionCard({ type, label, Icon, description, collapsed, isDragging, onDragStart, onDragEnd }: SectionCardProps) {
+function SectionCard({ type, label, Icon, description, collapsed, isDragging, onDragStart, onDragEnd, onAddSection }: SectionCardProps) {
   const { onTouchStart, onTouchMove, onTouchEnd } = useTouchDrag({ payload: { sectionType: type } })
+  const handleClick = () => {
+    if (typeof window === "undefined" || window.innerWidth >= 768) return
+    onAddSection?.(type)
+  }
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (typeof window === "undefined" || window.innerWidth >= 768) return
+    if (event.key !== "Enter" && event.key !== " ") return
+    event.preventDefault()
+    onAddSection?.(type)
+  }
+
   return (
     <div
       draggable
       onDragStart={(e) => onDragStart(e, type)}
       onDragEnd={onDragEnd}
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
       onTouchStart={(e) => onTouchStart(e, label)}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       style={{ touchAction: "none" }}
-      className={`group relative flex cursor-grab items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-primary active:cursor-grabbing active:scale-95 select-none ${
+      role={onAddSection ? "button" : undefined}
+      tabIndex={onAddSection ? 0 : undefined}
+      aria-label={onAddSection ? `${label} plaatsen` : undefined}
+      className={`group relative flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-primary active:scale-95 select-none md:cursor-grab md:active:cursor-grabbing ${
         collapsed ? "justify-center px-2 py-3" : ""
       } ${isDragging ? "opacity-50 scale-95" : ""}`}
       title={`${label}: ${description}`}
@@ -49,13 +67,13 @@ function SectionCard({ type, label, Icon, description, collapsed, isDragging, on
         <Icon className="h-5 w-5" />
       </div>
       {!collapsed && (
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="text-sm font-medium">{label}</div>
           <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
         </div>
       )}
       <div
-        className={`absolute inset-0 rounded-lg bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 transition-opacity group-hover:opacity-100 ${
+        className={`pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 transition-opacity group-hover:opacity-100 ${
           collapsed ? "hidden" : ""
         }`}
       />
@@ -103,9 +121,10 @@ interface SectionsSelectorProps {
   userId?: string
   /** Called on mobile after a touch-drag drop so the parent can switch back to the canvas panel */
   onSectionAdded?: () => void
+  onSectionAddRequest?: (type: SectionType) => void
 }
 
-export function SectionsSelector({ className = "", userId, onSectionAdded }: SectionsSelectorProps) {
+export function SectionsSelector({ className = "", userId, onSectionAdded, onSectionAddRequest }: SectionsSelectorProps) {
   const [collapsed, setCollapsed] = useState(false)
   const [draggingType, setDraggingType] = useState<SectionType | null>(null)
   const [tab, setTab] = useState("sections")
@@ -272,7 +291,8 @@ export function SectionsSelector({ className = "", userId, onSectionAdded }: Sec
           <div className={`mb-4 ${collapsed ? "sr-only" : "opacity-100 transition-opacity delay-100"}`}>
             <h3 className={`${collapsed ? "sr-only" : "mb-1 text-sm font-semibold"}`}>Secties toevoegen</h3>
             <p className={`${collapsed ? "sr-only" : "text-xs text-muted-foreground"}`}>
-              Sleep een sectie naar de gewenste plek.
+              <span className="md:hidden">Tik op een sectie om een plek te kiezen. Slepen kan ook.</span>
+              <span className="hidden md:inline">Sleep een sectie naar de gewenste plek.</span>
             </p>
           </div>
 
@@ -288,6 +308,7 @@ export function SectionsSelector({ className = "", userId, onSectionAdded }: Sec
                 isDragging={draggingType === type}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
+                onAddSection={onSectionAddRequest}
               />
             ))}
           </div>
@@ -295,7 +316,8 @@ export function SectionsSelector({ className = "", userId, onSectionAdded }: Sec
           {!collapsed && (
             <div className="mt-6 rounded-xl border border-dashed border-border bg-secondary/70 p-3 text-center animate-in fade-in slide-in-from-left-2 duration-300">
               <p className="text-xs text-muted-foreground">
-                Op mobiel kunt u secties naar het canvas slepen.
+                <span className="md:hidden">Op mobiel kiest u na het tikken waar de sectie op de pagina komt.</span>
+                <span className="hidden md:inline">Sleep naar het canvas om de sectie precies te plaatsen.</span>
               </p>
             </div>
           )}

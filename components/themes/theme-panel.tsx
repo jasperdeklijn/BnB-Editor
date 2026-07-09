@@ -202,6 +202,11 @@ export function ThemePanel({
   const otherPresets = businessCategory
     ? THEME_PRESETS.filter((preset) => !visibleRecommendedPresetIds.has(preset.id))
     : THEME_PRESETS;
+  const themePanelOptions = [
+    { value: 'presets', label: 'Thema kiezen' },
+    { value: 'colors', label: 'Kleuren kiezen' },
+    { value: 'fonts', label: 'Letters kiezen' },
+  ];
 
   return (
     <div className={cn('flex h-full min-h-0 flex-col overflow-hidden', className)}>
@@ -215,7 +220,24 @@ export function ThemePanel({
       {status ? <StatusMessage tone={status.tone} className="m-3 mb-0 sm:mx-4">{status.text}</StatusMessage> : null}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <TabsList className="mx-3 mt-3 grid grid-cols-3 sm:mx-4">
+        <div className="mx-3 mt-3 sm:mx-4 md:hidden">
+          <label htmlFor="theme-panel-mobile-mode" className="sr-only">
+            Website thema onderdeel
+          </label>
+          <select
+            id="theme-panel-mobile-mode"
+            value={activeTab}
+            onChange={(event) => setActiveTab(event.target.value)}
+            className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm font-medium text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+          >
+            {themePanelOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <TabsList className="mx-3 mt-3 hidden grid-cols-3 sm:mx-4 md:grid">
           <TabsTrigger value="presets" className="text-xs">
             Thema&apos;s
           </TabsTrigger>
