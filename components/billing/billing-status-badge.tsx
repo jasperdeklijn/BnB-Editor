@@ -51,6 +51,12 @@ export function BillingStatusBadge({
       color: "text-destructive",
       bgColor: "bg-destructive/10",
     },
+    none: {
+      icon: <AlertCircle className="h-4 w-4" />,
+      label: "Geen actief abonnement",
+      color: "text-muted-foreground",
+      bgColor: "bg-muted",
+    },
   }
 
   const config = statusConfig[status]

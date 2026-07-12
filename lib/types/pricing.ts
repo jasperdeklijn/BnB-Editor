@@ -25,7 +25,7 @@ export interface PricingPlan {
 
 // ===== SUBSCRIPTION STATUS =====
 
-export type SubscriptionStatus = "active" | "trial" | "past_due" | "canceled" | "expired"
+export type SubscriptionStatus = "active" | "trial" | "past_due" | "canceled" | "expired" | "none"
 
 export interface Subscription {
   id: string
@@ -90,17 +90,19 @@ export interface UpdateSubscriptionResponse {
 
 // ===== MOCK DATA INTERFACES =====
 
-export interface MockUserBillingData {
+export interface UserBillingData {
   userId: string
   currentPlan: PlanId
+  storedPlan: PlanId | null
   status: SubscriptionStatus
+  source: "subscription" | "bronze_fallback"
   currentPrice: number
-  nextBillingDate: Date
+  nextBillingDate: Date | null
   addons: {
     bookingAddon: boolean
   }
   invoices: Invoice[]
-  createdAt: Date
+  createdAt: Date | null
 }
 
 // ===== COMPONENT PROPS =====

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { logAuditEvent } from "@/lib/audit-log"
 import { createClient } from "@/lib/supabase/server"
+import { getUserSubscription } from "@/lib/subscriptions"
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -13,6 +14,8 @@ export async function POST(request: Request) {
   if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const subscription = await getUserSubscription(supabase, user.id)
 
   const body = await request.json().catch(() => null)
   const websiteId = typeof body?.websiteId === "string" ? body.websiteId : null
@@ -52,6 +55,7 @@ export async function POST(request: Request) {
         title: targetWebsite.title,
         slug: targetWebsite.slug,
         previousPublished: targetWebsite.published,
+        plan: subscription.planId,
       },
       request,
     })
@@ -99,6 +103,7 @@ export async function POST(request: Request) {
       title: targetWebsite.title,
       slug: targetWebsite.slug,
       previousPublished: targetWebsite.published,
+      plan: subscription.planId,
     },
     request,
   })

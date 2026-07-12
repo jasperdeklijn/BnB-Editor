@@ -2,7 +2,7 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { BillingClient } from "@/components/billing/billing-client"
 import { EditorPageShell } from "@/components/editor/editor-page-shell"
-import { getMockUserBillingData } from "@/lib/mock-data"
+import { getUserSubscription, toUserBillingData } from "@/lib/subscriptions"
 
 export const metadata = {
   title: "Facturering | Website Maker",
@@ -24,15 +24,8 @@ export default async function BillingPage() {
     redirect("/auth/login")
   }
 
-  // TODO: In production, fetch real subscription data from Supabase
-  // const subscription = await supabase
-  //   .from("subscriptions")
-  //   .select("*")
-  //   .eq("user_id", data.user.id)
-  //   .single()
-
-  // For now, use mock data
-  const billingData = getMockUserBillingData(data.user.id)
+  const subscription = await getUserSubscription(supabase, data.user.id)
+  const billingData = toUserBillingData(subscription)
 
   return (
     <EditorPageShell

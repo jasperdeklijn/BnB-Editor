@@ -19,6 +19,7 @@ create extension if not exists "pgcrypto";
 -- ------------------------------------------------------------
 
 drop table if exists public.contact_requests cascade;
+drop table if exists public.subscriptions cascade;
 drop table if exists public.calendar_availability_windows cascade;
 drop table if exists public.calendar_entries cascade;
 drop table if exists public.leads cascade;
@@ -282,6 +283,39 @@ create trigger trg_section_transitions_updated_at
   before update on public.section_transitions
   for each row execute procedure public.set_updated_at();
 
+-- ------------------------------------------------------------
+-- Server-owned subscriptions and entitlements
+-- ------------------------------------------------------------
+
+create table public.subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null unique references auth.users(id) on delete cascade,
+  plan_id text not null default 'bronze'
+    check (plan_id in ('bronze', 'silver', 'gold')),
+  status text not null default 'active'
+    check (status in ('active', 'trial', 'past_due', 'canceled', 'expired')),
+  current_price numeric(10, 2) not null default 7.95
+    check (current_price >= 0),
+  currency text not null default 'EUR'
+    check (currency = 'EUR'),
+  current_period_start timestamptz,
+  current_period_end timestamptz,
+  stripe_customer_id text unique,
+  stripe_subscription_id text unique,
+  stripe_price_id text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint subscriptions_period_check check (
+    current_period_start is null
+    or current_period_end is null
+    or current_period_end > current_period_start
+  )
+);
+
+create trigger set_subscriptions_updated_at
+  before update on public.subscriptions
+  for each row execute procedure public.set_updated_at();
+
 create trigger set_calendar_entries_updated_at
   before update on public.calendar_entries
   for each row execute procedure public.set_updated_at();
@@ -310,6 +344,7 @@ create index idx_businesses_category on public.businesses (category);
 
 create index idx_services_business_id on public.services (business_id);
 create index idx_services_business_position on public.services (business_id, position);
+create index idx_subscriptions_status on public.subscriptions (status);
 
 create index idx_website_sections_website_id on public.website_sections (website_id);
 create index idx_website_sections_position on public.website_sections (website_id, position);
@@ -353,6 +388,7 @@ create index idx_audit_logs_action_created_at on public.audit_logs (action, crea
 -- ------------------------------------------------------------
 
 alter table public.businesses enable row level security;
+alter table public.subscriptions enable row level security;
 alter table public.services enable row level security;
 alter table public.websites enable row level security;
 alter table public.website_sections enable row level security;
@@ -362,6 +398,14 @@ alter table public.calendar_entries enable row level security;
 alter table public.calendar_availability_windows enable row level security;
 alter table public.leads enable row level security;
 alter table public.audit_logs enable row level security;
+
+create policy "Users can view own subscription"
+  on public.subscriptions for select
+  to authenticated
+  using (user_id = auth.uid());
+
+comment on table public.subscriptions is
+  'Server-owned subscription and entitlement state. Authenticated users may read only their own row; writes require trusted server/service-role access.';
 
 -- Businesses
 create policy "Anyone can view published website businesses"

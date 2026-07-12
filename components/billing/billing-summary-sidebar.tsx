@@ -10,7 +10,7 @@ import { toast } from "sonner"
 
 interface BillingSummarySidebarProps {
   currentPlan: PricingPlan
-  nextBillingDate: Date
+  nextBillingDate: Date | null
   monthlyCharge: number
   addonsPrice?: number
   onManageSubscription?: () => void
@@ -89,11 +89,11 @@ export function BillingSummarySidebar({
             Volgende facturering
           </p>
           <p className="text-sm text-primary font-semibold">
-            {nextBillingDate.toLocaleDateString("nl-NL", {
+            {nextBillingDate ? nextBillingDate.toLocaleDateString("nl-NL", {
               year: "numeric",
               month: "long",
               day: "numeric",
-            })}
+            }) : "Geen geplande facturering"}
           </p>
         </div>
       </div>

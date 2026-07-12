@@ -1,0 +1,65 @@
+import assert from "node:assert/strict"
+import fs from "node:fs"
+import path from "node:path"
+import test from "node:test"
+import ts from "typescript"
+
+const sourcePath = path.resolve("lib/subscriptions.ts")
+const source = fs.readFileSync(sourcePath, "utf8")
+const compiled = ts.transpileModule(source, {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
+  fileName: sourcePath,
+})
+const module = { exports: {} }
+Function("module", "exports", "require", compiled.outputText)(module, module.exports, (specifier) => {
+  if (specifier === "@/lib/pricing") {
+    return { getPlanById: (planId) => ({ monthlyPrice: { bronze: 7.95, silver: 14.95, gold: 24.95 }[planId] }) }
+  }
+  throw new Error(`Unexpected runtime dependency: ${specifier}`)
+})
+
+const { resolveEffectivePlan } = module.exports
+const now = new Date("2026-07-12T12:00:00.000Z")
+const record = (status, overrides = {}) => ({
+  id: "sub-1",
+  user_id: "user-1",
+  plan_id: "silver",
+  status,
+  current_price: 14.95,
+  currency: "EUR",
+  current_period_start: "2026-07-01T00:00:00.000Z",
+  current_period_end: "2026-08-01T00:00:00.000Z",
+  stripe_customer_id: null,
+  stripe_subscription_id: null,
+  stripe_price_id: null,
+  created_at: "2026-07-01T00:00:00.000Z",
+  updated_at: "2026-07-01T00:00:00.000Z",
+  ...overrides,
+})
+
+test("missing subscriptions receive the documented Bronze fallback", () => {
+  assert.deepEqual(resolveEffectivePlan(null, now), {
+    planId: "bronze",
+    storedPlanId: null,
+    status: "none",
+    source: "bronze_fallback",
+  })
+})
+
+test("active and trial subscriptions use the stored plan", () => {
+  assert.equal(resolveEffectivePlan(record("active"), now).planId, "silver")
+  assert.equal(resolveEffectivePlan(record("trial", { plan_id: "gold" }), now).planId, "gold")
+})
+
+test("past-due and expired subscriptions fall back to Bronze", () => {
+  assert.equal(resolveEffectivePlan(record("past_due"), now).planId, "bronze")
+  assert.equal(resolveEffectivePlan(record("expired", { plan_id: "gold" }), now).planId, "bronze")
+})
+
+test("canceled subscriptions retain access only through their paid-through date", () => {
+  assert.equal(resolveEffectivePlan(record("canceled"), now).planId, "silver")
+  assert.equal(
+    resolveEffectivePlan(record("canceled", { current_period_end: "2026-07-01T00:00:00.000Z" }), now).planId,
+    "bronze",
+  )
+})

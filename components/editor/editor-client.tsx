@@ -17,6 +17,7 @@ import type { BusinessCategory } from "@/lib/business/categories"
 import { Button } from "@/components/ui/button"
 import { StatusMessage } from "@/components/ui/status-message"
 import { PLATFORM_DOMAIN } from "@/lib/platform"
+import type { PlanId } from "@/lib/types/pricing"
 
 type MobilePanel = "canvas" | "sections" | "style" | "site"
 
@@ -55,9 +56,10 @@ async function logSectionAudit(action: "section.added" | "section.deleted", webs
 
 interface EditorClientProps {
   userId: string
+  currentPlan: PlanId
 }
 
-export function EditorClient({ userId }: EditorClientProps) {
+export function EditorClient({ userId, currentPlan: _currentPlan }: EditorClientProps) {
   const [sections, setSections] = useState<Section[]>([])
   const [transitions, setTransitions] = useState<Transition[]>([])
   const [websites, setWebsites] = useState<WebsiteSummary[]>([])

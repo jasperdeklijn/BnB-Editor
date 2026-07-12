@@ -8,10 +8,10 @@ import { InvoiceHistoryTable } from "@/components/billing/invoice-history-table"
 import { PlanComparisonTable } from "@/components/billing/plan-comparison-table"
 import { Card } from "@/components/ui/card"
 import { getPlanById } from "@/lib/pricing"
-import { MockUserBillingData } from "@/lib/types/pricing"
+import type { UserBillingData } from "@/lib/types/pricing"
 
 interface BillingClientProps {
-  billingData: MockUserBillingData
+  billingData: UserBillingData
   userId: string
 }
 
@@ -47,6 +47,11 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
 
           <BillingStatusBadge status={billingData.status} />
         </div>
+        {billingData.source === "bronze_fallback" ? (
+          <p className="mt-4 text-sm text-muted-foreground">
+            Er is geen actief betaald abonnement gevonden. Daarom gelden voorlopig de Bronze-rechten.
+          </p>
+        ) : null}
       </Card>
 
       <div className="grid gap-8 lg:grid-cols-3">
@@ -56,6 +61,9 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
               Abonnementen vergelijken
             </h3>
             <PlanComparisonTable currentPlanId={billingData.currentPlan} userId={userId} />
+            <p className="mt-3 text-sm text-muted-foreground">
+              Abonnement wijzigen wordt beschikbaar zodra de betaalprovider is gekoppeld.
+            </p>
           </div>
 
           <div className="animate-in fade-in duration-700 delay-300">

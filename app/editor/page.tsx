@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { EditorClient } from "@/components/editor/editor-client"
+import { getUserSubscription } from "@/lib/subscriptions"
 
 export default async function EditorPage() {
   const supabase = await createClient()
@@ -10,5 +11,7 @@ export default async function EditorPage() {
     redirect("/auth/login")
   }
 
-  return <EditorClient userId={data.user.id} />
+  const subscription = await getUserSubscription(supabase, data.user.id)
+
+  return <EditorClient userId={data.user.id} currentPlan={subscription.planId} />
 }

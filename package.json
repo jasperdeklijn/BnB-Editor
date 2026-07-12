@@ -6,6 +6,8 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "eslint .",
+    "test:entitlements": "node --test tests/entitlements.test.mjs",
+    "test:subscriptions": "node --test tests/subscriptions.test.mjs",
     "start": "next start"
   },
   "dependencies": {

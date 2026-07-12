@@ -11,6 +11,7 @@ import { useState } from "react"
 interface PlanComparisonTableProps {
   currentPlanId: PlanId
   userId: string
+  planChangesEnabled?: boolean
 }
 
 /**
@@ -20,6 +21,7 @@ interface PlanComparisonTableProps {
 export function PlanComparisonTable({
   currentPlanId,
   userId,
+  planChangesEnabled = false,
 }: PlanComparisonTableProps) {
   const [selectedPlan, setSelectedPlan] = useState<PlanId | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -141,12 +143,14 @@ export function PlanComparisonTable({
                   <Button
                     size="sm"
                     onClick={() => handlePlanChange(plan.id)}
-                    disabled={isLoading && selectedPlan === plan.id}
+                    disabled={!planChangesEnabled || (isLoading && selectedPlan === plan.id)}
                     className="gap-2"
                   >
-                    {PLAN_ORDER.indexOf(plan.id) > PLAN_ORDER.indexOf(currentPlanId)
-                      ? "Upgraden"
-                      : "Downgraden"}
+                    {planChangesEnabled
+                      ? PLAN_ORDER.indexOf(plan.id) > PLAN_ORDER.indexOf(currentPlanId)
+                        ? "Upgraden"
+                        : "Downgraden"
+                      : "Binnenkort beschikbaar"}
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 )}
