@@ -23,37 +23,37 @@ export function TemplatePreviewCard({
   const offeringCopy = getOfferingCopy(template.category)
 
   return (
-    <Card className={cn("overflow-hidden transition-all", isSelected ? "ring-2 ring-primary" : "")}>
-      <div className="border-b border-border bg-secondary p-4">
+    <Card className={cn("w-full max-w-full overflow-hidden transition-all", isSelected ? "ring-2 ring-primary" : "")}>
+      <div className="border-b border-border bg-secondary p-3 sm:p-4">
         <div className="mb-3 flex min-w-0 items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="truncate text-base font-semibold text-foreground">{template.name}</h3>
-            <p className="mt-1 text-sm text-muted-foreground">{template.description}</p>
+            <h3 className="break-words text-base font-semibold text-foreground">{template.name}</h3>
+            <p className="mt-1 break-words text-sm text-muted-foreground">{template.description}</p>
           </div>
           {isSelected ? <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" /> : null}
         </div>
         <TemplateMiniPreview template={template} />
       </div>
 
-      <div className="border-b border-border bg-white p-4">
+      <div className="border-b border-border bg-white p-3 sm:p-4">
         <div className="space-y-3">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Bedrijfsgegevens</p>
-            <p className="mt-1 text-sm font-semibold text-foreground">{template.businessDefaults.name}</p>
-            <p className="text-xs text-muted-foreground">{template.businessDefaults.tagline}</p>
+            <p className="mt-1 break-words text-sm font-semibold text-foreground">{template.businessDefaults.name}</p>
+            <p className="break-words text-xs text-muted-foreground">{template.businessDefaults.tagline}</p>
           </div>
         </div>
       </div>
 
-      <div className="border-b border-border bg-muted p-4">
+      <div className="border-b border-border bg-muted p-3 sm:p-4">
         <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {offeringCopy.previewLabel}
         </p>
         <div className="space-y-2">
           {template.services.slice(0, 3).map((service, idx) => (
             <div key={idx} className="text-sm">
-              <p className="font-medium text-foreground">{service.title}</p>
-              <p className="text-xs text-muted-foreground">{service.description}</p>
+              <p className="break-words font-medium text-foreground">{service.title}</p>
+              <p className="break-words text-xs text-muted-foreground">{service.description}</p>
               {service.price && <p className="text-xs font-semibold text-foreground mt-0.5">{service.price}</p>}
             </div>
           ))}
@@ -65,7 +65,7 @@ export function TemplatePreviewCard({
         </div>
       </div>
 
-      <div className="border-b border-border bg-white p-4">
+      <div className="border-b border-border bg-white p-3 sm:p-4">
         <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Pagina secties</p>
         <div className="flex flex-wrap gap-1">
           {template.sections.map((section, idx) => (
@@ -76,14 +76,14 @@ export function TemplatePreviewCard({
         </div>
       </div>
 
-      <div className="bg-muted p-4">
+      <div className="bg-muted p-3 sm:p-4">
         <Button
           onClick={() => onSelect?.(template)}
-          className="w-full gap-2"
+          className="w-full min-w-0 gap-2"
           variant={isSelected ? "default" : "outline"}
         >
-          {isSelected ? "Geselecteerd" : actionLabel}
-          <Eye className="h-4 w-4" />
+          <span className="min-w-0 break-words">{isSelected ? "Geselecteerd" : actionLabel}</span>
+          <Eye className="h-4 w-4 shrink-0" />
         </Button>
       </div>
     </Card>
@@ -96,7 +96,7 @@ function TemplateMiniPreview({ template }: { template: TemplatePreset }) {
   const hasServices = template.sections.some((section) => section.type === "services")
 
   return (
-    <div className="overflow-hidden rounded-md border border-border bg-background shadow-sm">
+    <div className="w-full max-w-full overflow-hidden rounded-md border border-border bg-background shadow-sm">
       <div className="flex h-7 items-center justify-between border-b border-border px-3">
         <div className="h-2 w-20 rounded bg-primary/70" />
         <div className="flex gap-1.5">

@@ -245,11 +245,11 @@ export function SiteDesignPanel({
         </TabsContent>
 
         <TabsContent value="templates" className="min-h-0 flex-1 overflow-hidden">
-          <ScrollArea className="h-full min-h-0">
-            <div className="space-y-3 p-3 sm:p-4">
-              <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-950">
+          <ScrollArea className="h-full min-h-0 overflow-x-hidden">
+            <div className="w-full max-w-full space-y-3 p-3 pb-[calc(5rem+env(safe-area-inset-bottom))] sm:p-4 md:pb-4">
+              <div className="w-full rounded-md border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-950">
                 <div className="mb-1 flex items-center gap-2 font-medium">
-                  <AlertTriangle className="h-3.5 w-3.5" />
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                   Eerst bekijken, daarna bevestigen
                 </div>
                 Een sjabloon opent eerst als voorbeeld. Pas na uw bevestiging vervangen we de huidige secties en voorbeeldinhoud.
@@ -259,7 +259,7 @@ export function SiteDesignPanel({
                 const isCollapsed = collapsedCategories.has(group.category.value)
 
                 return (
-                  <div key={group.category.value} className="overflow-hidden rounded-md border border-border bg-background">
+                  <div key={group.category.value} className="w-full max-w-full overflow-hidden rounded-md border border-border bg-background">
                     <button
                       type="button"
                       onClick={() => toggleCategory(group.category.value)}
@@ -267,21 +267,21 @@ export function SiteDesignPanel({
                       aria-expanded={!isCollapsed}
                     >
                       <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="truncate text-sm font-medium text-foreground">{group.category.label}</span>
+                        <div className="flex min-w-0 flex-wrap items-center gap-2">
+                          <span className="min-w-0 break-words text-sm font-medium text-foreground">{group.category.label}</span>
                           {group.category.value === businessCategory ? (
-                            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium uppercase text-primary">
+                            <span className="shrink-0 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium uppercase text-primary">
                               Aanbevolen
                             </span>
                           ) : null}
                         </div>
-                        <p className="truncate text-xs text-muted-foreground">{group.category.description}</p>
+                        <p className="break-words text-xs text-muted-foreground">{group.category.description}</p>
                       </div>
                       <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", isCollapsed ? "-rotate-90" : "rotate-0")} />
                     </button>
 
                     {!isCollapsed ? (
-                      <div className="space-y-3 p-3">
+                      <div className="w-full max-w-full space-y-3 p-3">
                         {group.templates.map((template) => (
                           <TemplatePreviewCard
                             key={template.id}

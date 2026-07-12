@@ -207,6 +207,46 @@ export function ThemePanel({
     { value: 'colors', label: 'Kleuren kiezen' },
     { value: 'fonts', label: 'Letters kiezen' },
   ];
+  const renderLayoutControls = (className?: string) => (
+    <div className={cn("space-y-4", className)}>
+      <div>
+        <Label className="text-xs text-muted-foreground mb-2 block">Afstand</Label>
+        <div className="grid grid-cols-1 gap-1 min-[360px]:grid-cols-3">
+          {(['compact', 'comfortable', 'spacious'] as ThemeSpacing[]).map((s) => (
+            <Button
+              key={s}
+              variant={theme.spacing === s ? 'default' : 'outline'}
+              size="sm"
+              className="text-xs"
+              onClick={() => handleSpacingChange(s)}
+            >
+              {SPACING_LABELS[s]}
+            </Button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <Label className="text-xs text-muted-foreground mb-2 block">Hoeken</Label>
+        <div className="grid grid-cols-2 gap-1 min-[420px]:grid-cols-4">
+          {RADIUS_OPTIONS.map((option) => (
+            <Button
+              key={option.value}
+              variant={theme.radius === option.value ? 'default' : 'outline'}
+              size="sm"
+              className="h-auto flex-col gap-1 px-2 py-2 text-xs"
+              onClick={() => handleRadiusChange(option.value)}
+            >
+              <div
+                className="w-4 h-4 border-2 border-current"
+                style={{ borderRadius: RADIUS_VALUES[option.value] }}
+              />
+              <span>{option.label}</span>
+            </Button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className={cn('flex h-full min-h-0 flex-col overflow-hidden', className)}>
@@ -252,113 +292,84 @@ export function ThemePanel({
         <div className="flex-1 min-h-0 p-3 sm:p-4">
           <TabsContent value="presets" className="h-full min-h-0 mt-0 overflow-hidden">
             <ScrollArea className="h-full min-h-0">
-              {businessCategory && recommendedPresets.length > 0 && (
-                <div className="mb-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                    <Label className="text-xs text-muted-foreground">Aanbevolen voor jouw bedrijf</Label>
+              <div className="pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
+                {businessCategory && recommendedPresets.length > 0 && (
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                      <Label className="text-xs text-muted-foreground">Aanbevolen voor jouw bedrijf</Label>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2 mb-4 sm:grid-cols-2">
+                      {visibleRecommendedPresets.map((preset) => (
+                        <PresetCard
+                          key={preset.id}
+                          preset={preset}
+                          isSelected={isPresetMatch(theme, preset)}
+                          onSelect={() => handlePresetSelect(preset.id)}
+                        />
+                      ))}
+                    </div>
+                    <div className="border-b my-4" />
                   </div>
-                  <div className="grid grid-cols-1 gap-2 mb-4 sm:grid-cols-2">
-                    {visibleRecommendedPresets.map((preset) => (
-                      <PresetCard
-                        key={preset.id}
-                        preset={preset}
-                        isSelected={isPresetMatch(theme, preset)}
-                        onSelect={() => handlePresetSelect(preset.id)}
-                      />
-                    ))}
-                  </div>
-                  <div className="border-b my-4" />
-                </div>
-              )}
+                )}
 
-              <Label className="text-xs text-muted-foreground mb-3 block">
-                {businessCategory && recommendedPresets.length > 0 ? 'Andere thema\'s' : 'Alle thema\'s'}
-              </Label>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {otherPresets.map((preset) => (
-                  <PresetCard
-                    key={preset.id}
-                    preset={preset}
-                    isSelected={isPresetMatch(theme, preset)}
-                    onSelect={() => handlePresetSelect(preset.id)}
-                  />
-                ))}
+                <Label className="text-xs text-muted-foreground mb-3 block">
+                  {businessCategory && recommendedPresets.length > 0 ? 'Andere thema\'s' : 'Alle thema\'s'}
+                </Label>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {otherPresets.map((preset) => (
+                    <PresetCard
+                      key={preset.id}
+                      preset={preset}
+                      isSelected={isPresetMatch(theme, preset)}
+                      onSelect={() => handlePresetSelect(preset.id)}
+                    />
+                  ))}
+                </div>
+                <div className="mt-4 border-t pt-4 md:hidden">{renderLayoutControls()}</div>
               </div>
             </ScrollArea>
           </TabsContent>
 
           <TabsContent value="colors" className="h-full min-h-0 mt-0 overflow-hidden">
             <ScrollArea className="h-full min-h-0">
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {COLOR_PALETTES.map((palette) => (
-                  <PaletteCard
-                    key={palette.id}
-                    palette={palette}
-                    isSelected={theme.paletteId === palette.id}
-                    onSelect={() => handlePaletteChange(palette.id)}
-                  />
-                ))}
+              <div className="pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {COLOR_PALETTES.map((palette) => (
+                    <PaletteCard
+                      key={palette.id}
+                      palette={palette}
+                      isSelected={theme.paletteId === palette.id}
+                      onSelect={() => handlePaletteChange(palette.id)}
+                    />
+                  ))}
+                </div>
+                <div className="mt-4 border-t pt-4 md:hidden">{renderLayoutControls()}</div>
               </div>
             </ScrollArea>
           </TabsContent>
 
           <TabsContent value="fonts" className="h-full min-h-0 mt-0 overflow-hidden">
             <ScrollArea className="h-full min-h-0">
-              <div className="space-y-2">
-                {FONT_PAIRS.map((fontPair) => (
-                  <FontCard
-                    key={fontPair.id}
-                    fontPair={fontPair}
-                    isSelected={theme.fontPairId === fontPair.id}
-                    onSelect={() => handleFontChange(fontPair.id)}
-                  />
-                ))}
+              <div className="pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
+                <div className="space-y-2">
+                  {FONT_PAIRS.map((fontPair) => (
+                    <FontCard
+                      key={fontPair.id}
+                      fontPair={fontPair}
+                      isSelected={theme.fontPairId === fontPair.id}
+                      onSelect={() => handleFontChange(fontPair.id)}
+                    />
+                  ))}
+                </div>
+                <div className="mt-4 border-t pt-4 md:hidden">{renderLayoutControls()}</div>
               </div>
             </ScrollArea>
           </TabsContent>
         </div>
       </Tabs>
 
-      {/* Layout Controls (always visible at bottom) */}
-      <div className="border-t p-3 space-y-4 sm:p-4">
-        <div>
-          <Label className="text-xs text-muted-foreground mb-2 block">Afstand</Label>
-          <div className="grid grid-cols-1 gap-1 min-[360px]:grid-cols-3">
-            {(['compact', 'comfortable', 'spacious'] as ThemeSpacing[]).map((s) => (
-              <Button
-                key={s}
-                variant={theme.spacing === s ? 'default' : 'outline'}
-                size="sm"
-                className="text-xs"
-                onClick={() => handleSpacingChange(s)}
-              >
-                {SPACING_LABELS[s]}
-              </Button>
-            ))}
-          </div>
-        </div>
-        <div>
-          <Label className="text-xs text-muted-foreground mb-2 block">Hoeken</Label>
-          <div className="grid grid-cols-2 gap-1 min-[420px]:grid-cols-4">
-            {RADIUS_OPTIONS.map((option) => (
-              <Button
-                key={option.value}
-                variant={theme.radius === option.value ? 'default' : 'outline'}
-                size="sm"
-                className="h-auto flex-col gap-1 px-2 py-2 text-xs"
-                onClick={() => handleRadiusChange(option.value)}
-              >
-                <div
-                  className="w-4 h-4 border-2 border-current"
-                  style={{ borderRadius: RADIUS_VALUES[option.value] }}
-                />
-                <span>{option.label}</span>
-              </Button>
-            ))}
-          </div>
-        </div>
-      </div>
+      {renderLayoutControls("hidden border-t p-3 sm:p-4 md:block")}
     </div>
   );
 }

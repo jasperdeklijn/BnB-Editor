@@ -4,8 +4,9 @@ Audit date: 2026-07-09
 Route tested: `/editor` in the authenticated in-app browser
 Viewport tested: 390px by 844px
 Perspective: non-technical website owner editing from a phone
-Scope: Mobile editor UX only. No websites, sections, templates, or publish actions were intentionally saved during this audit.
+Scope: Mobile editor UX only.
 Retry note: development-only Next.js UI, including the floating `N` badge/menu, was ignored and is not part of these findings.
+Implementation verification note: the later task 7 pass used the live `TESTSITE` editor page and added `Over ons` and `Diensten` through the mobile section flow.
 
 ## Tested
 
@@ -18,7 +19,6 @@ Retry note: development-only Next.js UI, including the floating `N` badge/menu, 
 
 ## Not Tested
 
-- Editing an existing populated page on mobile.
 - Applying a template.
 - Saving a website name, publishing, or creating a new website.
 - Dragging a section into the canvas.
@@ -28,10 +28,10 @@ Retry note: development-only Next.js UI, including the floating `N` badge/menu, 
 - [x] Task 1: Make the mobile editor header touch-safe and less crowded
 - [x] Task 2: Make mobile section adding read like a tap-first flow
 - [x] Task 3: Reduce nested mobile tabs in the style and site panels
-- [ ] Task 4: Give theme, color, and font lists enough visible space
-- [ ] Task 5: Fix template cards that sit too close to the viewport edge
-- [ ] Task 6: Protect scrollable panels from the fixed bottom navigation
-- [ ] Task 7: Add a populated-page mobile verification pass
+- [x] Task 4: Give theme, color, and font lists enough visible space
+- [x] Task 5: Fix template cards that sit too close to the viewport edge
+- [x] Task 6: Protect scrollable panels from the fixed bottom navigation
+- [x] Task 7: Add a populated-page mobile verification pass
 
 ## Task 1: Make the mobile editor header touch-safe and less crowded
 
@@ -114,7 +114,7 @@ Verified:
 
 ## Task 4: Give theme, color, and font lists enough visible space
 
-Status: To do
+Status: Done
 Priority: High
 Likely files:
 - `components/themes/theme-panel.tsx`
@@ -130,9 +130,16 @@ Done when:
 - The selected option remains visible without hiding most of the available alternatives.
 - The list can be scrolled without fighting the page or bottom navigation.
 
+Verified:
+- `components/themes/theme-panel.tsx` now keeps the persistent `Afstand` and `Hoeken` controls on desktop only.
+- On mobile, `Afstand` and `Hoeken` are rendered below the active theme/color/font list inside the scroll area, so the list gets the main visible panel height first.
+- Browser verification at 390px showed the color list with five full palette choices visible before scrolling and the font list with four full font choices plus the next item entering view.
+- Browser verification at 390px confirmed no horizontal overflow while switching between `Thema kiezen`, `Kleuren kiezen`, and `Letters kiezen`.
+- `npx tsc --noEmit` passed.
+
 ## Task 5: Fix template cards that sit too close to the viewport edge
 
-Status: To do
+Status: Done
 Priority: Medium
 Likely files:
 - `components/editor/site-design-panel.tsx`
@@ -149,9 +156,16 @@ Done when:
 - Long template titles and descriptions wrap cleanly without pushing the card beyond the viewport.
 - The template warning and list share the same horizontal alignment.
 
+Verified:
+- `components/editor/site-design-panel.tsx` now gives the template list a width-constrained, overflow-hidden scroll area with the same mobile gutters as the warning.
+- `components/templates/template-preview-card.tsx` now constrains cards to `w-full max-w-full`, reduces mobile padding, and wraps long titles/descriptions/action labels instead of letting text push the card width.
+- Browser verification at 390px measured visible template rows from x=13 to x=377, leaving gutter space on both sides and no page-level horizontal overflow.
+- Browser verification at 390px confirmed the template warning and template rows align to the same mobile content width.
+- `npx tsc --noEmit` passed.
+
 ## Task 6: Protect scrollable panels from the fixed bottom navigation
 
-Status: To do
+Status: Done
 Priority: High
 Likely files:
 - `components/editor/editor-client.tsx`
@@ -169,9 +183,17 @@ Done when:
 - Focus outlines and active states are not clipped by the viewport bottom.
 - The bottom nav remains fixed without covering actionable content.
 
+Verified:
+- `components/editor/sections-selector.tsx` now adds mobile bottom padding for the fixed nav/safe area.
+- `components/themes/theme-panel.tsx` adds mobile bottom padding inside each theme/color/font scroll content.
+- `components/editor/site-design-panel.tsx` adds mobile bottom padding inside the templates scroll content.
+- Browser verification at 390px confirmed `Site > Sjablonen` scrolls the final template group fully above the fixed nav, with max visible content right edge at 377px and no overflow.
+- Browser verification at 390px confirmed `Site > Kleuren` and `Site > Letters` can scroll through their final list and layout controls above the fixed nav when scrolled to the bottom.
+- `npx tsc --noEmit` passed.
+
 ## Task 7: Add a populated-page mobile verification pass
 
-Status: To do
+Status: Done
 Priority: Medium
 Likely files:
 - `components/editor/editor-client.tsx`
@@ -188,3 +210,13 @@ Done when:
 - Returning from `Stijl` or `Site` to `Doek` preserves the selected section context.
 - Adding a section on mobile shows a clear placement step and the new section appears where expected.
 - Verification confirms no horizontal overflow at 390px and no content hidden behind the bottom nav.
+
+Verified:
+- Browser verification used the live authenticated `/editor` page at 390px.
+- The page was populated through the mobile section flow until it had four sections: `Navigatie`, `Intro bovenaan`, `Over ons`, and `Diensten`.
+- Tapping `Over ons` on the canvas opened the mobile `Stijl` panel with the `Over ons` editor.
+- Switching to `Site` and back to `Doek` preserved the selected section context; the canvas showed `Geselecteerd: Over ons`.
+- Tapping section cards in `Secties` showed the placement prompt (`Waar wilt u ... plaatsen?`) and placing `Over ons` and `Diensten` at the bottom added them where expected.
+- Browser verification at 390px confirmed `documentElement.scrollWidth === clientWidth` throughout the pass, so there was no horizontal overflow.
+- The temporary browser viewport was reset after verification.
+- `npx tsc --noEmit` passed.

@@ -237,7 +237,7 @@ export function SectionsSelector({ className = "", userId, onSectionAdded, onSec
       data-collapsed={collapsed}
       className={`relative flex-shrink-0 transition-[width] duration-300 ease-in-out overflow-y-auto w-full ${
         collapsed ? "md:w-[4.5rem] md:min-w-[4.5rem] md:max-w-[4.5rem]" : "md:w-64 md:min-w-64 md:max-w-64"
-      } border-border bg-[var(--editor-sidebar)] p-3 md:border-r ${collapsed ? "md:px-3 md:py-4" : "md:p-4"} ${className}`}
+      } border-border bg-[var(--editor-sidebar)] p-3 pb-[calc(5rem+env(safe-area-inset-bottom))] md:border-r ${collapsed ? "md:px-3 md:py-4" : "md:p-4"} ${className}`}
     >
       {/* Collapse toggle — desktop only */}
       <button
