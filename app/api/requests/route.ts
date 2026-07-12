@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import nodemailer from "nodemailer"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { isWebsiteLiveSnapshot } from "@/lib/website-snapshot"
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
 import { PLATFORM_EMAILS } from "@/lib/platform"
 
@@ -159,22 +160,33 @@ async function resolveRequestContext(input: {
   let businessEmail = ""
   let userEmail = ""
   let businessName = "uw website"
+  let acceptsPublicRequests = false
+  let liveServiceIds: string[] = []
 
   if (websiteId) {
     const { data: website } = await supabase
       .from("websites")
-      .select("id, user_id, business_id, title")
+      .select("id, user_id, business_id, title, published, live_snapshot")
       .eq("id", websiteId)
       .maybeSingle()
 
     if (website) {
+      const snapshot = website.published && isWebsiteLiveSnapshot(website.live_snapshot)
+        ? website.live_snapshot
+        : null
+      acceptsPublicRequests = Boolean(snapshot)
+      liveServiceIds = snapshot?.services
+        ?.map((service) => service.id)
+        .filter((id): id is string => typeof id === "string") ?? []
       userId = website.user_id ?? null
-      businessId = businessId || website.business_id || null
-      businessName = website.title || businessName
+      businessId = snapshot?.website.businessId || businessId || website.business_id || null
+      businessName = snapshot?.business?.name || snapshot?.website.title || website.title || businessName
+      businessEmail = snapshot?.business?.email || ""
+      userEmail = snapshot?.ownerEmail || ""
     }
   }
 
-  if (businessId) {
+  if (businessId && !businessEmail) {
     const { data: business } = await supabase
       .from("businesses")
       .select("id, user_id, name, email")
@@ -188,14 +200,14 @@ async function resolveRequestContext(input: {
     }
   }
 
-  if (userId) {
+  if (userId && !userEmail) {
     const { data } = await supabase.auth.admin.getUserById(userId)
     userEmail = data?.user?.email || ""
   }
 
   const recipientEmail = businessEmail || userEmail || input.recipientEmail || FROM_EMAIL
 
-  return { supabase, websiteId, businessId, userId, recipientEmail, businessName }
+  return { supabase, websiteId, businessId, userId, recipientEmail, businessName, acceptsPublicRequests, liveServiceIds }
 }
 
 function buildEmailHtml(input: {
@@ -304,9 +316,18 @@ export async function POST(request: NextRequest) {
       businessId,
       recipientEmail: limitString(body.recipientEmail, FIELD_LIMITS.recipientEmail),
     })
+
+    if (!context.acceptsPublicRequests) {
+      logRejectedRequest("website_not_live", request, { websiteId })
+      return NextResponse.json(
+        { error: "Deze websiteversie staat niet live. Aanvragen zijn alleen beschikbaar op de live website." },
+        { status: 409 },
+      )
+    }
+
     let calendarServiceId: string | null = null
 
-    if (requestedServiceId && context.businessId) {
+    if (requestedServiceId && context.businessId && context.liveServiceIds.includes(requestedServiceId)) {
       const { data: linkedService } = await context.supabase
         .from("services")
         .select("id")

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { logAuditEvent } from "@/lib/audit-log"
 import { createClient } from "@/lib/supabase/server"
 import { getUserSubscription } from "@/lib/subscriptions"
+import { buildWebsiteLiveSnapshot } from "@/lib/website-snapshot"
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -85,9 +86,34 @@ export async function POST(request: Request) {
     )
   }
 
+  let liveSnapshot
+  try {
+    liveSnapshot = await buildWebsiteLiveSnapshot({
+      supabase,
+      websiteId,
+      userId: user.id,
+      ownerEmail: user.email,
+    })
+  } catch (snapshotError) {
+    return NextResponse.json(
+      {
+        error:
+          snapshotError instanceof Error
+            ? `De live versie kon niet worden opgebouwd: ${snapshotError.message}`
+            : "De live versie kon niet worden opgebouwd.",
+      },
+      { status: 500 },
+    )
+  }
+
   const { error: publishError } = await supabase
     .from("websites")
-    .update({ published: true, updated_at: new Date().toISOString() })
+    .update({
+      published: true,
+      live_snapshot: liveSnapshot,
+      live_published_at: liveSnapshot.publishedAt,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", websiteId)
     .eq("user_id", user.id)
 
@@ -104,6 +130,8 @@ export async function POST(request: Request) {
       slug: targetWebsite.slug,
       previousPublished: targetWebsite.published,
       plan: subscription.planId,
+      snapshotVersion: liveSnapshot.version,
+      livePublishedAt: liveSnapshot.publishedAt,
     },
     request,
   })

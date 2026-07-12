@@ -10,6 +10,7 @@ import { resolveAllSections } from "@/lib/supabase/section-resolver"
 import { WebsiteThemeProvider } from "@/components/themes/website-theme-provider"
 import { applyThemeDefaultsToSections, type ThemeConfig } from "@/lib/themes"
 import { buildLocalBusinessJsonLd } from "@/lib/business/structured-data"
+import { isWebsiteLiveSnapshot, type WebsiteLiveSnapshot } from "@/lib/website-snapshot"
 
 interface PageLoaderOptions {
   slug: string
@@ -25,17 +26,29 @@ export async function loadPublicWebsitePage({
 }: PageLoaderOptions) {
   const supabase = client ?? (await createClient())
 
-  const { data: website, error } =
-    await websiteSections.fetchWebsiteWithSectionsBySlug(slug, supabase)
+  const { data: website, error } = isPreview
+    ? await websiteSections.fetchWebsiteWithSectionsBySlug(slug, supabase)
+    : await supabase
+        .from("websites")
+        .select("id, user_id, business_id, title, slug, custom_domain, published, seo, theme_config, live_snapshot")
+        .eq("slug", slug)
+        .single()
 
   if (error || !website) return notFound()
 
   // Live route: only show published sites
   if (!isPreview && !website.published) return notFound()
 
+  const liveSnapshot: WebsiteLiveSnapshot | null = !isPreview && isWebsiteLiveSnapshot(website.live_snapshot)
+    ? website.live_snapshot
+    : null
+
+  // A published flag without a complete snapshot is not a renderable live revision.
+  if (!isPreview && !liveSnapshot) return notFound()
+
   const adminSupabase = await createAdminClient()
 
-  const websiteBusinessId = website.business_id ?? await (async () => {
+  const websiteBusinessId = liveSnapshot?.website.businessId ?? website.business_id ?? await (async () => {
     const { data: business, error: businessError } = await adminSupabase
       .from('businesses')
       .select('id')
@@ -49,10 +62,12 @@ export async function loadPublicWebsitePage({
   })()
 
   // Get user email for contact form default recipient
-  const { data: userData } = await adminSupabase.auth.admin.getUserById(website.user_id)
-  const userEmail = userData?.user?.email
+  const { data: userData } = liveSnapshot
+    ? { data: null }
+    : await adminSupabase.auth.admin.getUserById(website.user_id)
+  const userEmail = liveSnapshot?.ownerEmail ?? userData?.user?.email
 
-  const { data: businessDetails } = websiteBusinessId
+  const { data: currentBusinessDetails } = !liveSnapshot && websiteBusinessId
     ? await adminSupabase
         .from('businesses')
         .select('name, category, description, phone, email, street, city, postal, country, latitude, longitude, social_links, opening_note')
@@ -60,7 +75,9 @@ export async function loadPublicWebsitePage({
         .maybeSingle()
     : { data: null }
 
-  const sections: Section[] = (website.website_sections || []).map(
+  const businessDetails = liveSnapshot?.business ?? currentBusinessDetails
+
+  const draftSections: Section[] = (website.website_sections || []).map(
     (r: any): Section => ({
       id: r.id,
       type: r.type,
@@ -76,22 +93,56 @@ export async function loadPublicWebsitePage({
     })
   )
 
+  const sections: Section[] = liveSnapshot
+    ? liveSnapshot.sections.map((section) => {
+        const selectedServiceIds = Array.isArray(section.data.serviceIds)
+          ? section.data.serviceIds.filter((id): id is string => typeof id === "string")
+          : []
+        const snapshotServices = selectedServiceIds.length > 0
+          ? liveSnapshot.services.filter((service) => selectedServiceIds.includes(service.id))
+          : liveSnapshot.services
+
+        return {
+          ...section,
+          data: {
+            ...section.data,
+            businessId: liveSnapshot.website.businessId,
+            websiteId: liveSnapshot.website.id,
+            businessCategory: liveSnapshot.business?.category ?? null,
+            recipientEmail:
+              section.data.recipientEmail || liveSnapshot.business?.email || liveSnapshot.ownerEmail || undefined,
+            ...(section.type === "services" && !Array.isArray(section.data.services)
+              ? { services: snapshotServices }
+              : {}),
+          },
+        }
+      })
+    : draftSections
+
   // Resolve live data for all sections that need it.
   // The admin client is used so RLS does not block reads for published sites.
   // Preview shares the same resolver path — resolvers are safe for both modes.
-  const resolvedSections = await resolveAllSections(sections, {
-    businessId: websiteBusinessId,
-    supabase: adminSupabase,
-    isPreview,
-  })
-  const themeConfig = (website.theme_config as ThemeConfig | null) ?? null
+  const resolvedSections = liveSnapshot
+    ? sections
+    : await resolveAllSections(sections, {
+        businessId: websiteBusinessId,
+        supabase: adminSupabase,
+        isPreview,
+      })
+  const themeConfig = liveSnapshot?.website.themeConfig ?? (website.theme_config as ThemeConfig | null) ?? null
   sections.splice(0, sections.length, ...applyThemeDefaultsToSections(resolvedSections, themeConfig))
 
   // Fetch transitions from section_transitions table
-  const { data: transitionRows } = await supabase
-    .from("section_transitions")
-    .select("from_section_id, to_section_id, transition")
-    .eq("website_id", website.id)
+  const { data: transitionRows } = liveSnapshot
+    ? { data: liveSnapshot.transitions.map((transition) => ({
+        from_section_id: transition.fromSectionId,
+        to_section_id: transition.toSectionId,
+        transition: { type: transition.type },
+      })) }
+    : await supabase
+        .from("section_transitions")
+        .select("from_section_id, to_section_id, transition")
+        .eq("website_id", website.id)
 
   // Map transitions to Transition objects
   const transitions: Transition[] = (transitionRows || []).map((t: any) => ({
@@ -221,7 +272,9 @@ export async function loadPublicWebsitePage({
 
   const jsonLd = buildLocalBusinessJsonLd(
     businessDetails as Parameters<typeof buildLocalBusinessJsonLd>[0],
-    website.custom_domain ? `https://${website.custom_domain}` : `/site/${website.slug}`,
+    liveSnapshot?.website.customDomain
+      ? `https://${liveSnapshot.website.customDomain}`
+      : `/site/${liveSnapshot?.website.slug ?? website.slug}`,
   )
 
   return (

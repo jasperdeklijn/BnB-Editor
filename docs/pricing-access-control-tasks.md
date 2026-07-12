@@ -10,7 +10,7 @@ Publishing is the hard boundary: a user cannot put a new website version live wh
 
 - [x] Task 1 - Create a shared entitlement model
 - [x] Task 2 - Establish a real subscription source
-- [ ] Task 3 - Separate draft content from the live version
+- [x] Task 3 - Separate draft content from the live version
 - [ ] Task 4 - Add a temporary development tier switch
 - [ ] Task 5 - Show tier ownership throughout the editor
 - [ ] Task 6 - Add immediate, non-blocking upgrade warnings
@@ -101,6 +101,8 @@ Done when:
 ## Task 3 - Separate draft content from the live version
 
 Introduce website revisions or an equivalent immutable live snapshot. Editor saves update the current draft. A successful publish operation atomically promotes a compliant draft to the live version. Public routes render only the promoted live revision.
+
+Implemented approach: editor tables and website settings remain the mutable draft. A successful publish builds a versioned `live_snapshot` containing the website presentation settings, business details, services, availability, sections, and transitions, then promotes it with one atomic website update. Public rendering, public metadata, and public form routing use that snapshot; authenticated preview continues to use draft data.
 
 Keep the previous live revision available until promotion succeeds. Decide and document how business data referenced by sections (services, availability, forms, and booking settings) is snapshotted or safely resolved so draft edits cannot leak into the live site.
 

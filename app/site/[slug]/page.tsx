@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { loadPublicWebsitePage } from "@/components/page-loader"
 import { createClient } from "@/lib/supabase/server"
 import { getSeoDescription, getSeoTitle, type WebsiteSeoFields } from "@/lib/seo/metadata"
+import { isWebsiteLiveSnapshot } from "@/lib/website-snapshot"
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -12,16 +13,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const client = await createClient()
   const { data: website } = await client
     .from("websites")
-    .select("title, slug, custom_domain, seo, businesses:business_id(name, description)")
+    .select("slug, published, live_snapshot")
     .eq("slug", slug)
     .maybeSingle()
 
-  const businessRelation = website?.businesses as { name?: string; description?: string } | { name?: string; description?: string }[] | null | undefined
-  const business = Array.isArray(businessRelation) ? businessRelation[0] : businessRelation
-  const seo = website?.seo as WebsiteSeoFields | null | undefined
-  const title = getSeoTitle(seo, business?.name || website?.title || "Website")
+  const snapshot = website?.published && isWebsiteLiveSnapshot(website.live_snapshot)
+    ? website.live_snapshot
+    : null
+  const business = snapshot?.business
+  const seo = snapshot?.website.seo as WebsiteSeoFields | null | undefined
+  const title = getSeoTitle(seo, business?.name || snapshot?.website.title || "Website")
   const description = getSeoDescription(seo, business?.description)
-  const url = website?.custom_domain ? `https://${website.custom_domain}` : `/site/${website?.slug ?? slug}`
+  const customDomain = snapshot?.website.customDomain
+  const url = customDomain ? `https://${customDomain}` : `/site/${snapshot?.website.slug ?? website?.slug ?? slug}`
 
   return {
     title,

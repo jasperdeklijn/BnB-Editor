@@ -127,12 +127,20 @@ create table public.websites (
   seo jsonb not null default '{}'::jsonb,
   analytics jsonb not null default '{}'::jsonb,
   theme_config jsonb default null,
+  live_snapshot jsonb,
+  live_published_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
 comment on column public.websites.theme_config is
   'Theme configuration including paletteId, fontPairId, spacing, and radius';
+
+comment on column public.websites.live_snapshot is
+  'Immutable public rendering snapshot replaced atomically by a successful publish.';
+
+comment on column public.websites.live_published_at is
+  'Timestamp of the draft promotion that produced live_snapshot.';
 
 create table public.website_sections (
   id uuid primary key default gen_random_uuid(),

@@ -8,6 +8,7 @@
     "lint": "eslint .",
     "test:entitlements": "node --test tests/entitlements.test.mjs",
     "test:subscriptions": "node --test tests/subscriptions.test.mjs",
+    "test:snapshots": "node --test tests/website-snapshot.test.mjs",
     "start": "next start"
   },
   "dependencies": {
