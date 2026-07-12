@@ -50,7 +50,7 @@ interface FormState {
   company: string
 }
 
-function useContactForm(recipientEmail?: string, businessId?: string, websiteId?: string) {
+function useContactForm(recipientEmail?: string, businessId?: string, websiteId?: string, isPreview = false) {
   const [form, setForm] = useState<FormState>({ name: "", email: "", phone: "", message: "", company: "" })
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [errorMsg, setErrorMsg] = useState("")
@@ -62,6 +62,10 @@ function useContactForm(recipientEmail?: string, businessId?: string, websiteId?
     e.preventDefault()
     setStatus("loading")
     setErrorMsg("")
+    if (isPreview) {
+      setStatus("success")
+      return
+    }
     try {
       const res = await fetch("/api/requests", {
         method: "POST",
@@ -94,17 +98,20 @@ interface ContactFormProps {
   accentColor?: string
   buttonLabel?: string
   compact?: boolean
+  isPreview?: boolean
 }
 
-function ContactForm({ recipientEmail, businessId, websiteId, accentColor, buttonLabel = "Verstuur bericht", compact }: ContactFormProps) {
-  const { form, update, submit, status, errorMsg } = useContactForm(recipientEmail, businessId, websiteId)
+function ContactForm({ recipientEmail, businessId, websiteId, accentColor, buttonLabel = "Verstuur bericht", compact, isPreview = false }: ContactFormProps) {
+  const { form, update, submit, status, errorMsg } = useContactForm(recipientEmail, businessId, websiteId, isPreview)
 
   if (status === "success") {
     return (
       <div className="flex flex-col items-center gap-3 py-10 text-center">
         <CheckCircle className="h-10 w-10 text-green-500" />
-        <p className="font-semibold">Bericht verzonden!</p>
-        <p className="text-sm text-muted-foreground">We nemen zo snel mogelijk contact met je op.</p>
+        <p className="font-semibold">{isPreview ? "Preview geslaagd" : "Bericht verzonden!"}</p>
+        <p className="text-sm text-muted-foreground">
+          {isPreview ? "Er is geen bericht opgeslagen of verzonden." : "We nemen zo snel mogelijk contact met je op."}
+        </p>
       </div>
     )
   }
@@ -260,7 +267,7 @@ function ClassicLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps
             <EditableText as="p" data={data} path={["subtitle"]} value={(data.subtitle as string) || "Neem gerust contact met ons op. We helpen je graag verder."} isPreview={isPreview} onUpdate={onUpdate} className="mb-6 text-muted-foreground" style={textStyle} multiline />
             <InfoBlock address={data.address as string} phone={data.phone as string} email={data.email as string} textStyle={textStyle} />
           </div>
-          <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} />
+          <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} isPreview={isPreview} />
         </div>
       </div>
     </section>
@@ -304,7 +311,7 @@ function SplitLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps) 
         {/* Right form */}
         <div className="flex flex-1 flex-col justify-center bg-white px-8 py-12 md:px-12">
           <h3 className="mb-6 text-xl font-semibold text-gray-900">Stuur een bericht</h3>
-          <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} />
+          <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} isPreview={isPreview} />
         </div>
       </div>
     </section>
@@ -350,7 +357,7 @@ function MinimalLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps
           )}
         </div>
         <div className="rounded-2xl border border-border bg-white/80 p-6 text-left shadow-sm backdrop-blur">
-          <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} compact />
+          <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} isPreview={isPreview} compact />
         </div>
       </div>
     </section>
@@ -407,7 +414,7 @@ function CardLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps) {
             {/* Form */}
             <div className="px-8 py-10 md:col-span-3">
               <h3 className="mb-6 text-lg font-semibold text-gray-900">Stuur ons een bericht</h3>
-              <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} accentColor="#b45309" />
+              <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} isPreview={isPreview} accentColor="#b45309" />
             </div>
           </div>
         </div>
@@ -456,7 +463,7 @@ function FullwidthLayout({ data, isPreview, styles, onUpdate }: ContactLayoutPro
       {/* Form below */}
       <div className="bg-white px-4 py-12 sm:px-6">
         <div className="mx-auto max-w-2xl">
-          <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} />
+          <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} isPreview={isPreview} />
         </div>
       </div>
     </section>
@@ -506,7 +513,7 @@ function CenteredLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProp
         </div>
         {/* Form */}
         <div className="mx-auto max-w-xl rounded-2xl border border-border bg-white/80 p-8 shadow-sm backdrop-blur">
-          <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} />
+          <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} isPreview={isPreview} />
         </div>
       </div>
     </section>

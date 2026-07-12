@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { SectionEditorProps } from "@/components/editor/section-editor-types"
 import { Mail, Type } from "lucide-react"
+import { TierBadge } from "@/components/editor/tier-badge"
+import { planMeetsRequirement } from "@/lib/entitlements"
 
 const requestTypes = [
   { value: "contact", label: "Bericht" },
@@ -23,7 +25,7 @@ const formFields = [
   { value: "message", label: "Bericht" },
 ] as const
 
-export function RequestFormSectionEditor({ section, updateField }: SectionEditorProps) {
+export function RequestFormSectionEditor({ section, updateField, currentPlan }: SectionEditorProps) {
   const currentFields: string[] = (section.data as any).fields || ["name", "email", "phone", "message"]
   const requestType = ((section.data as any).requestType || "contact") as string
 
@@ -63,12 +65,20 @@ export function RequestFormSectionEditor({ section, updateField }: SectionEditor
                   isActive ? "border-primary bg-primary/10 text-primary" : "border-border hover:border-primary/50"
                 }`}
               >
-                {type.label}
+                <span className="flex items-center justify-center gap-1.5">
+                  {type.label}
+                  {type.value !== "contact" ? <TierBadge plan="silver" className="px-1.5 py-0 text-[9px]" /> : null}
+                </span>
               </button>
             )
           })}
         </div>
       </div>
+      {requestType !== "contact" && !planMeetsRequirement(currentPlan, "silver") ? (
+        <p className="rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-900">
+          Dit type aanvraag vereist Silver. Instellen en testen kan nu; live zetten vereist een upgrade.
+        </p>
+      ) : null}
       {requestType === "whatsapp" ? (
         <div>
           <Label className="text-xs mb-1.5 block">WhatsApp-nummer</Label>

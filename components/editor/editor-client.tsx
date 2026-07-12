@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { SectionsSelector } from "./sections-selector"
 import { EditorCanvas } from "./editor-canvas"
 import { EditorInspector } from "./editor-inspector"
@@ -18,6 +18,21 @@ import { Button } from "@/components/ui/button"
 import { StatusMessage } from "@/components/ui/status-message"
 import { PLATFORM_DOMAIN } from "@/lib/platform"
 import type { PlanId } from "@/lib/types/pricing"
+import { TierBadge } from "@/components/editor/tier-badge"
+import { highestRequiredPlan, inspectWebsiteEntitlements, type EntitlementViolation } from "@/lib/entitlements"
+import { getPlanDisplayName } from "@/lib/pricing"
+import { toast } from "sonner"
+import type { PlanEnforcementMode } from "@/lib/plan-enforcement"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 type MobilePanel = "canvas" | "sections" | "style" | "site"
 
@@ -54,12 +69,27 @@ async function logSectionAudit(action: "section.added" | "section.deleted", webs
   }).catch(() => null)
 }
 
-interface EditorClientProps {
-  userId: string
-  currentPlan: PlanId
+async function logEntitlementMetric(
+  action: "entitlement.warning_shown" | "entitlement.upgrade_clicked",
+  metadata: Record<string, unknown>,
+) {
+  await fetch("/api/audit/entitlement", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action, metadata }),
+  }).catch(() => null)
 }
 
-export function EditorClient({ userId, currentPlan: _currentPlan }: EditorClientProps) {
+interface EditorClientProps {
+  userId: string
+  realPlan: PlanId
+  currentPlan: PlanId
+  isTierTestOverride: boolean
+  subscriptionNotice?: string | null
+  enforcementMode: PlanEnforcementMode
+}
+
+export function EditorClient({ userId, realPlan, currentPlan, isTierTestOverride, subscriptionNotice, enforcementMode }: EditorClientProps) {
   const [sections, setSections] = useState<Section[]>([])
   const [transitions, setTransitions] = useState<Transition[]>([])
   const [websites, setWebsites] = useState<WebsiteSummary[]>([])
@@ -76,10 +106,89 @@ export function EditorClient({ userId, currentPlan: _currentPlan }: EditorClient
   const [pendingMobileSectionType, setPendingMobileSectionType] = useState<SectionType | null>(null)
   const [isMobileDraggingNewSection, setIsMobileDraggingNewSection] = useState(false)
   const [isMobileDraggingImage, setIsMobileDraggingImage] = useState(false)
+  const [publishPreflightOpen, setPublishPreflightOpen] = useState(false)
+  const [publishConfirmationOpen, setPublishConfirmationOpen] = useState(false)
+  const [serverPublishViolations, setServerPublishViolations] = useState<EntitlementViolation[]>([])
   const router = useRouter()
   const searchParams = useSearchParams()
   const { isPreview, isSaving, setIsSaving, saveState, setSaveState, device, setOnPublish, setOnLogout } = useEditorLayout()
   const requestedWebsiteId = searchParams.get("websiteId")
+  const previousEntitlementViolationKeys = useRef<Set<string>>(new Set())
+
+  const entitlementResult = useMemo(
+    () => inspectWebsiteEntitlements(currentPlan, { sections }),
+    [currentPlan, sections],
+  )
+  const publishEnforcementActive = enforcementMode === "enforce"
+  const canPublishDraft = !publishEnforcementActive || entitlementResult.allowed
+  const activePreflightViolations = serverPublishViolations.length > 0
+    ? serverPublishViolations
+    : entitlementResult.violations
+  const preflightGroups = useMemo(() => ({
+    sections: activePreflightViolations.filter((violation) => violation.code === "section.requires_plan"),
+    count: activePreflightViolations.filter((violation) => violation.code === "section.limit_exceeded"),
+    features: activePreflightViolations.filter(
+      (violation) => violation.code === "feature.requires_plan" && violation.capability !== "booking_system",
+    ),
+    booking: activePreflightViolations.filter(
+      (violation) => violation.code === "feature.requires_plan" && violation.capability === "booking_system",
+    ),
+  }), [activePreflightViolations])
+  const preflightGroupEntries = useMemo(() => [
+    { title: "Secties waarvoor een hoger abonnement nodig is", violations: preflightGroups.sections },
+    { title: "Maximum aantal secties", violations: preflightGroups.count },
+    { title: "Functies binnen secties", violations: preflightGroups.features },
+    { title: "Boeking en agenda", violations: preflightGroups.booking },
+  ].filter((group) => group.violations.length > 0), [preflightGroups])
+
+  const getViolationKey = useCallback((violation: EntitlementViolation) => (
+    [violation.code, violation.sectionId ?? "website", violation.capability ?? "", violation.requiredPlan].join(":")
+  ), [])
+
+  useEffect(() => {
+    const nextKeys = new Set(entitlementResult.violations.map(getViolationKey))
+    const addedViolations = entitlementResult.violations.filter(
+      (violation) => !previousEntitlementViolationKeys.current.has(getViolationKey(violation)),
+    )
+    previousEntitlementViolationKeys.current = nextKeys
+
+    if (addedViolations.length === 0) return
+
+    const requiredPlan = highestRequiredPlan(addedViolations.map((violation) => violation.requiredPlan))
+    const labels = addedViolations.slice(0, 3).map((violation) => violation.label)
+    const extraCount = addedViolations.length - labels.length
+    const affectedLabel = `${labels.join(", ")}${extraCount > 0 ? ` en ${extraCount} meer` : ""}`
+
+    void logEntitlementMetric("entitlement.warning_shown", {
+      source: "editor_draft_change",
+      requiredPlan,
+      violationCodes: addedViolations.map((violation) => violation.code),
+    })
+
+    toast.warning(`${getPlanDisplayName(requiredPlan)}-functie toegevoegd`, {
+      description: `${affectedLabel}. Je kunt dit blijven instellen en bekijken, maar deze versie kan pas live na een upgrade of wanneer je de functie verwijdert.`,
+      duration: 8000,
+      action: {
+        label: "Bekijk abonnementen",
+        onClick: () => {
+          void logEntitlementMetric("entitlement.upgrade_clicked", {
+            source: "editor_toast",
+            requiredPlan,
+            violationCodes: addedViolations.map((violation) => violation.code),
+          })
+          router.push("/editor/account/billing")
+        },
+      },
+    })
+  }, [entitlementResult.violations, getViolationKey, router])
+
+  useEffect(() => {
+    setServerPublishViolations([])
+  }, [currentPlan, sections])
+
+  useEffect(() => {
+    if (activePreflightViolations.length === 0) setPublishPreflightOpen(false)
+  }, [activePreflightViolations.length])
 
   // Switch to canvas on mobile when a touch drag starts
   useEffect(() => {
@@ -302,6 +411,16 @@ export function EditorClient({ userId, currentPlan: _currentPlan }: EditorClient
     setIsRenamingWebsite(false)
 
     if (!response.ok) {
+      if (result?.code === "ENTITLEMENT_VIOLATIONS" && Array.isArray(result?.violations)) {
+        setServerPublishViolations(result.violations as EntitlementViolation[])
+        setPublishConfirmationOpen(false)
+        setPublishPreflightOpen(true)
+        setWebsiteMessage({
+          type: "error",
+          text: result?.error || "Deze versie bevat onderdelen uit een hoger abonnement.",
+        })
+        return
+      }
       setSaveState("error")
       setWebsiteMessage({ type: "error", text: result?.error || "Websitenaam kon niet worden opgeslagen." })
       return
@@ -426,9 +545,8 @@ export function EditorClient({ userId, currentPlan: _currentPlan }: EditorClient
     }
   }
 
-  const handlePublish = useCallback(async () => {
+  const performPublish = useCallback(async () => {
     if (!websiteId) return
-
     setIsSaving(true)
     setWebsiteMessage(null)
     const response = await fetch("/api/websites/publish", {
@@ -438,6 +556,7 @@ export function EditorClient({ userId, currentPlan: _currentPlan }: EditorClient
     })
     const result = await response.json().catch(() => ({}))
     setIsSaving(false)
+    setPublishConfirmationOpen(false)
 
     if (!response.ok) {
       setSaveState("error")
@@ -459,6 +578,15 @@ export function EditorClient({ userId, currentPlan: _currentPlan }: EditorClient
     setWebsiteMessage({ type: "success", text: "Deze website is live gezet. Opgeslagen wijzigingen zijn nu zichtbaar via de live link." })
     router.push("/editor")
   }, [router, setIsSaving, setSaveState, websiteId])
+
+  const handlePublish = useCallback(() => {
+    if (!websiteId) return
+    if (!canPublishDraft) {
+      setPublishPreflightOpen(true)
+      return
+    }
+    setPublishConfirmationOpen(true)
+  }, [canPublishDraft, websiteId])
 
   const handleLogout = useCallback(async () => {
     await fetch("/api/auth/logout", { method: "POST" }).catch(async () => {
@@ -571,6 +699,32 @@ export function EditorClient({ userId, currentPlan: _currentPlan }: EditorClient
     setMobilePanel(typeof window !== "undefined" && window.innerWidth < 768 ? "style" : "canvas")
   }
 
+  const handlePreflightLocation = (violation: EntitlementViolation) => {
+    setPublishPreflightOpen(false)
+    if (violation.sectionId) {
+      setSelectedSectionId(violation.sectionId)
+      setMobilePanel("style")
+      return
+    }
+    setMobilePanel("sections")
+  }
+
+  const handleDisablePreflightFeature = (violation: EntitlementViolation) => {
+    if (!violation.sectionId) return
+    const nextSections = sections.map((section) => {
+      if (section.id !== violation.sectionId) return section
+      if (section.type === "services" && violation.capability === "booking_system") {
+        return { ...section, data: { ...section.data, bookingSpaceEnabled: false } }
+      }
+      if (section.type === "request_form") {
+        return { ...section, data: { ...section.data, requestType: "contact" } }
+      }
+      return section
+    })
+    setPublishPreflightOpen(false)
+    void persistSections(nextSections)
+  }
+
   const addSectionAt = (type: SectionType, index: number) => {
     const tempId = `section-${Date.now()}`
     const newSection: Section = {
@@ -628,7 +782,7 @@ export function EditorClient({ userId, currentPlan: _currentPlan }: EditorClient
       : `https://${selectedWebsiteLiveUrl}`
     : ""
   const liveStatusDescription = selectedWebsite?.published
-    ? "Online: opgeslagen wijzigingen staan op de live site."
+    ? "Online: wijzigingen blijven als concept bewaard totdat je opnieuw live zet."
     : "Offline: wijzigingen zijn alleen zichtbaar in de editor."
   const saveStatusLabel =
     isSaving || saveState === "saving" ? "Wijzigingen opslaan..." : saveState === "error" ? "Niet opgeslagen" : "Wijzigingen opgeslagen"
@@ -673,6 +827,7 @@ export function EditorClient({ userId, currentPlan: _currentPlan }: EditorClient
             {isCreatingWebsite ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
             Nieuw
           </Button>
+          <TierBadge plan={currentPlan} prefix="Actief" className="border-primary/30 bg-primary/10 text-primary" />
           {selectedWebsite ? (
             <div className="ml-auto flex min-w-0 items-center gap-2 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-xs">
               <span
@@ -686,23 +841,35 @@ export function EditorClient({ userId, currentPlan: _currentPlan }: EditorClient
               <span className="shrink-0 font-medium text-foreground">{selectedWebsite.published ? "Live" : "Offline"}</span>
               <span className="hidden text-muted-foreground lg:inline">{liveStatusDescription}</span>
               {selectedWebsite.published ? (
-                <a
-                  href={selectedWebsiteLiveHref}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex min-w-0 items-center gap-1 rounded border border-border bg-background px-2 py-1 font-medium text-primary hover:bg-accent"
-                  title={selectedWebsiteLiveUrl}
-                >
-                  <Globe2 className="h-3.5 w-3.5 shrink-0 text-primary" />
-                  <span className="max-w-[28vw] truncate font-mono">
-                    {selectedWebsiteLiveUrl}
-                  </span>
-                  <ExternalLink className="h-3 w-3 shrink-0" />
-                </a>
+                <>
+                  <a
+                    href={selectedWebsiteLiveHref}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex min-w-0 items-center gap-1 rounded border border-border bg-background px-2 py-1 font-medium text-primary hover:bg-accent"
+                    title={selectedWebsiteLiveUrl}
+                  >
+                    <Globe2 className="h-3.5 w-3.5 shrink-0 text-primary" />
+                    <span className="max-w-[28vw] truncate font-mono">
+                      {selectedWebsiteLiveUrl}
+                    </span>
+                    <ExternalLink className="h-3 w-3 shrink-0" />
+                  </a>
+                  <Button type="button" size="xs" onClick={handlePublish} disabled={!websiteId || isSaving}>
+                    {canPublishDraft ? "Nieuwe versie live" : "Bekijk blokkades"}
+                  </Button>
+                </>
               ) : (
-                <Button type="button" size="xs" onClick={handlePublish} disabled={!websiteId || isSaving}>
-                  Live zetten
-                </Button>
+                <div className="flex items-center gap-1.5">
+                  <Button type="button" size="xs" disabled={!websiteId || isSaving || !canPublishDraft} onClick={handlePublish}>
+                    Live zetten
+                  </Button>
+                  {!canPublishDraft ? (
+                    <Button type="button" variant="outline" size="xs" onClick={() => setPublishPreflightOpen(true)}>
+                      Bekijk blokkades
+                    </Button>
+                  ) : null}
+                </div>
               )}
             </div>
           ) : null}
@@ -791,14 +958,27 @@ export function EditorClient({ userId, currentPlan: _currentPlan }: EditorClient
                 <Button
                   type="button"
                   size="default"
+                  variant={canPublishDraft ? "default" : "outline"}
                   className="h-11 px-3 text-xs"
                   onClick={handlePublish}
                   disabled={!websiteId || isSaving}
                   title={liveStatusDescription}
                 >
-                  Live zetten
+                  {canPublishDraft ? "Live zetten" : "Blokkades"}
                 </Button>
               )
+            ) : null}
+            {selectedWebsite?.published ? (
+              <Button
+                type="button"
+                size="default"
+                variant={canPublishDraft ? "default" : "outline"}
+                className="h-11 px-3 text-xs"
+                onClick={handlePublish}
+                disabled={!websiteId || isSaving}
+              >
+                {canPublishDraft ? "Live zetten" : "Blokkades"}
+              </Button>
             ) : null}
           </div>
         </div>
@@ -808,9 +988,62 @@ export function EditorClient({ userId, currentPlan: _currentPlan }: EditorClient
           </StatusMessage>
         ) : null}
       </div>
+      {isTierTestOverride ? (
+        <div className="border-b border-amber-500/40 bg-amber-400 px-3 py-1.5 text-center text-xs font-semibold text-amber-950" role="status">
+          Testmodus: {currentPlan}. Werkelijk abonnement: {realPlan}. Waarschuwingen en controles gebruiken tijdelijk het testabonnement.
+        </div>
+      ) : null}
+      {subscriptionNotice ? (
+        <div className="border-b border-warning/40 bg-warning/10 px-3 py-2 text-center text-xs font-medium text-foreground" role="status">
+          {subscriptionNotice}
+        </div>
+      ) : null}
+      {!entitlementResult.allowed ? (
+        <details className="group border-b border-amber-500/30 bg-amber-500/10 px-3 py-2 text-amber-950">
+          <summary className="mx-auto flex max-w-7xl cursor-pointer list-none items-center justify-between gap-3 text-xs">
+            <span className="flex min-w-0 items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span className="font-semibold">
+                {entitlementResult.violations.length} {entitlementResult.violations.length === 1 ? "onderdeel" : "onderdelen"} {publishEnforcementActive ? "blokkeren" : "overschrijden"} het huidige abonnement
+              </span>
+              <span className="hidden text-amber-900/80 sm:inline">
+                Bewerken en bekijken blijft mogelijk.
+              </span>
+            </span>
+            <span className="shrink-0 font-semibold group-open:hidden">Details bekijken</span>
+            <span className="hidden shrink-0 font-semibold group-open:inline">Details sluiten</span>
+          </summary>
+          <div className="mx-auto mt-3 max-w-7xl rounded-lg border border-amber-500/30 bg-background p-3 text-foreground shadow-sm">
+            <ul className="space-y-2 text-xs">
+              {entitlementResult.violations.map((violation) => (
+                <li key={getViolationKey(violation)} className="flex items-center justify-between gap-3 rounded-md bg-amber-500/5 px-3 py-2">
+                  <span className="min-w-0 truncate">{violation.label}</span>
+                  <TierBadge plan={violation.requiredPlan} prefix="Vereist" />
+                </li>
+              ))}
+            </ul>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-xs">
+              <span className="text-muted-foreground">
+                {publishEnforcementActive ? "Je concept wordt gewoon opgeslagen; alleen live zetten wordt tegengehouden." : `Uitrolmodus ${enforcementMode}: publicatie wordt nog niet geblokkeerd.`}
+              </span>
+              <a
+                href="/editor/account/billing"
+                onClick={() => void logEntitlementMetric("entitlement.upgrade_clicked", {
+                  source: "editor_persistent_summary",
+                  requiredPlan: entitlementResult.requiredPlan,
+                  violationCodes: entitlementResult.violations.map((violation) => violation.code),
+                })}
+                className="font-semibold text-primary underline-offset-4 hover:underline"
+              >
+                Bekijk abonnementen
+              </a>
+            </div>
+          </div>
+        </details>
+      ) : null}
       {/* Desktop layout: side-by-side panels */}
       <div className="hidden md:flex flex-1 overflow-hidden">
-        {!isPreview && <SectionsSelector userId={userId} />}
+        {!isPreview && <SectionsSelector userId={userId} currentPlan={currentPlan} />}
         <EditorCanvas
           sections={sections}
           setSections={persistSections}
@@ -839,6 +1072,7 @@ export function EditorClient({ userId, currentPlan: _currentPlan }: EditorClient
             websiteId={websiteId}
             businessId={businessId}
             businessCategory={businessCategory}
+            currentPlan={currentPlan}
             currentTheme={themeConfig}
             onThemeChange={setThemeConfig}
             onTemplateApplied={handleTemplateApplied}
@@ -854,6 +1088,7 @@ export function EditorClient({ userId, currentPlan: _currentPlan }: EditorClient
           {mobilePanel === "sections" && !isPreview && (
             <SectionsSelector
               userId={userId}
+              currentPlan={currentPlan}
               className="w-full h-full border-r-0"
               onSectionAdded={() => setMobilePanel("canvas")}
               onSectionAddRequest={handleSectionAddRequest}
@@ -889,6 +1124,7 @@ export function EditorClient({ userId, currentPlan: _currentPlan }: EditorClient
               websiteId={websiteId}
               businessId={businessId}
               businessCategory={businessCategory}
+              currentPlan={currentPlan}
               currentTheme={themeConfig}
               onThemeChange={setThemeConfig}
               onTemplateApplied={handleTemplateApplied}
@@ -911,6 +1147,7 @@ export function EditorClient({ userId, currentPlan: _currentPlan }: EditorClient
               websiteId={websiteId}
               businessId={businessId}
               businessCategory={businessCategory}
+              currentPlan={currentPlan}
               currentTheme={themeConfig}
               onThemeChange={setThemeConfig}
               onTemplateApplied={handleTemplateApplied}
@@ -1028,6 +1265,94 @@ export function EditorClient({ userId, currentPlan: _currentPlan }: EditorClient
           </nav>
         )}
       </div>
+
+      <AlertDialog open={publishPreflightOpen} onOpenChange={setPublishPreflightOpen}>
+        <AlertDialogContent className="max-h-[85vh] overflow-hidden sm:max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deze versie kan nog niet live</AlertDialogTitle>
+            <AlertDialogDescription>
+              Je concept blijft opgeslagen en volledig bewerkbaar. Los de onderstaande onderdelen op of kies een abonnement dat ze ondersteunt.
+              {isTierTestOverride ? ` Deze controle gebruikt tijdelijk het testabonnement ${currentPlan}.` : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="max-h-[55vh] space-y-4 overflow-y-auto pr-1">
+            {preflightGroupEntries.map((group) => (
+              <section key={group.title} className="space-y-2">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{group.title}</h3>
+                <div className="space-y-2">
+                  {group.violations.map((violation) => {
+                    const canDisable = Boolean(
+                      violation.sectionId &&
+                      (violation.sectionType === "request_form" ||
+                        (violation.sectionType === "services" && violation.capability === "booking_system")),
+                    )
+                    return (
+                      <div key={getViolationKey(violation)} className="rounded-lg border border-border bg-muted/40 p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-foreground">{violation.label}</p>
+                            {violation.code === "section.limit_exceeded" ? (
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                Je gebruikt {violation.actualCount} secties; binnen {getPlanDisplayName(currentPlan)} zijn er maximaal {violation.allowedCount} toegestaan.
+                              </p>
+                            ) : null}
+                          </div>
+                          <TierBadge plan={violation.requiredPlan} prefix="Vereist" />
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <Button type="button" variant="outline" size="xs" onClick={() => handlePreflightLocation(violation)}>
+                            {violation.sectionId ? "Ga naar sectie" : "Bekijk secties"}
+                          </Button>
+                          {canDisable ? (
+                            <Button type="button" variant="outline" size="xs" onClick={() => handleDisablePreflightFeature(violation)}>
+                              Functie uitschakelen
+                            </Button>
+                          ) : null}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </section>
+            ))}
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Verder bewerken</AlertDialogCancel>
+            <Button asChild>
+              <a
+                href="/editor/account/billing"
+                onClick={() => void logEntitlementMetric("entitlement.upgrade_clicked", {
+                  source: "editor_preflight",
+                  requiredPlan: entitlementResult.requiredPlan,
+                  violationCodes: activePreflightViolations.map((violation) => violation.code),
+                })}
+              >Bekijk abonnementen</a>
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={publishConfirmationOpen} onOpenChange={setPublishConfirmationOpen}>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {selectedWebsite?.published ? "Nieuwe versie live zetten?" : "Website live zetten?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              De huidige opgeslagen conceptversie wordt gecontroleerd en daarna als één nieuwe live versie gepubliceerd.
+              {isTierTestOverride ? ` Testmodus ${currentPlan} is actief.` : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSaving}>Annuleren</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void performPublish()} disabled={isSaving}>
+              {isSaving ? "Live zetten..." : "Bevestigen en live zetten"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

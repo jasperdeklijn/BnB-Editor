@@ -9,6 +9,8 @@
     "test:entitlements": "node --test tests/entitlements.test.mjs",
     "test:subscriptions": "node --test tests/subscriptions.test.mjs",
     "test:snapshots": "node --test tests/website-snapshot.test.mjs",
+    "test:tier-switch": "node --test tests/tier-test-override.test.mjs",
+    "test:plan-enforcement": "node --test tests/plan-enforcement.test.mjs",
     "start": "next start"
   },
   "dependencies": {

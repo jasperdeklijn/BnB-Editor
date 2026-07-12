@@ -18,7 +18,7 @@ Function("module", "exports", "require", compiled.outputText)(module, module.exp
   throw new Error(`Unexpected runtime dependency: ${specifier}`)
 })
 
-const { resolveEffectivePlan } = module.exports
+const { getSubscriptionAccessNotice, resolveEffectivePlan } = module.exports
 const now = new Date("2026-07-12T12:00:00.000Z")
 const record = (status, overrides = {}) => ({
   id: "sub-1",
@@ -62,4 +62,15 @@ test("canceled subscriptions retain access only through their paid-through date"
     resolveEffectivePlan(record("canceled", { current_period_end: "2026-07-01T00:00:00.000Z" }), now).planId,
     "bronze",
   )
+})
+
+test("downgrade states explain live-version preservation and runtime blocking", () => {
+  const resolved = {
+    userId: "user-1",
+    record: record("past_due"),
+    ...resolveEffectivePlan(record("past_due"), now),
+  }
+  const notice = getSubscriptionAccessNotice(resolved)
+  assert.match(notice, /live versie blijft online/)
+  assert.match(notice, /runtime-acties/)
 })

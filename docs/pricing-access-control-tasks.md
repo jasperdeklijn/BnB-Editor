@@ -11,13 +11,13 @@ Publishing is the hard boundary: a user cannot put a new website version live wh
 - [x] Task 1 - Create a shared entitlement model
 - [x] Task 2 - Establish a real subscription source
 - [x] Task 3 - Separate draft content from the live version
-- [ ] Task 4 - Add a temporary development tier switch
-- [ ] Task 5 - Show tier ownership throughout the editor
-- [ ] Task 6 - Add immediate, non-blocking upgrade warnings
-- [ ] Task 7 - Build a publish preflight experience
-- [ ] Task 8 - Enforce entitlements in the publish API
-- [ ] Task 9 - Protect higher-tier runtime actions
-- [ ] Task 10 - Cover downgrade, templates, and race conditions
+- [x] Task 4 - Add a temporary development tier switch
+- [x] Task 5 - Show tier ownership throughout the editor
+- [x] Task 6 - Add immediate, non-blocking upgrade warnings
+- [x] Task 7 - Build a publish preflight experience
+- [x] Task 8 - Enforce entitlements in the publish API
+- [x] Task 9 - Protect higher-tier runtime actions
+- [x] Task 10 - Cover downgrade, templates, and race conditions
 - [ ] Task 11 - Verification and rollout
 
 ## Product rules
@@ -118,6 +118,8 @@ Done when:
 
 Add a compact test control to the editor that lets a developer switch the effective tier between `Bronze`, `Silver`, and `Gold` without changing subscription records. The selected test tier should immediately refresh badges, warnings, section-count limits, publish preflight results, and preview behavior.
 
+Implemented approach: development renders a `Testabonnement` selector backed by a signed, HTTP-only, eight-hour cookie. Selecting `Werkelijk abonnement` removes the override. Production rejects and hides the override even if a browser sends a forged cookie or the test environment flag is present.
+
 Recommended UI:
 
 - Place a small `Testabonnement` control in the editor header, developer panel, or account menu.
@@ -148,6 +150,8 @@ Done when:
 
 Pass the resolved current plan and entitlement metadata into the shared editor shell. Keep all section cards selectable and draggable, but add a persistent `Silver` or `Gold` badge to higher-tier cards. Show the same badge and a compact explanation in the selected section editor when the section exceeds the user's plan.
 
+Implemented surfaces: active-plan badge and test banner in the shared editor header, plan badges in desktop/mobile section selectors, required-plan status in the selected-section editor, Silver labels on advanced request types, and a Gold label/warning on Services booking controls.
+
 For mixed-tier sections, mark the individual controls instead of incorrectly marking the whole section. Examples include Silver request delivery and Gold booking controls inside Services or request forms.
 
 Done when:
@@ -160,6 +164,8 @@ Done when:
 ## Task 6 - Add immediate, non-blocking upgrade warnings
 
 When a user adds a higher-tier section, exceeds the section-count limit, enables a higher-tier control, or applies a template containing restricted features, show a shared warning. The warning should name what was added, which plan is required, state that draft editing/preview remains available, and link to the billing upgrade surface.
+
+Implemented approach: `EditorClient` validates the complete in-memory draft after every section or effective-plan change. Newly introduced violations produce one shared Silver/Gold toast with the affected items and an upgrade action. A persistent expandable summary lists every current blocker, its required plan, and a billing link while explicitly confirming that draft saving and preview remain available.
 
 Also show a persistent summary banner while the draft has violations so a dismissed toast does not remove the only warning. The banner should show the number of blockers and open the full preflight list.
 
@@ -177,6 +183,8 @@ Done when:
 ## Task 7 - Build a publish preflight experience
 
 Run the shared entitlement validator whenever the draft or current plan changes. Keep `Live zetten` visible. If blockers exist, present it as unavailable with nearby explanatory text and let the user open a detailed preflight dialog.
+
+Implemented approach: every editor publish entry point checks the current in-memory entitlement result before making an API request. Blocked drafts open a grouped preflight dialog; compliant drafts open a final publish confirmation. The dialog links to affected sections, can safely disable supported nested features, opens the section list for count problems, and links to the billing comparison.
 
 The dialog should group blockers into:
 
@@ -198,6 +206,8 @@ Done when:
 
 Extend `app/api/websites/publish/route.ts` or introduce a dedicated publish service that loads the authenticated user's active plan and the complete server-side draft, validates it, and refuses promotion when violations exist. Return a machine-readable error payload and an appropriate conflict/validation status for the editor and domain dashboard to render.
 
+Implemented approach: the authenticated publish route resolves the real/test-effective plan on the server, builds the complete draft snapshot from database records, and validates that snapshot before checking or changing live state. Entitlement failures return HTTP `422` with code `ENTITLEMENT_VIOLATIONS`, the current/required plan, and structured violations. Editor and domain-dashboard publish surfaces render this shared response. Unpublish remains unconditional for the website owner.
+
 Apply this server-side preflight to every route that can make or replace live content, including the editor publish action and the `/editor/domains` live toggle. Keep unpublish behavior available regardless of draft compliance.
 
 Record successful and rejected publish attempts in the existing audit log, including plan, required plan, and violation codes without storing sensitive form content.
@@ -213,6 +223,8 @@ Done when:
 
 Publishing validation protects page versions, but feature endpoints must also enforce entitlements independently. Add server-side checks to email delivery, quote/appointment request handling, WhatsApp configuration where applicable, calendar/availability mutations, booking creation, confirmation delivery, and booking management routes.
 
+Implemented policy: Bronze contact forms may store requests but require Silver for notification email. Quote, appointment, and WhatsApp request modes require Silver. Silver appointment requests do not create Gold calendar records. Booking requests, calendar-entry mutations, availability mutations, and booking management require Gold. Editor previews simulate success locally and never call runtime endpoints.
+
 Clearly separate editor simulation from real public behavior. A preview must never become a back door for sending emails or creating appointments on a lower plan.
 
 Done when:
@@ -226,6 +238,8 @@ Done when:
 
 Define behavior for users who downgrade while a higher-tier version is live. Recommended approach: preserve the current live version during a communicated grace period, immediately prevent publishing new non-compliant drafts, and disable new paid runtime actions after the subscription entitlement ends. Show a persistent account/editor warning with the deadline and remediation choices.
 
+Implemented policy and concurrency model: canceled subscriptions retain their stored tier through the paid-through date and then fall back to Bronze; past-due and expired subscriptions fall back immediately. Existing live snapshots remain online, while new non-compliant publications and paid runtime actions are blocked. Editor and billing surfaces show persistent Dutch status guidance. Every draft-affecting website, section, transition, business, service, and availability mutation changes a database `draft_version`. Publishing validates the snapshot and plan, then calls one transactional RPC that locks the user publication flow and subscription row, rechecks both versions, prevents two simultaneous live websites, and atomically promotes the snapshot or changes nothing.
+
 Validate templates before promotion, not before preview. Revalidate inside the publish transaction so a plan change, simultaneous edit, or stale browser preflight cannot race past enforcement.
 
 Done when:
@@ -238,6 +252,19 @@ Done when:
 ## Task 11 - Verification and rollout
 
 Add automated tests for the entitlement engine, publish API, protected runtime endpoints, and draft/live isolation. Add end-to-end coverage for Bronze, Silver, and Gold on desktop and mobile, including direct API bypass attempts.
+
+Implemented rollout foundation: `PLAN_ENFORCEMENT_MODE` supports `off`, `warn`, and fail-closed `enforce`; warning, upgrade-click, publish-denial, and publish-success audit events provide lightweight metrics; automated policy tests cover tier rules, runtime request mapping, subscription/downgrade behavior, snapshot isolation, test-switch security, and enforcement-mode rollback. The migration sequence, acceptance matrix, direct-bypass checks, metrics, and emergency rollback are maintained in `docs/pricing-entitlements-rollout.md`.
+
+Current verification status:
+
+- [x] Entitlement, runtime mapping, subscription, downgrade, snapshot, tier-switch, and enforcement-mode tests pass.
+- [x] `npx tsc --noEmit` passes.
+- [x] Full `npm run lint` passes.
+- [x] Production `npm run build` passes.
+- [x] Migration order, staged rollout, metrics, acceptance matrix, and emergency rollback are documented.
+- [ ] Apply the three entitlement/live-snapshot migrations to the target Supabase environment.
+- [ ] Complete the desktop/mobile tier matrix and direct API bypass checks against that migrated environment.
+- [ ] Confirm editor/domain-dashboard parity and unchanged public output after a rejected publish in the live browser.
 
 Roll out behind a feature flag if existing customers or websites need migration. Add lightweight metrics for warnings shown, preflight failures by violation code, upgrade clicks, successful publishes, and repeated blockers.
 
@@ -263,3 +290,53 @@ Done when:
 9. Task 11: full verification and rollout.
 
 Do not enable hard publish enforcement before Tasks 1-3 are complete; without a real plan source and a draft/live boundary, the UI could claim a version is blocked while edits still leak onto the public website.
+
+## Production cleanup checklist for the temporary tier switch
+
+The tier switch is already hard-disabled when `NODE_ENV === "production"`. Use this checklist only when the temporary testing feature should be removed from the repository entirely. Keep the normal `currentPlan` entitlement wiring and all Silver/Gold badges; those are production features, not test code.
+
+### Delete these files completely
+
+- [ ] Delete `lib/tier-test-override.ts` (signed cookie creation, validation, and environment checks).
+- [ ] Delete `app/api/dev/tier-override/route.ts` (development-only override endpoint).
+- [ ] Delete `components/editor/tier-test-switch.tsx` (the `Testabonnement` selector).
+- [ ] Delete `tests/tier-test-override.test.mjs` (override security tests).
+
+### Remove test-tier wiring from shared files
+
+- [ ] In `app/editor/page.tsx`, remove the `cookies` import and the import from `lib/tier-test-override.ts`.
+- [ ] In `app/editor/page.tsx`, remove `testPlan` and pass only `currentPlan={subscription.planId}` to `EditorClient`.
+- [ ] In `app/editor/page.tsx`, remove the `realPlan` and `isTierTestOverride` props.
+- [ ] In `components/editor/editor-client.tsx`, remove the `realPlan` and `isTierTestOverride` props and keep `currentPlan`.
+- [ ] In `components/editor/editor-client.tsx`, remove the yellow `Testmodus` banner.
+- [ ] In `app/editor/account/billing/page.tsx`, remove the cookie/test-override imports and the `tierTestSwitchEnabled`, `effectivePlan`, and `isTierTestOverride` props.
+- [ ] In `components/billing/billing-client.tsx`, remove the `TierTestSwitch` import, its three test props, and the `Abonnement testen` card.
+- [ ] In `app/api/websites/publish/route.ts`, remove the `cookies` and `readTierTestPlan` imports.
+- [ ] In `app/api/websites/publish/route.ts`, remove `testPlan` and `effectivePlan`; use `subscription.planId` directly for entitlement checks and audit metadata.
+- [ ] In `app/api/websites/publish/route.ts`, restore the audit actions to only `website.published` and `website.unpublished` and remove the `realPlan` and `testMode` metadata fields.
+- [ ] In `lib/audit-log.ts`, remove `website.published.test` and `website.unpublished.test` from `AuditAction`.
+- [ ] In `package.json`, remove the `test:tier-switch` script.
+
+### Remove optional environment configuration
+
+- [ ] Remove `ENABLE_TIER_TEST_SWITCH` from local, preview, CI, and hosting environment settings.
+- [ ] Remove `TIER_TEST_SWITCH_SECRET` from local, preview, CI, and hosting environment settings.
+- [ ] Optionally expire the old `flexpagina-tier-test` cookie once during deployment. Production already ignores it, so this is browser cleanup rather than a security requirement.
+
+### Keep these production tier features
+
+- [ ] Keep `currentPlan` on `EditorClient`, `SectionsSelector`, `EditorInspector`, `SelectionEditor`, and section-specific editor props.
+- [ ] Keep `components/editor/tier-badge.tsx`.
+- [ ] Keep section-level Silver/Gold badges and explanations.
+- [ ] Keep Silver labels on advanced request-form modes.
+- [ ] Keep the Gold label and warning on Services booking controls.
+- [ ] Keep `lib/entitlements.ts`, the database subscription resolver, publish validation, and all non-test entitlement tests.
+
+### Verify after removal
+
+- [ ] Search for leftovers with `rg -n "tier-test|TierTest|tierTest|testPlan|isTierTest|TIER_TEST|ENABLE_TIER|published\\.test|unpublished\\.test|Testabonnement|Testmodus" app components lib tests package.json`.
+- [ ] Run `npm run test:entitlements`.
+- [ ] Run `npm run test:subscriptions`.
+- [ ] Run `npm run test:snapshots`.
+- [ ] Run `npx tsc --noEmit`.
+- [ ] Run the relevant lint command and confirm the editor uses the database-backed subscription everywhere.

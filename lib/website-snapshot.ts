@@ -53,6 +53,7 @@ export interface SnapshotAvailabilityWindow {
 export interface WebsiteLiveSnapshot {
   version: typeof WEBSITE_SNAPSHOT_VERSION
   publishedAt: string
+  draftVersion: string
   website: {
     id: string
     userId: string
@@ -83,6 +84,7 @@ export function isWebsiteLiveSnapshot(value: unknown): value is WebsiteLiveSnaps
   const snapshot = value as Partial<WebsiteLiveSnapshot>
   return (
     snapshot.version === WEBSITE_SNAPSHOT_VERSION &&
+    typeof snapshot.draftVersion === "string" &&
     Boolean(snapshot.website?.id) &&
     Array.isArray(snapshot.sections) &&
     Array.isArray(snapshot.transitions) &&
@@ -99,7 +101,7 @@ export async function buildWebsiteLiveSnapshot({
 }: BuildSnapshotOptions): Promise<WebsiteLiveSnapshot> {
   const { data: website, error: websiteError } = await supabase
     .from("websites")
-    .select("id, user_id, business_id, title, slug, custom_domain, seo, theme_config")
+    .select("id, user_id, business_id, title, slug, custom_domain, seo, theme_config, draft_version")
     .eq("id", websiteId)
     .eq("user_id", userId)
     .single()
@@ -193,6 +195,7 @@ export async function buildWebsiteLiveSnapshot({
   return {
     version: WEBSITE_SNAPSHOT_VERSION,
     publishedAt: new Date().toISOString(),
+    draftVersion: website.draft_version,
     website: {
       id: website.id,
       userId: website.user_id,

@@ -909,7 +909,9 @@ function ServicesBookingSpace({
           {status === "success" ? (
             <div className="flex min-h-64 flex-col items-center justify-center gap-3 text-center">
               <CheckCircle className="h-10 w-10 text-primary" />
-              <p className="font-semibold text-foreground">{settings.successText}</p>
+              <p className="font-semibold text-foreground">
+                {isPreview ? "Preview geslaagd — er is geen boeking of afspraak aangemaakt." : settings.successText}
+              </p>
             </div>
           ) : (
             <form onSubmit={submit} className="space-y-4">

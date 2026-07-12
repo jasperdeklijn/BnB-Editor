@@ -35,6 +35,9 @@ import type { Section, SectionStyles, SectionType, Transition } from "@/lib/type
 import { getSectionLayoutOptions, normalizeSectionLayout, type SectionLayout } from "@/lib/section-layouts"
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
+import type { PlanId } from "@/lib/types/pricing"
+import { getMinimumPlanForSection, planMeetsRequirement } from "@/lib/entitlements"
+import { TierBadge } from "@/components/editor/tier-badge"
 
 interface SelectionEditorProps {
   selectedSection: Section | null
@@ -49,6 +52,7 @@ interface SelectionEditorProps {
   websiteId?: string | null
   businessId?: string | null
   businessCategory?: BusinessCategory | null
+  currentPlan: PlanId
 }
 
 type StyleControl = keyof Pick<SectionStyles, "fontFamily" | "backgroundColor" | "textColor" | "backgroundImage" | "logo">
@@ -147,6 +151,7 @@ export function SelectionEditor({
   websiteId,
   businessId,
   businessCategory,
+  currentPlan,
 }: SelectionEditorProps) {
   const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null)
   const [layoutDialogOpen, setLayoutDialogOpen] = useState(false)
@@ -329,6 +334,8 @@ export function SelectionEditor({
 
   const selectedLayout = normalizeSectionLayout((selectedSection.data as any).layout)
   const selectedSectionLabel = getSectionDefinition(selectedSection.type)?.label ?? selectedSection.type.replace("_", " ")
+  const selectedSectionPlan = getMinimumPlanForSection(selectedSection.type)
+  const selectedSectionExceedsPlan = !planMeetsRequirement(currentPlan, selectedSectionPlan)
   const layoutOptions = getSectionLayoutOptions(selectedSection.type)
   const selectedLayoutOption = layoutOptions.find((option) => option.value === selectedLayout) ?? layoutOptions[0]
   const LayoutIcon = getLayoutIcon(selectedLayout)
@@ -368,6 +375,7 @@ export function SelectionEditor({
               <Type className="h-4 w-4" />
             </div>
             <h2 className="text-lg font-semibold">{selectedSectionLabel}</h2>
+            {selectedSectionPlan !== "bronze" ? <TierBadge plan={selectedSectionPlan} /> : null}
           </div>
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -398,6 +406,11 @@ export function SelectionEditor({
           </AlertDialog>
         </div>
         <p className="text-xs text-muted-foreground">Pas de tekst en het uiterlijk van dit blok aan.</p>
+        {selectedSectionExceedsPlan ? (
+          <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-900">
+            Deze sectie hoort bij {selectedSectionPlan}. Je kunt haar volledig instellen en bekijken, maar deze versie kan pas live na een upgrade of wanneer je de sectie verwijdert.
+          </div>
+        ) : null}
       </div>
 
       <div className="space-y-4">
@@ -522,6 +535,7 @@ export function SelectionEditor({
           websiteId={websiteId}
           businessId={businessId}
           businessCategory={businessCategory}
+          currentPlan={currentPlan}
           sectionTargetOptions={sectionTargetOptions}
           updateField={updateField}
           updateFields={updateFields}

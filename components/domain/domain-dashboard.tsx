@@ -31,6 +31,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { PLATFORM_DOMAIN } from "@/lib/platform"
+import type { EntitlementViolation } from "@/lib/entitlements"
+import { TierBadge } from "@/components/editor/tier-badge"
 
 type DomainWebsite = {
   id: string
@@ -122,6 +124,7 @@ export function DomainDashboard({ websites }: DomainDashboardProps) {
   const [verifyMessage, setVerifyMessage] = useState("")
   const [message, setMessage] = useState<Message>(null)
   const [isPublishing, setIsPublishing] = useState(false)
+  const [publishViolations, setPublishViolations] = useState<EntitlementViolation[]>([])
   const [isPending, startTransition] = useTransition()
   const { setIsSaving, setSaveState } = useEditorLayout()
 
@@ -149,6 +152,7 @@ export function DomainDashboard({ websites }: DomainDashboardProps) {
     setVerifyStatus("idle")
     setVerifyMessage("")
     setMessage(null)
+    setPublishViolations([])
   }
 
   const saveDomain = async (domain: string | null) => {
@@ -219,6 +223,7 @@ export function DomainDashboard({ websites }: DomainDashboardProps) {
     setIsPublishing(true)
     setIsSaving(true)
     setMessage(null)
+    setPublishViolations([])
 
     const response = await fetch("/api/websites/publish", {
       method: "POST",
@@ -231,7 +236,11 @@ export function DomainDashboard({ websites }: DomainDashboardProps) {
 
     if (!response.ok) {
       setIsSaving(false)
-      setSaveState("error")
+      if (result?.code === "ENTITLEMENT_VIOLATIONS" && Array.isArray(result?.violations)) {
+        setPublishViolations(result.violations as EntitlementViolation[])
+      } else {
+        setSaveState("error")
+      }
       setMessage({ type: "error", text: result?.error || "Live status kon niet worden bijgewerkt." })
       return
     }
@@ -246,6 +255,7 @@ export function DomainDashboard({ websites }: DomainDashboardProps) {
       type: "success",
       text: published ? "Deze website staat nu live." : "Deze website staat niet meer live.",
     })
+    setPublishViolations([])
     setIsSaving(false)
   }
 
@@ -321,6 +331,32 @@ export function DomainDashboard({ websites }: DomainDashboardProps) {
                 />
               </div>
             </div>
+            {publishViolations.length > 0 ? (
+              <div className="space-y-3 rounded-md border border-warning/30 bg-warning/10 p-3">
+                <div>
+                  <p className="text-xs font-semibold text-foreground">
+                    {publishViolations.length} {publishViolations.length === 1 ? "onderdeel blokkeert" : "onderdelen blokkeren"} live publiceren
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">Pas het concept aan in de editor of kies een hoger abonnement.</p>
+                </div>
+                <ul className="space-y-2">
+                  {publishViolations.map((violation, index) => (
+                    <li key={`${violation.code}-${violation.sectionId ?? "website"}-${violation.capability ?? index}`} className="flex items-center justify-between gap-3 rounded bg-background px-2.5 py-2 text-xs">
+                      <span className="min-w-0 truncate">{violation.label}</span>
+                      <TierBadge plan={violation.requiredPlan} prefix="Vereist" />
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex flex-wrap gap-2">
+                  <Button asChild size="xs" variant="outline">
+                    <a href={`/editor?websiteId=${encodeURIComponent(selectedWebsite.id)}`}>Open in editor</a>
+                  </Button>
+                  <Button asChild size="xs">
+                    <a href="/editor/account/billing">Bekijk abonnementen</a>
+                  </Button>
+                </div>
+              </div>
+            ) : null}
           </UrlCard>
         </div>
       </section>

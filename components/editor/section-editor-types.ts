@@ -1,6 +1,7 @@
 import type { BusinessCategory } from "@/lib/business/categories"
 import type { Section, Transition } from "@/lib/types"
 import type { ReactNode } from "react"
+import type { PlanId } from "@/lib/types/pricing"
 
 export interface SectionTargetOption {
   label: string
@@ -14,6 +15,7 @@ export interface SectionEditorProps {
   websiteId?: string | null
   businessId?: string | null
   businessCategory?: BusinessCategory | null
+  currentPlan: PlanId
   sectionTargetOptions: SectionTargetOption[]
   updateField: (field: string, value: any) => void
   updateFields: (values: Record<string, unknown>) => void

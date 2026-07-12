@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from "next/server"
 import nodemailer from "nodemailer"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { isWebsiteLiveSnapshot } from "@/lib/website-snapshot"
+import {
+  getMinimumPlanForCapability,
+  getRequestEmailCapability,
+  getRequestSubmissionCapability,
+  planMeetsRequirement,
+} from "@/lib/entitlements"
+import { getUserSubscription } from "@/lib/subscriptions"
+import { getPlanEnforcementMode, shouldEnforcePlanEntitlements } from "@/lib/plan-enforcement"
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
 import { PLATFORM_EMAILS } from "@/lib/platform"
 
@@ -325,6 +333,44 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (!context.userId) {
+      logRejectedRequest("website_owner_missing", request, { websiteId })
+      return NextResponse.json({ error: GENERIC_ERROR }, { status: 404 })
+    }
+
+    const subscription = await getUserSubscription(context.supabase, context.userId)
+    const enforcementMode = getPlanEnforcementMode()
+    const submissionCapability = getRequestSubmissionCapability(requestType)
+    const submissionRequiredPlan = getMinimumPlanForCapability(submissionCapability)
+    if (!planMeetsRequirement(subscription.planId, submissionRequiredPlan) && shouldEnforcePlanEntitlements(enforcementMode)) {
+      logRejectedRequest("runtime_entitlement_required", request, {
+        websiteId,
+        requestType,
+        capability: submissionCapability,
+        currentPlan: subscription.planId,
+        requiredPlan: submissionRequiredPlan,
+      })
+      return NextResponse.json(
+        {
+          error: `Deze functie is niet beschikbaar binnen het huidige abonnement van deze website.`,
+          code: "RUNTIME_ENTITLEMENT_REQUIRED",
+          capability: submissionCapability,
+          currentPlan: subscription.planId,
+          requiredPlan: submissionRequiredPlan,
+        },
+        { status: 403 },
+      )
+    }
+
+    const emailCapability = getRequestEmailCapability(requestType)
+    const canSendEmail = emailCapability
+      ? !shouldEnforcePlanEntitlements(enforcementMode) || planMeetsRequirement(subscription.planId, getMinimumPlanForCapability(emailCapability))
+      : false
+    const canCreateCalendarEntry = !shouldEnforcePlanEntitlements(enforcementMode) || planMeetsRequirement(
+        subscription.planId,
+        getMinimumPlanForCapability("booking_management"),
+      )
+
     let calendarServiceId: string | null = null
 
     if (requestedServiceId && context.businessId && context.liveServiceIds.includes(requestedServiceId)) {
@@ -379,6 +425,7 @@ export async function POST(request: NextRequest) {
       context.businessId &&
       contactRequest?.id &&
       calendarDate &&
+      canCreateCalendarEntry &&
       (requestType === "appointment" || requestType === "booking_request")
     ) {
       const { error: calendarError } = await context.supabase.from("calendar_entries").insert({
@@ -417,7 +464,7 @@ export async function POST(request: NextRequest) {
     const transporter = createTransporter()
     let emailSent = false
 
-    if (transporter) {
+    if (transporter && canSendEmail) {
       const requestLabel = REQUEST_LABELS[requestType]
       try {
         await transporter.sendMail({
@@ -445,7 +492,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true, emailSent, calendarEntryCreated })
+    return NextResponse.json({
+      success: true,
+      emailSent,
+      calendarEntryCreated,
+      delivery: {
+        stored: true,
+        emailAvailable: canSendEmail,
+        calendarAvailable: canCreateCalendarEntry,
+      },
+    })
   } catch (error) {
     console.error("[requests] Error:", error)
     return NextResponse.json(

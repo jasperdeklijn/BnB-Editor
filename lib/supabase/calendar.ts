@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { assertCurrentUserRuntimeEntitlement } from "@/lib/runtime-entitlements"
 
 export type CalendarEntryType = "appointment" | "booking" | "blocked" | "note"
 export type CalendarEntryStatus = "pending" | "confirmed" | "cancelled" | "completed" | "blocked"
@@ -293,6 +294,7 @@ export async function createCalendarEntry(
   input: CalendarEntryInput,
 ): Promise<CalendarEntry> {
   const supabase = await createClient()
+  await assertCurrentUserRuntimeEntitlement(supabase, "booking_management")
   await assertOwnedBusiness(businessId, supabase)
   await assertLinkedServiceBelongsToBusiness(input.service_id, businessId, supabase)
   await assertLinkedContactRequestBelongsToBusiness(input.contact_request_id, businessId, supabase)
@@ -331,6 +333,7 @@ export async function updateCalendarEntry(
   updates: CalendarEntryUpdate,
 ): Promise<CalendarEntry> {
   const supabase = await createClient()
+  await assertCurrentUserRuntimeEntitlement(supabase, "booking_management")
   const existing = await getOwnedCalendarEntryRow(entryId, supabase)
 
   const nextServiceId = updates.service_id !== undefined ? updates.service_id : existing.service_id
@@ -360,6 +363,7 @@ export async function updateCalendarEntryStatus(
 
 export async function deleteCalendarEntry(entryId: string): Promise<void> {
   const supabase = await createClient()
+  await assertCurrentUserRuntimeEntitlement(supabase, "booking_management")
   await getOwnedCalendarEntryRow(entryId, supabase)
 
   const { error } = await supabase.from("calendar_entries").delete().eq("id", entryId)
@@ -388,6 +392,7 @@ export async function createCalendarAvailabilityWindow(
   input: CalendarAvailabilityWindowInput,
 ): Promise<CalendarAvailabilityWindow> {
   const supabase = await createClient()
+  await assertCurrentUserRuntimeEntitlement(supabase, "availability_calendar")
   await assertOwnedBusiness(businessId, supabase)
   await assertLinkedServiceBelongsToBusiness(input.service_id, businessId, supabase)
 
@@ -413,6 +418,7 @@ export async function createCalendarAvailabilityWindow(
 
 export async function deleteCalendarAvailabilityWindow(windowId: string): Promise<void> {
   const supabase = await createClient()
+  await assertCurrentUserRuntimeEntitlement(supabase, "availability_calendar")
   const { data, error } = await supabase
     .from("calendar_availability_windows")
     .select("business_id")

@@ -135,6 +135,22 @@ export function getMinimumPlanForCapability(capability: EntitlementCapability): 
   return CAPABILITY_MINIMUM_PLAN[capability]
 }
 
+export function getRequestSubmissionCapability(requestType: string): EntitlementCapability {
+  if (requestType === "quote") return "email_quote_requests"
+  if (requestType === "appointment") return "email_appointment_requests"
+  if (requestType === "whatsapp") return "whatsapp_integration"
+  if (requestType === "booking_request") return "booking_system"
+  return "contact_form"
+}
+
+export function getRequestEmailCapability(requestType: string): EntitlementCapability | null {
+  if (requestType === "contact") return "email_contact_requests"
+  if (requestType === "quote") return "email_quote_requests"
+  if (requestType === "appointment") return "email_appointment_requests"
+  if (requestType === "booking_request") return "booking_system"
+  return null
+}
+
 export function getSectionLimit(plan: PlanId): number | null {
   return SECTION_LIMIT_BY_PLAN[plan]
 }

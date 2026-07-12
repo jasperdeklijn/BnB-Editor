@@ -116,6 +116,29 @@ export async function getUserSubscription(
   }
 }
 
+export function getSubscriptionAccessNotice(resolved: ResolvedSubscription): string | null {
+  const paidThrough = resolved.record?.current_period_end
+    ? new Date(resolved.record.current_period_end)
+    : null
+  const formattedPaidThrough = paidThrough && !Number.isNaN(paidThrough.getTime())
+    ? paidThrough.toLocaleDateString("nl-NL", { year: "numeric", month: "long", day: "numeric" })
+    : null
+
+  if (resolved.status === "canceled" && resolved.source === "subscription" && formattedPaidThrough) {
+    return `Je abonnement is opgezegd. De huidige rechten blijven actief tot en met ${formattedPaidThrough}. Daarna gelden Bronze-rechten. De bestaande live versie blijft online, maar hogere-tier functies en nieuwe niet-passende publicaties worden geblokkeerd.`
+  }
+
+  if (resolved.status === "past_due") {
+    return "De betaling is achterstallig. Daarom gelden nu Bronze-rechten. De bestaande live versie blijft online, maar hogere-tier runtime-acties en nieuwe niet-passende publicaties zijn geblokkeerd."
+  }
+
+  if (resolved.status === "expired" || (resolved.status === "canceled" && resolved.source === "bronze_fallback")) {
+    return "Het eerdere abonnement is niet meer actief. Daarom gelden nu Bronze-rechten. De bestaande live versie blijft online, maar hogere-tier runtime-acties en nieuwe niet-passende publicaties zijn geblokkeerd."
+  }
+
+  return null
+}
+
 export function toUserBillingData(resolved: ResolvedSubscription): UserBillingData {
   const plan = getPlanById(resolved.planId)
   const record = resolved.record
@@ -126,14 +149,12 @@ export function toUserBillingData(resolved: ResolvedSubscription): UserBillingDa
     storedPlan: resolved.storedPlanId,
     status: resolved.status,
     source: resolved.source,
+    accessNotice: getSubscriptionAccessNotice(resolved),
     currentPrice:
       resolved.source === "subscription" && record
         ? Number(record.current_price)
         : plan.monthlyPrice,
-    nextBillingDate:
-      resolved.source === "subscription" && record?.current_period_end
-        ? new Date(record.current_period_end)
-        : null,
+    nextBillingDate: record?.current_period_end ? new Date(record.current_period_end) : null,
     addons: { bookingAddon: false },
     invoices: [],
     createdAt: record ? new Date(record.created_at) : null,

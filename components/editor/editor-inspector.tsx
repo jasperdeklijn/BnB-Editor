@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import type { BusinessCategory } from "@/lib/business/categories"
 import type { Section, SectionStyles, Transition } from "@/lib/types"
 import type { ThemeConfig } from "@/lib/themes"
+import type { PlanId } from "@/lib/types/pricing"
 
 interface EditorInspectorProps {
   selectedSection: Section | null
@@ -22,6 +23,7 @@ interface EditorInspectorProps {
   websiteId: string | null
   businessId: string | null
   businessCategory?: BusinessCategory | null
+  currentPlan: PlanId
   currentTheme?: ThemeConfig | null
   onThemeChange: (config: ThemeConfig) => void
   onTemplateApplied: (websiteId?: string | null) => Promise<void> | void
@@ -43,6 +45,7 @@ export function EditorInspector({
   websiteId,
   businessId,
   businessCategory,
+  currentPlan,
   currentTheme,
   onThemeChange,
   onTemplateApplied,
@@ -64,6 +67,7 @@ export function EditorInspector({
       websiteId={websiteId}
       businessId={businessId}
       businessCategory={businessCategory}
+      currentPlan={currentPlan}
     />
   )
 

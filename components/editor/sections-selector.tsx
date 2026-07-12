@@ -15,6 +15,9 @@ import { selectableSectionDefinitions } from "@/components/editor/section-regist
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { createClient } from "@/lib/supabase/client"
 import { useTouchDrag } from "@/hooks/use-touch-drag"
+import type { PlanId } from "@/lib/types/pricing"
+import { getMinimumPlanForSection, planMeetsRequirement } from "@/lib/entitlements"
+import { TierBadge } from "@/components/editor/tier-badge"
 
 // ----- Sub-components so each draggable item can call the hook independently -----
 
@@ -28,10 +31,13 @@ interface SectionCardProps {
   onDragStart: (e: React.DragEvent, type: SectionType) => void
   onDragEnd: () => void
   onAddSection?: (type: SectionType) => void
+  currentPlan: PlanId
 }
 
-function SectionCard({ type, label, Icon, description, collapsed, isDragging, onDragStart, onDragEnd, onAddSection }: SectionCardProps) {
+function SectionCard({ type, label, Icon, description, collapsed, isDragging, onDragStart, onDragEnd, onAddSection, currentPlan }: SectionCardProps) {
   const { onTouchStart, onTouchMove, onTouchEnd } = useTouchDrag({ payload: { sectionType: type } })
+  const requiredPlan = getMinimumPlanForSection(type)
+  const isHigherTier = !planMeetsRequirement(currentPlan, requiredPlan)
   const handleClick = () => {
     if (typeof window === "undefined" || window.innerWidth >= 768) return
     onAddSection?.(type)
@@ -61,17 +67,26 @@ function SectionCard({ type, label, Icon, description, collapsed, isDragging, on
       className={`group relative flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:border-primary active:scale-95 select-none md:cursor-grab md:active:cursor-grabbing ${
         collapsed ? "justify-center px-2 py-3" : ""
       } ${isDragging ? "opacity-50 scale-95" : ""}`}
-      title={`${label}: ${description}`}
+      title={`${label}: ${description}${isHigherTier ? ` — vereist ${requiredPlan}` : ""}`}
     >
       <div className="flex-shrink-0 rounded-md bg-primary/10 p-2 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
         <Icon className="h-5 w-5" />
       </div>
       {!collapsed && (
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium">{label}</div>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-sm font-medium">{label}</span>
+            {requiredPlan !== "bronze" ? <TierBadge plan={requiredPlan} /> : null}
+          </div>
           <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
+          {isHigherTier ? <p className="mt-1 text-[10px] font-medium text-amber-800">Beschikbaar om te testen; vereist upgrade voor livegang.</p> : null}
         </div>
       )}
+      {collapsed && requiredPlan !== "bronze" ? (
+        <span className="absolute -right-1 -top-1 rounded-full bg-amber-500 px-1 text-[9px] font-bold text-white" aria-label={`${requiredPlan} abonnement`}>
+          {requiredPlan === "silver" ? "S" : "G"}
+        </span>
+      ) : null}
       <div
         className={`pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 transition-opacity group-hover:opacity-100 ${
           collapsed ? "hidden" : ""
@@ -122,9 +137,10 @@ interface SectionsSelectorProps {
   /** Called on mobile after a touch-drag drop so the parent can switch back to the canvas panel */
   onSectionAdded?: () => void
   onSectionAddRequest?: (type: SectionType) => void
+  currentPlan: PlanId
 }
 
-export function SectionsSelector({ className = "", userId, onSectionAdded, onSectionAddRequest }: SectionsSelectorProps) {
+export function SectionsSelector({ className = "", userId, onSectionAdded, onSectionAddRequest, currentPlan }: SectionsSelectorProps) {
   const [collapsed, setCollapsed] = useState(false)
   const [draggingType, setDraggingType] = useState<SectionType | null>(null)
   const [tab, setTab] = useState("sections")
@@ -309,6 +325,7 @@ export function SectionsSelector({ className = "", userId, onSectionAdded, onSec
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
                 onAddSection={onSectionAddRequest}
+                currentPlan={currentPlan}
               />
             ))}
           </div>

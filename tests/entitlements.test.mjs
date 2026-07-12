@@ -23,6 +23,8 @@ const {
   ENTITLEMENT_PLAN_ORDER,
   getMinimumPlanForCapability,
   getMinimumPlanForSection,
+  getRequestEmailCapability,
+  getRequestSubmissionCapability,
   getSectionCapabilities,
   inspectWebsiteEntitlements,
   planMeetsRequirement,
@@ -117,4 +119,14 @@ test("all standalone capability tiers are represented", () => {
   })
   assert.equal(result.requiredPlan, "gold")
   assert.equal(result.violations.length, 2)
+})
+
+test("public request types map to the correct runtime capability", () => {
+  assert.equal(getRequestSubmissionCapability("contact"), "contact_form")
+  assert.equal(getRequestSubmissionCapability("quote"), "email_quote_requests")
+  assert.equal(getRequestSubmissionCapability("appointment"), "email_appointment_requests")
+  assert.equal(getRequestSubmissionCapability("whatsapp"), "whatsapp_integration")
+  assert.equal(getRequestSubmissionCapability("booking_request"), "booking_system")
+  assert.equal(getRequestEmailCapability("contact"), "email_contact_requests")
+  assert.equal(getRequestEmailCapability("whatsapp"), null)
 })

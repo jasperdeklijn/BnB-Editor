@@ -8,14 +8,18 @@ import { InvoiceHistoryTable } from "@/components/billing/invoice-history-table"
 import { PlanComparisonTable } from "@/components/billing/plan-comparison-table"
 import { Card } from "@/components/ui/card"
 import { getPlanById } from "@/lib/pricing"
-import type { UserBillingData } from "@/lib/types/pricing"
+import type { PlanId, UserBillingData } from "@/lib/types/pricing"
+import { TierTestSwitch } from "@/components/editor/tier-test-switch"
 
 interface BillingClientProps {
   billingData: UserBillingData
   userId: string
+  tierTestSwitchEnabled: boolean
+  effectivePlan: PlanId
+  isTierTestOverride: boolean
 }
 
-export function BillingClient({ billingData, userId }: BillingClientProps) {
+export function BillingClient({ billingData, userId, tierTestSwitchEnabled, effectivePlan, isTierTestOverride }: BillingClientProps) {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -35,6 +39,23 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
 
   return (
     <div className="space-y-8 pb-20">
+      {tierTestSwitchEnabled ? (
+        <Card className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-5 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-amber-950">Abonnement testen</p>
+              <p className="mt-1 text-xs text-amber-900/80">
+                Simuleer tijdelijk een ander abonnement in de editor. Dit wijzigt je echte abonnement niet.
+              </p>
+            </div>
+            <TierTestSwitch
+              realPlan={billingData.currentPlan}
+              effectivePlan={effectivePlan}
+              isOverridden={isTierTestOverride}
+            />
+          </div>
+        </Card>
+      ) : null}
       <Card className="rounded-xl border border-border bg-secondary/70 p-8 shadow-sm animate-in fade-in duration-700">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -50,6 +71,11 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
         {billingData.source === "bronze_fallback" ? (
           <p className="mt-4 text-sm text-muted-foreground">
             Er is geen actief betaald abonnement gevonden. Daarom gelden voorlopig de Bronze-rechten.
+          </p>
+        ) : null}
+        {billingData.accessNotice ? (
+          <p className="mt-4 rounded-md border border-warning/30 bg-warning/10 p-3 text-sm text-foreground">
+            {billingData.accessNotice}
           </p>
         ) : null}
       </Card>

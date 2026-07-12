@@ -3,6 +3,10 @@ import { logAuditEvent } from "@/lib/audit-log"
 import { createClient } from "@/lib/supabase/server"
 import { getUserSubscription } from "@/lib/subscriptions"
 import { buildWebsiteLiveSnapshot } from "@/lib/website-snapshot"
+import { cookies } from "next/headers"
+import { readTierTestPlan } from "@/lib/tier-test-override"
+import { inspectWebsiteEntitlements } from "@/lib/entitlements"
+import { getPlanEnforcementMode, shouldEnforcePlanEntitlements } from "@/lib/plan-enforcement"
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -17,6 +21,9 @@ export async function POST(request: Request) {
   }
 
   const subscription = await getUserSubscription(supabase, user.id)
+  const testPlan = readTierTestPlan(await cookies())
+  const effectivePlan = testPlan ?? subscription.planId
+  const enforcementMode = getPlanEnforcementMode()
 
   const body = await request.json().catch(() => null)
   const websiteId = typeof body?.websiteId === "string" ? body.websiteId : null
@@ -51,17 +58,91 @@ export async function POST(request: Request) {
     await logAuditEvent({
       userId: user.id,
       websiteId,
-      action: "website.unpublished",
+      action: testPlan ? "website.unpublished.test" : "website.unpublished",
       metadata: {
         title: targetWebsite.title,
         slug: targetWebsite.slug,
         previousPublished: targetWebsite.published,
-        plan: subscription.planId,
+        plan: effectivePlan,
+        realPlan: subscription.planId,
+        testMode: Boolean(testPlan),
       },
       request,
     })
 
     return NextResponse.json({ success: true, websiteId, published: false })
+  }
+
+  let liveSnapshot
+  try {
+    liveSnapshot = await buildWebsiteLiveSnapshot({
+      supabase,
+      websiteId,
+      userId: user.id,
+      ownerEmail: user.email,
+    })
+  } catch (snapshotError) {
+    await logAuditEvent({
+      userId: user.id,
+      websiteId,
+      action: "website.publish_denied",
+      metadata: {
+        reason: "snapshot_build_failed",
+        plan: effectivePlan,
+        realPlan: subscription.planId,
+        testMode: Boolean(testPlan),
+      },
+      request,
+    })
+    return NextResponse.json(
+      {
+        error:
+          snapshotError instanceof Error
+            ? `De live versie kon niet worden opgebouwd: ${snapshotError.message}`
+            : "De live versie kon niet worden opgebouwd.",
+      },
+      { status: 500 },
+    )
+  }
+
+  const entitlementResult = inspectWebsiteEntitlements(effectivePlan, {
+    sections: liveSnapshot.sections,
+  })
+
+  if (!entitlementResult.allowed) {
+    await logAuditEvent({
+      userId: user.id,
+      websiteId,
+      action: "website.publish_denied",
+      metadata: {
+        title: targetWebsite.title,
+        slug: targetWebsite.slug,
+        previousPublished: targetWebsite.published,
+        plan: effectivePlan,
+        realPlan: subscription.planId,
+        testMode: Boolean(testPlan),
+        requiredPlan: entitlementResult.requiredPlan,
+        violationCodes: entitlementResult.violations.map((violation) => violation.code),
+        violationCapabilities: entitlementResult.violations
+          .map((violation) => violation.capability)
+          .filter(Boolean),
+        enforcementMode,
+      },
+      request,
+    })
+
+    if (shouldEnforcePlanEntitlements(enforcementMode)) {
+      return NextResponse.json(
+        {
+          error: "Deze conceptversie bevat onderdelen die niet binnen het huidige abonnement live mogen.",
+          code: "ENTITLEMENT_VIOLATIONS",
+          currentPlan: effectivePlan,
+          requiredPlan: entitlementResult.requiredPlan,
+          violations: entitlementResult.violations,
+        },
+        { status: 422 },
+      )
+    }
   }
 
   const { data: liveWebsite, error: liveError } = await supabase
@@ -77,6 +158,19 @@ export async function POST(request: Request) {
   }
 
   if (liveWebsite) {
+    await logAuditEvent({
+      userId: user.id,
+      websiteId,
+      action: "website.publish_denied",
+      metadata: {
+        reason: "another_website_is_live",
+        plan: effectivePlan,
+        realPlan: subscription.planId,
+        testMode: Boolean(testPlan),
+        conflictingWebsiteId: liveWebsite.id,
+      },
+      request,
+    })
     return NextResponse.json(
       {
         error: `Er is al een live website: ${liveWebsite.title || liveWebsite.slug}. Zet die eerst uit of wijzig welke website live moet zijn.`,
@@ -86,52 +180,60 @@ export async function POST(request: Request) {
     )
   }
 
-  let liveSnapshot
-  try {
-    liveSnapshot = await buildWebsiteLiveSnapshot({
-      supabase,
-      websiteId,
+  const { data: promotionStatus, error: publishError } = await supabase.rpc(
+    "promote_website_live_snapshot",
+    {
+      p_website_id: websiteId,
+      p_expected_draft_version: liveSnapshot.draftVersion,
+      p_expected_subscription_updated_at: subscription.record?.updated_at ?? null,
+      p_live_snapshot: liveSnapshot,
+      p_live_published_at: liveSnapshot.publishedAt,
+    },
+  )
+
+  if (publishError || promotionStatus !== "published") {
+    const stateChanged = promotionStatus === "draft_changed" || promotionStatus === "subscription_changed"
+    const liveConflict = promotionStatus === "live_website_exists"
+    await logAuditEvent({
       userId: user.id,
-      ownerEmail: user.email,
+      websiteId,
+      action: "website.publish_denied",
+      metadata: {
+        reason: promotionStatus || "live_snapshot_update_failed",
+        plan: effectivePlan,
+        realPlan: subscription.planId,
+        testMode: Boolean(testPlan),
+      },
+      request,
     })
-  } catch (snapshotError) {
     return NextResponse.json(
       {
-        error:
-          snapshotError instanceof Error
-            ? `De live versie kon niet worden opgebouwd: ${snapshotError.message}`
-            : "De live versie kon niet worden opgebouwd.",
+        error: stateChanged
+          ? "Het concept of abonnement veranderde tijdens de controle. Controleer de nieuwste wijzigingen en probeer opnieuw."
+          : liveConflict
+            ? "Er is ondertussen een andere website live gezet. Zet die eerst uit."
+            : publishError?.message || "De live versie kon niet atomair worden bijgewerkt.",
+        code: stateChanged ? "PUBLISH_STATE_CHANGED" : liveConflict ? "LIVE_WEBSITE_CONFLICT" : "PUBLISH_FAILED",
       },
-      { status: 500 },
+      { status: stateChanged || liveConflict ? 409 : 500 },
     )
-  }
-
-  const { error: publishError } = await supabase
-    .from("websites")
-    .update({
-      published: true,
-      live_snapshot: liveSnapshot,
-      live_published_at: liveSnapshot.publishedAt,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", websiteId)
-    .eq("user_id", user.id)
-
-  if (publishError) {
-    return NextResponse.json({ error: publishError.message }, { status: 500 })
   }
 
   await logAuditEvent({
     userId: user.id,
     websiteId,
-    action: "website.published",
+    action: testPlan ? "website.published.test" : "website.published",
     metadata: {
       title: targetWebsite.title,
       slug: targetWebsite.slug,
       previousPublished: targetWebsite.published,
-      plan: subscription.planId,
+      plan: effectivePlan,
+      realPlan: subscription.planId,
+      testMode: Boolean(testPlan),
       snapshotVersion: liveSnapshot.version,
       livePublishedAt: liveSnapshot.publishedAt,
+      draftVersion: liveSnapshot.draftVersion,
+      enforcementMode,
     },
     request,
   })

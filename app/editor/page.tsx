@@ -1,7 +1,10 @@
 import { redirect } from "next/navigation"
+import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { EditorClient } from "@/components/editor/editor-client"
-import { getUserSubscription } from "@/lib/subscriptions"
+import { getSubscriptionAccessNotice, getUserSubscription } from "@/lib/subscriptions"
+import { readTierTestPlan } from "@/lib/tier-test-override"
+import { getPlanEnforcementMode } from "@/lib/plan-enforcement"
 
 export default async function EditorPage() {
   const supabase = await createClient()
@@ -12,6 +15,16 @@ export default async function EditorPage() {
   }
 
   const subscription = await getUserSubscription(supabase, data.user.id)
+  const testPlan = readTierTestPlan(await cookies())
 
-  return <EditorClient userId={data.user.id} currentPlan={subscription.planId} />
+  return (
+    <EditorClient
+      userId={data.user.id}
+      realPlan={subscription.planId}
+      currentPlan={testPlan ?? subscription.planId}
+      isTierTestOverride={Boolean(testPlan)}
+      subscriptionNotice={getSubscriptionAccessNotice(subscription)}
+      enforcementMode={getPlanEnforcementMode()}
+    />
+  )
 }

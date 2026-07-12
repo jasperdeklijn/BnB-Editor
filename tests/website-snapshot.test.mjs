@@ -20,6 +20,7 @@ const { isWebsiteLiveSnapshot, WEBSITE_SNAPSHOT_VERSION } = module.exports
 const validSnapshot = {
   version: 1,
   publishedAt: "2026-07-12T12:00:00.000Z",
+  draftVersion: "00000000-0000-0000-0000-000000000001",
   website: { id: "website-1" },
   ownerEmail: null,
   business: null,
@@ -42,7 +43,7 @@ test("rejects missing, partial, and future snapshots", () => {
 
 test("a copied live snapshot is isolated from later draft mutations", () => {
   const draft = [{ id: "hero", type: "hero", data: { title: "Live title" } }]
-  const live = structuredClone({ ...validSnapshot, sections: draft })
+  const live = JSON.parse(JSON.stringify({ ...validSnapshot, sections: draft }))
   draft[0].data.title = "New draft title"
 
   assert.equal(live.sections[0].data.title, "Live title")

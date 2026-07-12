@@ -59,7 +59,7 @@ interface FormState {
 type FieldKey = keyof FormState
 type VisibleFieldKey = Exclude<FieldKey, "company">
 
-function useRequestForm(recipientEmail?: string, requestType: RequestType = "contact", businessId?: string, websiteId?: string) {
+function useRequestForm(recipientEmail?: string, requestType: RequestType = "contact", businessId?: string, websiteId?: string, isPreview = false) {
   const [form, setForm] = useState<FormState>({
     name: "",
     email: "",
@@ -80,6 +80,10 @@ function useRequestForm(recipientEmail?: string, requestType: RequestType = "con
     e.preventDefault()
     setStatus("loading")
     setErrorMsg("")
+    if (isPreview) {
+      setStatus("success")
+      return
+    }
     try {
       const res = await fetch("/api/requests", {
         method: "POST",
@@ -127,7 +131,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
   const config = REQUEST_TYPE_CONFIG[requestType] ?? REQUEST_TYPE_CONFIG.contact
   const Icon = config.icon
 
-  const { form, update, submit, status, errorMsg } = useRequestForm(recipientEmail, requestType, businessId, websiteId)
+  const { form, update, submit, status, errorMsg } = useRequestForm(recipientEmail, requestType, businessId, websiteId, isPreview)
 
   const sectionStyle: React.CSSProperties = {
     backgroundColor: styles?.backgroundColor,
@@ -139,7 +143,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
 
   if (requestType === "whatsapp") {
     const number = whatsappNumber?.replace(/\D/g, "") || ""
-    const waUrl = number ? `https://wa.me/${number}` : "#"
+    const waUrl = !isPreview && number ? `https://wa.me/${number}` : "#"
 
     return (
       <section
@@ -159,11 +163,15 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
             href={waUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(event) => {
+              if (isPreview) event.preventDefault()
+            }}
             className="inline-flex items-center gap-3 rounded-xl bg-green-500 px-8 py-4 text-base font-semibold text-white shadow hover:bg-green-600 transition-all hover:scale-[1.02]"
           >
             <PhoneIcon className="h-5 w-5" />
             App ons op WhatsApp
           </a>
+          {isPreview ? <p className="mt-3 text-xs font-medium text-amber-800">Preview: WhatsApp wordt niet geopend.</p> : null}
           {number && (
             <p className="mt-4 text-sm text-muted-foreground">
               Nummer: +{number}
@@ -204,9 +212,9 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
           {status === "success" ? (
             <div className="flex flex-col items-center gap-3 py-10 text-center">
               <CheckCircle className="h-10 w-10 text-green-500" />
-              <p className="font-semibold">Aanvraag ontvangen!</p>
+              <p className="font-semibold">{isPreview ? "Preview geslaagd" : "Aanvraag ontvangen!"}</p>
               <p className="text-sm text-muted-foreground">
-                We nemen zo snel mogelijk contact met je op.
+                {isPreview ? "Er is geen aanvraag opgeslagen of verzonden." : "We nemen zo snel mogelijk contact met je op."}
               </p>
             </div>
           ) : (
