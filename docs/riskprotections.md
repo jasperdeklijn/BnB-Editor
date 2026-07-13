@@ -24,6 +24,34 @@ Maak dit praktisch en MVP-gericht. Bouw geen enterprise compliance-systeem. Het 
 
 ---
 
+## Implementatiechecklist
+
+Laatst gecontroleerd op 2026-07-13 tegen de huidige codebase.
+
+- [x] 1. Juridische pagina's uitbreiden — alle zeven routes en Nederlandse MVP-templatecontent zijn aanwezig.
+- [x] 2. Footer links toevoegen — alle juridische links en de statuslink staan responsive in `SharedFooter`.
+- [x] 3. Statuspagina maken — statische servicestatus, incidenten en klantenuitleg zijn aanwezig.
+- [~] 4. Audit logging toevoegen — tabel, helper en alle huidige appacties zijn aangesloten, inclusief website- en accountverwijdering; alleen een echte `payment.failed`-bron wacht nog op een toekomstige Stripe-webhook.
+- [x] 5. Backup-strategie documenteren — `/docs/backup-strategy.md` beschrijft backups, frequenties, verantwoordelijkheden, hersteltests en de procedure bij dataverlies.
+- [x] 6. Incident response document maken — `/docs/incident-response.md` bevat het storingsproces, rollen, ernstniveaus, controles en communicatietemplates.
+- [x] 7. Rate limiting voorbereiden — de centrale MVP-helper beschermt contact, login, wachtwoordreset, publiceren en domeinverificatie; een TODO documenteert de latere overstap naar een gedeelde Redis/Upstash-store.
+- [x] 8. Contactformulier veiliger maken — validatie, lengtelimieten, honeypot, spamdetectie, rate limiting, logging en veilige foutmeldingen zijn aanwezig.
+- [x] 9. Custom domain risico's afdekken — risicoteksten en logging van domeinacties zijn aanwezig.
+- [x] 10. Account verwijdering en data export voorbereiden — profiel-UI en beveiligde API-routes ondersteunen JSON-export, websiteverwijdering en definitieve accountverwijdering.
+- [x] 11. Security headers controleren — frame-, MIME-, referrer-, permissions- en Content Security Policy-headers zijn centraal ingesteld met toegestane Supabase-, afbeeldings-, font- en kaartbronnen.
+- [x] 12. Admin-only pagina voor audit logs — `/admin/audit-logs` toont de nieuwste logs en gebruikt een standaard-weigerende server-side admincontrole.
+- [x] 13. Geen harde uptime-belofte — geen verboden uptimeclaims gevonden in de app- en marketingteksten.
+- [x] 14. Acceptatiecriteria — gehaald voor alle bestaande MVP-flows; lint, TypeScript, de bestaande tests en de productiebuild slagen.
+- [x] 15. Belangrijke randvoorwaarden — de uitgevoerde wijzigingen zijn MVP-gericht en juridische templates tonen de verplichte controlewaarschuwing.
+- [x] 16. Aanbevolen bestandsstructuur — routes, auditlogging, rate limiting, operationele documentatie, `lib/security.ts` en de adminpagina zijn aanwezig.
+- [ ] 17. Extra toekomstige verbeteringen — niet verplicht en grotendeels nog toekomstwerk.
+
+Validatie op 2026-07-13: `npm run lint`, `npx tsc --noEmit`, alle vier bestaande testsuites en `npm run build` zijn succesvol afgerond.
+
+Legenda: `[x]` uitgevoerd, `[~]` gedeeltelijk uitgevoerd, `[ ]` niet uitgevoerd.
+
+---
+
 # 1. Juridische pagina’s uitbreiden
 
 Status: uitgevoerd op 2026-07-08 voor flexpagina.nl. De routes `/terms`, `/privacy`, `/cookies`, `/processor-agreement`, `/acceptable-use`, `/disclaimer` en `/status` bestaan nu met Nederlandse MVP-templatecontent en een duidelijke controlewaarschuwing voor juridische review.
@@ -188,7 +216,7 @@ Maak dit later makkelijk uitbreidbaar naar databasebeheer.
 
 # 4. Audit logging toevoegen
 
-Status: uitgevoerd op 2026-07-08. Toegevoegd: `audit_logs` tabel + migratie, `logAuditEvent` helper met try/catch, en logging voor huidige actiepunten: login, logout, website aangemaakt, website gepubliceerd/ongepubliceerd, sectie toegevoegd/verwijderd, domein toegevoegd/verwijderd, domeinverificatie gestart/gelukt/mislukt en abonnement gewijzigd via de huidige billing-UI. Actienamen voor `website.deleted`, `account.deleted` en `payment.failed` zijn voorbereid; die worden pas daadwerkelijk gelogd zodra de bijbehorende delete-flow of Stripe webhook bestaat.
+Status: grotendeels uitgevoerd. Toegevoegd: `audit_logs` tabel + migratie, `logAuditEvent` helper met try/catch, en logging voor login, logout, website aangemaakt/gepubliceerd/ongepubliceerd/verwijderd, sectie toegevoegd/verwijderd, domein toegevoegd/verwijderd, domeinverificatie gestart/gelukt/mislukt, abonnement gewijzigd en account verwijderd. `payment.failed` is voorbereid in de audit-API, maar kan pas door een echte bron worden gelogd zodra een Stripe-webhook bestaat.
 
 Maak een Supabase tabel voor audit logs.
 
@@ -242,6 +270,8 @@ Zorg dat logging nooit de hoofdactie mag laten falen. Gebruik try/catch.
 
 # 5. Backup-strategie documenteren
 
+Status: uitgevoerd op 2026-07-13. `docs/backup-strategy.md` beschrijft de dagelijkse databasebackup, afzonderlijke Storage-backup, GitHub als code-backup, bewaartermijnen, verantwoordelijkheden, kwartaalhersteltests en de procedure bij dataverlies.
+
 Maak een markdownbestand:
 
 ```txt
@@ -267,6 +297,8 @@ Voor MVP:
 ---
 
 # 6. Incident response document maken
+
+Status: uitgevoerd op 2026-07-13. `docs/incident-response.md` beschrijft herkenning, triage, status- en klantcommunicatie, workarounds, herstelcontrole, afsluiting en post-mortems, inclusief de gevraagde klanttemplates.
 
 Maak bestand:
 
@@ -302,6 +334,8 @@ De storing is opgelost. We blijven de dienst monitoren. Excuses voor het ongemak
 ---
 
 # 7. Rate limiting voorbereiden
+
+Status: uitgevoerd op 2026-07-13. De centrale in-memory `checkRateLimit` helper beschermt nu het contactformulier, de server-side loginroute, wachtwoordreset, het publicatie-endpoint en domeinverificatie. Login en wachtwoordreset hebben eigen serverroutes en herstel-UI. Domeinverificatie vereist nu bovendien een ingelogde eigenaar. De helper bevat een expliciete TODO voor vervanging door een gedeelde Redis/Upstash-store voordat de app horizontaal schaalt.
 
 Voeg rate limiting toe of bereid dit voor voor:
 
@@ -369,6 +403,8 @@ Log acties:
 
 # 10. Account verwijdering en data export voorbereiden
 
+Status: uitgevoerd op 2026-07-13. De profielpagina bevat een JSON-export, afzonderlijke websiteverwijdering en definitieve accountverwijdering met e-mailbevestiging. De server controleert eigendom, gebruikt rate limiting, verwijdert gekoppelde Storage-bestanden en probeert custom domains uit Vercel op te ruimen. Website- en accountverwijdering worden in de auditlog vastgelegd.
+
 Maak MVP-basis voor:
 
 * account verwijderen;
@@ -388,6 +424,8 @@ Belangrijk voor privacy/GDPR.
 
 # 11. Security headers controleren
 
+Status: uitgevoerd op 2026-07-13. `next.config.mjs` stelt `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `Content-Security-Policy` en HSTS centraal in. De CSP staat de bestaande Supabase-verbindingen, HTTPS-afbeeldingen, Google Fonts en HTTPS-kaartframes toe en laat `unsafe-eval` alleen in development toe.
+
 Controleer Next.js configuratie en voeg waar mogelijk security headers toe:
 
 * `X-Frame-Options`
@@ -401,6 +439,8 @@ Gebruik veilige defaults, maar voorkom dat Supabase, Vercel assets of afbeelding
 ---
 
 # 12. Admin-only pagina voor audit logs
+
+Status: uitgevoerd op 2026-07-13. `/admin/audit-logs` toont maximaal 200 recente logs met datum, gebruiker, website, actie, metadata en IP. `isAdmin(user)` weigert standaard toegang en accepteert alleen server-beheerde Supabase `app_metadata.role = "admin"` of een e-mailadres uit de server-only `ADMIN_EMAILS` configuratie.
 
 Maak een simpele adminpagina:
 
@@ -431,6 +471,8 @@ Gebruik voorlopig een veilige placeholder of bestaande role-check.
 
 # 13. Geen harde uptime-belofte
 
+Status: gecontroleerd op 2026-07-13. Er zijn geen marketingclaims gevonden met 100% uptime, altijd-onlinegaranties of gegarandeerde beschikbaarheid. De juridische teksten vermelden juist expliciet dat geen 100% uptime wordt gegarandeerd.
+
 Controleer marketingteksten en pricingpagina’s.
 
 Verwijder of vermijd claims zoals:
@@ -452,6 +494,8 @@ Best effort beschikbaarheid
 ---
 
 # 14. Acceptatiecriteria
+
+Status: uitgevoerd en gecontroleerd op 2026-07-13. Alle criteria voor de bestaande MVP-flows zijn aanwezig. `npm run lint`, `npx tsc --noEmit`, de vier bestaande testsuites en `npm run build` zijn succesvol afgerond. Betalingsfouten blijven toekomstwerk totdat een echte Stripe-webhook wordt toegevoegd; de auditactie en beveiligde audit-API zijn hiervoor voorbereid.
 
 De taak is klaar als:
 

@@ -5,6 +5,7 @@ import { getUserSubscription } from "@/lib/subscriptions"
 import { buildWebsiteLiveSnapshot } from "@/lib/website-snapshot"
 import { inspectWebsiteEntitlements } from "@/lib/entitlements"
 import { getPlanEnforcementMode, shouldEnforcePlanEntitlements } from "@/lib/plan-enforcement"
+import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -16,6 +17,11 @@ export async function POST(request: Request) {
 
   if (authError || !user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const rateLimit = checkRateLimit(getRateLimitKey(request, `website_publish:${user.id}`), 12, 10 * 60 * 1000)
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ error: "Te veel publicatiepogingen. Probeer het later opnieuw." }, { status: 429 })
   }
 
   const subscription = await getUserSubscription(supabase, user.id)

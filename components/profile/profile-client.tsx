@@ -17,16 +17,32 @@ import {
   Camera,
   Loader2,
   CheckCircle2,
+  Download,
+  Globe2,
+  ShieldAlert,
+  Trash2,
 } from "lucide-react"
 import Image from "next/image"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 interface ProfileClientProps {
   userId: string
   email: string
   initialMeta: Record<string, unknown>
+  initialWebsites: Array<{ id: string; title: string; slug: string }>
 }
 
-export function ProfileClient({ userId, email, initialMeta }: ProfileClientProps) {
+export function ProfileClient({ userId, email, initialMeta, initialWebsites }: ProfileClientProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [fullName, setFullName] = useState((initialMeta.full_name as string) ?? "")
@@ -35,6 +51,11 @@ export function ProfileClient({ userId, email, initialMeta }: ProfileClientProps
   const [avatarUrl, setAvatarUrl] = useState((initialMeta.avatar_url as string) ?? "")
   const [isSaving, setIsSaving] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const [websites, setWebsites] = useState(initialWebsites)
+  const [isExporting, setIsExporting] = useState(false)
+  const [deletingWebsiteId, setDeletingWebsiteId] = useState<string | null>(null)
+  const [accountConfirmation, setAccountConfirmation] = useState("")
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
   const { setIsSaving: setHeaderSaving, setSaveState } = useEditorLayout()
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,6 +111,62 @@ export function ProfileClient({ userId, email, initialMeta }: ProfileClientProps
     }
 
     toast.success("Profile saved successfully")
+  }
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      const response = await fetch("/api/account/export", { cache: "no-store" })
+      if (!response.ok) throw new Error("Export failed")
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const anchor = document.createElement("a")
+      anchor.href = url
+      anchor.download = `flexpagina-export-${new Date().toISOString().slice(0, 10)}.json`
+      anchor.click()
+      URL.revokeObjectURL(url)
+      toast.success("Gegevens zijn geëxporteerd")
+    } catch {
+      toast.error("Gegevens konden niet worden geëxporteerd")
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const handleDeleteWebsite = async (websiteId: string) => {
+    setDeletingWebsiteId(websiteId)
+    try {
+      const response = await fetch("/api/websites/delete", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ websiteId }),
+      })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(result.error || "Website kon niet worden verwijderd")
+      setWebsites((current) => current.filter((website) => website.id !== websiteId))
+      toast.success("Website verwijderd")
+    } catch (deleteError) {
+      toast.error(deleteError instanceof Error ? deleteError.message : "Website kon niet worden verwijderd")
+    } finally {
+      setDeletingWebsiteId(null)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    setIsDeletingAccount(true)
+    try {
+      const response = await fetch("/api/account", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirmation: accountConfirmation }),
+      })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(result.error || "Account kon niet worden verwijderd")
+      window.location.assign("/")
+    } catch (deleteError) {
+      toast.error(deleteError instanceof Error ? deleteError.message : "Account kon niet worden verwijderd")
+      setIsDeletingAccount(false)
+    }
   }
 
   return (
@@ -234,6 +311,95 @@ export function ProfileClient({ userId, email, initialMeta }: ProfileClientProps
                 </>
               )}
             </Button>
+          </div>
+        </div>
+
+        <div className="mt-8 rounded-xl border border-border bg-card shadow-sm">
+          <div className="flex items-center gap-3 border-b border-border bg-secondary/40 px-6 py-4">
+            <div className="rounded-md bg-primary/15 p-1.5 text-primary"><Download className="h-4 w-4" /></div>
+            <div>
+              <h2 className="font-semibold text-foreground">Gegevens en websites</h2>
+              <p className="text-xs text-muted-foreground">Exporteer uw gegevens of verwijder een website.</p>
+            </div>
+          </div>
+          <div className="space-y-5 p-6">
+            <div className="flex flex-col gap-3 rounded-lg border border-border p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="font-medium text-foreground">Data-export</p>
+                <p className="text-sm text-muted-foreground">Download account-, website-, aanvraag- en agendagegevens als JSON.</p>
+              </div>
+              <Button type="button" variant="outline" onClick={handleExport} disabled={isExporting}>
+                {isExporting ? <Loader2 className="animate-spin" /> : <Download />}
+                JSON downloaden
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <p className="font-medium text-foreground">Mijn websites</p>
+                <p className="text-sm text-muted-foreground">Verwijderen wist ook secties en overgangen. Deze actie kan niet ongedaan worden gemaakt.</p>
+              </div>
+              {websites.length ? websites.map((website) => (
+                <div key={website.id} className="flex flex-col gap-3 rounded-lg border border-border p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="flex items-center gap-2 font-medium text-foreground"><Globe2 className="h-4 w-4 text-primary" />{website.title}</p>
+                    <p className="truncate text-xs text-muted-foreground">/{website.slug}</p>
+                  </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button type="button" variant="destructive" size="sm" disabled={deletingWebsiteId === website.id}>
+                        <Trash2 /> Verwijderen
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Website definitief verwijderen?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {website.title} en alle bijbehorende secties worden verwijderd. Maak eerst een JSON-export als u de gegevens wilt bewaren.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuleren</AlertDialogCancel>
+                        <AlertDialogAction variant="destructive" onClick={() => handleDeleteWebsite(website.id)}>Website verwijderen</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )) : <p className="rounded-lg bg-muted p-4 text-sm text-muted-foreground">Er zijn geen websites om te verwijderen.</p>}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 rounded-xl border border-destructive/30 bg-destructive/5 shadow-sm">
+          <div className="flex items-center gap-3 border-b border-destructive/20 px-6 py-4">
+            <ShieldAlert className="h-5 w-5 text-destructive" />
+            <div>
+              <h2 className="font-semibold text-foreground">Account verwijderen</h2>
+              <p className="text-xs text-muted-foreground">Verwijdert uw account en gekoppelde gegevens definitief.</p>
+            </div>
+          </div>
+          <div className="p-6">
+            <AlertDialog onOpenChange={(open) => { if (!open) setAccountConfirmation("") }}>
+              <AlertDialogTrigger asChild><Button type="button" variant="destructive"><Trash2 />Account verwijderen</Button></AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Account definitief verwijderen?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Hiermee worden uw websites, bedrijfsgegevens, diensten, agenda en uploads verwijderd. Download vooraf een export. Typ uw e-mailadres om door te gaan.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="space-y-2">
+                  <Label htmlFor="delete-confirmation">Typ {email}</Label>
+                  <Input id="delete-confirmation" value={accountConfirmation} onChange={(event) => setAccountConfirmation(event.target.value)} autoComplete="off" />
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuleren</AlertDialogCancel>
+                  <AlertDialogAction variant="destructive" disabled={accountConfirmation.trim().toLowerCase() !== email.toLowerCase() || isDeletingAccount} onClick={handleDeleteAccount}>
+                    {isDeletingAccount ? "Verwijderen…" : "Account definitief verwijderen"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
     </EditorPageShell>

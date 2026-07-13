@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import dns from "node:dns/promises"
 import { logAuditEvent } from "@/lib/audit-log"
 import { createClient } from "@/lib/supabase/server"
+import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
 
 const VERCEL_IP = "76.76.21.21"
 const VERCEL_CNAME = "cname.vercel-dns.com"
@@ -12,28 +13,40 @@ export async function GET(request: Request) {
   const domain = searchParams.get("domain")
   const websiteId = searchParams.get("websiteId")
 
-  if (!domain) {
-    return NextResponse.json({ error: "Missing domain" }, { status: 400 })
-  }
-
-  // Normalize
-  const apex = domain.replace(/^www\./i, "").toLowerCase()
   const supabase = await createClient()
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser()
-  const verifiedWebsiteId = user && websiteId
-    ? await supabase
-        .from("websites")
-        .select("id")
-        .eq("id", websiteId)
-        .eq("user_id", user.id)
-        .maybeSingle()
-        .then(({ data }) => data?.id ?? null)
-    : null
+
+  if (authError || !user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const rateLimit = checkRateLimit(getRateLimitKey(request, `domain_verify:${user.id}`), 15, 10 * 60 * 1000)
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ error: "Te veel verificatiepogingen. Probeer het later opnieuw." }, { status: 429 })
+  }
+
+  if (!domain || !websiteId || domain.length > 253) {
+    return NextResponse.json({ error: "Ongeldige domeinverificatie" }, { status: 400 })
+  }
+
+  const apex = domain.trim().replace(/^www\./i, "").toLowerCase()
+  const verifiedWebsiteId = await supabase
+    .from("websites")
+    .select("id")
+    .eq("id", websiteId)
+    .eq("user_id", user.id)
+    .maybeSingle()
+    .then(({ data }) => data?.id ?? null)
+
+  if (!verifiedWebsiteId) {
+    return NextResponse.json({ error: "Website not found" }, { status: 404 })
+  }
 
   await logAuditEvent({
-    userId: user?.id ?? null,
+    userId: user.id,
     websiteId: verifiedWebsiteId,
     action: "domain.verification_started",
     metadata: { domain, apex },
@@ -46,7 +59,7 @@ export async function GET(request: Request) {
 
     if (aRecords.includes(VERCEL_IP)) {
       await logAuditEvent({
-        userId: user?.id ?? null,
+        userId: user.id,
         websiteId: verifiedWebsiteId,
         action: "domain.verification_succeeded",
         metadata: { domain, apex, type: "A" },
@@ -63,7 +76,7 @@ export async function GET(request: Request) {
     // Detect Cloudflare / proxy
     if (aRecords.length > 0 && !aRecords.includes(VERCEL_IP)) {
       await logAuditEvent({
-        userId: user?.id ?? null,
+        userId: user.id,
         websiteId: verifiedWebsiteId,
         action: "domain.verification_failed",
         metadata: { domain, apex, reason: "unexpected_a_record", aRecords },
@@ -82,7 +95,7 @@ export async function GET(request: Request) {
 
     if (cnameRecords.some((r) => r.toLowerCase() === VERCEL_CNAME)) {
       await logAuditEvent({
-        userId: user?.id ?? null,
+        userId: user.id,
         websiteId: verifiedWebsiteId,
         action: "domain.verification_succeeded",
         metadata: { domain, apex, type: "CNAME" },
@@ -99,7 +112,7 @@ export async function GET(request: Request) {
     const wwwRecords = await dns.resolveCname(`www.${apex}`).catch(() => [] as string[])
     if (wwwRecords.some((r) => r.toLowerCase().includes("vercel"))) {
       await logAuditEvent({
-        userId: user?.id ?? null,
+        userId: user.id,
         websiteId: verifiedWebsiteId,
         action: "domain.verification_succeeded",
         metadata: { domain, apex, type: "WWW_CNAME" },
@@ -110,7 +123,7 @@ export async function GET(request: Request) {
     }
 
     await logAuditEvent({
-      userId: user?.id ?? null,
+      userId: user.id,
       websiteId: verifiedWebsiteId,
       action: "domain.verification_failed",
       metadata: { domain, apex, reason: "no_valid_dns_record" },
@@ -123,7 +136,7 @@ export async function GET(request: Request) {
     })
   } catch {
     await logAuditEvent({
-      userId: user?.id ?? null,
+      userId: user.id,
       websiteId: verifiedWebsiteId,
       action: "domain.verification_failed",
       metadata: { domain, apex, reason: "dns_resolution_error" },

@@ -15,11 +15,18 @@ export default async function ProfilePage() {
     redirect("/auth/login")
   }
 
+  const { data: websites } = await supabase
+    .from("websites")
+    .select("id, title, slug")
+    .eq("user_id", data.user.id)
+    .order("created_at", { ascending: true })
+
   return (
     <ProfileClient
       userId={data.user.id}
       email={data.user.email ?? ""}
       initialMeta={data.user.user_metadata ?? {}}
+      initialWebsites={websites ?? []}
     />
   )
 }

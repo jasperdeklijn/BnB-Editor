@@ -4,9 +4,23 @@ type RateLimitEntry = {
 }
 
 const buckets = new Map<string, RateLimitEntry>()
+let lastCleanupAt = 0
+
+// TODO: Replace this per-process MVP limiter with a shared store such as
+// Upstash/Redis before horizontally scaling. Serverless instances do not share
+// this Map, so it reduces abuse but is not a global enforcement boundary.
+function cleanupExpiredBuckets(now: number) {
+  if (now - lastCleanupAt < 60_000) return
+
+  for (const [key, entry] of buckets) {
+    if (entry.resetAt <= now) buckets.delete(key)
+  }
+  lastCleanupAt = now
+}
 
 export function checkRateLimit(key: string, limit: number, windowMs: number) {
   const now = Date.now()
+  cleanupExpiredBuckets(now)
   const current = buckets.get(key)
 
   if (!current || current.resetAt <= now) {
@@ -32,4 +46,3 @@ export function getRateLimitKey(request: Request, action: string) {
 
   return `${action}:${ip}`
 }
-

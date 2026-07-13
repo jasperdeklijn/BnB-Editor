@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,17 +18,17 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
     setIsLoading(true)
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       })
-      if (error) throw error
-      await fetch("/api/auth/login-event", { method: "POST" }).catch(() => null)
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(result.error || "Inloggen is niet gelukt.")
       router.push("/editor")
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "Er is een fout opgetreden")
@@ -122,6 +121,9 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   className="border-[#B7D1C2]/25 bg-[var(--hero-bg)] text-white placeholder:text-white/40 focus-visible:ring-[#B7D1C2]"
                 />
+                <Link href="/auth/forgot-password" className="self-end text-xs text-[#B7D1C2] hover:text-white">
+                  Wachtwoord vergeten?
+                </Link>
               </div>
 
               <div className="flex flex-col gap-2">
