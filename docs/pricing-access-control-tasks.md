@@ -11,7 +11,7 @@ Publishing is the hard boundary: a user cannot put a new website version live wh
 - [x] Task 1 - Create a shared entitlement model
 - [x] Task 2 - Establish a real subscription source
 - [x] Task 3 - Separate draft content from the live version
-- [x] Task 4 - Add a temporary development tier switch
+- [x] Task 4 - Temporary development tier switch removed before rollout
 - [x] Task 5 - Show tier ownership throughout the editor
 - [x] Task 6 - Add immediate, non-blocking upgrade warnings
 - [x] Task 7 - Build a publish preflight experience
@@ -82,11 +82,11 @@ Replace the current mock-only billing plan with a server-owned active-plan resol
 
 Implemented policy:
 
-- No subscription row: Bronze fallback with status `none`.
+- No subscription row: temporary Gold default with status `none`.
 - Active or trial subscription: use the stored plan.
 - Canceled subscription with a future paid-through date: retain the stored plan until that date.
-- Canceled subscription after its paid-through date: Bronze fallback.
-- Past-due or expired subscription: Bronze fallback.
+- Canceled subscription after its paid-through date: temporary Gold default.
+- Past-due or expired subscription: temporary Gold default.
 - Subscription lookup/database errors: fail closed with an application error; do not silently grant a plan or misreport the account state.
 
 Add the required Supabase schema through both a migration and `supabase/init.sql`, including appropriate row-level security. APIs must derive the user and plan from the authenticated session and database; they must never trust a plan sent by the browser.
@@ -114,7 +114,9 @@ Done when:
 - New schema exists in both `supabase/migrations/` and `supabase/init.sql`.
 - Existing websites receive a safe initial draft/live revision during migration.
 
-## Task 4 - Add a temporary development tier switch
+## Task 4 - Temporary development tier switch (removed)
+
+This temporary developer aid was removed from the repository before rollout. The editor, billing page, publish API, and audit metadata now always use the database-backed subscription plan. The original requirements below are retained only as implementation history.
 
 Add a compact test control to the editor that lets a developer switch the effective tier between `Bronze`, `Silver`, and `Gold` without changing subscription records. The selected test tier should immediately refresh badges, warnings, section-count limits, publish preflight results, and preview behavior.
 
@@ -238,7 +240,7 @@ Done when:
 
 Define behavior for users who downgrade while a higher-tier version is live. Recommended approach: preserve the current live version during a communicated grace period, immediately prevent publishing new non-compliant drafts, and disable new paid runtime actions after the subscription entitlement ends. Show a persistent account/editor warning with the deadline and remediation choices.
 
-Implemented policy and concurrency model: canceled subscriptions retain their stored tier through the paid-through date and then fall back to Bronze; past-due and expired subscriptions fall back immediately. Existing live snapshots remain online, while new non-compliant publications and paid runtime actions are blocked. Editor and billing surfaces show persistent Dutch status guidance. Every draft-affecting website, section, transition, business, service, and availability mutation changes a database `draft_version`. Publishing validates the snapshot and plan, then calls one transactional RPC that locks the user publication flow and subscription row, rechecks both versions, prevents two simultaneous live websites, and atomically promotes the snapshot or changes nothing.
+Implemented policy and concurrency model: canceled subscriptions retain their stored tier through the paid-through date and then use the temporary Gold default; past-due and expired subscriptions also use that default for now. Existing live snapshots remain online. Editor and billing surfaces show persistent Dutch status guidance. Every draft-affecting website, section, transition, business, service, and availability mutation changes a database `draft_version`. Publishing validates the snapshot and plan, then calls one transactional RPC that locks the user publication flow and subscription row, rechecks both versions, prevents two simultaneous live websites, and atomically promotes the snapshot or changes nothing.
 
 Validate templates before promotion, not before preview. Revalidate inside the publish transaction so a plan change, simultaneous edit, or stale browser preflight cannot race past enforcement.
 
@@ -253,18 +255,20 @@ Done when:
 
 Add automated tests for the entitlement engine, publish API, protected runtime endpoints, and draft/live isolation. Add end-to-end coverage for Bronze, Silver, and Gold on desktop and mobile, including direct API bypass attempts.
 
-Implemented rollout foundation: `PLAN_ENFORCEMENT_MODE` supports `off`, `warn`, and fail-closed `enforce`; warning, upgrade-click, publish-denial, and publish-success audit events provide lightweight metrics; automated policy tests cover tier rules, runtime request mapping, subscription/downgrade behavior, snapshot isolation, test-switch security, and enforcement-mode rollback. The migration sequence, acceptance matrix, direct-bypass checks, metrics, and emergency rollback are maintained in `docs/pricing-entitlements-rollout.md`.
+Implemented rollout foundation: `PLAN_ENFORCEMENT_MODE` supports `off`, `warn`, and fail-closed `enforce`; warning, upgrade-click, publish-denial, and publish-success audit events provide lightweight metrics; automated policy tests cover tier rules, runtime request mapping, subscription/downgrade behavior, snapshot isolation, and enforcement-mode rollback. The migration sequence, acceptance matrix, direct-bypass checks, metrics, and emergency rollback are maintained in `docs/pricing-entitlements-rollout.md`.
 
 Current verification status:
 
-- [x] Entitlement, runtime mapping, subscription, downgrade, snapshot, tier-switch, and enforcement-mode tests pass.
+- [x] Entitlement, runtime mapping, subscription, downgrade, snapshot, and enforcement-mode tests pass.
 - [x] `npx tsc --noEmit` passes.
 - [x] Full `npm run lint` passes.
 - [x] Production `npm run build` passes.
 - [x] Migration order, staged rollout, metrics, acceptance matrix, and emergency rollback are documented.
-- [ ] Apply the three entitlement/live-snapshot migrations to the target Supabase environment.
+- [ ] Finish applying the entitlement/live-snapshot migrations to the target Supabase environment (`subscriptions` exists; live-snapshot columns and promotion RPC are still missing as of 2026-07-13).
 - [ ] Complete the desktop/mobile tier matrix and direct API bypass checks against that migrated environment.
 - [ ] Confirm editor/domain-dashboard parity and unchanged public output after a rejected publish in the live browser.
+
+Latest rollout check (2026-07-13): the configured target exposes `subscriptions`, but rejects queries for the live-snapshot columns and does not expose `promote_website_live_snapshot`. The workspace has no linked Supabase CLI configuration or database/management credential with which to apply the remaining DDL. Localhost browser automation was also blocked by the browser URL policy, so no manual matrix result is claimed.
 
 Roll out behind a feature flag if existing customers or websites need migration. Add lightweight metrics for warnings shown, preflight failures by violation code, upgrade clicks, successful publishes, and repeated blockers.
 
@@ -291,52 +295,53 @@ Done when:
 
 Do not enable hard publish enforcement before Tasks 1-3 are complete; without a real plan source and a draft/live boundary, the UI could claim a version is blocked while edits still leak onto the public website.
 
-## Production cleanup checklist for the temporary tier switch
+## Completed production cleanup for the temporary tier switch
 
 The tier switch is already hard-disabled when `NODE_ENV === "production"`. Use this checklist only when the temporary testing feature should be removed from the repository entirely. Keep the normal `currentPlan` entitlement wiring and all Silver/Gold badges; those are production features, not test code.
 
 ### Delete these files completely
 
-- [ ] Delete `lib/tier-test-override.ts` (signed cookie creation, validation, and environment checks).
-- [ ] Delete `app/api/dev/tier-override/route.ts` (development-only override endpoint).
-- [ ] Delete `components/editor/tier-test-switch.tsx` (the `Testabonnement` selector).
-- [ ] Delete `tests/tier-test-override.test.mjs` (override security tests).
+- [x] Delete `lib/tier-test-override.ts` (signed cookie creation, validation, and environment checks).
+- [x] Delete `app/api/dev/tier-override/route.ts` (development-only override endpoint).
+- [x] Delete `components/editor/tier-test-switch.tsx` (the `Testabonnement` selector).
+- [x] Delete `tests/tier-test-override.test.mjs` (override security tests).
 
 ### Remove test-tier wiring from shared files
 
-- [ ] In `app/editor/page.tsx`, remove the `cookies` import and the import from `lib/tier-test-override.ts`.
-- [ ] In `app/editor/page.tsx`, remove `testPlan` and pass only `currentPlan={subscription.planId}` to `EditorClient`.
-- [ ] In `app/editor/page.tsx`, remove the `realPlan` and `isTierTestOverride` props.
-- [ ] In `components/editor/editor-client.tsx`, remove the `realPlan` and `isTierTestOverride` props and keep `currentPlan`.
-- [ ] In `components/editor/editor-client.tsx`, remove the yellow `Testmodus` banner.
-- [ ] In `app/editor/account/billing/page.tsx`, remove the cookie/test-override imports and the `tierTestSwitchEnabled`, `effectivePlan`, and `isTierTestOverride` props.
-- [ ] In `components/billing/billing-client.tsx`, remove the `TierTestSwitch` import, its three test props, and the `Abonnement testen` card.
-- [ ] In `app/api/websites/publish/route.ts`, remove the `cookies` and `readTierTestPlan` imports.
-- [ ] In `app/api/websites/publish/route.ts`, remove `testPlan` and `effectivePlan`; use `subscription.planId` directly for entitlement checks and audit metadata.
-- [ ] In `app/api/websites/publish/route.ts`, restore the audit actions to only `website.published` and `website.unpublished` and remove the `realPlan` and `testMode` metadata fields.
-- [ ] In `lib/audit-log.ts`, remove `website.published.test` and `website.unpublished.test` from `AuditAction`.
-- [ ] In `package.json`, remove the `test:tier-switch` script.
+- [x] In `app/editor/page.tsx`, remove the `cookies` import and the import from `lib/tier-test-override.ts`.
+- [x] In `app/editor/page.tsx`, remove `testPlan` and pass only `currentPlan={subscription.planId}` to `EditorClient`.
+- [x] In `app/editor/page.tsx`, remove the `realPlan` and `isTierTestOverride` props.
+- [x] In `components/editor/editor-client.tsx`, remove the `realPlan` and `isTierTestOverride` props and keep `currentPlan`.
+- [x] In `components/editor/editor-client.tsx`, remove the yellow `Testmodus` banner.
+- [x] In `app/editor/account/billing/page.tsx`, remove the cookie/test-override imports and the `tierTestSwitchEnabled`, `effectivePlan`, and `isTierTestOverride` props.
+- [x] In `components/billing/billing-client.tsx`, remove the `TierTestSwitch` import, its three test props, and the `Abonnement testen` card.
+- [x] In `app/api/websites/publish/route.ts`, remove the `cookies` and `readTierTestPlan` imports.
+- [x] In `app/api/websites/publish/route.ts`, remove `testPlan` and `effectivePlan`; use `subscription.planId` directly for entitlement checks and audit metadata.
+- [x] In `app/api/websites/publish/route.ts`, restore the audit actions to only `website.published` and `website.unpublished` and remove the `realPlan` and `testMode` metadata fields.
+- [x] In `lib/audit-log.ts`, remove `website.published.test` and `website.unpublished.test` from `AuditAction`.
+- [x] In `package.json`, remove the `test:tier-switch` script.
 
 ### Remove optional environment configuration
 
-- [ ] Remove `ENABLE_TIER_TEST_SWITCH` from local, preview, CI, and hosting environment settings.
-- [ ] Remove `TIER_TEST_SWITCH_SECRET` from local, preview, CI, and hosting environment settings.
-- [ ] Optionally expire the old `flexpagina-tier-test` cookie once during deployment. Production already ignores it, so this is browser cleanup rather than a security requirement.
+- [x] Confirm `ENABLE_TIER_TEST_SWITCH` is absent from the repository's local environment files.
+- [x] Confirm `TIER_TEST_SWITCH_SECRET` is absent from the repository's local environment files.
+- [x] Confirm both variables are absent from the configured Vercel project and repository CI configuration.
+- [ ] Optionally expire the old `flexpagina-tier-test` cookie once during deployment. With all reader code removed, the cookie is inert browser data.
 
 ### Keep these production tier features
 
-- [ ] Keep `currentPlan` on `EditorClient`, `SectionsSelector`, `EditorInspector`, `SelectionEditor`, and section-specific editor props.
-- [ ] Keep `components/editor/tier-badge.tsx`.
-- [ ] Keep section-level Silver/Gold badges and explanations.
-- [ ] Keep Silver labels on advanced request-form modes.
-- [ ] Keep the Gold label and warning on Services booking controls.
-- [ ] Keep `lib/entitlements.ts`, the database subscription resolver, publish validation, and all non-test entitlement tests.
+- [x] Keep `currentPlan` on `EditorClient`, `SectionsSelector`, `EditorInspector`, `SelectionEditor`, and section-specific editor props.
+- [x] Keep `components/editor/tier-badge.tsx`.
+- [x] Keep section-level Silver/Gold badges and explanations.
+- [x] Keep Silver labels on advanced request-form modes.
+- [x] Keep the Gold label and warning on Services booking controls.
+- [x] Keep `lib/entitlements.ts`, the database subscription resolver, publish validation, and all non-test entitlement tests.
 
 ### Verify after removal
 
-- [ ] Search for leftovers with `rg -n "tier-test|TierTest|tierTest|testPlan|isTierTest|TIER_TEST|ENABLE_TIER|published\\.test|unpublished\\.test|Testabonnement|Testmodus" app components lib tests package.json`.
-- [ ] Run `npm run test:entitlements`.
-- [ ] Run `npm run test:subscriptions`.
-- [ ] Run `npm run test:snapshots`.
-- [ ] Run `npx tsc --noEmit`.
-- [ ] Run the relevant lint command and confirm the editor uses the database-backed subscription everywhere.
+- [x] Search for leftovers with `rg -n "tier-test|TierTest|tierTest|testPlan|isTierTest|TIER_TEST|ENABLE_TIER|published\\.test|unpublished\\.test|Testabonnement|Testmodus" app components lib tests package.json`.
+- [x] Run `npm run test:entitlements`.
+- [x] Run `npm run test:subscriptions`.
+- [x] Run `npm run test:snapshots`.
+- [x] Run `npx tsc --noEmit`.
+- [x] Run the relevant lint command and confirm the editor uses the database-backed subscription everywhere.

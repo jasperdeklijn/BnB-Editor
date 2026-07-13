@@ -3,8 +3,6 @@ import { logAuditEvent } from "@/lib/audit-log"
 import { createClient } from "@/lib/supabase/server"
 import { getUserSubscription } from "@/lib/subscriptions"
 import { buildWebsiteLiveSnapshot } from "@/lib/website-snapshot"
-import { cookies } from "next/headers"
-import { readTierTestPlan } from "@/lib/tier-test-override"
 import { inspectWebsiteEntitlements } from "@/lib/entitlements"
 import { getPlanEnforcementMode, shouldEnforcePlanEntitlements } from "@/lib/plan-enforcement"
 
@@ -21,8 +19,7 @@ export async function POST(request: Request) {
   }
 
   const subscription = await getUserSubscription(supabase, user.id)
-  const testPlan = readTierTestPlan(await cookies())
-  const effectivePlan = testPlan ?? subscription.planId
+  const currentPlan = subscription.planId
   const enforcementMode = getPlanEnforcementMode()
 
   const body = await request.json().catch(() => null)
@@ -58,14 +55,12 @@ export async function POST(request: Request) {
     await logAuditEvent({
       userId: user.id,
       websiteId,
-      action: testPlan ? "website.unpublished.test" : "website.unpublished",
+      action: "website.unpublished",
       metadata: {
         title: targetWebsite.title,
         slug: targetWebsite.slug,
         previousPublished: targetWebsite.published,
-        plan: effectivePlan,
-        realPlan: subscription.planId,
-        testMode: Boolean(testPlan),
+        plan: currentPlan,
       },
       request,
     })
@@ -88,9 +83,7 @@ export async function POST(request: Request) {
       action: "website.publish_denied",
       metadata: {
         reason: "snapshot_build_failed",
-        plan: effectivePlan,
-        realPlan: subscription.planId,
-        testMode: Boolean(testPlan),
+        plan: currentPlan,
       },
       request,
     })
@@ -105,7 +98,7 @@ export async function POST(request: Request) {
     )
   }
 
-  const entitlementResult = inspectWebsiteEntitlements(effectivePlan, {
+  const entitlementResult = inspectWebsiteEntitlements(currentPlan, {
     sections: liveSnapshot.sections,
   })
 
@@ -118,9 +111,7 @@ export async function POST(request: Request) {
         title: targetWebsite.title,
         slug: targetWebsite.slug,
         previousPublished: targetWebsite.published,
-        plan: effectivePlan,
-        realPlan: subscription.planId,
-        testMode: Boolean(testPlan),
+        plan: currentPlan,
         requiredPlan: entitlementResult.requiredPlan,
         violationCodes: entitlementResult.violations.map((violation) => violation.code),
         violationCapabilities: entitlementResult.violations
@@ -136,7 +127,7 @@ export async function POST(request: Request) {
         {
           error: "Deze conceptversie bevat onderdelen die niet binnen het huidige abonnement live mogen.",
           code: "ENTITLEMENT_VIOLATIONS",
-          currentPlan: effectivePlan,
+          currentPlan,
           requiredPlan: entitlementResult.requiredPlan,
           violations: entitlementResult.violations,
         },
@@ -164,9 +155,7 @@ export async function POST(request: Request) {
       action: "website.publish_denied",
       metadata: {
         reason: "another_website_is_live",
-        plan: effectivePlan,
-        realPlan: subscription.planId,
-        testMode: Boolean(testPlan),
+        plan: currentPlan,
         conflictingWebsiteId: liveWebsite.id,
       },
       request,
@@ -200,9 +189,7 @@ export async function POST(request: Request) {
       action: "website.publish_denied",
       metadata: {
         reason: promotionStatus || "live_snapshot_update_failed",
-        plan: effectivePlan,
-        realPlan: subscription.planId,
-        testMode: Boolean(testPlan),
+        plan: currentPlan,
       },
       request,
     })
@@ -222,14 +209,12 @@ export async function POST(request: Request) {
   await logAuditEvent({
     userId: user.id,
     websiteId,
-    action: testPlan ? "website.published.test" : "website.published",
+    action: "website.published",
     metadata: {
       title: targetWebsite.title,
       slug: targetWebsite.slug,
       previousPublished: targetWebsite.published,
-      plan: effectivePlan,
-      realPlan: subscription.planId,
-      testMode: Boolean(testPlan),
+      plan: currentPlan,
       snapshotVersion: liveSnapshot.version,
       livePublishedAt: liveSnapshot.publishedAt,
       draftVersion: liveSnapshot.draftVersion,

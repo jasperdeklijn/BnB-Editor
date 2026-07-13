@@ -82,14 +82,12 @@ async function logEntitlementMetric(
 
 interface EditorClientProps {
   userId: string
-  realPlan: PlanId
   currentPlan: PlanId
-  isTierTestOverride: boolean
   subscriptionNotice?: string | null
   enforcementMode: PlanEnforcementMode
 }
 
-export function EditorClient({ userId, realPlan, currentPlan, isTierTestOverride, subscriptionNotice, enforcementMode }: EditorClientProps) {
+export function EditorClient({ userId, currentPlan, subscriptionNotice, enforcementMode }: EditorClientProps) {
   const [sections, setSections] = useState<Section[]>([])
   const [transitions, setTransitions] = useState<Transition[]>([])
   const [websites, setWebsites] = useState<WebsiteSummary[]>([])
@@ -988,11 +986,6 @@ export function EditorClient({ userId, realPlan, currentPlan, isTierTestOverride
           </StatusMessage>
         ) : null}
       </div>
-      {isTierTestOverride ? (
-        <div className="border-b border-amber-500/40 bg-amber-400 px-3 py-1.5 text-center text-xs font-semibold text-amber-950" role="status">
-          Testmodus: {currentPlan}. Werkelijk abonnement: {realPlan}. Waarschuwingen en controles gebruiken tijdelijk het testabonnement.
-        </div>
-      ) : null}
       {subscriptionNotice ? (
         <div className="border-b border-warning/40 bg-warning/10 px-3 py-2 text-center text-xs font-medium text-foreground" role="status">
           {subscriptionNotice}
@@ -1272,7 +1265,6 @@ export function EditorClient({ userId, realPlan, currentPlan, isTierTestOverride
             <AlertDialogTitle>Deze versie kan nog niet live</AlertDialogTitle>
             <AlertDialogDescription>
               Je concept blijft opgeslagen en volledig bewerkbaar. Los de onderstaande onderdelen op of kies een abonnement dat ze ondersteunt.
-              {isTierTestOverride ? ` Deze controle gebruikt tijdelijk het testabonnement ${currentPlan}.` : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -1342,7 +1334,6 @@ export function EditorClient({ userId, realPlan, currentPlan, isTierTestOverride
             </AlertDialogTitle>
             <AlertDialogDescription>
               De huidige opgeslagen conceptversie wordt gecontroleerd en daarna als één nieuwe live versie gepubliceerd.
-              {isTierTestOverride ? ` Testmodus ${currentPlan} is actief.` : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

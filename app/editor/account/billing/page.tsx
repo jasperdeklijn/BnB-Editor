@@ -1,10 +1,8 @@
 import { redirect } from "next/navigation"
-import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { BillingClient } from "@/components/billing/billing-client"
 import { EditorPageShell } from "@/components/editor/editor-page-shell"
 import { getUserSubscription, toUserBillingData } from "@/lib/subscriptions"
-import { isTierTestSwitchEnabled, readTierTestPlan } from "@/lib/tier-test-override"
 
 export const metadata = {
   title: "Facturering | Website Maker",
@@ -28,7 +26,6 @@ export default async function BillingPage() {
 
   const subscription = await getUserSubscription(supabase, data.user.id)
   const billingData = toUserBillingData(subscription)
-  const testPlan = readTierTestPlan(await cookies())
 
   return (
     <EditorPageShell
@@ -36,13 +33,7 @@ export default async function BillingPage() {
       description="Beheer uw abonnement, betaalgegevens en factuuroverzicht."
       maxWidth="7xl"
     >
-      <BillingClient
-        billingData={billingData}
-        userId={data.user.id}
-        tierTestSwitchEnabled={isTierTestSwitchEnabled()}
-        effectivePlan={testPlan ?? subscription.planId}
-        isTierTestOverride={Boolean(testPlan)}
-      />
+      <BillingClient billingData={billingData} userId={data.user.id} />
     </EditorPageShell>
   )
 }

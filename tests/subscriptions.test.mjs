@@ -37,12 +37,12 @@ const record = (status, overrides = {}) => ({
   ...overrides,
 })
 
-test("missing subscriptions receive the documented Bronze fallback", () => {
+test("missing subscriptions receive the temporary Gold default", () => {
   assert.deepEqual(resolveEffectivePlan(null, now), {
-    planId: "bronze",
+    planId: "gold",
     storedPlanId: null,
     status: "none",
-    source: "bronze_fallback",
+    source: "default_fallback",
   })
 })
 
@@ -51,26 +51,25 @@ test("active and trial subscriptions use the stored plan", () => {
   assert.equal(resolveEffectivePlan(record("trial", { plan_id: "gold" }), now).planId, "gold")
 })
 
-test("past-due and expired subscriptions fall back to Bronze", () => {
-  assert.equal(resolveEffectivePlan(record("past_due"), now).planId, "bronze")
-  assert.equal(resolveEffectivePlan(record("expired", { plan_id: "gold" }), now).planId, "bronze")
+test("past-due and expired subscriptions use the temporary Gold default", () => {
+  assert.equal(resolveEffectivePlan(record("past_due"), now).planId, "gold")
+  assert.equal(resolveEffectivePlan(record("expired", { plan_id: "silver" }), now).planId, "gold")
 })
 
 test("canceled subscriptions retain access only through their paid-through date", () => {
   assert.equal(resolveEffectivePlan(record("canceled"), now).planId, "silver")
   assert.equal(
     resolveEffectivePlan(record("canceled", { current_period_end: "2026-07-01T00:00:00.000Z" }), now).planId,
-    "bronze",
+    "gold",
   )
 })
 
-test("downgrade states explain live-version preservation and runtime blocking", () => {
+test("inactive states explain the temporary Gold default", () => {
   const resolved = {
     userId: "user-1",
     record: record("past_due"),
     ...resolveEffectivePlan(record("past_due"), now),
   }
   const notice = getSubscriptionAccessNotice(resolved)
-  assert.match(notice, /live versie blijft online/)
-  assert.match(notice, /runtime-acties/)
+  assert.match(notice, /standaardabonnement Gold/)
 })

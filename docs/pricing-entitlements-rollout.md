@@ -6,12 +6,12 @@ This runbook enables the Bronze, Silver, and Gold entitlement system after the s
 
 ## Required migration order
 
-- [ ] Apply `20260712190000_create_subscriptions.sql`.
+- [x] Confirm `20260712190000_create_subscriptions.sql` is present on the configured target (`subscriptions` REST query succeeds).
 - [ ] Apply `20260712200000_add_website_live_snapshots.sql`.
 - [ ] Apply `20260712210000_race_safe_live_promotion.sql`.
 - [ ] Confirm existing published websites have a non-null `live_snapshot`, `live_published_at`, and `draft_version`.
 - [ ] Confirm `promote_website_live_snapshot` is executable by `authenticated`, but not `public`/anonymous users.
-- [ ] Confirm each existing customer has the intended subscription row or intentionally receives the Bronze fallback.
+- [ ] Confirm each existing customer has the intended subscription row or intentionally receives the temporary Gold default.
 
 ## Enforcement modes
 
@@ -32,18 +32,17 @@ Recommended rollout:
 3. Change to `warn` and observe audit metrics for at least one normal publishing cycle.
 4. Resolve unexpected blocker patterns or incorrect customer plans.
 5. Change to `enforce`.
-6. Keep the temporary test-tier switch unavailable in production.
+6. Confirm all plan decisions use the database-backed subscription resolver.
 
 ## Automated verification
 
-- [ ] `npm run test:entitlements`
-- [ ] `npm run test:subscriptions`
-- [ ] `npm run test:snapshots`
-- [ ] `npm run test:tier-switch`
-- [ ] `npm run test:plan-enforcement`
-- [ ] `npx tsc --noEmit`
-- [ ] `npm run lint`
-- [ ] `npm run build`
+- [x] `npm run test:entitlements`
+- [x] `npm run test:subscriptions`
+- [x] `npm run test:snapshots`
+- [x] `npm run test:plan-enforcement`
+- [x] `npx tsc --noEmit`
+- [x] `npm run lint`
+- [x] `npm run build`
 
 ## Desktop and mobile acceptance matrix
 
@@ -88,7 +87,7 @@ The audit log records:
 - `entitlement.warning_shown` with violation count/codes and required plan;
 - `entitlement.upgrade_clicked` with source and required plan;
 - `website.publish_denied` with reason, plan, required plan, and violation codes;
-- `website.published` / `website.published.test` for successful promotion.
+- `website.published` for successful promotion.
 
 Repeated blocker counts can be derived by grouping `website.publish_denied` and `entitlement.warning_shown` by `user_id`, violation code, and time window. Do not add form content or customer-submitted messages to entitlement metrics.
 

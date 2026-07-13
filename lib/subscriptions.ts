@@ -7,9 +7,10 @@ import type {
   UserBillingData,
 } from "@/lib/types/pricing"
 
-export const DEFAULT_PLAN_ID: PlanId = "bronze"
+// Temporary product default: accounts without a valid subscription receive Gold.
+export const DEFAULT_PLAN_ID: PlanId = "gold"
 
-export type SubscriptionSource = "subscription" | "bronze_fallback"
+export type SubscriptionSource = "subscription" | "default_fallback"
 
 export interface SubscriptionRecord {
   id: string
@@ -65,7 +66,7 @@ export function resolveEffectivePlan(
       planId: DEFAULT_PLAN_ID,
       storedPlanId: null,
       status: "none",
-      source: "bronze_fallback",
+      source: "default_fallback",
     }
   }
 
@@ -90,7 +91,7 @@ export function resolveEffectivePlan(
     planId: DEFAULT_PLAN_ID,
     storedPlanId,
     status: record.status,
-    source: "bronze_fallback",
+    source: "default_fallback",
   }
 }
 
@@ -125,15 +126,15 @@ export function getSubscriptionAccessNotice(resolved: ResolvedSubscription): str
     : null
 
   if (resolved.status === "canceled" && resolved.source === "subscription" && formattedPaidThrough) {
-    return `Je abonnement is opgezegd. De huidige rechten blijven actief tot en met ${formattedPaidThrough}. Daarna gelden Bronze-rechten. De bestaande live versie blijft online, maar hogere-tier functies en nieuwe niet-passende publicaties worden geblokkeerd.`
+    return `Je abonnement is opgezegd. De huidige rechten blijven actief tot en met ${formattedPaidThrough}. Daarna geldt tijdelijk het standaardabonnement Gold.`
   }
 
   if (resolved.status === "past_due") {
-    return "De betaling is achterstallig. Daarom gelden nu Bronze-rechten. De bestaande live versie blijft online, maar hogere-tier runtime-acties en nieuwe niet-passende publicaties zijn geblokkeerd."
+    return "De betaling is achterstallig. Voor nu geldt tijdelijk het standaardabonnement Gold."
   }
 
-  if (resolved.status === "expired" || (resolved.status === "canceled" && resolved.source === "bronze_fallback")) {
-    return "Het eerdere abonnement is niet meer actief. Daarom gelden nu Bronze-rechten. De bestaande live versie blijft online, maar hogere-tier runtime-acties en nieuwe niet-passende publicaties zijn geblokkeerd."
+  if (resolved.status === "expired" || (resolved.status === "canceled" && resolved.source === "default_fallback")) {
+    return "Het eerdere abonnement is niet meer actief. Voor nu geldt tijdelijk het standaardabonnement Gold."
   }
 
   return null

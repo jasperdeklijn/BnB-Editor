@@ -95,7 +95,7 @@ export interface UserBillingData {
   currentPlan: PlanId
   storedPlan: PlanId | null
   status: SubscriptionStatus
-  source: "subscription" | "bronze_fallback"
+  source: "subscription" | "default_fallback"
   accessNotice: string | null
   currentPrice: number
   nextBillingDate: Date | null

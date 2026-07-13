@@ -299,11 +299,11 @@ create trigger trg_section_transitions_updated_at
 create table public.subscriptions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null unique references auth.users(id) on delete cascade,
-  plan_id text not null default 'bronze'
+  plan_id text not null default 'gold'
     check (plan_id in ('bronze', 'silver', 'gold')),
   status text not null default 'active'
     check (status in ('active', 'trial', 'past_due', 'canceled', 'expired')),
-  current_price numeric(10, 2) not null default 7.95
+  current_price numeric(10, 2) not null default 24.95
     check (current_price >= 0),
   currency text not null default 'EUR'
     check (currency = 'EUR'),
