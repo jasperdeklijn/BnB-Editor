@@ -154,12 +154,12 @@ Voorbeeld:
 
 Checklist:
 
-* [ ] Alleen toegankelijk voor ingelogde/admin gebruiker
-* [ ] Valideer input
-* [ ] Gebruik Google Places API om bedrijven te zoeken
-* [ ] Haal bedrijfsnaam, telefoon, website, rating en reviews op
-* [ ] Sla ruwe resultaten niet dubbel op
-* [ ] Beperk standaard tot maximaal 25 leads per run
+* [x] Alleen toegankelijk voor ingelogde/admin gebruiker
+* [x] Valideer input
+* [x] Gebruik Google Places API om bedrijven te zoeken
+* [x] Haal bedrijfsnaam, telefoon, website, rating en reviews op
+* [x] Sla ruwe resultaten niet dubbel op
+* [x] Beperk standaard tot maximaal 25 leads per run
 
 ---
 
@@ -187,22 +187,22 @@ type WebsiteAnalysis = {
 
 Checklist:
 
-* [ ] Controleer of website bestaat
-* [ ] Controleer of URL HTTPS gebruikt
-* [ ] Fetch homepage HTML
-* [ ] Check `<meta name="viewport">`
-* [ ] Check contactformulier via `<form>`
-* [ ] Check CTA woorden zoals:
+* [x] Controleer of website bestaat
+* [x] Controleer of URL HTTPS gebruikt
+* [x] Fetch homepage HTML
+* [x] Check `<meta name="viewport">`
+* [x] Check contactformulier via `<form>`
+* [x] Check CTA woorden zoals:
 
   * contact
   * offerte
   * afspraak
   * bel
   * reserveren
-* [ ] Lees `<title>`
-* [ ] Lees meta description
-* [ ] Gebruik timeout zodat trage sites de run niet blokkeren
-* [ ] Fouten netjes afvangen
+* [x] Lees `<title>`
+* [x] Lees meta description
+* [x] Gebruik timeout zodat trage sites de run niet blokkeren
+* [x] Fouten netjes afvangen
 
 ---
 
@@ -224,11 +224,11 @@ type PageSpeedResult = {
 
 Checklist:
 
-* [ ] Gebruik Google PageSpeed Insights API
-* [ ] Analyseer mobile performance
-* [ ] Zet score om naar 0-100
-* [ ] Bij fout: retourneer `null`
-* [ ] Laat PageSpeed optioneel zijn zodat lead search niet faalt
+* [x] Gebruik Google PageSpeed Insights API
+* [x] Analyseer mobile performance
+* [x] Zet score om naar 0-100
+* [x] Bij fout: retourneer `null`
+* [x] Laat PageSpeed optioneel zijn zodat lead search niet faalt
 
 ---
 
@@ -268,10 +268,10 @@ Score betekenis:
 
 Checklist:
 
-* [ ] Maak scorefunctie
-* [ ] Houd score maximaal 100
-* [ ] Maak scoring makkelijk aanpasbaar
-* [ ] Sla score op in database
+* [x] Maak scorefunctie
+* [x] Houd score maximaal 100
+* [x] Maak scoring makkelijk aanpasbaar
+* [x] Sla score op in database
 
 ---
 
@@ -327,11 +327,11 @@ Regels:
 
 Checklist:
 
-* [ ] Maak AI helper
-* [ ] Gebruik server-side API key
-* [ ] Maak fallback tekst als AI faalt
-* [ ] Verstuur nooit automatisch e-mail
-* [ ] Sla alleen concepttekst op
+* [x] Maak AI helper
+* [x] Gebruik server-side API key
+* [x] Maak fallback tekst als AI faalt
+* [x] Verstuur nooit automatisch e-mail
+* [x] Sla alleen concepttekst op
 
 ---
 
@@ -345,12 +345,12 @@ lib/leads/saveLead.ts
 
 Checklist:
 
-* [ ] Upsert op basis van `google_place_id`
-* [ ] Als `google_place_id` ontbreekt, voorkom dubbeling via website + company_name
-* [ ] Sla alle analysevelden op
-* [ ] Sla `reason` op
-* [ ] Sla `outreach_draft` op
-* [ ] Zet nieuwe leads standaard op `new`
+* [x] Upsert op basis van `google_place_id`
+* [x] Als `google_place_id` ontbreekt, voorkom dubbeling via website + company_name
+* [x] Sla alle analysevelden op
+* [x] Sla `reason` op
+* [x] Sla `outreach_draft` op
+* [x] Zet nieuwe leads standaard op `new`
 
 ---
 
@@ -374,18 +374,18 @@ Functionaliteit:
 
 Checklist:
 
-* [ ] Maak leads tabel
-* [ ] Toon bedrijfsnaam
-* [ ] Toon branche
-* [ ] Toon plaats
-* [ ] Toon website
-* [ ] Toon score
-* [ ] Toon reden
-* [ ] Toon status
-* [ ] Maak status aanpasbaar
-* [ ] Maak notitieveld
-* [ ] Maak knop “Open website”
-* [ ] Maak knop “Kopieer outreach tekst”
+* [x] Maak leads tabel
+* [x] Toon bedrijfsnaam
+* [x] Toon branche
+* [x] Toon plaats
+* [x] Toon website
+* [x] Toon score
+* [x] Toon reden
+* [x] Toon status
+* [x] Maak status aanpasbaar
+* [x] Maak notitieveld
+* [x] Maak knop “Open website”
+* [x] Maak knop “Kopieer outreach tekst”
 
 ---
 
@@ -423,12 +423,12 @@ fotograaf
 
 Checklist:
 
-* [ ] Maak formulier
-* [ ] Valideer invoer
-* [ ] Toon loading state
-* [ ] Toon hoeveel leads gevonden zijn
-* [ ] Toon foutmelding bij API error
-* [ ] Refresh leadlijst na succesvolle run
+* [x] Maak formulier
+* [x] Valideer invoer
+* [x] Toon loading state
+* [x] Toon hoeveel leads gevonden zijn
+* [x] Toon foutmelding bij API error
+* [x] Refresh leadlijst na succesvolle run
 
 ---
 
@@ -436,7 +436,7 @@ Checklist:
 
 Belangrijk:
 
-* De agent mag niet automatisch e-mails versturen.
+* De agent mag niet automatisch outreach-e-mails naar leads versturen.
 * Alle outreach moet eerst handmatig worden gecontroleerd.
 * Geen scraping van e-mailadressen als dit tegen voorwaarden ingaat.
 * Respecteer rate limits.
@@ -444,12 +444,12 @@ Belangrijk:
 
 Checklist:
 
-* [ ] Geen automatische mailfunctie
-* [ ] Geen bulk-send knop
-* [ ] Rate limiting op lead search route
-* [ ] Admin-only toegang
-* [ ] Log fouten zonder gevoelige data
-* [ ] API keys niet naar client lekken
+* [x] Geen automatische outreach-mailfunctie naar leads
+* [x] Geen bulk-send knop
+* [x] Rate limiting op lead search route
+* [x] Admin-only toegang
+* [x] Log fouten zonder gevoelige data
+* [x] API keys niet naar client lekken
 
 ---
 
@@ -466,10 +466,12 @@ zoek 25 nieuwe leads in ingestelde regio's
 
 Checklist later:
 
-* [ ] Vercel Cron toevoegen
-* [ ] Instellingenpagina maken voor regio's en branches
-* [ ] Maximaal aantal leads per week instelbaar maken
-* [ ] Notificatie sturen naar admin na run
+* [x] Vercel Cron toevoegen
+* [x] Instellingenpagina maken voor regio's en branches
+* [x] Maximaal aantal leads per week instelbaar maken
+* [x] Notificatie sturen naar admin na run
+
+De notificatie bestaat uit dashboardhistorie en, indien SMTP + `ADMIN_EMAILS` zijn ingesteld, een korte e-mail aan beheerders. Er worden nooit automatisch outreach-e-mails naar leads verstuurd.
 
 ---
 
@@ -478,16 +480,16 @@ Checklist later:
 Bouw eerst alleen dit:
 
 * [x] Supabase tabel `leads`
-* [ ] API route om leads te zoeken
-* [ ] Website analyse
-* [ ] Lead score
-* [ ] AI reden + outreach draft
-* [ ] Admin dashboard
-* [ ] Handmatige knop “Zoek nieuwe leads”
+* [x] API route om leads te zoeken
+* [x] Website analyse
+* [x] Lead score
+* [x] AI reden + outreach draft
+* [x] Admin dashboard
+* [x] Handmatige knop “Zoek nieuwe leads”
 
 Niet doen in MVP:
 
-* [ ] Geen automatische e-mails
+* [x] Geen automatische e-mails naar leads
 * [ ] Geen cron job
 * [ ] Geen complexe CRM
 * [ ] Geen uitgebreide analytics
@@ -508,7 +510,7 @@ De feature is klaar wanneer:
 * [ ] Elke lead een reden heeft
 * [ ] Elke lead een outreach concepttekst heeft
 * [ ] Ik leads kan filteren en status kan aanpassen
-* [ ] Er geen automatische e-mails worden verstuurd
+* [ ] Er geen automatische outreach-e-mails naar leads worden verstuurd
 
 ---
 

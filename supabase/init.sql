@@ -22,6 +22,8 @@ drop table if exists public.contact_requests cascade;
 drop table if exists public.subscriptions cascade;
 drop table if exists public.calendar_availability_windows cascade;
 drop table if exists public.calendar_entries cascade;
+drop table if exists public.lead_agent_runs cascade;
+drop table if exists public.lead_agent_settings cascade;
 drop table if exists public.leads cascade;
 drop table if exists public.section_transitions cascade;
 drop table if exists public.website_sections cascade;
@@ -269,6 +271,45 @@ create table public.leads (
     check (status in ('new', 'interesting', 'contacted', 'not_interested', 'customer', 'ignored'))
 );
 
+create table public.lead_agent_settings (
+  singleton_key boolean primary key default true,
+  enabled boolean not null default false,
+  cities text[] not null default array['Uden']::text[],
+  categories text[] not null default array['kapper']::text[],
+  weekly_limit integer not null default 25,
+  email_notifications_enabled boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint lead_agent_settings_singleton_check check (singleton_key),
+  constraint lead_agent_settings_weekly_limit_check check (weekly_limit between 1 and 25),
+  constraint lead_agent_settings_cities_check check (cardinality(cities) between 1 and 25),
+  constraint lead_agent_settings_categories_check check (cardinality(categories) between 1 and 25)
+);
+
+insert into public.lead_agent_settings (singleton_key) values (true);
+
+create table public.lead_agent_runs (
+  id uuid primary key default gen_random_uuid(),
+  run_key text not null unique,
+  trigger text not null default 'cron',
+  status text not null default 'running',
+  requested_limit integer not null default 0,
+  found_count integer not null default 0,
+  created_count integer not null default 0,
+  updated_count integer not null default 0,
+  failed_count integer not null default 0,
+  error_message text,
+  notification_sent boolean not null default false,
+  started_at timestamptz not null default now(),
+  completed_at timestamptz,
+  constraint lead_agent_runs_key_not_blank_check check (btrim(run_key) <> ''),
+  constraint lead_agent_runs_trigger_check check (trigger in ('cron', 'manual')),
+  constraint lead_agent_runs_status_check check (status in ('running', 'succeeded', 'partial', 'failed', 'skipped')),
+  constraint lead_agent_runs_counts_check check (
+    requested_limit >= 0 and found_count >= 0 and created_count >= 0 and updated_count >= 0 and failed_count >= 0
+  )
+);
+
 create table public.section_transitions (
   id uuid primary key default gen_random_uuid(),
   website_id uuid not null references public.websites(id) on delete cascade,
@@ -473,6 +514,10 @@ create trigger set_leads_updated_at
   before update on public.leads
   for each row execute procedure public.set_updated_at();
 
+create trigger set_lead_agent_settings_updated_at
+  before update on public.lead_agent_settings
+  for each row execute procedure public.set_updated_at();
+
 -- ------------------------------------------------------------
 -- Indexes
 -- ------------------------------------------------------------
@@ -516,6 +561,7 @@ create index idx_calendar_availability_service_weekday
 create index idx_leads_city on public.leads (city);
 create index idx_leads_category on public.leads (category);
 create index idx_leads_status on public.leads (status);
+create index idx_lead_agent_runs_started_at on public.lead_agent_runs (started_at desc);
 
 create index idx_section_transitions_website_id on public.section_transitions (website_id);
 create index idx_section_transitions_from_section on public.section_transitions (from_section_id);
@@ -542,6 +588,8 @@ alter table public.contact_requests enable row level security;
 alter table public.calendar_entries enable row level security;
 alter table public.calendar_availability_windows enable row level security;
 alter table public.leads enable row level security;
+alter table public.lead_agent_settings enable row level security;
+alter table public.lead_agent_runs enable row level security;
 alter table public.audit_logs enable row level security;
 
 create policy "Users can view own subscription"
