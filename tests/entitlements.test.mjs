@@ -37,7 +37,7 @@ test("plan order and every section entitlement are explicit", () => {
   for (const type of ["nav", "hero", "about", "services", "contact", "map", "footer", "request_form"]) {
     assert.equal(getMinimumPlanForSection(type), "bronze")
   }
-  for (const type of ["gallery", "features", "testimonials", "faq", "opening_hours", "pricing", "cta"]) {
+  for (const type of ["gallery", "features", "testimonials", "faq", "opening_hours", "pricing", "team", "cta"]) {
     assert.equal(getMinimumPlanForSection(type), "silver")
   }
 })

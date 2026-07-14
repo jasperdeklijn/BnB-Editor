@@ -59,6 +59,7 @@ const SECTION_MINIMUM_PLAN = {
   faq: "silver",
   opening_hours: "silver",
   pricing: "silver",
+  team: "silver",
   cta: "silver",
 } as const satisfies Record<SectionType, PlanId>
 
@@ -109,6 +110,7 @@ const SECTION_LABELS = {
   faq: "Veelgestelde vragen",
   opening_hours: "Openingstijden",
   pricing: "Prijzen",
+  team: "Ons team",
   cta: "Call-to-action",
 } as const satisfies Record<SectionType, string>
 

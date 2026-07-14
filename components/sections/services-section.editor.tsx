@@ -52,6 +52,7 @@ export function ServicesSectionEditor({
   const [loadingServices, setLoadingServices] = useState(false)
   const offeringCopy = getOfferingCopy(businessCategory)
   const bookingDefaults = getBookingSpaceDefaults(businessCategory)
+  const moreInfoButtonEnabled = section.data.infoPopupButtonEnabled !== false
   const selectedPopupTarget = ((section.data as any).infoPopupCtaHref as string | undefined) || ""
   const hasSelectedPopupTarget =
     !selectedPopupTarget || sectionTargetOptions.some((option) => option.value === selectedPopupTarget)
@@ -248,14 +249,22 @@ export function ServicesSectionEditor({
         <p className="text-xs text-muted-foreground">
           De knop op elke kaart opent een popup met de actuele {offeringCopy.singular} en deze instellingen.
         </p>
-        <div>
+        <button
+          type="button"
+          onClick={() => updateField("infoPopupButtonEnabled", !moreInfoButtonEnabled)}
+          className={`flex w-full items-center justify-center gap-2 rounded-lg border p-2 text-xs font-medium transition-colors ${moreInfoButtonEnabled ? "border-primary bg-primary/10 text-primary" : "border-border bg-background text-muted-foreground"}`}
+        >
+          {moreInfoButtonEnabled ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+          {moreInfoButtonEnabled ? "Knop zichtbaar" : "Knop verborgen"}
+        </button>
+        {moreInfoButtonEnabled ? <div>
           <Label className="text-xs mb-1.5 block">Knoptekst op kaart</Label>
           <Input
             placeholder="Meer info"
             value={(section.data as any).moreInfoButtonLabel || ""}
             onChange={(event) => updateField("moreInfoButtonLabel", event.target.value)}
           />
-        </div>
+        </div> : null}
         <div>
           <Label className="text-xs mb-1.5 block">Label bovenaan popup</Label>
           <Input

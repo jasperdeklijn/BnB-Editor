@@ -195,7 +195,7 @@ function GridLayout({
       {services.map((service) => (
         <div
           key={service.id}
-          className="group overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition-shadow hover:shadow-md"
+          className="group overflow-hidden rounded-2xl border border-border bg-[var(--section-surface)] shadow-sm transition-shadow hover:shadow-md"
         >
           <div className="relative h-52 overflow-hidden">
             <ServiceImage
@@ -225,7 +225,7 @@ function GridLayout({
                   {service.capacity} deelnemers
                 </span>
               )}
-              <Button
+              {buttonLabel ? <Button
                 type="button"
                 size="sm"
                 variant="outline"
@@ -235,7 +235,7 @@ function GridLayout({
                 }}
               >
                 {buttonLabel}
-              </Button>
+              </Button> : null}
             </div>
           </div>
         </div>
@@ -260,7 +260,7 @@ function ListLayout({
       {services.map((service) => (
         <div
           key={service.id}
-          className="group flex overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition-shadow hover:shadow-md"
+          className="group flex overflow-hidden rounded-2xl border border-border bg-[var(--section-surface)] shadow-sm transition-shadow hover:shadow-md"
         >
           <div className="relative w-2/5 flex-shrink-0 min-h-[180px] overflow-hidden">
             <ServiceImage
@@ -295,16 +295,16 @@ function ListLayout({
                   </span>
                 )}
               </div>
-              <Button
+              {buttonLabel ? <Button
                 type="button"
                 size="sm"
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                className="bg-[var(--section-accent)] text-white brightness-100 hover:brightness-90"
                 onClick={() => {
                   onMoreInfo(service)
                 }}
               >
                 {buttonLabel}
-              </Button>
+              </Button> : null}
             </div>
           </div>
         </div>
@@ -329,7 +329,7 @@ function FeaturedLayout({
   return (
     <div className="space-y-6">
       {/* Featured hero card */}
-      <div className="group relative flex min-h-[380px] overflow-hidden rounded-3xl border border-border bg-white shadow-md transition-shadow hover:shadow-xl">
+      <div className="group relative flex min-h-[380px] overflow-hidden rounded-3xl border border-border bg-[var(--section-surface)] shadow-md transition-shadow hover:shadow-xl">
         <div className="relative w-1/2 overflow-hidden">
           <ServiceImage
             images={featured.images}
@@ -366,15 +366,15 @@ function FeaturedLayout({
                 </p>
               )}
             </div>
-            <Button
+            {buttonLabel ? <Button
               type="button"
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              className="bg-[var(--section-accent)] text-white brightness-100 hover:brightness-90"
               onClick={() => {
                 onMoreInfo(featured)
               }}
             >
               {buttonLabel}
-            </Button>
+            </Button> : null}
           </div>
         </div>
       </div>
@@ -405,7 +405,7 @@ function FeaturedLayout({
                   {service.price && (
                     <span className="text-sm font-bold text-primary">{service.price}</span>
                   )}
-                  <Button
+                  {buttonLabel ? <Button
                     type="button"
                     size="sm"
                     variant="outline"
@@ -415,7 +415,7 @@ function FeaturedLayout({
                     }}
                   >
                     {buttonLabel}
-                  </Button>
+                  </Button> : null}
                 </div>
               </div>
             </div>
@@ -444,7 +444,7 @@ function MagazineLayout({
         return (
           <div
             key={service.id}
-            className={`group flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm hover:shadow-md transition-shadow ${
+            className={`group flex flex-col overflow-hidden rounded-2xl bg-[var(--section-surface)] shadow-sm hover:shadow-md transition-shadow ${
               isReversed ? "sm:flex-row-reverse" : "sm:flex-row"
             }`}
           >
@@ -481,15 +481,15 @@ function MagazineLayout({
                   </span>
                 )}
               </div>
-              <Button
+              {buttonLabel ? <Button
                 type="button"
-                className="mt-6 w-fit bg-primary text-primary-foreground hover:bg-primary/90"
+                className="mt-6 w-fit bg-[var(--section-accent)] text-white brightness-100 hover:brightness-90"
                 onClick={() => {
                   onMoreInfo(service)
                 }}
               >
                 {buttonLabel}
-              </Button>
+              </Button> : null}
             </div>
           </div>
         )
@@ -543,7 +543,7 @@ function MinimalLayout({
                 {service.price}
               </span>
             )}
-            <Button
+            {buttonLabel ? <Button
               type="button"
               variant="ghost"
               size="sm"
@@ -553,7 +553,7 @@ function MinimalLayout({
               }}
             >
               {buttonLabel} &rarr;
-            </Button>
+            </Button> : null}
           </div>
         </div>
       ))}
@@ -601,7 +601,7 @@ function CarouselLayout({
         {services.map((service) => (
           <div
             key={service.id}
-            className="group w-72 flex-shrink-0 overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition-shadow hover:shadow-md"
+            className="group w-72 flex-shrink-0 overflow-hidden rounded-2xl border border-border bg-[var(--section-surface)] shadow-sm transition-shadow hover:shadow-md"
             style={{ scrollSnapAlign: "start" }}
           >
             <div className="relative h-48 overflow-hidden">
@@ -632,7 +632,7 @@ function CarouselLayout({
                     {service.capacity} pers.
                   </span>
                 )}
-                <Button
+                {buttonLabel ? <Button
                   type="button"
                   size="sm"
                   variant="outline"
@@ -642,7 +642,7 @@ function CarouselLayout({
                   }}
                 >
                   {buttonLabel}
-                </Button>
+                </Button> : null}
               </div>
             </div>
           </div>
@@ -750,7 +750,7 @@ function ServiceInfoPopup({
               <a
                 href={settings.ctaHref}
                 onClick={(event) => handleSectionAnchorClick(event, settings.ctaHref, onClose)}
-                className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 sm:w-auto"
+                className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-[var(--section-accent)] px-5 py-3 text-sm font-semibold text-white transition-all hover:brightness-90 sm:w-auto"
               >
                 {settings.ctaLabel}
               </a>
@@ -877,7 +877,7 @@ function ServicesBookingSpace({
             <a
               href={settings.targetHref}
               onClick={(event) => handleSectionAnchorClick(event, settings.targetHref)}
-              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--section-accent)] px-5 py-3 text-sm font-semibold text-white transition-all hover:brightness-90"
             >
               <CalendarDays className="h-4 w-4" />
               {settings.buttonLabel}
@@ -1031,7 +1031,7 @@ function ServicesBookingSpace({
               <Button
                 type="submit"
                 disabled={status === "loading"}
-                className="w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                className="w-full rounded-full bg-[var(--section-accent)] text-white brightness-100 hover:brightness-90"
               >
                 {status === "loading" ? (
                   <span className="flex items-center gap-2">
@@ -1191,6 +1191,8 @@ export function ServicesSection({ data, styles, isPreview, onUpdate }: ServicesS
     backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
     backgroundPosition: "center",
+    ["--section-surface" as string]: styles?.surfaceColor || "#ffffff",
+    ["--section-accent" as string]: styles?.accentColor || "hsl(var(--primary))",
   }
 
   const textStyle: React.CSSProperties = { color: styles?.textColor }
@@ -1238,7 +1240,7 @@ export function ServicesSection({ data, styles, isPreview, onUpdate }: ServicesS
         <EditableText as="h2" data={data} path={["title"]} value={title} isPreview={isPreview} onUpdate={onUpdate} className="mb-6 text-4xl font-extrabold tracking-tight text-foreground" style={textStyle} />
         <div className="relative overflow-hidden rounded-2xl border border-border bg-white p-12 shadow-sm">
           <div className="relative flex flex-col items-center">
-            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary shadow-sm">
+            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-[var(--section-accent)] shadow-sm">
               <Briefcase className="h-10 w-10 text-primary-foreground" />
             </div>
             <h3 className="mb-3 text-2xl font-bold text-foreground">
@@ -1249,7 +1251,7 @@ export function ServicesSection({ data, styles, isPreview, onUpdate }: ServicesS
             </p>
             <Link
               href="/editor/services"
-              className="mt-10 inline-flex items-center gap-3 rounded-full bg-primary px-7 py-4 text-sm font-semibold text-primary-foreground transition-colors duration-200 hover:bg-primary/90"
+              className="mt-10 inline-flex items-center gap-3 rounded-full bg-[var(--section-accent)] px-7 py-4 text-sm font-semibold text-white transition-all duration-200 hover:brightness-90"
             >
               <Briefcase className="h-4 w-4" />
               Aanbod aanmaken
@@ -1282,7 +1284,7 @@ export function ServicesSection({ data, styles, isPreview, onUpdate }: ServicesS
           <GridLayout
             services={services}
             textStyle={textStyle}
-            buttonLabel={popupSettings.buttonLabel}
+            buttonLabel={data.infoPopupButtonEnabled === false ? "" : popupSettings.buttonLabel}
             onMoreInfo={setActiveService}
           />
         )}
@@ -1290,7 +1292,7 @@ export function ServicesSection({ data, styles, isPreview, onUpdate }: ServicesS
           <ListLayout
             services={services}
             textStyle={textStyle}
-            buttonLabel={popupSettings.buttonLabel}
+            buttonLabel={data.infoPopupButtonEnabled === false ? "" : popupSettings.buttonLabel}
             onMoreInfo={setActiveService}
           />
         )}
@@ -1298,7 +1300,7 @@ export function ServicesSection({ data, styles, isPreview, onUpdate }: ServicesS
           <FeaturedLayout
             services={services}
             textStyle={textStyle}
-            buttonLabel={popupSettings.buttonLabel}
+            buttonLabel={data.infoPopupButtonEnabled === false ? "" : popupSettings.buttonLabel}
             onMoreInfo={setActiveService}
           />
         )}
@@ -1306,7 +1308,7 @@ export function ServicesSection({ data, styles, isPreview, onUpdate }: ServicesS
           <MagazineLayout
             services={services}
             textStyle={textStyle}
-            buttonLabel={popupSettings.buttonLabel}
+            buttonLabel={data.infoPopupButtonEnabled === false ? "" : popupSettings.buttonLabel}
             onMoreInfo={setActiveService}
           />
         )}
@@ -1314,7 +1316,7 @@ export function ServicesSection({ data, styles, isPreview, onUpdate }: ServicesS
           <MinimalLayout
             services={services}
             textStyle={textStyle}
-            buttonLabel={popupSettings.buttonLabel}
+            buttonLabel={data.infoPopupButtonEnabled === false ? "" : popupSettings.buttonLabel}
             onMoreInfo={setActiveService}
           />
         )}
@@ -1322,7 +1324,7 @@ export function ServicesSection({ data, styles, isPreview, onUpdate }: ServicesS
           <CarouselLayout
             services={services}
             textStyle={textStyle}
-            buttonLabel={popupSettings.buttonLabel}
+            buttonLabel={data.infoPopupButtonEnabled === false ? "" : popupSettings.buttonLabel}
             onMoreInfo={setActiveService}
           />
         )}

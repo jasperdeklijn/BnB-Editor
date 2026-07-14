@@ -71,7 +71,7 @@ export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProp
         <div className="overflow-hidden rounded-2xl border border-border shadow-sm">
           <div className={`grid ${layout.layout === "compact" ? "" : "md:grid-cols-5"}`}>
             {/* Info panel */}
-            <div className={`flex flex-col justify-center gap-5 bg-amber-700 px-8 py-10 ${layout.layout === "compact" ? "" : "md:col-span-2"}`}>
+            <div className={`flex flex-col justify-center gap-5 px-8 py-10 ${layout.layout === "compact" ? "" : "md:col-span-2"}`} style={{ backgroundColor: styles?.accentColor || "#b45309" }}>
               <h3 className="text-lg font-semibold text-white">Kom langs</h3>
 
               {address && (

@@ -11,6 +11,7 @@ export type SectionType =
   | "faq"
   | "opening_hours"
   | "pricing"
+  | "team"
   | "map"
   | "cta"
   | "request_form"
@@ -32,6 +33,8 @@ export interface SectionStyles {
   backgroundColor?: string
   backgroundImage?: string
   logo?: string
+  accentColor?: string
+  surfaceColor?: string
 }
 
 export interface Transition {

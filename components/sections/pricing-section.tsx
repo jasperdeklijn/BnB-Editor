@@ -5,206 +5,54 @@ import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
 
-export interface PricingPlan {
-  id?: string
-  name: string
-  price: string
-  period?: string
-  description?: string
-  features: string[]
-  highlighted?: boolean
-  ctaText?: string
-  ctaHref?: string
-}
-
-interface PricingSectionProps {
-  data: Record<string, unknown>
-  isPreview: boolean
-  styles?: SectionStyles
-  onUpdate?: (newData: Record<string, unknown>) => void
-}
+export interface PricingPlan { id?: string; name: string; price: string; period?: string; description?: string; features: string[]; highlighted?: boolean; showButton?: boolean; ctaText?: string; ctaHref?: string }
+export interface TariffItem { id?: string; name: string; description?: string; price: string; category?: string }
 
 const DEFAULT_PLANS: PricingPlan[] = [
-  {
-    id: "1",
-    name: "Basis",
-    price: "€ 49",
-    period: "per keer",
-    description: "Ideaal voor eenmalige klussen of kennismaking.",
-    features: ["Persoonlijk adviesgesprek", "Standaard uitvoering", "E-mail support"],
-    ctaText: "Kies basis",
-  },
-  {
-    id: "2",
-    name: "Standaard",
-    price: "€ 99",
-    period: "per maand",
-    description: "De meest gekozen optie voor reguliere klanten.",
-    features: [
-      "Alle voordelen van Basis",
-      "Prioriteit inplanning",
-      "Telefonische support",
-      "Maandelijkse rapportage",
-    ],
-    highlighted: true,
-    ctaText: "Kies standaard",
-  },
-  {
-    id: "3",
-    name: "Premium",
-    price: "Op aanvraag",
-    description: "Maatwerk voor grotere opdrachten of bedrijven.",
-    features: [
-      "Alle voordelen van Standaard",
-      "Dedicated accountmanager",
-      "SLA garantie",
-      "Onbeperkt support",
-    ],
-    ctaText: "Neem contact op",
-  },
+  { id: "plan-1", name: "Basis", price: "€ 49", period: "per keer", description: "Ideaal om kennis te maken.", features: ["Persoonlijk advies", "Heldere afspraken"], showButton: true, ctaText: "Kies basis" },
+  { id: "plan-2", name: "Compleet", price: "€ 99", period: "per maand", description: "Voor klanten die meer ondersteuning willen.", features: ["Alles uit Basis", "Snellere service"], highlighted: true, showButton: true, ctaText: "Kies compleet" },
+]
+const DEFAULT_TARIFFS: TariffItem[] = [
+  { id: "tariff-1", name: "Kennismakingsgesprek", description: "Vrijblijvend gesprek van 30 minuten", price: "Gratis" },
+  { id: "tariff-2", name: "Uurtarief", description: "Voor losse werkzaamheden", price: "€ 75" },
 ]
 
-export function PricingSection({ data, isPreview, styles, onUpdate }: PricingSectionProps) {
+export function PricingSection({ data, isPreview, styles, onUpdate }: { data: Record<string, unknown>; isPreview: boolean; styles?: SectionStyles; onUpdate?: (newData: Record<string, unknown>) => void }) {
   const title = (data.title as string) || "Onze tarieven"
   const subtitle = data.subtitle as string | undefined
-  const plans: PricingPlan[] =
-    Array.isArray(data.plans) && (data.plans as PricingPlan[]).length > 0
-      ? (data.plans as PricingPlan[])
-      : DEFAULT_PLANS
-  const editableData =
-    Array.isArray(data.plans) && (data.plans as PricingPlan[]).length > 0
-      ? data
-      : { ...data, plans }
+  const plans = Array.isArray(data.plans) ? data.plans as PricingPlan[] : DEFAULT_PLANS
+  const tariffs = Array.isArray(data.tariffs) ? data.tariffs as TariffItem[] : DEFAULT_TARIFFS
+  const displayMode = data.displayMode === "menu" || data.displayMode === "both" ? data.displayMode : "packages"
+  const editableData = { ...data, plans, tariffs }
   const layout = getLayoutClasses(data.layout)
-
-  const sectionStyle: React.CSSProperties = {
-    backgroundColor: styles?.backgroundColor,
-    backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  }
   const textStyle: React.CSSProperties = { color: styles?.textColor }
+  const sectionStyle: React.CSSProperties = { backgroundColor: styles?.backgroundColor, backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }
+  const accent = styles?.accentColor || "#b45309"
+  const surface = styles?.surfaceColor || "rgba(255,255,255,0.85)"
 
   return (
-    <section
-      className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`}
-      style={sectionStyle}
-    >
+    <section className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`} style={sectionStyle}>
       <div className={`mx-auto ${layout.container}`}>
-        <div className={`mb-12 ${layout.heading}`}>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-amber-600">
-            Tarieven
-          </p>
-          <EditableText
-            as="h2"
-            data={data}
-            path={["title"]}
-            value={title}
-            isPreview={isPreview}
-            onUpdate={onUpdate}
-            className="mb-3 text-balance text-3xl font-bold text-amber-950 md:text-4xl"
-            style={textStyle}
-          />
-          {subtitle && (
-            <EditableText as="p" data={data} path={["subtitle"]} value={subtitle} isPreview={isPreview} onUpdate={onUpdate} className="mx-auto max-w-xl text-muted-foreground" style={textStyle} multiline />
-          )}
-        </div>
+        <div className={`mb-10 ${layout.heading}`}><p className="mb-2 text-xs font-semibold uppercase tracking-widest" style={{ color: accent }}>Tarieven</p><EditableText as="h2" data={data} path={["title"]} value={title} isPreview={isPreview} onUpdate={onUpdate} className="text-3xl font-bold md:text-4xl" style={textStyle} />{subtitle ? <EditableText as="p" data={data} path={["subtitle"]} value={subtitle} isPreview={isPreview} onUpdate={onUpdate} multiline className="mx-auto mt-3 max-w-xl text-muted-foreground" style={textStyle} /> : null}</div>
 
-        <div className={`grid gap-6 ${layout.grid}`}>
-          {plans.map((plan, idx) => (
-            <div
-              key={plan.id ?? idx}
-              className={`relative flex flex-col rounded-2xl border p-8 shadow-sm transition-all ${
-                plan.highlighted
-                  ? "border-amber-500 bg-amber-700 text-white ring-2 ring-amber-400/40"
-                  : "border-border bg-white/70 backdrop-blur"
-              }`}
-            >
-              {plan.highlighted && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="rounded-full bg-amber-400 px-3 py-1 text-xs font-semibold text-amber-900">
-                    Meest gekozen
-                  </span>
-                </div>
-              )}
+        {displayMode !== "menu" ? <div className={`grid gap-6 ${layout.grid}`}>
+          {plans.map((plan, index) => <article key={plan.id ?? index} className="relative flex flex-col rounded-2xl border p-6 shadow-sm" style={{ backgroundColor: plan.highlighted ? accent : surface, color: plan.highlighted ? "#fff" : styles?.textColor }}>
+            {plan.highlighted ? <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-xs font-semibold shadow" style={{ color: accent }}>Meest gekozen</span> : null}
+            <EditableText data={editableData} path={["plans", index, "name"]} value={plan.name} isPreview={isPreview} onUpdate={onUpdate} className="text-sm font-semibold uppercase tracking-wide" />
+            <div className="mt-2 flex items-baseline gap-1"><EditableText as="span" data={editableData} path={["plans", index, "price"]} value={plan.price} isPreview={isPreview} onUpdate={onUpdate} className="text-4xl font-bold" />{plan.period ? <EditableText as="span" data={editableData} path={["plans", index, "period"]} value={plan.period} isPreview={isPreview} onUpdate={onUpdate} className="text-sm opacity-75" /> : null}</div>
+            {plan.description ? <EditableText as="p" data={editableData} path={["plans", index, "description"]} value={plan.description} isPreview={isPreview} onUpdate={onUpdate} multiline className="mt-3 text-sm opacity-80" /> : null}
+            <ul className="my-6 flex-1 space-y-3">{(plan.features || []).map((feature, featureIndex) => <li key={featureIndex} className="flex gap-2 text-sm"><Check className="mt-0.5 h-4 w-4 shrink-0" /><EditableText data={editableData} path={["plans", index, "features", featureIndex]} value={feature} isPreview={isPreview} onUpdate={onUpdate} /></li>)}</ul>
+            {plan.showButton !== false && plan.ctaText ? <a href={plan.ctaHref || "#contact"} className="rounded-xl px-5 py-3 text-center text-sm font-semibold" style={{ backgroundColor: plan.highlighted ? "#fff" : accent, color: plan.highlighted ? accent : "#fff" }}><EditableText data={editableData} path={["plans", index, "ctaText"]} value={plan.ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a> : null}
+          </article>)}
+        </div> : null}
 
-              <div className="mb-6">
-                <p
-                  className={`mb-1 text-sm font-semibold uppercase tracking-wide ${
-                    plan.highlighted ? "text-amber-200" : "text-amber-700"
-                  }`}
-                >
-                  <EditableText data={editableData} path={["plans", idx, "name"]} value={plan.name} isPreview={isPreview} onUpdate={onUpdate} />
-                </p>
-                <div className="flex items-baseline gap-1">
-                  <EditableText
-                    as="span"
-                    data={editableData}
-                    path={["plans", idx, "price"]}
-                    value={plan.price}
-                    isPreview={isPreview}
-                    onUpdate={onUpdate}
-                    className={`text-4xl font-bold ${
-                      plan.highlighted ? "text-white" : "text-amber-950"
-                    }`}
-                    style={!plan.highlighted ? textStyle : undefined}
-                  />
-                  {plan.period && (
-                    <EditableText
-                      as="span"
-                      data={editableData}
-                      path={["plans", idx, "period"]}
-                      value={plan.period}
-                      isPreview={isPreview}
-                      onUpdate={onUpdate}
-                      className={`text-sm ${plan.highlighted ? "text-amber-200" : "text-muted-foreground"}`}
-                    />
-                  )}
-                </div>
-                {plan.description && (
-                  <EditableText
-                    as="p"
-                    data={editableData}
-                    path={["plans", idx, "description"]}
-                    value={plan.description}
-                    isPreview={isPreview}
-                    onUpdate={onUpdate}
-                    multiline
-                    className={`mt-2 text-sm ${
-                      plan.highlighted ? "text-amber-100" : "text-muted-foreground"
-                    }`}
-                  />
-                )}
-              </div>
-
-              <ul className="mb-8 flex-1 space-y-3">
-                {plan.features.map((feature, fIdx) => (
-                  <li key={fIdx} className="flex items-start gap-2 text-sm">
-                    <Check
-                      className={`mt-0.5 h-4 w-4 flex-shrink-0 ${
-                        plan.highlighted ? "text-amber-300" : "text-amber-600"
-                      }`}
-                    />
-                    <EditableText data={editableData} path={["plans", idx, "features", fIdx]} value={feature} isPreview={isPreview} onUpdate={onUpdate} className={plan.highlighted ? "text-amber-100" : "text-muted-foreground"} />
-                  </li>
-                ))}
-              </ul>
-
-              {plan.ctaText && (
-                <a
-                  href={plan.ctaHref || "#contact"}
-                  className={`mt-auto inline-flex w-full items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition-all hover:scale-[1.02] ${
-                    plan.highlighted
-                      ? "bg-white text-amber-700 hover:bg-amber-50"
-                      : "bg-amber-700 text-white hover:bg-amber-800"
-                  }`}
-                >
-                  <EditableText data={editableData} path={["plans", idx, "ctaText"]} value={plan.ctaText} isPreview={isPreview} onUpdate={onUpdate} />
-                </a>
-              )}
-            </div>
-          ))}
-        </div>
+        {displayMode === "both" ? <h3 className="mb-5 mt-14 text-center text-2xl font-semibold" style={textStyle}>Losse tarieven</h3> : null}
+        {displayMode !== "packages" ? <div className="mx-auto max-w-3xl overflow-hidden rounded-2xl border shadow-sm" style={{ backgroundColor: surface }}>
+          {tariffs.map((item, index) => <div key={item.id ?? index} className="flex items-start gap-4 border-b border-border px-5 py-4 last:border-b-0">
+            <div className="min-w-0 flex-1">{item.category ? <EditableText data={editableData} path={["tariffs", index, "category"]} value={item.category} isPreview={isPreview} onUpdate={onUpdate} className="text-xs font-semibold uppercase tracking-wide" style={{ color: accent }} /> : null}<EditableText as="h3" data={editableData} path={["tariffs", index, "name"]} value={item.name} isPreview={isPreview} onUpdate={onUpdate} className="font-semibold" style={textStyle} />{item.description ? <EditableText as="p" data={editableData} path={["tariffs", index, "description"]} value={item.description} isPreview={isPreview} onUpdate={onUpdate} className="mt-1 text-sm text-muted-foreground" multiline /> : null}</div>
+            <span className="mt-1 border-b border-dotted px-1 font-semibold" style={{ color: accent }}><EditableText data={editableData} path={["tariffs", index, "price"]} value={item.price} isPreview={isPreview} onUpdate={onUpdate} /></span>
+          </div>)}
+        </div> : null}
       </div>
     </section>
   )

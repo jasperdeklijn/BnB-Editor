@@ -66,6 +66,11 @@ export const SECTION_COPY: Record<
     description: "Tarieven en pakketten",
     defaultTitle: "Onze tarieven",
   },
+  team: {
+    label: "Ons team",
+    description: "Stel je teamleden voor",
+    defaultTitle: "Maak kennis met ons team",
+  },
   map: {
     label: "Locatie",
     description: "Kaart en locatiegegevens",

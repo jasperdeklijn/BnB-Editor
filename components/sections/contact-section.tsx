@@ -309,7 +309,7 @@ function SplitLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps) 
           </div>
         </div>
         {/* Right form */}
-        <div className="flex flex-1 flex-col justify-center bg-white px-8 py-12 md:px-12">
+        <div className="flex flex-1 flex-col justify-center px-8 py-12 md:px-12" style={{ backgroundColor: styles?.surfaceColor || "#ffffff" }}>
           <h3 className="mb-6 text-xl font-semibold text-gray-900">Stuur een bericht</h3>
           <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} isPreview={isPreview} />
         </div>
@@ -356,7 +356,7 @@ function MinimalLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps
             </span>
           )}
         </div>
-        <div className="rounded-2xl border border-border bg-white/80 p-6 text-left shadow-sm backdrop-blur">
+        <div className="rounded-2xl border border-border p-6 text-left shadow-sm backdrop-blur" style={{ backgroundColor: styles?.surfaceColor || "rgba(255,255,255,0.8)" }}>
           <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} isPreview={isPreview} compact />
         </div>
       </div>
@@ -378,10 +378,10 @@ function CardLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps) {
   return (
     <section className={`px-4 py-16 sm:px-6 md:py-24 ${styles?.fontFamily || ""}`} style={sectionStyle}>
       <div className="mx-auto max-w-5xl">
-        <div className="overflow-hidden rounded-3xl bg-white shadow-xl">
+        <div className="overflow-hidden rounded-3xl shadow-xl" style={{ backgroundColor: styles?.surfaceColor || "#ffffff" }}>
           <div className="grid md:grid-cols-5">
             {/* Info sidebar */}
-            <div className="flex flex-col justify-between bg-amber-700 px-8 py-10 md:col-span-2">
+            <div className="flex flex-col justify-between px-8 py-10 md:col-span-2" style={{ backgroundColor: styles?.accentColor || "#b45309" }}>
               <div>
                 <EditableText as="h2" data={data} path={["title"]} value={data.title as string} isPreview={isPreview} onUpdate={onUpdate} className="mb-3 text-2xl font-bold text-white" style={textStyle} />
                 <EditableText as="p" data={data} path={["subtitle"]} value={(data.subtitle as string) || "Wij zijn beschikbaar om je vragen te beantwoorden."} isPreview={isPreview} onUpdate={onUpdate} className="mb-8 text-sm text-amber-100" multiline />
@@ -414,7 +414,7 @@ function CardLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps) {
             {/* Form */}
             <div className="px-8 py-10 md:col-span-3">
               <h3 className="mb-6 text-lg font-semibold text-gray-900">Stuur ons een bericht</h3>
-              <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} isPreview={isPreview} accentColor="#b45309" />
+              <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} isPreview={isPreview} accentColor={styles?.accentColor || "#b45309"} />
             </div>
           </div>
         </div>
@@ -434,7 +434,7 @@ function FullwidthLayout({ data, isPreview, styles, onUpdate }: ContactLayoutPro
       <div
         className="relative flex items-center justify-center px-4 py-20 text-center"
         style={{
-          backgroundColor: styles?.backgroundColor || "#78350f",
+          backgroundColor: styles?.accentColor || styles?.backgroundColor || "#78350f",
           backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
           backgroundSize: "cover",
           backgroundPosition: "center",
@@ -461,7 +461,7 @@ function FullwidthLayout({ data, isPreview, styles, onUpdate }: ContactLayoutPro
         </div>
       </div>
       {/* Form below */}
-      <div className="bg-white px-4 py-12 sm:px-6">
+      <div className="px-4 py-12 sm:px-6" style={{ backgroundColor: styles?.surfaceColor || "#ffffff" }}>
         <div className="mx-auto max-w-2xl">
           <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} isPreview={isPreview} />
         </div>
@@ -499,7 +499,8 @@ function CenteredLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProp
             .map(({ icon: Icon, label, value }) => (
               <div
                 key={label}
-                className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-white/70 p-6 text-center shadow-sm backdrop-blur"
+                className="flex flex-col items-center gap-3 rounded-2xl border border-border p-6 text-center shadow-sm backdrop-blur"
+                style={{ backgroundColor: styles?.surfaceColor || "rgba(255,255,255,0.7)" }}
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100">
                   <Icon className="h-5 w-5 text-amber-700" />
@@ -512,7 +513,7 @@ function CenteredLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProp
             ))}
         </div>
         {/* Form */}
-        <div className="mx-auto max-w-xl rounded-2xl border border-border bg-white/80 p-8 shadow-sm backdrop-blur">
+        <div className="mx-auto max-w-xl rounded-2xl border border-border p-8 shadow-sm backdrop-blur" style={{ backgroundColor: styles?.surfaceColor || "rgba(255,255,255,0.8)" }}>
           <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} isPreview={isPreview} />
         </div>
       </div>

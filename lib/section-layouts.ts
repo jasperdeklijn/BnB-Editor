@@ -106,6 +106,14 @@ const sectionLayoutLabels: Partial<Record<SectionType, Record<SectionLayout, str
     card: "Price cards",
     banner: "Price band",
   },
+  team: {
+    classic: "Teamraster",
+    split: "Team met introductie",
+    showcase: "Grote portretten",
+    compact: "Compacte teamlijst",
+    card: "Teamkaarten",
+    banner: "Horizontale teamrij",
+  },
   map: {
     classic: "Map + info",
     split: "Split map",

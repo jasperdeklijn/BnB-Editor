@@ -55,9 +55,9 @@ interface SelectionEditorProps {
   currentPlan: PlanId
 }
 
-type StyleControl = keyof Pick<SectionStyles, "fontFamily" | "backgroundColor" | "textColor" | "backgroundImage" | "logo">
+type StyleControl = keyof Pick<SectionStyles, "fontFamily" | "backgroundColor" | "textColor" | "backgroundImage" | "logo" | "accentColor" | "surfaceColor">
 
-const DEFAULT_STYLE_CONTROLS: StyleControl[] = ["fontFamily", "backgroundColor", "textColor", "backgroundImage"]
+const DEFAULT_STYLE_CONTROLS: StyleControl[] = ["fontFamily", "backgroundColor", "textColor", "accentColor", "surfaceColor", "backgroundImage"]
 
 const FONT_OPTIONS = [
   { label: "Standaard lettertype", value: "" },
@@ -84,6 +84,7 @@ const SECTION_TARGET_LABELS: Record<SectionType, string> = {
   faq: "FAQ",
   opening_hours: "Openingstijden",
   pricing: "Tarieven",
+  team: "Team",
   map: "Locatie",
   cta: "Actie",
   request_form: "Aanvraag",
@@ -100,6 +101,7 @@ const SECTION_TARGET_TYPES: SectionType[] = [
   "faq",
   "opening_hours",
   "pricing",
+  "team",
   "map",
   "cta",
   "request_form",
@@ -595,6 +597,35 @@ export function SelectionEditor({
                       aria-label="Tekstkleur"
                       value={selectedSection.styles?.textColor || "#000000"}
                       onChange={(event) => updateStyleValue("textColor", event.target.value)}
+                      className="h-9 w-full cursor-pointer rounded border"
+                    />
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {supportsStyleControl("accentColor") || supportsStyleControl("surfaceColor") ? (
+              <div className="flex gap-3">
+                {supportsStyleControl("accentColor") ? (
+                  <div className="flex-1">
+                    <Label className="mb-2 block text-xs">Accentkleur</Label>
+                    <input
+                      type="color"
+                      aria-label="Accentkleur"
+                      value={selectedSection.styles?.accentColor || "#b45309"}
+                      onChange={(event) => updateStyleValue("accentColor", event.target.value)}
+                      className="h-9 w-full cursor-pointer rounded border"
+                    />
+                  </div>
+                ) : null}
+                {supportsStyleControl("surfaceColor") ? (
+                  <div className="flex-1">
+                    <Label className="mb-2 block text-xs">Kaartkleur</Label>
+                    <input
+                      type="color"
+                      aria-label="Kaartkleur"
+                      value={selectedSection.styles?.surfaceColor || "#ffffff"}
+                      onChange={(event) => updateStyleValue("surfaceColor", event.target.value)}
                       className="h-9 w-full cursor-pointer rounded border"
                     />
                   </div>

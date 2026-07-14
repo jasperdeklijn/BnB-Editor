@@ -11,7 +11,7 @@ import { getDefaultSectionData as getRegistryDefaultSectionData, getSectionDefin
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { useRouter, useSearchParams } from "next/navigation"
-import { AlertCircle, CheckCircle2, ExternalLink, Globe2, Layers, LayoutTemplate, Loader2, Paintbrush, Plus, Sparkles } from "lucide-react"
+import { AlertCircle, CheckCircle2, ExternalLink, Eye, Globe2, Layers, LayoutTemplate, Loader2, Paintbrush, Plus, Sparkles } from "lucide-react"
 import type { ThemeConfig } from "@/lib/themes"
 import type { BusinessCategory } from "@/lib/business/categories"
 import { Button } from "@/components/ui/button"
@@ -779,6 +779,12 @@ export function EditorClient({ userId, currentPlan, subscriptionNotice, enforcem
       ? selectedWebsiteLiveUrl
       : `https://${selectedWebsiteLiveUrl}`
     : ""
+  const selectedWebsitePreviewUrl = selectedWebsite
+    ? `preview-${selectedWebsite.slug}.${PLATFORM_DOMAIN}`
+    : ""
+  const selectedWebsitePreviewHref = selectedWebsitePreviewUrl
+    ? `https://${selectedWebsitePreviewUrl}`
+    : ""
   const liveStatusDescription = selectedWebsite?.published
     ? "Online: wijzigingen blijven als concept bewaard totdat je opnieuw live zet."
     : "Offline: wijzigingen zijn alleen zichtbaar in de editor."
@@ -828,6 +834,18 @@ export function EditorClient({ userId, currentPlan, subscriptionNotice, enforcem
           <TierBadge plan={currentPlan} prefix="Actief" className="border-primary/30 bg-primary/10 text-primary" />
           {selectedWebsite ? (
             <div className="ml-auto flex min-w-0 items-center gap-2 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-xs">
+              <a
+                href={selectedWebsitePreviewHref}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex shrink-0 items-center gap-1 rounded border border-border bg-background px-2 py-1 font-medium text-primary transition-colors hover:bg-accent"
+                title={`Preview openen: ${selectedWebsitePreviewUrl}`}
+                aria-label={`Preview openen: ${selectedWebsitePreviewUrl}`}
+              >
+                <Eye className="h-3.5 w-3.5" />
+                Preview
+                <ExternalLink className="h-3 w-3" />
+              </a>
               <span
                 className={`h-2.5 w-2.5 rounded-full ring-2 ${
                   selectedWebsite.published
@@ -938,6 +956,18 @@ export function EditorClient({ userId, currentPlan, subscriptionNotice, enforcem
               {isRenamingWebsite ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
               Naam opslaan
             </Button>
+            {selectedWebsite ? (
+              <a
+                href={selectedWebsitePreviewHref}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-border bg-background text-primary shadow-sm"
+                title={`Preview openen: ${selectedWebsitePreviewUrl}`}
+                aria-label={`Preview openen: ${selectedWebsitePreviewUrl}`}
+              >
+                <Eye className="h-4 w-4" />
+              </a>
+            ) : null}
             {selectedWebsite ? (
               selectedWebsite.published ? (
                 <a

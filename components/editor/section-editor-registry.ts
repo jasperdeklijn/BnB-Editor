@@ -15,6 +15,7 @@ import { PricingSectionEditor } from "@/components/sections/pricing-section.edit
 import { RequestFormSectionEditor } from "@/components/sections/request-form-section.editor"
 import { ServicesSectionEditor } from "@/components/sections/services-section.editor"
 import { TestimonialsSectionEditor } from "@/components/sections/testimonials-section.editor"
+import { TeamSectionEditor } from "@/components/sections/team-section.editor"
 
 const sectionEditors: Record<SectionType, SectionEditorComponent> = {
   hero: HeroSectionEditor,
@@ -29,6 +30,7 @@ const sectionEditors: Record<SectionType, SectionEditorComponent> = {
   faq: FaqSectionEditor,
   opening_hours: OpeningHoursSectionEditor,
   pricing: PricingSectionEditor,
+  team: TeamSectionEditor,
   map: MapSectionEditor,
   cta: CtaSectionEditor,
   request_form: RequestFormSectionEditor,

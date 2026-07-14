@@ -29,6 +29,8 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
   const title = data.title as string
   const subtitle = data.subtitle as string
   const ctaText = data.ctaText as string
+  const ctaEnabled = data.ctaEnabled !== false && Boolean(ctaText)
+  const ctaHref = (data.ctaHref as string) || "#contact"
   const layout = (heroLayoutMap[normalizeSectionLayout(data.layout)] ?? "centered") as HeroLayout
 
   const textStyle: React.CSSProperties = {
@@ -71,15 +73,9 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             className="mb-6 text-pretty text-base text-amber-900 sm:mb-8 sm:text-lg md:text-xl"
             style={textStyle}
           />
-          <Button size="lg" className="bg-amber-700 text-amber-50 hover:bg-amber-800">
-            <EditableText
-              data={data}
-              path={["ctaText"]}
-              value={ctaText}
-              isPreview={isPreview}
-              onUpdate={onUpdate}
-            />
-          </Button>
+          {ctaEnabled ? <Button asChild size="lg" className="bg-amber-700 text-amber-50 hover:bg-amber-800">
+            <a href={ctaHref}><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a>
+          </Button> : null}
         </div>
       </section>
     )
@@ -133,11 +129,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
               className="mb-6 text-pretty text-base text-amber-800 sm:text-lg md:text-xl"
               style={textStyle}
             />
-            <div>
-              <Button size="lg" className="bg-amber-700 text-amber-50 hover:bg-amber-800">
-                <EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} />
-              </Button>
-            </div>
+            {ctaEnabled ? <div><Button asChild size="lg" className="bg-amber-700 text-amber-50 hover:bg-amber-800"><a href={ctaHref}><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button></div> : null}
           </div>
         </div>
       </section>
@@ -183,9 +175,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             className="mb-8 text-pretty text-lg text-white/90 drop-shadow-md sm:text-xl md:text-2xl"
             style={styles?.textColor ? textStyle : undefined}
           />
-          <Button size="lg" className="bg-white text-amber-900 shadow-lg hover:bg-white/95 hover:shadow-xl transition-all">
-            <EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} />
-          </Button>
+          {ctaEnabled ? <Button asChild size="lg" className="bg-white text-amber-900 shadow-lg transition-all hover:bg-white/95 hover:shadow-xl"><a href={ctaHref}><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button> : null}
         </div>
       </section>
     )
@@ -222,9 +212,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             className="mb-6 text-pretty text-base sm:mb-8 sm:text-lg md:text-xl"
             style={textStyle}
           />
-          <Button size="lg" className="bg-amber-700 text-amber-50 hover:bg-amber-800">
-            <EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} />
-          </Button>
+          {ctaEnabled ? <Button asChild size="lg" className="bg-amber-700 text-amber-50 hover:bg-amber-800"><a href={ctaHref}><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button> : null}
         </div>
       </section>
     )
@@ -269,9 +257,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             className="mb-6 text-pretty text-sm text-amber-800 sm:text-base"
             style={textStyle}
           />
-          <Button size="lg" className="bg-amber-700 text-amber-50 hover:bg-amber-800 w-full">
-            <EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} />
-          </Button>
+          {ctaEnabled ? <Button asChild size="lg" className="w-full bg-amber-700 text-amber-50 hover:bg-amber-800"><a href={ctaHref}><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button> : null}
         </div>
       </section>
     )
@@ -310,11 +296,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
               className="mb-6 text-pretty text-base text-amber-800 sm:text-lg md:text-xl"
               style={textStyle}
             />
-            <div>
-              <Button size="lg" className="bg-amber-700 text-amber-50 hover:bg-amber-800">
-                <EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} />
-              </Button>
-            </div>
+            {ctaEnabled ? <div><Button asChild size="lg" className="bg-amber-700 text-amber-50 hover:bg-amber-800"><a href={ctaHref}><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button></div> : null}
           </div>
 
           {/* Image Side - Full right half */}

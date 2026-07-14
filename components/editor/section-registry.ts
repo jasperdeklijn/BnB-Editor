@@ -17,6 +17,7 @@ import {
   MapPin,
   Megaphone,
   ClipboardList,
+  Users,
   type LucideIcon,
 } from "lucide-react"
 import type { Section, SectionStyles, SectionType } from "@/lib/types"
@@ -42,6 +43,7 @@ import { PricingSection } from "@/components/sections/pricing-section"
 import { MapSection } from "@/components/sections/map-section"
 import { CtaSection } from "@/components/sections/cta-section"
 import { RequestFormSection } from "@/components/sections/request-form-section"
+import { TeamSection } from "@/components/sections/team-section"
 import { getDefaultLayoutForSection } from "@/lib/section-layouts"
 
 export interface SectionDefaultContext {
@@ -98,6 +100,8 @@ export const sectionDefinitions = {
       title: SECTION_COPY.hero.defaultTitle,
       subtitle: "Professionele service, persoonlijk contact.",
       ctaText: "Neem contact op",
+      ctaEnabled: true,
+      ctaHref: "#contact",
       layout: getDefaultLayoutForSection("hero"),
     }),
     Renderer: HeroSection,
@@ -111,6 +115,7 @@ export const sectionDefinitions = {
     defaultData: () => ({
       title: SECTION_COPY.about.defaultTitle,
       description: "Vertel wie je bent, wat je doet en waarom klanten voor je kiezen.",
+      images: [],
       layout: getDefaultLayoutForSection("about"),
     }),
     Renderer: AboutSection,
@@ -127,6 +132,7 @@ export const sectionDefinitions = {
       businessId: businessId ?? null,
       serviceIds: [],
       moreInfoButtonLabel: "Meer info",
+      infoPopupButtonEnabled: true,
       infoPopupEyebrow: "Aanbod",
       infoPopupTitle: "",
       infoPopupIntro: "",
@@ -199,7 +205,28 @@ export const sectionDefinitions = {
     category: "structure",
     defaultData: () => ({
       brandName: DEFAULT_BUSINESS_NAME,
+      companyName: DEFAULT_BUSINESS_NAME,
+      companyDescription: "Persoonlijke service en heldere afspraken.",
       copyright: `© ${currentYear} ${DEFAULT_BUSINESS_NAME}. Alle rechten voorbehouden.`,
+      showCompanyInfo: false,
+      address: "",
+      phone: "",
+      email: "",
+      registrationNumber: "",
+      vatNumber: "",
+      showLinks: true,
+      columns: [
+        {
+          title: "Snel naar",
+          links: [
+            { label: "Over ons", href: "#over-ons" },
+            { label: "Diensten", href: "#diensten" },
+            { label: "Contact", href: "#contact" },
+          ],
+        },
+      ],
+      showSocialLinks: false,
+      socialLinks: [],
       layout: getDefaultLayoutForSection("footer"),
     }),
     Renderer: FooterSection,
@@ -253,10 +280,35 @@ export const sectionDefinitions = {
     defaultData: () => ({
       title: SECTION_COPY.pricing.defaultTitle,
       subtitle: "Transparante tarieven zonder verrassingen.",
-      plans: [],
+      displayMode: "packages",
+      plans: [
+        { id: "plan-1", name: "Basis", price: "€ 49", period: "per keer", description: "Ideaal om kennis te maken.", features: ["Persoonlijk advies", "Heldere afspraken"], showButton: true, ctaText: "Kies basis" },
+        { id: "plan-2", name: "Compleet", price: "€ 99", period: "per maand", description: "Voor klanten die meer ondersteuning willen.", features: ["Alles uit Basis", "Snellere service"], highlighted: true, showButton: true, ctaText: "Kies compleet" },
+      ],
+      tariffs: [
+        { id: "tariff-1", name: "Kennismakingsgesprek", description: "Vrijblijvend gesprek van 30 minuten", price: "Gratis" },
+        { id: "tariff-2", name: "Uurtarief", description: "Voor losse werkzaamheden", price: "€ 75" },
+      ],
       layout: getDefaultLayoutForSection("pricing"),
     }),
     Renderer: PricingSection,
+  },
+  team: {
+    type: "team",
+    label: SECTION_COPY.team.label,
+    description: SECTION_COPY.team.description,
+    icon: Users,
+    category: "content",
+    defaultData: () => ({
+      title: SECTION_COPY.team.defaultTitle,
+      subtitle: "De mensen achter ons bedrijf.",
+      members: [
+        { id: "member-1", name: "Sanne de Vries", title: "Oprichter", bio: "Vertel kort wat dit teamlid doet en waar diegene goed in is.", image: "" },
+        { id: "member-2", name: "Noah Jansen", title: "Specialist", bio: "Een korte, persoonlijke introductie maakt je team herkenbaar.", image: "" },
+      ],
+      layout: getDefaultLayoutForSection("team"),
+    }),
+    Renderer: TeamSection,
   },
   map: {
     type: "map",
@@ -283,6 +335,10 @@ export const sectionDefinitions = {
       subtitle: "Neem vandaag nog contact op.",
       primaryCtaText: "Neem contact op",
       primaryCtaHref: "#contact",
+      primaryCtaEnabled: true,
+      secondaryCtaEnabled: false,
+      secondaryCtaText: "",
+      secondaryCtaHref: "",
       layout: getDefaultLayoutForSection("cta"),
     }),
     Renderer: CtaSection,

@@ -1,71 +1,80 @@
 "use client"
 
+import { Plus, Trash2, Type } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { SectionLinkSelect } from "@/components/editor/section-link-select"
 import type { SectionEditorProps } from "@/components/editor/section-editor-types"
-import { Type } from "lucide-react"
+import type { PricingPlan, TariffItem } from "@/components/sections/pricing-section"
 
-const fallbackPlans = [
-  { name: "Basis", price: "EUR 49", period: "per keer", description: "Ideaal voor eenmalige klussen of kennismaking.", features: ["Persoonlijk adviesgesprek", "Standaard uitvoering", "E-mail support"], ctaText: "Kies basis" },
-  { name: "Standaard", price: "EUR 99", period: "per maand", description: "De meest gekozen optie voor reguliere klanten.", features: ["Alle voordelen van Basis", "Prioriteit inplanning", "Telefonische support", "Maandelijkse rapportage"], ctaText: "Kies standaard", highlighted: true },
-  { name: "Premium", price: "Op aanvraag", description: "Maatwerk voor grotere opdrachten of bedrijven.", features: ["Alle voordelen van Standaard", "Dedicated accountmanager", "SLA garantie", "Onbeperkt support"], ctaText: "Neem contact op" },
+const fallbackPlans: PricingPlan[] = [
+  { id: "plan-1", name: "Basis", price: "€ 49", period: "per keer", description: "Ideaal om kennis te maken.", features: ["Persoonlijk advies", "Heldere afspraken"], showButton: true, ctaText: "Kies basis" },
+  { id: "plan-2", name: "Compleet", price: "€ 99", period: "per maand", description: "Voor klanten die meer ondersteuning willen.", features: ["Alles uit Basis", "Snellere service"], highlighted: true, showButton: true, ctaText: "Kies compleet" },
 ]
 
-export function PricingSectionEditor({ section, updateField, updateListItemField }: SectionEditorProps) {
-  const plans = ((section.data as any).plans as any[]) || fallbackPlans
+const fallbackTariffs: TariffItem[] = [
+  { id: "tariff-1", name: "Kennismakingsgesprek", description: "Vrijblijvend gesprek van 30 minuten", price: "Gratis" },
+  { id: "tariff-2", name: "Uurtarief", description: "Voor losse werkzaamheden", price: "€ 75" },
+]
+
+export function PricingSectionEditor({ section, updateField, sectionTargetOptions }: SectionEditorProps) {
+  const plans = Array.isArray(section.data.plans) ? section.data.plans as PricingPlan[] : fallbackPlans
+  const tariffs = Array.isArray(section.data.tariffs) ? section.data.tariffs as TariffItem[] : fallbackTariffs
+  const displayMode = section.data.displayMode === "menu" || section.data.displayMode === "both" ? section.data.displayMode : "packages"
+  const savePlans = (next: PricingPlan[]) => updateField("plans", next)
+  const saveTariffs = (next: TariffItem[]) => updateField("tariffs", next)
+  const updatePlan = (index: number, values: Partial<PricingPlan>) => savePlans(plans.map((plan, planIndex) => planIndex === index ? { ...plan, ...values } : plan))
+  const updateTariff = (index: number, values: Partial<TariffItem>) => saveTariffs(tariffs.map((item, itemIndex) => itemIndex === index ? { ...item, ...values } : item))
 
   return (
-    <Card className="p-4 space-y-3">
-      <Label className="flex items-center gap-2">
-        <Type className="h-3.5 w-3.5" />
-        Inhoud
-      </Label>
+    <Card className="space-y-4 p-4">
+      <Label className="flex items-center gap-2"><Type className="h-3.5 w-3.5" />Prijzen en tarieven</Label>
+      <Input placeholder="Onze tarieven" value={(section.data.title as string) || ""} onChange={(event) => updateField("title", event.target.value)} />
+      <Input placeholder="Transparante tarieven zonder verrassingen" value={(section.data.subtitle as string) || ""} onChange={(event) => updateField("subtitle", event.target.value)} />
       <div>
-        <Label className="text-xs mb-1.5 block">Titel</Label>
-        <Input
-          placeholder="Onze tarieven"
-          value={(section.data as any).title || ""}
-          onChange={(e) => updateField("title", e.target.value)}
-        />
+        <Label className="mb-1.5 block text-xs">Weergave</Label>
+        <select value={displayMode} onChange={(event) => updateField("displayMode", event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+          <option value="packages">Pakketten</option>
+          <option value="menu">Tarievenlijst</option>
+          <option value="both">Pakketten en tarievenlijst</option>
+        </select>
       </div>
-      <div>
-        <Label className="text-xs mb-1.5 block">Ondertitel</Label>
-        <Input
-          placeholder="Transparante tarieven zonder verrassingen"
-          value={(section.data as any).subtitle || ""}
-          onChange={(e) => updateField("subtitle", e.target.value)}
-        />
-      </div>
-      {plans.map((plan, index) => (
-        <div key={index} className="space-y-2 rounded-lg border border-border p-3">
-          <Input value={plan.name || ""} onChange={(e) => updateListItemField("plans", index, "name", e.target.value, fallbackPlans)} placeholder="Pakketnaam" />
-          <div className="grid grid-cols-2 gap-2">
-            <Input value={plan.price || ""} onChange={(e) => updateListItemField("plans", index, "price", e.target.value, fallbackPlans)} placeholder="Prijs" />
-            <Input value={plan.period || ""} onChange={(e) => updateListItemField("plans", index, "period", e.target.value, fallbackPlans)} placeholder="Periode" />
-          </div>
-          <textarea
-            value={plan.description || ""}
-            onChange={(e) => updateListItemField("plans", index, "description", e.target.value, fallbackPlans)}
-            placeholder="Beschrijving"
-            className="min-h-14 w-full resize-none rounded-lg border border-input bg-background p-2 text-sm shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-          />
-          <Input
-            value={(plan.features || []).join(", ")}
-            onChange={(e) =>
-              updateListItemField(
-                "plans",
-                index,
-                "features",
-                e.target.value.split(",").map((value) => value.trim()).filter(Boolean),
-                fallbackPlans,
-              )
-            }
-            placeholder="Voordelen, kommagescheiden"
-          />
-          <Input value={plan.ctaText || ""} onChange={(e) => updateListItemField("plans", index, "ctaText", e.target.value, fallbackPlans)} placeholder="Knoptekst" />
+
+      {displayMode !== "menu" ? (
+        <div className="space-y-3">
+          <div><p className="text-sm font-semibold">Pakketten</p><p className="text-xs text-muted-foreground">Voeg zelf zoveel pakketten toe als nodig.</p></div>
+          {plans.map((plan, index) => (
+            <div key={plan.id ?? index} className="space-y-2 rounded-lg border border-border p-3">
+              <div className="flex items-center justify-between"><span className="text-xs font-semibold">Pakket {index + 1}</span><Button type="button" variant="ghost" size="icon-sm" aria-label={`Pakket ${index + 1} verwijderen`} onClick={() => savePlans(plans.filter((_, planIndex) => planIndex !== index))}><Trash2 className="h-4 w-4" /></Button></div>
+              <Input value={plan.name || ""} onChange={(event) => updatePlan(index, { name: event.target.value })} placeholder="Pakketnaam" />
+              <div className="grid grid-cols-2 gap-2"><Input value={plan.price || ""} onChange={(event) => updatePlan(index, { price: event.target.value })} placeholder="Prijs" /><Input value={plan.period || ""} onChange={(event) => updatePlan(index, { period: event.target.value })} placeholder="Periode" /></div>
+              <textarea value={plan.description || ""} onChange={(event) => updatePlan(index, { description: event.target.value })} placeholder="Beschrijving" className="min-h-16 w-full resize-none rounded-lg border border-input bg-background p-2 text-sm" />
+              <Input value={(plan.features || []).join(", ")} onChange={(event) => updatePlan(index, { features: event.target.value.split(",").map((value) => value.trim()).filter(Boolean) })} placeholder="Voordelen, gescheiden met komma's" />
+              <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={plan.showButton !== false} onChange={(event) => updatePlan(index, { showButton: event.target.checked })} />Knop tonen</label>
+              {plan.showButton !== false ? <div className="space-y-2"><Input value={plan.ctaText || ""} onChange={(event) => updatePlan(index, { ctaText: event.target.value })} placeholder="Knoptekst" /><SectionLinkSelect value={plan.ctaHref || ""} onChange={(value) => updatePlan(index, { ctaHref: value })} options={sectionTargetOptions} ariaLabel={`Knopdoel voor pakket ${index + 1}`} /></div> : null}
+              <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={Boolean(plan.highlighted)} onChange={(event) => updatePlan(index, { highlighted: event.target.checked })} />Uitgelicht pakket</label>
+            </div>
+          ))}
+          <Button type="button" variant="outline" className="w-full" onClick={() => savePlans([...plans, { id: `plan-${Date.now()}`, name: "Nieuw pakket", price: "€ 0", period: "", description: "", features: [], showButton: true, ctaText: "Kies dit pakket" }])}><Plus className="mr-2 h-4 w-4" />Pakket toevoegen</Button>
         </div>
-      ))}
+      ) : null}
+
+      {displayMode !== "packages" ? (
+        <div className="space-y-3">
+          <div><p className="text-sm font-semibold">Tarievenlijst</p><p className="text-xs text-muted-foreground">Een menu met losse diensten en prijzen.</p></div>
+          {tariffs.map((item, index) => (
+            <div key={item.id ?? index} className="space-y-2 rounded-lg border border-border p-3">
+              <div className="flex items-center justify-between"><span className="text-xs font-semibold">Tarief {index + 1}</span><Button type="button" variant="ghost" size="icon-sm" aria-label={`Tarief ${index + 1} verwijderen`} onClick={() => saveTariffs(tariffs.filter((_, itemIndex) => itemIndex !== index))}><Trash2 className="h-4 w-4" /></Button></div>
+              <div className="grid grid-cols-[1fr_110px] gap-2"><Input value={item.name || ""} onChange={(event) => updateTariff(index, { name: event.target.value })} placeholder="Dienst" /><Input value={item.price || ""} onChange={(event) => updateTariff(index, { price: event.target.value })} placeholder="Prijs" /></div>
+              <Input value={item.description || ""} onChange={(event) => updateTariff(index, { description: event.target.value })} placeholder="Korte omschrijving" />
+              <Input value={item.category || ""} onChange={(event) => updateTariff(index, { category: event.target.value })} placeholder="Categorie (optioneel)" />
+            </div>
+          ))}
+          <Button type="button" variant="outline" className="w-full" onClick={() => saveTariffs([...tariffs, { id: `tariff-${Date.now()}`, name: "Nieuw tarief", description: "", price: "€ 0" }])}><Plus className="mr-2 h-4 w-4" />Tarief toevoegen</Button>
+        </div>
+      ) : null}
     </Card>
   )
 }

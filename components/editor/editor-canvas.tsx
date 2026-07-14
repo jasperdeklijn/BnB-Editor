@@ -189,12 +189,22 @@ export function EditorCanvas({
           const galleryImageIndex = galleryImageEl
             ? Number(galleryImageEl.dataset.galleryImageIndex)
             : undefined
+          const aboutImageEl = target.closest("[data-about-image-index]") as HTMLElement | null
+          const aboutImageIndex = aboutImageEl
+            ? Number(aboutImageEl.dataset.aboutImageIndex)
+            : undefined
 
           if (section.type === "gallery") {
             updateGalleryImage(
               section,
               detail.imageUrl,
               Number.isFinite(galleryImageIndex) ? galleryImageIndex : undefined,
+            )
+          } else if (section.type === "about") {
+            updateAboutImage(
+              section,
+              detail.imageUrl,
+              Number.isFinite(aboutImageIndex) ? aboutImageIndex : undefined,
             )
           } else {
             updateSection(sectionId, {
@@ -322,6 +332,22 @@ export function EditorCanvas({
     onSectionSelect(id)
   }
 
+  const updateAboutImage = (section: Section, imageUrl: string, targetIndex?: number) => {
+    const currentImages = Array.isArray(section.data?.images)
+      ? section.data.images.filter((image): image is string => typeof image === "string" && image.trim().length > 0)
+      : []
+    const index = typeof targetIndex === "number" && targetIndex >= 0 ? targetIndex : currentImages.length
+    const nextImages = [...currentImages]
+    nextImages[index] = imageUrl
+
+    updateSection(section.id, {
+      data: {
+        ...section.data,
+        images: nextImages,
+      },
+    })
+  }
+
   const handleDropOnGap = async (e: React.DragEvent, index: number) => {
     e.preventDefault()
 
@@ -397,6 +423,10 @@ export function EditorCanvas({
         suppressNextSectionClickRef.current = true
         if (section.type === "gallery") {
           updateGalleryImage(section, imageUrl)
+        } else if (section.type === "about") {
+          const aboutImageEl = (e.target as HTMLElement).closest("[data-about-image-index]") as HTMLElement | null
+          const aboutImageIndex = aboutImageEl ? Number(aboutImageEl.dataset.aboutImageIndex) : undefined
+          updateAboutImage(section, imageUrl, Number.isFinite(aboutImageIndex) ? aboutImageIndex : undefined)
         } else {
           updateSection(sectionId, {
             styles: { ...section.styles, backgroundImage: imageUrl }
