@@ -51,6 +51,7 @@ export default async function AdminLeadsPage() {
             <p className="mt-2 max-w-2xl text-sm text-white/60">Vind lokale bedrijven, beoordeel hun online presentatie en bereid outreach voor handmatige controle voor.</p>
           </div>
           <div className="flex gap-4 text-sm font-medium">
+            <Link href="/admin" className="text-[var(--brand-blue)] hover:text-white">Adminoverzicht</Link>
             <Link href="/admin/leads/settings" className="text-[var(--brand-blue)] hover:text-white">Automatisering</Link>
             <Link href="/editor" className="text-[var(--brand-blue)] hover:text-white">Terug naar editor</Link>
           </div>

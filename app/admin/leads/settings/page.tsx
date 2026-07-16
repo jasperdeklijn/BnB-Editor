@@ -47,7 +47,10 @@ export default async function LeadAgentSettingsPage() {
             <h1 className="mt-2 text-3xl font-bold">Wekelijkse lead-agent</h1>
             <p className="mt-2 max-w-2xl text-sm text-white/60">Configureer regio’s, branches, de weeklimiet en beheerdersnotificaties.</p>
           </div>
-          <Link href="/admin/leads" className="text-sm font-medium text-[var(--brand-blue)] hover:text-white">Terug naar leads</Link>
+          <div className="flex gap-4 text-sm font-medium">
+            <Link href="/admin" className="text-[var(--brand-blue)] hover:text-white">Adminoverzicht</Link>
+            <Link href="/admin/leads" className="text-[var(--brand-blue)] hover:text-white">Terug naar leads</Link>
+          </div>
         </div>
 
         <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

@@ -62,7 +62,10 @@ export default async function AuditLogsPage() {
             <h1 className="mt-2 text-3xl font-bold">Recente auditlogs</h1>
             <p className="mt-2 text-sm text-white/60">De nieuwste 200 acties. IP-adressen en metadata zijn alleen op deze beveiligde pagina zichtbaar.</p>
           </div>
-          <Link href="/editor" className="text-sm font-medium text-[var(--brand-blue)] hover:text-white">Terug naar editor</Link>
+          <div className="flex gap-4 text-sm font-medium">
+            <Link href="/admin" className="text-[var(--brand-blue)] hover:text-white">Adminoverzicht</Link>
+            <Link href="/editor" className="text-[var(--brand-blue)] hover:text-white">Terug naar editor</Link>
+          </div>
         </div>
 
         {error ? (
@@ -103,4 +106,3 @@ export default async function AuditLogsPage() {
     </main>
   )
 }
-
