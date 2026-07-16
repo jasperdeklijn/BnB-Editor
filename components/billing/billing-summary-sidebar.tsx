@@ -79,6 +79,9 @@ export function BillingSummarySidebar({
             {formatPrice(totalCharge)}/mnd
           </span>
         </div>
+        <p className="text-right text-xs text-muted-foreground">
+          Exclusief btw
+        </p>
       </div>
 
       {/* Next billing date */}

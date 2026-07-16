@@ -90,6 +90,9 @@ export default function PricingPage() {
               <p className="mt-5 text-lg leading-relaxed text-[var(--landing-muted)]">
                 Bronze zet je bedrijf online, Silver helpt meer aanvragen binnen te krijgen en Gold voegt online afspraken en boekingsbeheer toe.
               </p>
+              <p className="mt-3 text-sm font-semibold text-[var(--landing-primary)]">
+                Alle vermelde prijzen zijn exclusief btw.
+              </p>
             </div>
 
             <div className="mt-14 grid gap-8 lg:grid-cols-3">
@@ -126,6 +129,9 @@ export default function PricingPage() {
                         <span>{plan.name}</span>
                         <span className="mt-1 block text-xs font-semibold text-[var(--landing-muted)]">
                           {formatPrice(plan.monthlyPrice)}/maand
+                        </span>
+                        <span className="mt-0.5 block text-[10px] font-medium text-[var(--landing-muted)]">
+                          Excl. btw
                         </span>
                       </th>
                     ))}

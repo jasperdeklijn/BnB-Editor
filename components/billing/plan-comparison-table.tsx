@@ -90,8 +90,11 @@ export function PlanComparisonTable({
                 <div className="text-base font-bold text-primary mt-1">
                   {formatPrice(plan.monthlyPrice)}
                   <span className="text-xs font-normal text-muted-foreground">
-                    /mo
+                    /maand
                   </span>
+                </div>
+                <div className="mt-0.5 text-[10px] font-normal text-muted-foreground">
+                  Excl. btw
                 </div>
               </th>
             ))}

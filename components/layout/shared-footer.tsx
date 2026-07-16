@@ -50,9 +50,6 @@ export function SharedFooter() {
           <div>
             <h3 className="mb-3 text-sm font-semibold">Bedrijf</h3>
             <nav className="flex flex-col gap-2">
-              <Link href="/about" className="text-xs text-white/60 transition-colors hover:text-white">
-                Over ons
-              </Link>
               <a href={`mailto:${PLATFORM_EMAILS.support}`} className="text-xs text-white/60 transition-colors hover:text-white">
                 Support
               </a>

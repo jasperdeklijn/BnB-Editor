@@ -4,22 +4,6 @@ import { PLATFORM_DOMAIN } from "@/lib/platform"
 
 const platformDomain = PLATFORM_DOMAIN.toLowerCase().replace(/^www\./, "")
 const platformHosts = new Set([platformDomain, `www.${platformDomain}`])
-const publicPagePaths = new Set([
-  "/",
-  "/about",
-  "/acceptable-use",
-  "/cookies",
-  "/disclaimer",
-  "/legal",
-  "/pricing",
-  "/privacy",
-  "/processor-agreement",
-  "/robots.txt",
-  "/sitemap.xml",
-  "/status",
-  "/terms",
-])
-
 function isAssetOrApiRequest(pathname: string) {
   return (
     pathname.startsWith("/api/") ||
@@ -119,18 +103,13 @@ if (hostname.endsWith(`.${platformDomain}`)) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (
-    !publicPagePaths.has(request.nextUrl.pathname) &&
-    !user &&
-    !request.nextUrl.pathname.startsWith("/api") &&
-    !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth") &&
-    !request.nextUrl.pathname.startsWith("/editor-demo.mp4") &&
-    !request.nextUrl.pathname.startsWith("/legal") &&
-    !request.nextUrl.pathname.startsWith("/site") &&
-    !request.nextUrl.pathname.startsWith("/preview") &&
-    !request.nextUrl.pathname.startsWith("/sitemap.xml")
-  ) {
+  const requiresAuthentication =
+    request.nextUrl.pathname === "/editor" ||
+    request.nextUrl.pathname.startsWith("/editor/") ||
+    request.nextUrl.pathname === "/admin" ||
+    request.nextUrl.pathname.startsWith("/admin/")
+
+  if (requiresAuthentication && !user) {
     const url = request.nextUrl.clone()
     url.pathname = "/auth/login"
     return NextResponse.redirect(url)

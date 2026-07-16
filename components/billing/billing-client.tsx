@@ -35,6 +35,10 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
 
   return (
     <div className="space-y-8 pb-20">
+      <div className="rounded-xl border border-warning/30 bg-warning/10 px-5 py-4 text-sm text-foreground">
+        <span className="font-semibold">Let op:</span> alle vermelde abonnements- en add-onprijzen zijn exclusief btw.
+      </div>
+
       <Card className="rounded-xl border border-border bg-secondary/70 p-8 shadow-sm animate-in fade-in duration-700">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -93,6 +97,7 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
           Informatie over uw abonnement
         </h4>
         <ul className="space-y-2 text-sm text-muted-foreground">
+          <li>Alle vermelde abonnements- en add-onprijzen zijn exclusief btw.</li>
           <li>U kunt op elk moment van abonnement wisselen.</li>
           <li>Uw abonnement wordt automatisch maandelijks verlengd.</li>
           <li>Gold bevat online afspraken, beschikbaarheid en boekingsbeheer.</li>

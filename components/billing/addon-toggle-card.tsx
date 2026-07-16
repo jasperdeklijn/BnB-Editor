@@ -101,6 +101,9 @@ export function AddonToggleCard({
               <p className="text-sm text-muted-foreground">
                 {formatPrice(monthlyPrice)}/maand
               </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Exclusief btw
+              </p>
             </div>
           </div>
 
@@ -139,7 +142,7 @@ export function AddonToggleCard({
             </AlertDialogTitle>
             <AlertDialogDescription>
               {pendingState
-                ? `${formatPrice(monthlyPrice)}/maand wordt toegevoegd aan je volgende factuur.`
+                ? `${formatPrice(monthlyPrice)}/maand exclusief btw wordt toegevoegd aan je volgende factuur.`
                 : `Je verliest toegang tot deze functies na je volgende factuurdatum.`}
             </AlertDialogDescription>
           </AlertDialogHeader>

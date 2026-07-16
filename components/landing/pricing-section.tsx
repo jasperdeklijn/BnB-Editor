@@ -22,6 +22,9 @@ export function PricingSection() {
           <p className="mt-4 text-lg leading-relaxed text-[var(--landing-muted)]">
             Start met een professionele website, breid uit met aanvragen en ga door naar online boekingen wanneer je daar klaar voor bent.
           </p>
+          <p className="mt-3 text-sm font-semibold text-[var(--landing-primary)]">
+            Alle vermelde prijzen zijn exclusief btw.
+          </p>
         </div>
 
         <div className="mb-12 grid gap-8 lg:grid-cols-3 animate-in fade-in duration-700 delay-200">

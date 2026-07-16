@@ -35,7 +35,7 @@ export const homepageFaqItems = [
 
 export function LandingFaq() {
   return (
-    <section className="bg-white px-6 py-24" aria-labelledby="faq-title">
+    <section id="faq" className="scroll-mt-24 bg-white px-6 py-24" aria-labelledby="faq-title">
       <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[0.8fr_1.2fr]">
         <div>
           <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-[var(--landing-primary)]">

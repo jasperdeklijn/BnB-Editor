@@ -70,6 +70,9 @@ export function PricingCard({
             </span>
             <span className="text-sm text-[var(--landing-muted)]">/maand</span>
           </div>
+          <p className="mt-1 text-xs font-medium text-[var(--landing-muted)]">
+            Exclusief btw
+          </p>
         </div>
 
         <div className="mb-8 flex-1">
