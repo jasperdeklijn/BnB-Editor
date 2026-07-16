@@ -747,7 +747,10 @@ export function EditorClient({ userId, currentPlan, subscriptionNotice, enforcem
       return
     }
 
-    addSectionAt(type, sections.length)
+    const selectedIndex = selectedSectionId
+      ? sections.findIndex((section) => section.id === selectedSectionId)
+      : -1
+    addSectionAt(type, selectedIndex >= 0 ? selectedIndex + 1 : sections.length)
   }
 
   const handleMobileSectionPlacement = (index: number) => {
@@ -908,7 +911,7 @@ export function EditorClient({ userId, currentPlan, subscriptionNotice, enforcem
               ))}
             </select>
             <div
-              className={`flex h-11 max-w-[9.5rem] shrink-0 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium ${
+              className={`flex h-11 max-w-[7.5rem] shrink-0 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium ${
                 saveState === "error"
                   ? "border-warning/30 bg-warning/10 text-warning"
                   : "border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
@@ -919,96 +922,94 @@ export function EditorClient({ userId, currentPlan, subscriptionNotice, enforcem
               <SaveStatusIcon className={`h-3.5 w-3.5 ${isSaving || saveState === "saving" ? "animate-spin" : ""}`} />
               <span className="truncate">{mobileSaveStatusLabel}</span>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="size-11"
-              onClick={handleCreateWebsite}
-              disabled={isCreatingWebsite}
-              aria-label="Nieuwe website maken"
-              title="Nieuwe website maken"
-            >
-              {isCreatingWebsite ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            </Button>
-          </div>
-
-          <div className="flex min-w-0 items-center gap-2">
-            <label htmlFor="website-name-mobile" className="sr-only">
-              Websitenaam
-            </label>
-            <input
-              id="website-name-mobile"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              className="h-11 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-              placeholder="Websitenaam"
-            />
-            <Button
-              type="button"
-              size="default"
-              className="h-11 px-3 text-xs"
-              onClick={handleSave}
-              disabled={!websiteId || isRenamingWebsite}
-              aria-label="Websitenaam opslaan"
-              title="Websitenaam opslaan"
-            >
-              {isRenamingWebsite ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-              Naam opslaan
-            </Button>
             {selectedWebsite ? (
-              <a
-                href={selectedWebsitePreviewHref}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-border bg-background text-primary shadow-sm"
-                title={`Preview openen: ${selectedWebsitePreviewUrl}`}
-                aria-label={`Preview openen: ${selectedWebsitePreviewUrl}`}
-              >
-                <Eye className="h-4 w-4" />
-              </a>
-            ) : null}
-            {selectedWebsite ? (
-              selectedWebsite.published ? (
-                <a
-                  href={selectedWebsiteLiveHref}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex h-11 shrink-0 items-center justify-center gap-1 rounded-md border border-border bg-background px-3 text-xs font-medium text-primary shadow-sm"
-                  title={selectedWebsiteLiveUrl}
-                  aria-label={`Live site openen: ${selectedWebsiteLiveUrl}`}
-                >
-                  <Globe2 className="h-3.5 w-3.5 shrink-0 text-primary" />
-                  <span>Live</span>
-                  <ExternalLink className="h-3 w-3 shrink-0" />
-                </a>
-              ) : (
-                <Button
-                  type="button"
-                  size="default"
-                  variant={canPublishDraft ? "default" : "outline"}
-                  className="h-11 px-3 text-xs"
-                  onClick={handlePublish}
-                  disabled={!websiteId || isSaving}
-                  title={liveStatusDescription}
-                >
-                  {canPublishDraft ? "Live zetten" : "Blokkades"}
-                </Button>
-              )
-            ) : null}
-            {selectedWebsite?.published ? (
               <Button
                 type="button"
                 size="default"
                 variant={canPublishDraft ? "default" : "outline"}
-                className="h-11 px-3 text-xs"
+                className="h-11 shrink-0 px-3 text-xs"
                 onClick={handlePublish}
                 disabled={!websiteId || isSaving}
+                title={liveStatusDescription}
               >
-                {canPublishDraft ? "Live zetten" : "Blokkades"}
+                {canPublishDraft
+                  ? selectedWebsite.published
+                    ? "Nieuwe versie live"
+                    : "Live zetten"
+                  : "Blokkades"}
               </Button>
             ) : null}
           </div>
+
+          <details className="group rounded-md border border-border bg-muted/30">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 text-sm font-medium text-foreground">
+              <span>Website beheren</span>
+              <span className="text-xs font-normal text-muted-foreground group-open:hidden">Naam, links en nieuwe website</span>
+              <span className="hidden text-xs font-normal text-muted-foreground group-open:inline">Sluiten</span>
+            </summary>
+            <div className="space-y-2 border-t border-border p-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <label htmlFor="website-name-mobile" className="sr-only">
+                  Websitenaam
+                </label>
+                <input
+                  id="website-name-mobile"
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                  className="h-11 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  placeholder="Websitenaam"
+                />
+                <Button
+                  type="button"
+                  size="default"
+                  className="h-11 shrink-0 px-3 text-xs"
+                  onClick={handleSave}
+                  disabled={!websiteId || isRenamingWebsite}
+                >
+                  {isRenamingWebsite ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                  Naam opslaan
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11"
+                  onClick={handleCreateWebsite}
+                  disabled={isCreatingWebsite}
+                >
+                  {isCreatingWebsite ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                  Nieuwe website
+                </Button>
+                {selectedWebsite ? (
+                  <a
+                    href={selectedWebsitePreviewHref}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border bg-background px-3 text-sm font-medium text-primary shadow-sm"
+                    title={`Preview openen: ${selectedWebsitePreviewUrl}`}
+                  >
+                    <Eye className="h-4 w-4" />
+                    Preview
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                ) : null}
+              </div>
+              {selectedWebsite?.published ? (
+                <a
+                  href={selectedWebsiteLiveHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex h-11 min-w-0 items-center justify-center gap-2 rounded-md border border-border bg-background px-3 text-sm font-medium text-primary shadow-sm"
+                  title={selectedWebsiteLiveUrl}
+                >
+                  <Globe2 className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{selectedWebsiteLiveUrl}</span>
+                  <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+                </a>
+              ) : null}
+            </div>
+          </details>
         </div>
         {websiteMessage ? (
           <StatusMessage tone={websiteMessage.type} className="mx-auto mt-2 max-w-7xl text-xs">
@@ -1066,7 +1067,13 @@ export function EditorClient({ userId, currentPlan, subscriptionNotice, enforcem
       ) : null}
       {/* Desktop layout: side-by-side panels */}
       <div className="hidden md:flex flex-1 overflow-hidden">
-        {!isPreview && <SectionsSelector userId={userId} currentPlan={currentPlan} />}
+        {!isPreview && (
+          <SectionsSelector
+            userId={userId}
+            currentPlan={currentPlan}
+            onSectionAddRequest={handleSectionAddRequest}
+          />
+        )}
         <EditorCanvas
           sections={sections}
           setSections={persistSections}
@@ -1255,7 +1262,7 @@ export function EditorClient({ userId, currentPlan, subscriptionNotice, enforcem
               }`}
             >
               <LayoutTemplate className="h-5 w-5" />
-              Doek
+              Website
             </button>
             <button
               type="button"

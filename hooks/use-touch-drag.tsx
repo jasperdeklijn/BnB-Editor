@@ -30,6 +30,7 @@ export function useTouchDrag({ payload }: UseTouchDragOptions) {
   const ghostRef = useRef<HTMLDivElement | null>(null)
   const startPos = useRef<{ x: number; y: number } | null>(null)
   const isDragging = useRef(false)
+  const gestureCancelled = useRef(false)
   const labelRef = useRef<string>("")
   const removeDocumentListenersRef = useRef<(() => void) | null>(null)
 
@@ -41,11 +42,12 @@ export function useTouchDrag({ payload }: UseTouchDragOptions) {
     removeDocumentListenersRef.current?.()
     removeDocumentListenersRef.current = null
     isDragging.current = false
+    gestureCancelled.current = false
     startPos.current = null
   }
 
   const onTouchMove = (e: TouchEvent | ReactTouchEvent) => {
-    if (!startPos.current) return
+    if (!startPos.current || gestureCancelled.current) return
 
     const touch = e.touches[0]
     if (!touch) return
@@ -53,7 +55,14 @@ export function useTouchDrag({ payload }: UseTouchDragOptions) {
     const dx = touch.clientX - startPos.current.x
     const dy = touch.clientY - startPos.current.y
 
-    if (!isDragging.current && Math.hypot(dx, dy) < 10) return
+    if (!isDragging.current && Math.hypot(dx, dy) < 12) return
+
+    // Preserve normal list scrolling. A deliberate sideways gesture starts
+    // dragging toward the canvas; a vertical gesture remains a page scroll.
+    if (!isDragging.current && Math.abs(dy) > Math.abs(dx)) {
+      gestureCancelled.current = true
+      return
+    }
 
     e.preventDefault()
 
@@ -153,6 +162,7 @@ export function useTouchDrag({ payload }: UseTouchDragOptions) {
     cleanup()
     startPos.current = { x: touch.clientX, y: touch.clientY }
     isDragging.current = false
+    gestureCancelled.current = false
     labelRef.current = label ?? "Section"
 
     const handleDocumentTouchMove = (event: TouchEvent) => onTouchMove(event)

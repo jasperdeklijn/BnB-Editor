@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   ChevronLeft,
   ChevronRight,
@@ -36,31 +36,43 @@ interface SectionCardProps {
 
 function SectionCard({ type, label, Icon, description, collapsed, isDragging, onDragStart, onDragEnd, onAddSection, currentPlan }: SectionCardProps) {
   const { onTouchStart, onTouchMove, onTouchEnd } = useTouchDrag({ payload: { sectionType: type } })
+  const draggedRef = useRef(false)
   const requiredPlan = getMinimumPlanForSection(type)
   const isHigherTier = !planMeetsRequirement(currentPlan, requiredPlan)
   const handleClick = () => {
-    if (typeof window === "undefined" || window.innerWidth >= 768) return
+    if (draggedRef.current) return
     onAddSection?.(type)
   }
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (typeof window === "undefined" || window.innerWidth >= 768) return
     if (event.key !== "Enter" && event.key !== " ") return
     event.preventDefault()
     onAddSection?.(type)
   }
 
+  const handleCardDragStart = (event: React.DragEvent) => {
+    draggedRef.current = true
+    onDragStart(event, type)
+  }
+
+  const handleCardDragEnd = () => {
+    onDragEnd()
+    window.setTimeout(() => {
+      draggedRef.current = false
+    }, 0)
+  }
+
   return (
     <div
       draggable
-      onDragStart={(e) => onDragStart(e, type)}
-      onDragEnd={onDragEnd}
+      onDragStart={handleCardDragStart}
+      onDragEnd={handleCardDragEnd}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       onTouchStart={(e) => onTouchStart(e, label)}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
-      style={{ touchAction: "none" }}
+      style={{ touchAction: "pan-y" }}
       role={onAddSection ? "button" : undefined}
       tabIndex={onAddSection ? 0 : undefined}
       aria-label={onAddSection ? `${label} plaatsen` : undefined}
@@ -115,7 +127,7 @@ function ImageCard({ name, url, collapsed, isDragging, onDragStart, onDragEnd }:
       onTouchStart={(e) => onTouchStart(e, name)}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
-      style={{ touchAction: "none" }}
+      style={{ touchAction: "pan-y" }}
       className={`rounded-lg border border-border bg-card p-1 shadow-sm cursor-move hover:border-primary transition-all duration-200 select-none ${
         isDragging ? "ring-4 ring-primary shadow-xl scale-105 bg-secondary" : ""
       }`}
@@ -308,7 +320,7 @@ export function SectionsSelector({ className = "", userId, onSectionAdded, onSec
             <h3 className={`${collapsed ? "sr-only" : "mb-1 text-sm font-semibold"}`}>Secties toevoegen</h3>
             <p className={`${collapsed ? "sr-only" : "text-xs text-muted-foreground"}`}>
               <span className="md:hidden">Tik op een sectie om een plek te kiezen. Slepen kan ook.</span>
-              <span className="hidden md:inline">Sleep een sectie naar de gewenste plek.</span>
+              <span className="hidden md:inline">Klik om toe te voegen. Sleep voor precieze plaatsing.</span>
             </p>
           </div>
 
@@ -334,7 +346,7 @@ export function SectionsSelector({ className = "", userId, onSectionAdded, onSec
             <div className="mt-6 rounded-xl border border-dashed border-border bg-secondary/70 p-3 text-center animate-in fade-in slide-in-from-left-2 duration-300">
               <p className="text-xs text-muted-foreground">
                 <span className="md:hidden">Op mobiel kiest u na het tikken waar de sectie op de pagina komt.</span>
-                <span className="hidden md:inline">Sleep naar het canvas om de sectie precies te plaatsen.</span>
+                <span className="hidden md:inline">Een klik plaatst de sectie na uw selectie, of onderaan als niets geselecteerd is.</span>
               </p>
             </div>
           )}

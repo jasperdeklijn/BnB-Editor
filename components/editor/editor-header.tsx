@@ -243,7 +243,7 @@ export function EditorHeader({
           {saveState === "saving" ? (
             <>
               <Loader2 className="h-3 w-3 md:h-3.5 md:w-3.5 animate-spin" />
-              <span className="hidden md:inline">Opslaan…</span>
+              <span className="hidden md:inline">Opslaan...</span>
             </>
           ) : saveState === "error" ? (
             <>
