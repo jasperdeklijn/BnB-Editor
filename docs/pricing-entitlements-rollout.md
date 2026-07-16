@@ -9,6 +9,7 @@ This runbook enables the Bronze, Silver, and Gold entitlement system after the s
 - [x] Confirm `20260712190000_create_subscriptions.sql` is present on the configured target (`subscriptions` REST query succeeds).
 - [ ] Apply `20260712200000_add_website_live_snapshots.sql`.
 - [ ] Apply `20260712210000_race_safe_live_promotion.sql`.
+- [ ] If the target was only partially migrated or reports a missing `websites.draft_version`, apply the idempotent repair migration `20260716120000_repair_live_snapshot_publishing.sql`.
 - [ ] Confirm existing published websites have a non-null `live_snapshot`, `live_published_at`, and `draft_version`.
 - [ ] Confirm `promote_website_live_snapshot` is executable by `authenticated`, but not `public`/anonymous users.
 - [ ] Confirm each existing customer has the intended subscription row or intentionally receives the temporary Gold default.

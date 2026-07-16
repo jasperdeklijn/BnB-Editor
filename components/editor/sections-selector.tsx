@@ -86,8 +86,8 @@ function SectionCard({ type, label, Icon, description, collapsed, isDragging, on
       </div>
       {!collapsed && (
         <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-medium">{label}</span>
+          <div className="flex min-w-0 items-start justify-between gap-2">
+            <span className="min-w-0 flex-1 text-sm font-medium leading-tight">{label}</span>
             {requiredPlan !== "bronze" ? <TierBadge plan={requiredPlan} /> : null}
           </div>
           <p className="text-xs leading-relaxed text-muted-foreground">{description}</p>
@@ -95,7 +95,14 @@ function SectionCard({ type, label, Icon, description, collapsed, isDragging, on
         </div>
       )}
       {collapsed && requiredPlan !== "bronze" ? (
-        <span className="absolute -right-1 -top-1 rounded-full bg-amber-500 px-1 text-[9px] font-bold text-white" aria-label={`${requiredPlan} abonnement`}>
+        <span
+          className={`absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full border px-1 text-[9px] font-bold leading-none shadow-sm ${
+            requiredPlan === "silver"
+              ? "border-slate-400 bg-gradient-to-b from-white to-slate-300 text-slate-700"
+              : "border-amber-500 bg-gradient-to-b from-amber-100 to-amber-400 text-amber-950"
+          }`}
+          aria-label={`${requiredPlan} abonnement`}
+        >
           {requiredPlan === "silver" ? "S" : "G"}
         </span>
       ) : null}

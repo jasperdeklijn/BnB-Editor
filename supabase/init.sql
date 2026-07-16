@@ -145,6 +145,9 @@ comment on column public.websites.live_snapshot is
 comment on column public.websites.live_published_at is
   'Timestamp of the draft promotion that produced live_snapshot.';
 
+comment on column public.websites.draft_version is
+  'Changes whenever website draft content changes and is checked during atomic live publication.';
+
 create table public.website_sections (
   id uuid primary key default gen_random_uuid(),
   website_id uuid not null references public.websites(id) on delete cascade,

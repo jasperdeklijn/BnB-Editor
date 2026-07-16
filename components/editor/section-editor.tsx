@@ -36,7 +36,13 @@ import { getSectionLayoutOptions, normalizeSectionLayout, type SectionLayout } f
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
 import type { PlanId } from "@/lib/types/pricing"
-import { getMinimumPlanForSection, planMeetsRequirement } from "@/lib/entitlements"
+import {
+  getMinimumPlanForCapability,
+  getMinimumPlanForSection,
+  getSectionCapabilities,
+  highestRequiredPlan,
+  planMeetsRequirement,
+} from "@/lib/entitlements"
 import { TierBadge } from "@/components/editor/tier-badge"
 
 interface SelectionEditorProps {
@@ -336,7 +342,12 @@ export function SelectionEditor({
 
   const selectedLayout = normalizeSectionLayout((selectedSection.data as any).layout)
   const selectedSectionLabel = getSectionDefinition(selectedSection.type)?.label ?? selectedSection.type.replace("_", " ")
-  const selectedSectionPlan = getMinimumPlanForSection(selectedSection.type)
+  const selectedSectionBasePlan = getMinimumPlanForSection(selectedSection.type)
+  const selectedSectionPlan = highestRequiredPlan([
+    selectedSectionBasePlan,
+    ...getSectionCapabilities(selectedSection).map(getMinimumPlanForCapability),
+  ])
+  const selectedSectionUsesHigherTierFeature = selectedSectionPlan !== selectedSectionBasePlan
   const selectedSectionExceedsPlan = !planMeetsRequirement(currentPlan, selectedSectionPlan)
   const layoutOptions = getSectionLayoutOptions(selectedSection.type)
   const selectedLayoutOption = layoutOptions.find((option) => option.value === selectedLayout) ?? layoutOptions[0]
@@ -410,7 +421,9 @@ export function SelectionEditor({
         <p className="text-xs text-muted-foreground">Pas de tekst en het uiterlijk van dit blok aan.</p>
         {selectedSectionExceedsPlan ? (
           <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-900">
-            Deze sectie hoort bij {selectedSectionPlan}. Je kunt haar volledig instellen en bekijken, maar deze versie kan pas live na een upgrade of wanneer je de sectie verwijdert.
+            {selectedSectionUsesHigherTierFeature
+              ? `Een ingeschakelde functie in deze sectie vereist ${selectedSectionPlan}. Je kunt haar volledig instellen en bekijken, maar deze versie kan pas live na een upgrade of wanneer je de functie uitschakelt.`
+              : `Deze sectie hoort bij ${selectedSectionPlan}. Je kunt haar volledig instellen en bekijken, maar deze versie kan pas live na een upgrade of wanneer je de sectie verwijdert.`}
           </div>
         ) : null}
       </div>
@@ -736,7 +749,7 @@ export function SelectionEditor({
                   {currentType !== "none" ? (
                     <div className="mt-3 p-2 rounded bg-muted border border-border">
                       <p className="text-xs text-muted-foreground">
-                        Voorvertoning: Controleer het editorcanvas om de {currentType} overgang te zien
+                        De gekozen overgang verschijnt direct tussen deze sectie en de volgende op het editorcanvas.
                       </p>
                     </div>
                   ) : null}

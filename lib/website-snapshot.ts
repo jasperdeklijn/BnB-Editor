@@ -107,6 +107,15 @@ export async function buildWebsiteLiveSnapshot({
     .single()
 
   if (websiteError || !website) {
+    if (
+      websiteError?.message.includes("draft_version") ||
+      websiteError?.message.includes("live_snapshot") ||
+      websiteError?.code === "42703"
+    ) {
+      throw new Error(
+        "De Supabase-database mist de live-publicatiemigratie. Voer migratie 20260716120000_repair_live_snapshot_publishing.sql uit en probeer opnieuw.",
+      )
+    }
     throw new Error(websiteError?.message || "Website not found")
   }
 

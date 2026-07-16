@@ -9,10 +9,17 @@ interface TierBadgeProps {
 }
 
 export function TierBadge({ plan, className, prefix }: TierBadgeProps) {
+  const planClasses: Record<PlanId, string> = {
+    bronze: "border-orange-700/30 bg-orange-700/10 text-orange-900",
+    silver: "border-slate-400/60 bg-slate-100 text-slate-700",
+    gold: "border-amber-500/50 bg-amber-100 text-amber-900",
+  }
+
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-800",
+        "inline-flex shrink-0 items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-semibold leading-none",
+        planClasses[plan],
         className,
       )}
       aria-label={`${prefix ? `${prefix}: ` : ""}${getPlanDisplayName(plan)} abonnement`}

@@ -8,7 +8,7 @@ import {
   DEFAULT_GALLERY_IMAGES,
 } from "@/lib/business-naming"
 import { getDefaultSectionData as getRegistryDefaultSectionData, getSectionDefinition } from "@/components/editor/section-registry"
-import { SectionRenderer } from "./section-renderer"
+import { SectionRenderer, TransitionWrapper } from "./section-renderer"
 import { useEditorLayout } from "./editor-layout-context"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { createClient } from "@/lib/supabase/client"
@@ -51,54 +51,6 @@ export function EditorCanvas({
 }: EditorCanvasProps) {
   const [tutorialDismissed, setTutorialDismissed] = useState(false)
   const { setIsSaving, setSaveState } = useEditorLayout()
-  function SectionTransition({
-    type,
-    from = {},
-    to = {},
-  }: {
-    type: string
-    from?: Record<string, unknown>
-    to?: Record<string, unknown>
-  }) {
-    const fromBg = (from as any)?.backgroundColor || "#ffffff"
-    const toBg = (to as any)?.backgroundColor || "#fff7ed"
-    const height = 56
-
-    const baseStyle: React.CSSProperties = {
-      height,
-      width: "100%",
-    }
-
-    if (type === "fade" || type === "gradient") {
-      return (
-        <div style={{ ...baseStyle, background: `linear-gradient(180deg, ${fromBg} 0%, ${toBg} 100%)` }} className="my-2 pointer-events-none" />
-      )
-    }
-
-    if (type === "wave") {
-      return (
-        <div className="my-2 pointer-events-none" style={{ ...baseStyle, background: "transparent" }}>
-          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="w-full h-full" style={{ display: "block" }}>
-            <defs>
-              <linearGradient id="grad-wave" x1="0%" x2="0%" y1="0%" y2="100%">
-                <stop offset="0%" stopColor={fromBg} stopOpacity="1" />
-                <stop offset="100%" stopColor={toBg} stopOpacity="1" />
-              </linearGradient>
-            </defs>
-            <path d="M0,0 C150,60 350,0 600,40 C850,80 1050,20 1200,60 L1200,120 L0,120 Z" fill="url(#grad-wave)" />
-          </svg>
-        </div>
-      )
-    }
-
-    if (type === "slide" || type === "curve" || type === "diagonal" || type === "zigzag" || type === "split") {
-      return (
-        <div style={{ ...baseStyle, background: `linear-gradient(180deg, ${fromBg} 0%, ${toBg} 100%)` }} className="my-2 pointer-events-none" />
-      )
-    }
-
-    return null
-  }
   const sectionRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const canvasRef = useRef<HTMLElement | null>(null)
   const suppressNextSectionClickRef = useRef(false)
@@ -790,14 +742,40 @@ export function EditorCanvas({
             // If there's a transition to the next section, render an explicit
             // visual separator between this section and the next
             if (transitionToNext && next) {
+              const transitionLabels: Record<Transition["type"], string> = {
+                none: "Geen",
+                fade: "Vervagen",
+                gradient: "Verloop",
+                slide: "Schuiven",
+                wave: "Golf",
+                curve: "Kromme",
+                diagonal: "Diagonaal",
+                zigzag: "Zigzag",
+                split: "Splitsen",
+              }
+              const fromColor = section.styles?.backgroundColor || "#ffffff"
+              const toColor = next.styles?.backgroundColor || "#fafaf9"
+
               return (
                 <React.Fragment key={section.id}>
                   {content}
-                  <SectionTransition
-                    type={transitionToNext.type}
-                    from={section.styles as Record<string, unknown>}
-                    to={next.styles as Record<string, unknown>}
-                  />
+                  <div
+                    className={`relative overflow-hidden ${isPreview ? "" : "mb-4 rounded-lg border border-dashed border-primary/50 bg-background shadow-sm"}`}
+                    aria-label={`Voorbeeld van overgang: ${transitionLabels[transitionToNext.type]}`}
+                  >
+                    {!isPreview ? (
+                      <span className="absolute left-1/2 top-1 z-10 -translate-x-1/2 rounded-full border border-primary/20 bg-background/90 px-2 py-0.5 text-[10px] font-medium text-primary shadow-sm backdrop-blur">
+                        Overgang: {transitionLabels[transitionToNext.type]}
+                      </span>
+                    ) : null}
+                    <TransitionWrapper
+                      key={`${section.id}-${next.id}-${transitionToNext.type}`}
+                      type={transitionToNext.type}
+                      position="center"
+                      fromColor={fromColor}
+                      toColor={toColor}
+                    />
+                  </div>
                 </React.Fragment>
               )
             }
