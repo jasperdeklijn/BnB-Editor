@@ -37,13 +37,18 @@ export function LandingHowItWorks() {
           </p>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {steps.map((s) => (
+        <div className="relative grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="absolute left-[10%] right-[10%] top-[22px] hidden h-px bg-[linear-gradient(90deg,var(--landing-accent),var(--landing-gold),var(--landing-accent))] lg:block" aria-hidden="true" />
+          {steps.map((s, index) => (
             <article
               key={s.step}
-              className="rounded-3xl border border-[var(--landing-border)] bg-white p-7"
+              className="relative rounded-3xl border border-[var(--landing-border)] bg-white p-7 shadow-[0_12px_30px_rgba(31,41,51,0.04)]"
             >
-              <div className="mb-8 flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--landing-primary-light)] text-sm font-bold text-[var(--landing-primary-dark)]">
+              <div className={`relative z-10 mb-8 flex h-11 w-11 items-center justify-center rounded-2xl text-sm font-bold ${
+                index % 2 === 0
+                  ? "bg-[var(--landing-primary)] text-white"
+                  : "bg-[var(--landing-gold-light)] text-[#8a6418]"
+              }`}>
                 {s.step}
               </div>
               <h3 className="mb-2 text-lg font-bold text-[var(--landing-secondary)]">{s.title}</h3>

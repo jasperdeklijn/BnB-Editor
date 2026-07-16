@@ -91,7 +91,10 @@ export function LandingNav() {
           </Link>
           <Link href="#prijzen" onClick={handleNavClick} className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
             Prijzen
-          </Link> 
+          </Link>
+          <Link href="/about" className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
+            Over ons
+          </Link>
         </nav>
 
         {/* CTA */}
@@ -151,6 +154,8 @@ export function LandingNav() {
             <Link href="#functies" onClick={handleNavClick} className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">Functies</Link>
             <Link href="#hoe-het-werkt" onClick={handleNavClick} className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">Hoe het werkt</Link>
             <Link href="#voorbeeld" onClick={handleNavClick} className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">Voorbeeld</Link>
+            <Link href="/pricing" className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">Prijzen</Link>
+            <Link href="/about" className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">Over ons</Link>
             <div className="flex gap-3 pt-2">
               {!isLoading && (
                 <>

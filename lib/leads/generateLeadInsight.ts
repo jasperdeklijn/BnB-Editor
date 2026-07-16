@@ -59,14 +59,14 @@ function getResponseText(data: unknown) {
 
 export async function generateLeadInsight(input: LeadInsightInput): Promise<LeadInsight> {
   const fallback = createFallback(input)
-  const apiKey = process.env.OPENAI_API_KEY?.trim()
+  const apiKey = process.env.AI_GATEWAY_API_KEY?.trim() || process.env.VERCEL_OIDC_TOKEN?.trim()
   if (!apiKey) return fallback
 
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 20_000)
 
   try {
-    const response = await fetch("https://api.openai.com/v1/responses", {
+    const response = await fetch("https://ai-gateway.vercel.sh/v1/responses", {
       method: "POST",
       signal: controller.signal,
       headers: {
@@ -74,7 +74,7 @@ export async function generateLeadInsight(input: LeadInsightInput): Promise<Lead
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-5.4-mini",
+        model: "openai/gpt-5.4-mini",
         instructions: "Je bent een Nederlandse sales assistant voor een SaaS website builder voor kleine ondernemers en ZZP'ers. Geef uitsluitend geldige JSON met de sleutels reason en outreachDraft.",
         input: `Schrijf 1. een korte interne reden waarom deze lead interessant is en 2. een vriendelijke outreach-conceptmail.\n\nRegels:\n- Niet agressief verkopen.\n- Niet doen alsof we de ondernemer persoonlijk kennen.\n- Geen harde claims maken als die niet zeker zijn.\n- Maximaal 120 woorden voor de mail.\n- Schrijf in het Nederlands.\n- Noem concreet wat verbeterd kan worden.\n- Eindig met een laagdrempelige vraag.\n\nLeadgegevens:\n${JSON.stringify(input)}`,
         max_output_tokens: 500,

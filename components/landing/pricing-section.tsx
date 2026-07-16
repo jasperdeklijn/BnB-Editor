@@ -10,17 +10,17 @@ export function PricingSection() {
   const plans = getMainPlans()
 
   return (
-    <section id="prijzen" className="bg-white px-6 py-24">
+    <section id="prijzen" className="bg-[var(--landing-warm)] px-6 py-24">
       <div className="mx-auto max-w-6xl">
         <div className="mx-auto mb-14 max-w-2xl text-center animate-in fade-in duration-700">
           <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-[var(--landing-primary)]">
             Prijzen
           </p>
           <h2 className="text-balance text-4xl font-bold tracking-tight text-[var(--landing-secondary)] md:text-5xl">
-            Kies het plan dat past bij uw bedrijf
+            Kies het plan dat past bij je bedrijf
           </h2>
           <p className="mt-4 text-lg leading-relaxed text-[var(--landing-muted)]">
-            Start met een professionele website, breid uit met aanvragen en ga door naar online boekingen wanneer u daar klaar voor bent.
+            Start met een professionele website, breid uit met aanvragen en ga door naar online boekingen wanneer je daar klaar voor bent.
           </p>
         </div>
 
@@ -43,7 +43,7 @@ export function PricingSection() {
           </Button>
 
           <p className="mt-4 text-sm text-[var(--landing-muted)]">
-            Upgraden of downgraden kan wanneer uw bedrijf verandert.
+            Upgraden of downgraden kan wanneer je bedrijf verandert.
           </p>
         </div>
       </div>

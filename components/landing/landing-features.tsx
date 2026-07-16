@@ -1,4 +1,5 @@
 import { Brush, CloudUpload, Images, LayoutTemplate, MousePointer2, ShieldCheck } from "lucide-react"
+import type { CSSProperties } from "react"
 
 const features = [
   {
@@ -33,9 +34,16 @@ const features = [
   },
 ]
 
+const featureStyles = [
+  "bg-[var(--landing-primary-light)] text-[var(--landing-primary-dark)]",
+  "bg-[var(--landing-gold-light)] text-[#8a6418]",
+  "bg-[var(--landing-sage)] text-[var(--landing-primary-dark)]",
+]
+
 export function LandingFeatures() {
   return (
-    <section id="functies" className="bg-white px-6 py-24">
+    <section id="functies" className="relative overflow-hidden bg-[var(--landing-surface)] px-6 py-24">
+      <div className="absolute -left-24 top-20 h-64 w-64 rounded-full bg-[var(--landing-sage)]/55 blur-3xl" aria-hidden="true" />
       <div className="mx-auto max-w-6xl">
         <div className="mb-14 max-w-2xl">
           <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-[var(--landing-primary)]">
@@ -50,15 +58,18 @@ export function LandingFeatures() {
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature) => {
+          {features.map((feature, index) => {
             const Icon = feature.icon
 
             return (
               <article
                 key={feature.title}
-                className="rounded-3xl border border-[var(--landing-border)] bg-white p-7 shadow-[0_16px_40px_rgba(31,41,51,0.06)] transition-all hover:-translate-y-1 hover:border-[var(--landing-primary)]"
+                className="relative overflow-hidden rounded-3xl border border-[var(--landing-border)] bg-white p-7 shadow-[0_16px_40px_rgba(31,41,51,0.06)] transition-all before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[var(--card-accent)] hover:-translate-y-1 hover:border-[var(--landing-primary)]"
+                style={{
+                  "--card-accent": index % 3 === 1 ? "var(--landing-gold)" : "var(--landing-accent)",
+                } as CSSProperties}
               >
-                <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--landing-primary-light)] text-[var(--landing-primary-dark)]">
+                <div className={`mb-5 flex h-11 w-11 items-center justify-center rounded-2xl ${featureStyles[index % featureStyles.length]}`}>
                   <Icon className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <h3 className="mb-2 text-lg font-bold text-[var(--landing-secondary)]">{feature.title}</h3>

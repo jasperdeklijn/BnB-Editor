@@ -5,6 +5,10 @@ import { EditorLayoutClient } from "@/components/editor/editor-layout-client"
 export const metadata = {
   title: "Editor | Website Maker",
   description: "Bouw en beheer uw website",
+  robots: {
+    index: false,
+    follow: false,
+  },
 }
 
 export default async function EditorLayout({

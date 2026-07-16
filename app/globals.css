@@ -48,11 +48,16 @@
   --brand-purple: #385344;
   --surface-dim: #e9efea;
   --landing-surface: #f6f8f5;
+  --landing-soft: #f6f8f5;
   --landing-primary: #385344;
   --landing-primary-dark: #24382d;
   --landing-primary-light: #eaf1ed;
   --landing-secondary: #20342a;
   --landing-accent: #6f927d;
+  --landing-gold: #d39b2a;
+  --landing-gold-light: #fbf3df;
+  --landing-warm: #faf8f2;
+  --landing-sage: #dce8e0;
   --landing-border: #d6e0d9;
   --landing-muted: #667085;
   --landing-footer: #1d2c24;

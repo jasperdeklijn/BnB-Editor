@@ -23,6 +23,11 @@ export function PricingCard({
   const handleClick = () => {
     onSelectPlan?.(plan.id)
   }
+  const planAccent = {
+    bronze: "before:bg-[#a96f44]",
+    silver: "before:bg-[var(--landing-accent)]",
+    gold: "before:bg-[var(--landing-gold)]",
+  }[plan.id]
 
   const buttonClasses = cn(
     "group/btn w-full gap-2 rounded-full transition-all duration-300",
@@ -34,7 +39,8 @@ export function PricingCard({
   return (
     <div
       className={cn(
-        "relative flex flex-col overflow-hidden rounded-3xl border transition-all duration-300",
+        "relative flex flex-col overflow-hidden rounded-3xl border transition-all duration-300 before:absolute before:inset-x-0 before:top-0 before:h-1",
+        planAccent,
         isPopular
           ? "border-[var(--landing-primary)] bg-[var(--landing-primary-light)] shadow-[0_20px_48px_rgba(31,41,51,0.09)] ring-1 ring-[var(--landing-primary)]/15 lg:scale-[1.03]"
           : "border-[var(--landing-border)] bg-white shadow-[0_16px_40px_rgba(31,41,51,0.06)] hover:border-[var(--landing-primary)]",

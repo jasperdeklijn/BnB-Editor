@@ -113,7 +113,7 @@ Voeg toe aan `.env.local`:
 ```env
 GOOGLE_PLACES_API_KEY=
 GOOGLE_PAGESPEED_API_KEY=
-OPENAI_API_KEY=
+AI_GATEWAY_API_KEY=
 ```
 
 Checklist:
@@ -121,6 +121,12 @@ Checklist:
 * [x] Voeg env vars toe
 * [x] Controleer dat keys alleen server-side gebruikt worden
 * [x] Nooit API keys naar client sturen
+
+De AI-helper gebruikt Vercel AI Gateway via de OpenAI Responses-compatible endpoint.
+Lokaal wordt `AI_GATEWAY_API_KEY` gebruikt. Op een Vercel deployment kan de
+automatisch beschikbare `VERCEL_OIDC_TOKEN` worden gebruikt, zodat daar geen
+aparte provider-key nodig is. Het model gebruikt de Gateway-notatie
+`openai/gpt-5.4-mini`.
 
 ---
 
@@ -328,7 +334,7 @@ Regels:
 Checklist:
 
 * [x] Maak AI helper
-* [x] Gebruik server-side API key
+* [x] Gebruik Vercel AI Gateway met server-side authenticatie
 * [x] Maak fallback tekst als AI faalt
 * [x] Verstuur nooit automatisch e-mail
 * [x] Sla alleen concepttekst op

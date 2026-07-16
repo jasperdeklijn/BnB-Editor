@@ -4,17 +4,38 @@ import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { PLATFORM_BRAND_NAME } from "@/lib/platform"
+import { PLATFORM_BASE_URL } from "@/lib/platform"
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: PLATFORM_BRAND_NAME,
-  description: 'Bouw eenvoudig een professionele website voor jouw kleine bedrijf. Geen code nodig, direct online.',
-  generator: 'v0.app',
+  metadataBase: new URL(PLATFORM_BASE_URL),
+  title: {
+    default: `Website maken voor je bedrijf | ${PLATFORM_BRAND_NAME}`,
+    template: `%s | ${PLATFORM_BRAND_NAME}`,
+  },
+  description:
+    'Maak zelf een professionele website voor je bedrijf. Kies kant-en-klare secties, pas alles visueel aan en publiceer zonder code.',
+  keywords: [
+    "website maken",
+    "websitebouwer kleine ondernemer",
+    "bedrijfswebsite maken",
+    "website maken zonder code",
+    "website builder Nederland",
+  ],
+  openGraph: {
+    type: "website",
+    locale: "nl_NL",
+    siteName: PLATFORM_BRAND_NAME,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
   icons: [
-    { rel: 'icon', url: '/icon.png', sizes: '1024x1024', type: 'image/png' },
+    { rel: 'icon', url: '/favicon.ico' },
   ],
 }
 

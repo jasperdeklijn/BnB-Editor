@@ -9,9 +9,18 @@ import { PLATFORM_BRAND_INITIALS, PLATFORM_BRAND_NAME } from "@/lib/platform"
 import type { PlanId } from "@/lib/types/pricing"
 
 export const metadata = {
-  title: `Prijzen | ${PLATFORM_BRAND_NAME}`,
+  title: "Prijzen",
   description:
-    "Transparante abonnementen voor uw website: Bronze, Silver en Gold. Kies de functies die passen bij uw bedrijf.",
+    "Transparante abonnementen voor je website: Bronze, Silver en Gold. Kies de functies die passen bij je bedrijf.",
+  alternates: {
+    canonical: "/pricing",
+  },
+  openGraph: {
+    url: "/pricing",
+    title: `Prijzen | ${PLATFORM_BRAND_NAME}`,
+    description:
+      "Vergelijk Bronze, Silver en Gold voor je bedrijfswebsite.",
+  },
 }
 
 const planPosition: Record<PlanId, number> = {
@@ -79,7 +88,7 @@ export default function PricingPage() {
                 Duidelijke abonnementen voor elke groeifase
               </h1>
               <p className="mt-5 text-lg leading-relaxed text-[var(--landing-muted)]">
-                Bronze zet uw bedrijf online, Silver helpt meer aanvragen binnen te krijgen en Gold voegt online afspraken en boekingsbeheer toe.
+                Bronze zet je bedrijf online, Silver helpt meer aanvragen binnen te krijgen en Gold voegt online afspraken en boekingsbeheer toe.
               </p>
             </div>
 
@@ -168,10 +177,10 @@ export default function PricingPage() {
               <ShieldCheck className="h-6 w-6" />
             </div>
             <h2 className="text-balance text-3xl font-bold md:text-4xl">
-              Klaar om uw website professioneel online te zetten?
+              Klaar om je website professioneel online te zetten?
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-white/78">
-              Kies het abonnement dat nu past. U kunt later uitbreiden wanneer u meer aanvragen of online boekingen nodig heeft.
+              Kies het abonnement dat nu past. Je kunt later uitbreiden wanneer je meer aanvragen of online boekingen nodig hebt.
             </p>
             <Link
               href="/auth/sign-up"
