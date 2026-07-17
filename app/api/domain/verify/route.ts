@@ -3,14 +3,15 @@ import dns from "node:dns/promises"
 import { logAuditEvent } from "@/lib/audit-log"
 import { createClient } from "@/lib/supabase/server"
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
+import { normalizeDomain, validateDomain } from "@/lib/vercel-domains"
 
 const VERCEL_IP = "76.76.21.21"
-const VERCEL_CNAME = "cname.vercel-dns.com"
+const VERCEL_CNAMES = new Set(["cname.vercel-dns.com", "cname.vercel-dns-0.com"])
 
 // GET /api/domain/verify?domain=mijnbedrijf.nl
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-  const domain = searchParams.get("domain")
+  const domain = normalizeDomain(searchParams.get("domain"))
   const websiteId = searchParams.get("websiteId")
 
   const supabase = await createClient()
@@ -28,22 +29,35 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Te veel verificatiepogingen. Probeer het later opnieuw." }, { status: 429 })
   }
 
-  if (!domain || !websiteId || domain.length > 253) {
+  if (!websiteId || !domain || validateDomain(domain)) {
     return NextResponse.json({ error: "Ongeldige domeinverificatie" }, { status: 400 })
   }
 
-  const apex = domain.trim().replace(/^www\./i, "").toLowerCase()
-  const verifiedWebsiteId = await supabase
+  const { data: ownedWebsite } = await supabase
     .from("websites")
     .select("id")
     .eq("id", websiteId)
     .eq("user_id", user.id)
     .maybeSingle()
-    .then(({ data }) => data?.id ?? null)
-
-  if (!verifiedWebsiteId) {
-    return NextResponse.json({ error: "Website not found" }, { status: 404 })
+  if (!ownedWebsite) {
+    return NextResponse.json({ error: "Website niet gevonden." }, { status: 404 })
   }
+
+  const apex = domain.trim().replace(/^www\./i, "").toLowerCase()
+  const verifiedDomain = await supabase
+    .from("website_domains")
+    .select("website_id")
+    .eq("website_id", websiteId)
+    .eq("domain", domain)
+    .eq("status", "active")
+    .maybeSingle()
+    .then(({ data }) => data ?? null)
+
+  if (!verifiedDomain) {
+    return NextResponse.json({ error: "Domein niet gevonden." }, { status: 404 })
+  }
+
+  const verifiedWebsiteId = ownedWebsite.id
 
   await logAuditEvent({
     userId: user.id,
@@ -93,7 +107,7 @@ export async function GET(request: Request) {
     // Check CNAME
     const cnameRecords = await dns.resolveCname(domain).catch((): string[] => [])
 
-    if (cnameRecords.some((r) => r.toLowerCase() === VERCEL_CNAME)) {
+    if (cnameRecords.some((record) => VERCEL_CNAMES.has(record.toLowerCase().replace(/\.$/, "")))) {
       await logAuditEvent({
         userId: user.id,
         websiteId: verifiedWebsiteId,
@@ -132,7 +146,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       connected: false,
-      message: `No valid DNS record found yet. Make sure you have added an A record pointing to ${VERCEL_IP} or a CNAME pointing to ${VERCEL_CNAME}.`,
+      message: `No valid DNS record found yet. Make sure you have added an A record pointing to ${VERCEL_IP} or a CNAME pointing to cname.vercel-dns-0.com.`,
     })
   } catch {
     await logAuditEvent({

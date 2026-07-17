@@ -25,13 +25,33 @@ export async function DELETE(request: Request) {
 
   const { data: website, error: websiteError } = await supabase
     .from("websites")
-    .select("id, title, slug, custom_domain")
+    .select("id, title, slug")
     .eq("id", websiteId)
     .eq("user_id", user.id)
     .maybeSingle()
 
   if (websiteError || !website) {
     return NextResponse.json({ error: "Website niet gevonden" }, { status: 404 })
+  }
+
+  const { data: domains, error: domainsError } = await supabase
+    .from("website_domains")
+    .select("domain")
+    .eq("website_id", website.id)
+
+  if (domainsError) {
+    return NextResponse.json({ error: "Domeinen konden niet worden gecontroleerd." }, { status: 500 })
+  }
+
+  const domainCleanup = await Promise.all((domains ?? []).map((domain) => removeDomainFromVercel(domain.domain)))
+  const failedDomainIndex = domainCleanup.findIndex((result) => !result.success)
+  if (failedDomainIndex >= 0) {
+    return NextResponse.json(
+      {
+        error: `Website kon niet worden verwijderd omdat ${(domains ?? [])[failedDomainIndex]?.domain ?? "een domein"} niet uit Vercel kon worden verwijderd.`,
+      },
+      { status: 502 },
+    )
   }
 
   const { error: deleteError } = await supabase
@@ -44,8 +64,6 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Website kon niet worden verwijderd." }, { status: 500 })
   }
 
-  const domainCleanup = await removeDomainFromVercel(website.custom_domain)
-
   await logAuditEvent({
     userId: user.id,
     action: "website.deleted",
@@ -53,7 +71,7 @@ export async function DELETE(request: Request) {
       deletedWebsiteId: website.id,
       title: website.title,
       slug: website.slug,
-      customDomain: website.custom_domain,
+      domains: (domains ?? []).map((domain) => domain.domain),
       domainCleanup,
     },
     request,
@@ -61,4 +79,3 @@ export async function DELETE(request: Request) {
 
   return NextResponse.json({ success: true })
 }
-

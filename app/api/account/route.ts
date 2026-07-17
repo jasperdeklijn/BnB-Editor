@@ -31,11 +31,28 @@ export async function DELETE(request: Request) {
   const admin = await createAdminClient()
   const { data: websites, error: websitesError } = await admin
     .from("websites")
-    .select("custom_domain")
+    .select("id")
     .eq("user_id", user.id)
 
   if (websitesError) {
     return NextResponse.json({ error: "Accountgegevens konden niet worden gecontroleerd." }, { status: 500 })
+  }
+
+  const websiteIds = (websites ?? []).map((website) => website.id)
+  const { data: domains, error: domainsError } = websiteIds.length
+    ? await admin.from("website_domains").select("domain").in("website_id", websiteIds)
+    : { data: [], error: null }
+  if (domainsError) {
+    return NextResponse.json({ error: "Domeinen konden niet worden gecontroleerd." }, { status: 500 })
+  }
+
+  const domainCleanup = await Promise.all((domains ?? []).map((domain) => removeDomainFromVercel(domain.domain)))
+  const failedDomainIndex = domainCleanup.findIndex((result) => !result.success)
+  if (failedDomainIndex >= 0) {
+    return NextResponse.json(
+      { error: `Account kon niet worden verwijderd omdat ${(domains ?? [])[failedDomainIndex]?.domain ?? "een domein"} niet uit Vercel kon worden verwijderd.` },
+      { status: 502 },
+    )
   }
 
   const { data: files, error: storageListError } = await admin.storage
@@ -57,8 +74,6 @@ export async function DELETE(request: Request) {
     }
   }
 
-  await Promise.all((websites ?? []).map((website) => removeDomainFromVercel(website.custom_domain)))
-
   const deletedUserId = user.id
   const deletedEmail = user.email
   const { error: deleteError } = await admin.auth.admin.deleteUser(user.id)
@@ -74,4 +89,3 @@ export async function DELETE(request: Request) {
 
   return NextResponse.json({ success: true })
 }
-

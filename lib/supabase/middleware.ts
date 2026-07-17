@@ -65,7 +65,7 @@ if (hostname.endsWith(`.${platformDomain}`)) {
   }
 }
 
-  // 3. Custom domain: look up custom_domain in websites table
+  // 3. Custom domain: resolve any active domain attached to a published website.
   const isCustomDomain =
     !platformHosts.has(hostname) &&
     !hostname.endsWith(`.${platformDomain}`) &&
@@ -79,14 +79,25 @@ if (hostname.endsWith(`.${platformDomain}`)) {
       return supabaseResponse
     }
 
-    const { data: website, error } = await supabase
-      .from("websites")
-      .select("slug")
-      .or(`custom_domain.eq.${hostname},custom_domain.eq.www.${hostname}`)
-      .single()
+    const normalizedHostname = hostname.replace(/^www\./, "")
+    const { data: websiteDomain, error: domainError } = await supabase
+      .from("website_domains")
+      .select("website_id")
+      .eq("domain", normalizedHostname)
+      .eq("status", "active")
+      .maybeSingle()
 
-    if (error && error.code !== "PGRST116") {
-      console.error("Custom domain lookup failed:", error)
+    const { data: website, error: websiteError } = websiteDomain
+      ? await supabase
+          .from("websites")
+          .select("slug")
+          .eq("id", websiteDomain.website_id)
+          .eq("published", true)
+          .maybeSingle()
+      : { data: null, error: null }
+
+    if (domainError || websiteError) {
+      console.error("Custom domain lookup failed:", domainError || websiteError)
     }
 
     if (website?.slug) {

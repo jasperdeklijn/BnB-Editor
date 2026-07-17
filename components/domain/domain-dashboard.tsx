@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, useTransition } from "react"
+import { useMemo, useState } from "react"
 import {
   CheckCircle,
   Copy,
@@ -9,16 +9,20 @@ import {
   Globe,
   Info,
   Loader2,
+  Plus,
+  RefreshCw,
+  Star,
   Trash2,
   Wifi,
   WifiOff,
 } from "lucide-react"
 import { useEditorLayout } from "@/components/editor/editor-layout-context"
+import { TierBadge } from "@/components/editor/tier-badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import { StatusMessage } from "@/components/ui/status-message"
+import { Switch } from "@/components/ui/switch"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,15 +34,25 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { PLATFORM_DOMAIN } from "@/lib/platform"
 import type { EntitlementViolation } from "@/lib/entitlements"
-import { TierBadge } from "@/components/editor/tier-badge"
+import { PLATFORM_DOMAIN } from "@/lib/platform"
+
+type DomainStatus = "provisioning" | "active" | "add_failed" | "removal_pending" | "removal_failed"
+
+type WebsiteDomain = {
+  id: string
+  domain: string
+  isPrimary: boolean
+  status: DomainStatus
+  lastError: string | null
+  createdAt: string
+}
 
 type DomainWebsite = {
   id: string
   title: string
   slug: string
-  customDomain: string | null
+  domains: WebsiteDomain[]
   isPublished: boolean
 }
 
@@ -46,13 +60,13 @@ interface DomainDashboardProps {
   websites: DomainWebsite[]
 }
 
-type VerifyStatus = "idle" | "checking" | "connected" | "error"
+type VerifyState = { status: "checking" | "connected" | "error"; message: string }
 type Message = { type: "success" | "error"; text: string } | null
 
 function CopyButton({ value }: { value: string }) {
   const [copied, setCopied] = useState(false)
   const handleCopy = () => {
-    navigator.clipboard.writeText(value)
+    void navigator.clipboard.writeText(value)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -61,20 +75,15 @@ function CopyButton({ value }: { value: string }) {
       type="button"
       onClick={handleCopy}
       className="ml-2 shrink-0 text-muted-foreground transition-colors hover:text-foreground"
-      aria-label="Copy to clipboard"
+      aria-label="Kopieren naar klembord"
+      title="Kopieren"
     >
       {copied ? <CheckCircle className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
     </button>
   )
 }
 
-function UrlCard({
-  label,
-  icon,
-  url,
-  badge,
-  children,
-}: {
+function UrlCard({ label, icon, url, badge, children }: {
   label: string
   icon: React.ReactNode
   url: string
@@ -94,13 +103,7 @@ function UrlCard({
         <div className="flex items-center gap-1">
           <span className="truncate font-mono text-sm text-muted-foreground">{url}</span>
           <CopyButton value={`https://${url}`} />
-          <a
-            href={`https://${url}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ml-1 shrink-0 text-muted-foreground transition-colors hover:text-foreground"
-            aria-label="Open in new tab"
-          >
+          <a href={`https://${url}`} target="_blank" rel="noopener noreferrer" className="ml-1 shrink-0 text-muted-foreground hover:text-foreground" aria-label="Open in nieuw tabblad">
             <ExternalLink className="h-4 w-4" />
           </a>
         </div>
@@ -110,410 +113,255 @@ function UrlCard({
   )
 }
 
+function domainStatusLabel(status: DomainStatus) {
+  if (status === "active") return "Actief"
+  if (status === "provisioning") return "Wordt toegevoegd"
+  if (status === "add_failed") return "Toevoegen mislukt"
+  if (status === "removal_pending") return "Wordt verwijderd"
+  return "Verwijderen mislukt"
+}
+
 export function DomainDashboard({ websites }: DomainDashboardProps) {
   const initialWebsite = websites.find((website) => website.isPublished) || websites[0]
   const [websiteList, setWebsiteList] = useState(websites)
   const [selectedWebsiteId, setSelectedWebsiteId] = useState(initialWebsite?.id ?? "")
+  const [newDomain, setNewDomain] = useState("")
+  const [busyDomainId, setBusyDomainId] = useState<string | null>(null)
+  const [isAdding, setIsAdding] = useState(false)
+  const [verifyStates, setVerifyStates] = useState<Record<string, VerifyState>>({})
+  const [message, setMessage] = useState<Message>(null)
+  const [isPublishing, setIsPublishing] = useState(false)
+  const [publishViolations, setPublishViolations] = useState<EntitlementViolation[]>([])
+  const { setIsSaving, setSaveState } = useEditorLayout()
+
   const selectedWebsite = useMemo(
     () => websiteList.find((website) => website.id === selectedWebsiteId) || websiteList[0],
     [selectedWebsiteId, websiteList],
   )
-  const [customDomain, setCustomDomain] = useState(selectedWebsite?.customDomain || "")
-  const [savedDomain, setSavedDomain] = useState(selectedWebsite?.customDomain || "")
-  const [verifyStatus, setVerifyStatus] = useState<VerifyStatus>("idle")
-  const [verifyMessage, setVerifyMessage] = useState("")
-  const [message, setMessage] = useState<Message>(null)
-  const [isPublishing, setIsPublishing] = useState(false)
-  const [publishViolations, setPublishViolations] = useState<EntitlementViolation[]>([])
-  const [isPending, startTransition] = useTransition()
-  const { setIsSaving, setSaveState } = useEditorLayout()
-
   const previewUrl = selectedWebsite ? `preview-${selectedWebsite.slug}.${PLATFORM_DOMAIN}` : ""
   const liveUrl = selectedWebsite ? `${selectedWebsite.slug}.${PLATFORM_DOMAIN}` : ""
 
-  const updateSelectedWebsiteDomain = (domain: string | null) => {
-    setWebsiteList((current) =>
-      current.map((website) =>
-        website.id === selectedWebsite?.id
-          ? {
-              ...website,
-              customDomain: domain,
-            }
-          : website,
-      ),
-    )
+  const replaceDomains = (websiteId: string, domains: WebsiteDomain[]) => {
+    setWebsiteList((current) => current.map((website) => website.id === websiteId ? { ...website, domains } : website))
+  }
+
+  const refreshDomains = async (websiteId: string) => {
+    const response = await fetch(`/api/domain?websiteId=${encodeURIComponent(websiteId)}`)
+    const result = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(result?.error || "Domeinen konden niet opnieuw worden geladen.")
+    replaceDomains(websiteId, result.domains as WebsiteDomain[])
+  }
+
+  const failSave = (text: string) => {
+    setMessage({ type: "error", text })
+    setSaveState("error")
+    setIsSaving(false)
   }
 
   const handleWebsiteSelect = (websiteId: string) => {
-    const nextWebsite = websiteList.find((website) => website.id === websiteId)
     setSelectedWebsiteId(websiteId)
-    setCustomDomain(nextWebsite?.customDomain || "")
-    setSavedDomain(nextWebsite?.customDomain || "")
-    setVerifyStatus("idle")
-    setVerifyMessage("")
+    setNewDomain("")
+    setVerifyStates({})
     setMessage(null)
     setPublishViolations([])
   }
 
-  const saveDomain = async (domain: string | null) => {
-    if (!selectedWebsite) return
-
+  const handleAddDomain = async () => {
+    if (!selectedWebsite || !newDomain.trim()) return
+    setIsAdding(true)
     setIsSaving(true)
-    const res = await fetch("/api/domain", {
+    setMessage(null)
+    const response = await fetch("/api/domain", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ websiteId: selectedWebsite.id, customDomain: domain }),
+      body: JSON.stringify({ websiteId: selectedWebsite.id, domain: newDomain }),
     })
-    const json = await res.json().catch(() => ({}))
+    const result = await response.json().catch(() => ({}))
+    setIsAdding(false)
 
-    if (!res.ok) {
-      setIsSaving(false)
-      setSaveState("error")
-      setMessage({ type: "error", text: json?.error || "Domein kon niet worden opgeslagen." })
+    if (!response.ok) {
+      if (result?.domain) {
+        replaceDomains(selectedWebsite.id, [...selectedWebsite.domains.filter((item) => item.id !== result.domain.id), result.domain])
+      }
+      failSave(result?.error || "Domein kon niet worden toegevoegd.")
       return
     }
 
-    const normalized = json.customDomain || ""
-    setCustomDomain(normalized)
-    setSavedDomain(normalized)
-    updateSelectedWebsiteDomain(normalized || null)
-    setVerifyStatus("idle")
-    setVerifyMessage("")
-    setMessage({
-      type: "success",
-      text: normalized ? "Domein opgeslagen en naar Vercel gestuurd." : "Domein verwijderd.",
-    })
+    await refreshDomains(selectedWebsite.id).catch(() => undefined)
+    setNewDomain("")
+    setMessage({ type: "success", text: `${result.domain.domain} is aan Vercel toegevoegd.` })
     setIsSaving(false)
   }
 
-  const handleSaveDomain = async () => {
+  const handleDomainAction = async (domain: WebsiteDomain, action: "retryAdd" | "makePrimary") => {
+    if (!selectedWebsite) return
+    setBusyDomainId(domain.id)
+    setIsSaving(true)
     setMessage(null)
-    startTransition(() => {
-      void saveDomain(customDomain.trim() || null)
+    const response = await fetch(`/api/domain/${encodeURIComponent(domain.id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action }),
     })
-  }
-
-  const handleRemoveDomain = async () => {
-    setMessage(null)
-    startTransition(() => {
-      void saveDomain(null)
-    })
-  }
-
-  const handleVerify = async () => {
-    setVerifyStatus("checking")
-    setVerifyMessage("")
-    setMessage(null)
-    const domain = savedDomain || customDomain.trim()
-    if (!domain) return
-    const res = await fetch(`/api/domain/verify?domain=${encodeURIComponent(domain)}&websiteId=${encodeURIComponent(selectedWebsite.id)}`)
-    const json = await res.json()
-    if (json.connected) {
-      setVerifyStatus("connected")
-      setVerifyMessage("Domein is verbonden en verwijst naar Vercel.")
-    } else {
-      setVerifyStatus("error")
-      setVerifyMessage(json.message || "Domein lijkt nog niet verbonden.")
+    const result = await response.json().catch(() => ({}))
+    setBusyDomainId(null)
+    if (!response.ok) {
+      await refreshDomains(selectedWebsite.id).catch(() => undefined)
+      failSave(result?.error || "Domeinactie is mislukt.")
+      return
     }
+    await refreshDomains(selectedWebsite.id)
+    setMessage({ type: "success", text: action === "makePrimary" ? `${domain.domain} is nu het primaire domein.` : `${domain.domain} is alsnog toegevoegd.` })
+    setIsSaving(false)
+  }
+
+  const handleRemoveDomain = async (domain: WebsiteDomain) => {
+    if (!selectedWebsite) return
+    setBusyDomainId(domain.id)
+    setIsSaving(true)
+    setMessage(null)
+    replaceDomains(selectedWebsite.id, selectedWebsite.domains.map((item) => item.id === domain.id ? { ...item, status: "removal_pending", lastError: null } : item))
+
+    const response = await fetch(`/api/domain/${encodeURIComponent(domain.id)}`, { method: "DELETE" })
+    const result = await response.json().catch(() => ({}))
+    setBusyDomainId(null)
+    await refreshDomains(selectedWebsite.id).catch(() => undefined)
+    if (!response.ok) {
+      failSave(result?.error || "Domein kon niet worden verwijderd.")
+      return
+    }
+    setMessage({ type: "success", text: `${domain.domain} is verwijderd uit de website en het Vercel-project.` })
+    setIsSaving(false)
+  }
+
+  const handleVerify = async (domain: WebsiteDomain) => {
+    if (!selectedWebsite) return
+    setVerifyStates((current) => ({ ...current, [domain.id]: { status: "checking", message: "" } }))
+    const response = await fetch(`/api/domain/verify?domain=${encodeURIComponent(domain.domain)}&websiteId=${encodeURIComponent(selectedWebsite.id)}`)
+    const result = await response.json().catch(() => ({}))
+    const connected = response.ok && result.connected
+    setVerifyStates((current) => ({
+      ...current,
+      [domain.id]: {
+        status: connected ? "connected" : "error",
+        message: connected ? "Domein verwijst correct naar Vercel." : result?.message || result?.error || "Domein lijkt nog niet verbonden.",
+      },
+    }))
   }
 
   const handlePublishChange = async (published: boolean) => {
     if (!selectedWebsite) return
-
     setIsPublishing(true)
     setIsSaving(true)
     setMessage(null)
     setPublishViolations([])
-
     const response = await fetch("/api/websites/publish", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ websiteId: selectedWebsite.id, published }),
     })
     const result = await response.json().catch(() => ({}))
-
     setIsPublishing(false)
-
     if (!response.ok) {
-      setIsSaving(false)
-      if (result?.code === "ENTITLEMENT_VIOLATIONS" && Array.isArray(result?.violations)) {
-        setPublishViolations(result.violations as EntitlementViolation[])
-      } else {
-        setSaveState("error")
-      }
-      setMessage({ type: "error", text: result?.error || "Live status kon niet worden bijgewerkt." })
+      if (result?.code === "ENTITLEMENT_VIOLATIONS" && Array.isArray(result?.violations)) setPublishViolations(result.violations)
+      failSave(result?.error || "Live status kon niet worden bijgewerkt.")
       return
     }
-
-    setWebsiteList((current) =>
-      current.map((website) => ({
-        ...website,
-        isPublished: published ? website.id === selectedWebsite.id : website.id === selectedWebsite.id ? false : website.isPublished,
-      })),
-    )
-    setMessage({
-      type: "success",
-      text: published ? "Deze website staat nu live." : "Deze website staat niet meer live.",
-    })
-    setPublishViolations([])
+    setWebsiteList((current) => current.map((website) => ({
+      ...website,
+      isPublished: published ? website.id === selectedWebsite.id : website.id === selectedWebsite.id ? false : website.isPublished,
+    })))
+    setMessage({ type: "success", text: published ? "Deze website staat nu live." : "Deze website staat niet meer live." })
     setIsSaving(false)
   }
 
-  if (!selectedWebsite) {
-    return null
-  }
+  if (!selectedWebsite) return null
 
   return (
     <div className="space-y-6">
       <section className="rounded-lg border border-border bg-card p-4">
-        <div className="space-y-2">
-          <Label htmlFor="website-domain-selector" className="text-sm font-medium">
-            Website
-          </Label>
-          <select
-            id="website-domain-selector"
-            value={selectedWebsite.id}
-            onChange={(event) => handleWebsiteSelect(event.target.value)}
-            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-          >
-            {websiteList.map((website) => (
-              <option key={website.id} value={website.id}>
-                {website.title} ({website.slug}){website.isPublished ? " - live" : ""}
-              </option>
-            ))}
-          </select>
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            Kies welke van uw eigen websites aan deze domeininstellingen wordt gekoppeld.
-          </p>
-        </div>
+        <Label htmlFor="website-domain-selector">Website</Label>
+        <select id="website-domain-selector" value={selectedWebsite.id} onChange={(event) => handleWebsiteSelect(event.target.value)} className="mt-2 h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20">
+          {websiteList.map((website) => <option key={website.id} value={website.id}>{website.title} ({website.slug}){website.isPublished ? " - live" : ""}</option>)}
+        </select>
       </section>
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-foreground">Uw URLs</h2>
+        <h2 className="mb-3 text-sm font-semibold uppercase text-foreground">Uw URLs</h2>
         <div className="space-y-3">
-          <UrlCard
-            label="Preview URL"
-            icon={<Eye className="h-4 w-4" />}
-            url={previewUrl}
-            badge={<span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground">Preview</span>}
-          >
-            <div className="flex items-start gap-2 rounded-md border border-primary/20 bg-primary/10 px-3 py-2 text-xs leading-relaxed text-primary">
-              <Info className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>De preview is alleen zichtbaar voor u wanneer u bent ingelogd.</span>
-            </div>
+          <UrlCard label="Preview URL" icon={<Eye className="h-4 w-4" />} url={previewUrl} badge={<span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground">Preview</span>}>
+            <div className="flex items-start gap-2 rounded-md border border-primary/20 bg-primary/10 px-3 py-2 text-xs text-primary"><Info className="mt-0.5 h-4 w-4 shrink-0" /><span>De preview is alleen zichtbaar voor u wanneer u bent ingelogd.</span></div>
           </UrlCard>
-          <UrlCard
-            label="Live URL"
-            icon={<Globe className="h-4 w-4" />}
-            url={liveUrl}
-            badge={
-              selectedWebsite.isPublished ? (
-                <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">Live</span>
-              ) : (
-                <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                  Niet live
-                </span>
-              )
-            }
-          >
+          <UrlCard label="Live URL" icon={<Globe className="h-4 w-4" />} url={liveUrl} badge={<span className={selectedWebsite.isPublished ? "rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary" : "rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"}>{selectedWebsite.isPublished ? "Live" : "Niet live"}</span>}>
             <div className="flex flex-col gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-medium text-foreground">Live publiceren</p>
-                <p className="text-xs text-muted-foreground">Er kan maar een website tegelijk live staan.</p>
-              </div>
-              <div className="flex items-center gap-2">
-                {isPublishing ? <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" /> : null}
-                <Switch
-                  checked={selectedWebsite.isPublished}
-                  onCheckedChange={handlePublishChange}
-                  disabled={isPublishing}
-                  aria-label="Live status wijzigen"
-                />
-              </div>
+              <div><p className="text-xs font-medium text-foreground">Live publiceren</p><p className="text-xs text-muted-foreground">Er kan maar een website tegelijk live staan.</p></div>
+              <div className="flex items-center gap-2">{isPublishing ? <Loader2 className="h-4 w-4 animate-spin" /> : null}<Switch checked={selectedWebsite.isPublished} onCheckedChange={handlePublishChange} disabled={isPublishing} aria-label="Live status wijzigen" /></div>
             </div>
-            {publishViolations.length > 0 ? (
-              <div className="space-y-3 rounded-md border border-warning/30 bg-warning/10 p-3">
-                <div>
-                  <p className="text-xs font-semibold text-foreground">
-                    {publishViolations.length} {publishViolations.length === 1 ? "onderdeel blokkeert" : "onderdelen blokkeren"} live publiceren
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">Pas het concept aan in de editor of kies een hoger abonnement.</p>
-                </div>
-                <ul className="space-y-2">
-                  {publishViolations.map((violation, index) => (
-                    <li key={`${violation.code}-${violation.sectionId ?? "website"}-${violation.capability ?? index}`} className="flex items-center justify-between gap-3 rounded bg-background px-2.5 py-2 text-xs">
-                      <span className="min-w-0 truncate">{violation.label}</span>
-                      <TierBadge plan={violation.requiredPlan} prefix="Vereist" />
-                    </li>
-                  ))}
-                </ul>
-                <div className="flex flex-wrap gap-2">
-                  <Button asChild size="xs" variant="outline">
-                    <a href={`/editor?websiteId=${encodeURIComponent(selectedWebsite.id)}`}>Open in editor</a>
-                  </Button>
-                  <Button asChild size="xs">
-                    <a href="/editor/account/billing">Bekijk abonnementen</a>
-                  </Button>
-                </div>
-              </div>
-            ) : null}
+            {publishViolations.length > 0 ? <div className="mt-3 space-y-2 rounded-md border border-warning/30 bg-warning/10 p-3"><p className="text-xs font-semibold">Deze onderdelen blokkeren live publiceren</p>{publishViolations.map((violation, index) => <div key={`${violation.code}-${index}`} className="flex items-center justify-between gap-3 text-xs"><span className="truncate">{violation.label}</span><TierBadge plan={violation.requiredPlan} prefix="Vereist" /></div>)}</div> : null}
           </UrlCard>
         </div>
       </section>
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-foreground">Eigen domein</h2>
+        <h2 className="mb-3 text-sm font-semibold uppercase text-foreground">Eigen domeinen</h2>
         <div className="space-y-4 rounded-lg border border-border bg-card p-4">
-          <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-3 text-xs leading-relaxed text-secondary-foreground">
+          <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-3 text-xs text-secondary-foreground">
             <p className="font-semibold text-foreground">Belangrijk voordat u een domein koppelt</p>
-            <ul className="mt-2 list-disc space-y-1 pl-4">
-              <li>U blijft zelf eigenaar van uw domein en beheert dit bij uw domeinprovider.</li>
-              <li>DNS-instellingen zijn uw verantwoordelijkheid; verkeerde DNS-records kunnen uw website offline zetten.</li>
-              <li>SSL-certificaten worden automatisch geregeld, maar activatie kan enige tijd duren.</li>
-              <li>DNS-wijzigingen kunnen door propagatie vertraagd zichtbaar zijn, soms tot 24 uur.</li>
-            </ul>
+            <p className="mt-1">U beheert DNS bij uw eigen provider. SSL wordt automatisch geregeld; DNS-wijzigingen kunnen tot 24 uur nodig hebben.</p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="custom-domain" className="text-sm">
-              Domeinnaam
-            </Label>
+            <Label htmlFor="new-domain">Domeinnaam toevoegen</Label>
             <div className="flex flex-col gap-2 sm:flex-row">
-              <Input
-                id="custom-domain"
-                placeholder="mijnbedrijf.nl"
-                value={customDomain}
-                onChange={(event) => setCustomDomain(event.target.value)}
-                className="font-mono text-sm"
-              />
-              <Button onClick={handleSaveDomain} disabled={isPending} size="sm">
-                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Opslaan"}
-              </Button>
+              <Input id="new-domain" value={newDomain} onChange={(event) => setNewDomain(event.target.value)} placeholder="mijnbedrijf.nl" className="font-mono" onKeyDown={(event) => { if (event.key === "Enter") void handleAddDomain() }} />
+              <Button onClick={handleAddDomain} disabled={isAdding || !newDomain.trim()} size="sm">{isAdding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}Toevoegen</Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Vul het hoofddomein in zonder <code className="font-mono">https://</code> of{" "}
-              <code className="font-mono">www</code>.
-            </p>
+            <p className="text-xs text-muted-foreground">Gebruik het hoofddomein zonder <code className="font-mono">https://</code> of <code className="font-mono">www</code>.</p>
           </div>
 
-          {savedDomain ? (
-            <div className="flex flex-col gap-3 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex min-w-0 items-center gap-2 text-sm">
-                {verifyStatus === "connected" ? (
-                  <Wifi className="h-4 w-4 shrink-0 text-primary" />
-                ) : verifyStatus === "error" ? (
-                  <WifiOff className="h-4 w-4 shrink-0 text-destructive" />
-                ) : (
-                  <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
-                )}
-                <span className="truncate font-mono text-muted-foreground">{savedDomain}</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" onClick={handleVerify} disabled={verifyStatus === "checking"}>
-                  {verifyStatus === "checking" ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
-                  {verifyStatus === "checking" ? "Controleren..." : "Controleer"}
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="sm" disabled={isPending}>
-                      <Trash2 className="h-4 w-4" />
-                      Verwijderen
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Domein verwijderen?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Dit verwijdert {savedDomain} uit deze website en koppelt het domein los van Vercel. DNS-records bij uw
-                        provider blijven staan totdat u ze daar zelf verwijdert.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Annuleren</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleRemoveDomain}>Verwijderen</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </div>
-          ) : null}
-
-          {verifyMessage ? (
-            <StatusMessage tone={verifyStatus === "connected" ? "success" : "error"}>{verifyMessage}</StatusMessage>
-          ) : null}
+          <div className="space-y-3 border-t border-border pt-4">
+            {selectedWebsite.domains.length === 0 ? <div className="rounded-md border border-dashed border-border px-4 py-6 text-center"><Globe className="mx-auto h-5 w-5 text-muted-foreground" /><p className="mt-2 text-sm font-medium">Nog geen eigen domeinen</p></div> : null}
+            {selectedWebsite.domains.map((domain) => {
+              const verify = verifyStates[domain.id]
+              const busy = busyDomainId === domain.id || domain.status === "removal_pending"
+              const failedAdd = domain.status === "add_failed" || domain.status === "provisioning"
+              const failedRemoval = domain.status === "removal_failed"
+              return (
+                <div key={domain.id} className="rounded-md border border-border p-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2"><span className="truncate font-mono text-sm">{domain.domain}</span>{domain.isPrimary ? <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"><Star className="h-3 w-3" />Primair</span> : null}<span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">{domainStatusLabel(domain.status)}</span></div>
+                      {domain.lastError ? <p className="mt-2 text-xs text-destructive">{domain.lastError}</p> : null}
+                      {verify?.message ? <div className="mt-2"><StatusMessage tone={verify.status === "connected" ? "success" : "error"}>{verify.message}</StatusMessage></div> : null}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {domain.status === "active" ? <Button variant="outline" size="sm" onClick={() => void handleVerify(domain)} disabled={verify?.status === "checking" || busy}>{verify?.status === "checking" ? <Loader2 className="h-4 w-4 animate-spin" /> : verify?.status === "connected" ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}Controleren</Button> : null}
+                      {domain.status === "active" && !domain.isPrimary ? <Button variant="outline" size="sm" onClick={() => void handleDomainAction(domain, "makePrimary")} disabled={busy}><Star className="h-4 w-4" />Primair maken</Button> : null}
+                      {failedAdd ? <Button variant="outline" size="sm" onClick={() => void handleDomainAction(domain, "retryAdd")} disabled={busy}><RefreshCw className="h-4 w-4" />Opnieuw</Button> : null}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild><Button variant="outline" size="sm" disabled={busy}><Trash2 className="h-4 w-4" />{failedRemoval ? "Opnieuw verwijderen" : "Verwijderen"}</Button></AlertDialogTrigger>
+                        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Domein verwijderen?</AlertDialogTitle><AlertDialogDescription>Dit verwijdert {domain.domain} uit deze website en uit het Vercel-project. DNS-records bij uw provider blijven bestaan.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Annuleren</AlertDialogCancel><AlertDialogAction onClick={() => void handleRemoveDomain(domain)}>Verwijderen</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
           {message ? <StatusMessage tone={message.type}>{message.text}</StatusMessage> : null}
         </div>
       </section>
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-foreground">DNS configuratie</h2>
+        <h2 className="mb-3 text-sm font-semibold uppercase text-foreground">DNS configuratie</h2>
         <div className="space-y-4 rounded-lg border border-border bg-card p-4">
-          <div>
-            <p className="text-sm font-medium text-foreground">DNS-records voor uw eigen domein</p>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              Voeg deze records toe bij uw domeinprovider. DNS-wijzigingen kunnen enkele minuten tot 24 uur nodig hebben.
-            </p>
-          </div>
-          <DnsTable
-            rows={[
-              { type: "A", host: "@", value: "76.76.21.21", purpose: "Verbindt het hoofddomein met Vercel." },
-              { type: "CNAME", host: "www", value: "cname.vercel-dns.com", purpose: "Verbindt www met Vercel." },
-            ]}
-          />
-          <ol className="grid gap-3 text-sm text-muted-foreground">
-            <li className="rounded-md bg-muted/50 p-3">
-              <span className="font-medium text-foreground">1. Open uw DNS-beheer.</span> Ga naar de provider waar uw domein
-              is gekocht en open de DNS- of nameserver-instellingen.
-            </li>
-            <li className="rounded-md bg-muted/50 p-3">
-              <span className="font-medium text-foreground">2. Voeg de records toe.</span> Gebruik exact het type, de naam
-              en de waarde uit de tabel. Verwijder conflicterende A- of CNAME-records voor dezelfde naam.
-            </li>
-            <li className="rounded-md bg-muted/50 p-3">
-              <span className="font-medium text-foreground">3. Controleer de status.</span> Sla de records op en klik daarna
-              op Controleer. Als de status nog niet goed is, wacht dan even en probeer opnieuw.
-            </li>
-          </ol>
+          <p className="text-sm text-muted-foreground">Voeg deze records toe bij uw domeinprovider en controleer daarna elk domein afzonderlijk.</p>
+          <DnsTable rows={[{ type: "A", host: "@", value: "76.76.21.21", purpose: "Hoofddomein" }, { type: "CNAME", host: "www", value: "cname.vercel-dns-0.com", purpose: "www-adres" }]} />
         </div>
       </section>
     </div>
   )
 }
 
-function DnsTable({
-  rows,
-}: {
-  rows: { type: string; host: string; value: string; purpose: string }[]
-}) {
-  return (
-    <div className="overflow-x-auto rounded-md border border-border">
-      <table className="w-full text-xs">
-        <thead>
-          <tr className="border-b border-border bg-muted/50">
-            <th className="px-3 py-2 text-left font-medium text-muted-foreground">Type</th>
-            <th className="px-3 py-2 text-left font-medium text-muted-foreground">Naam</th>
-            <th className="px-3 py-2 text-left font-medium text-muted-foreground">Waarde</th>
-            <th className="px-3 py-2 text-left font-medium text-muted-foreground">Gebruik</th>
-            <th className="w-8 px-3 py-2" />
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={`${row.type}-${row.host}`} className="border-b border-border last:border-0">
-              <td className="px-3 py-2">
-                <span className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-primary">
-                  {row.type}
-                </span>
-              </td>
-              <td className="px-3 py-2 font-mono text-foreground">{row.host}</td>
-              <td className="max-w-[180px] truncate px-3 py-2 font-mono text-foreground">{row.value}</td>
-              <td className="min-w-[160px] px-3 py-2 text-muted-foreground">{row.purpose}</td>
-              <td className="px-3 py-2">
-                <CopyButton value={row.value} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
+function DnsTable({ rows }: { rows: { type: string; host: string; value: string; purpose: string }[] }) {
+  return <div className="overflow-x-auto rounded-md border border-border"><table className="w-full text-xs"><thead><tr className="border-b border-border bg-muted/50"><th className="px-3 py-2 text-left">Type</th><th className="px-3 py-2 text-left">Naam</th><th className="px-3 py-2 text-left">Waarde</th><th className="px-3 py-2 text-left">Gebruik</th><th className="w-8 px-3 py-2" /></tr></thead><tbody>{rows.map((row) => <tr key={`${row.type}-${row.host}`} className="border-b border-border last:border-0"><td className="px-3 py-2 font-mono">{row.type}</td><td className="px-3 py-2 font-mono">{row.host}</td><td className="px-3 py-2 font-mono">{row.value}</td><td className="px-3 py-2 text-muted-foreground">{row.purpose}</td><td className="px-3 py-2"><CopyButton value={row.value} /></td></tr>)}</tbody></table></div>
 }

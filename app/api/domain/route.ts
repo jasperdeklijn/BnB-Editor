@@ -1,145 +1,150 @@
 import { NextResponse } from "next/server"
 import { logAuditEvent } from "@/lib/audit-log"
+import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
 import { createClient } from "@/lib/supabase/server"
+import { addDomainToVercel, normalizeDomain, validateDomain } from "@/lib/vercel-domains"
 
-function normalizeDomain(domain: string | null | undefined) {
-  return domain
-    ? domain
-        .trim()
-        .replace(/^https?:\/\//i, "")
-        .replace(/^www\./i, "")
-        .replace(/\/.*$/, "")
-        .toLowerCase()
-    : null
+function serializeDomain(row: {
+  id: string
+  website_id: string
+  domain: string
+  is_primary: boolean
+  status: string
+  last_error: string | null
+  created_at: string
+}) {
+  return {
+    id: row.id,
+    websiteId: row.website_id,
+    domain: row.domain,
+    isPrimary: row.is_primary,
+    status: row.status,
+    lastError: row.last_error,
+    createdAt: row.created_at,
+  }
+}
+
+export async function GET(request: Request) {
+  const supabase = await createClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  const websiteId = new URL(request.url).searchParams.get("websiteId")
+  if (!websiteId) return NextResponse.json({ error: "Website ontbreekt." }, { status: 400 })
+
+  const { data: website } = await supabase
+    .from("websites")
+    .select("id")
+    .eq("id", websiteId)
+    .eq("user_id", user.id)
+    .maybeSingle()
+  if (!website) return NextResponse.json({ error: "Website niet gevonden." }, { status: 404 })
+
+  const { data, error } = await supabase
+    .from("website_domains")
+    .select("id, website_id, domain, is_primary, status, last_error, created_at")
+    .eq("website_id", websiteId)
+    .order("created_at", { ascending: true })
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ domains: (data ?? []).map(serializeDomain) })
 }
 
 export async function POST(request: Request) {
   const supabase = await createClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser()
-
-  if (authError || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const rateLimit = checkRateLimit(getRateLimitKey(request, `domain_add:${user.id}`), 12, 60 * 60 * 1000)
+  if (!rateLimit.allowed) {
+    return NextResponse.json({ error: "Te veel domeinpogingen. Probeer het later opnieuw." }, { status: 429 })
   }
 
   const body = await request.json().catch(() => null)
-  const websiteId = typeof body?.websiteId === "string" ? body.websiteId : null
-  const slug = typeof body?.slug === "string" ? body.slug : null
-  const customDomain = typeof body?.customDomain === "string" ? body.customDomain : null
-
-  if (!websiteId && !slug) {
-    return NextResponse.json({ error: "Missing websiteId" }, { status: 400 })
+  const websiteId = typeof body?.websiteId === "string" ? body.websiteId : ""
+  const normalized = normalizeDomain(typeof body?.domain === "string" ? body.domain : null)
+  const validationError = validateDomain(normalized)
+  if (!websiteId || validationError) {
+    return NextResponse.json({ error: validationError || "Website ontbreekt." }, { status: 400 })
   }
 
-  const normalized = normalizeDomain(customDomain)
-
-  let websiteQuery = supabase
+  const { data: website } = await supabase
     .from("websites")
-    .select("id, slug, custom_domain")
+    .select("id, slug")
+    .eq("id", websiteId)
     .eq("user_id", user.id)
+    .maybeSingle()
+  if (!website) return NextResponse.json({ error: "Website niet gevonden." }, { status: 404 })
 
-  websiteQuery = websiteId ? websiteQuery.eq("id", websiteId) : websiteQuery.eq("slug", slug)
+  const { data: inserted, error: insertError } = await supabase
+    .from("website_domains")
+    .insert({ website_id: websiteId, domain: normalized, status: "provisioning" })
+    .select("id, website_id, domain, is_primary, status, last_error, created_at")
+    .single()
 
-  const { data: website, error: websiteError } = await websiteQuery.single()
-
-  if (websiteError || !website) {
-    return NextResponse.json({ error: "Website not found" }, { status: 404 })
+  if (insertError) {
+    const duplicate = insertError.code === "23505"
+    return NextResponse.json(
+      { error: duplicate ? "Dit domein is al aan een website gekoppeld." : insertError.message },
+      { status: duplicate ? 409 : 500 },
+    )
   }
 
-  const currentDomain = website.custom_domain
+  const vercel = await addDomainToVercel(normalized!)
+  if (!vercel.success) {
+    const errorMessage = vercel.error || "Het domein kon niet aan Vercel worden toegevoegd."
+    const { data: failed } = await supabase
+      .from("website_domains")
+      .update({ status: "add_failed", last_error: errorMessage })
+      .eq("id", inserted.id)
+      .select("id, website_id, domain, is_primary, status, last_error, created_at")
+      .single()
 
-  const { error } = await supabase
-    .from("websites")
-    .update({ custom_domain: normalized, updated_at: new Date().toISOString() })
-    .eq("id", website.id)
-    .eq("user_id", user.id)
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  if (normalized !== currentDomain) {
     await logAuditEvent({
       userId: user.id,
-      websiteId: website.id,
-      action: normalized ? "domain.added" : "domain.removed",
-      metadata: {
-        previousDomain: currentDomain,
-        domain: normalized,
-        slug: website.slug,
-      },
+      websiteId,
+      action: "domain.add_failed",
+      metadata: { domain: normalized, slug: website.slug, vercel },
       request,
     })
+    return NextResponse.json(
+      { error: errorMessage, domain: serializeDomain(failed ?? { ...inserted, status: "add_failed", last_error: errorMessage }) },
+      { status: vercel.skipped ? 503 : 502 },
+    )
   }
 
-  const vercelToken = process.env.VERCEL_ACCESS_TOKEN
-  const vercelProjectId = process.env.VERCEL_PROJECT_ID
+  const { data: active, error: activateError } = await supabase
+    .from("website_domains")
+    .update({ status: "active", last_error: null })
+    .eq("id", inserted.id)
+    .select("id, website_id, domain, is_primary, status, last_error, created_at")
+    .single()
+  if (activateError || !active) {
+    return NextResponse.json({ error: "Domein is aan Vercel toegevoegd, maar kon lokaal niet worden geactiveerd." }, { status: 500 })
+  }
 
-  console.log("[Vercel Domain] Starting domain management", {
-    websiteId: website.id,
-    slug: website.slug,
-    normalized,
-    currentDomain,
-    hasVercelToken: !!vercelToken,
-    hasVercelProjectId: !!vercelProjectId,
+  const { count } = await supabase
+    .from("website_domains")
+    .select("id", { count: "exact", head: true })
+    .eq("website_id", websiteId)
+    .eq("status", "active")
+
+  let result = active
+  if (count === 1) {
+    const { data: primarySet } = await supabase.rpc("set_website_primary_domain", {
+      p_website_id: websiteId,
+      p_domain_id: active.id,
+    })
+    if (primarySet) result = { ...active, is_primary: true }
+  }
+
+  await logAuditEvent({
+    userId: user.id,
+    websiteId,
+    action: "domain.added",
+    metadata: { domain: normalized, slug: website.slug, isPrimary: result.is_primary },
+    request,
   })
 
-  if (vercelToken && vercelProjectId) {
-    try {
-      if (normalized && normalized !== currentDomain) {
-        const url = `https://api.vercel.com/v10/projects/${vercelProjectId}/domains`
-        const addResponse = await fetch(url, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${vercelToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ name: normalized }),
-        })
-
-        if (!addResponse.ok) {
-          const errorData = await addResponse.json().catch(() => null)
-          console.error("[Vercel Domain] Failed to add domain to Vercel:", {
-            status: addResponse.status,
-            statusText: addResponse.statusText,
-            error: errorData,
-          })
-        }
-      }
-
-      if (!normalized && currentDomain) {
-        const url = `https://api.vercel.com/v9/projects/${vercelProjectId}/domains/${encodeURIComponent(currentDomain)}`
-        const deleteResponse = await fetch(url, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${vercelToken}`,
-          },
-        })
-
-        if (!deleteResponse.ok) {
-          const errorData = await deleteResponse.json().catch(() => null)
-          console.error("[Vercel Domain] Failed to remove domain from Vercel:", {
-            status: deleteResponse.status,
-            statusText: deleteResponse.statusText,
-            error: errorData,
-          })
-        }
-      }
-    } catch (vercelError) {
-      console.error("[Vercel Domain] Exception during Vercel API call:", {
-        error: vercelError instanceof Error ? vercelError.message : String(vercelError),
-        stack: vercelError instanceof Error ? vercelError.stack : undefined,
-      })
-    }
-  } else {
-    console.warn("[Vercel Domain] Vercel credentials not configured", {
-      hasToken: !!vercelToken,
-      hasProjectId: !!vercelProjectId,
-    })
-  }
-
-  return NextResponse.json({ success: true, customDomain: normalized })
+  return NextResponse.json({ success: true, domain: serializeDomain(result) }, { status: 201 })
 }

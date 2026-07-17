@@ -11,11 +11,17 @@ export default async function DomainsPage() {
 
   const { data: websites } = await supabase
     .from("websites")
-    .select("id, title, slug, custom_domain, published")
+    .select("id, title, slug, published")
     .eq("user_id", data.user.id)
     .order("created_at", { ascending: false })
 
   if (!websites || websites.length === 0) redirect("/editor")
+
+  const { data: domains } = await supabase
+    .from("website_domains")
+    .select("id, website_id, domain, is_primary, status, last_error, created_at")
+    .in("website_id", websites.map((website) => website.id))
+    .order("created_at", { ascending: true })
 
   return (
     <EditorPageShell
@@ -28,7 +34,16 @@ export default async function DomainsPage() {
           id: website.id,
           title: website.title,
           slug: website.slug,
-          customDomain: website.custom_domain ?? null,
+          domains: (domains ?? [])
+            .filter((domain) => domain.website_id === website.id)
+            .map((domain) => ({
+              id: domain.id,
+              domain: domain.domain,
+              isPrimary: domain.is_primary,
+              status: domain.status,
+              lastError: domain.last_error,
+              createdAt: domain.created_at,
+            })),
           isPublished: website.published ?? false,
         }))}
       />
