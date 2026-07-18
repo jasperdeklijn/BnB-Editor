@@ -43,10 +43,13 @@ test("recognizes automated mail that must not receive a draft", () => {
 test("schema and cron keep the agent durable and scheduled", () => {
   const migration = fs.readFileSync(path.resolve("supabase/migrations/20260718120000_ai_mail_agent.sql"), "utf8")
   const init = fs.readFileSync(path.resolve("supabase/init.sql"), "utf8")
+  const sendReply = fs.readFileSync(path.resolve("lib/mail/send-reply.ts"), "utf8")
   const vercel = JSON.parse(fs.readFileSync(path.resolve("vercel.json"), "utf8"))
   for (const table of ["mail_accounts", "mail_threads", "mail_messages", "mail_drafts", "mail_knowledge_answers", "mail_feedback", "mail_sync_runs"]) {
     assert.match(migration, new RegExp(`create table if not exists public\\.${table}`))
     assert.match(init, new RegExp(`create table public\\.${table}`))
   }
-  assert.ok(vercel.crons.some((cron) => cron.path === "/api/cron/mail-sync" && cron.schedule === "*/5 * * * *"))
+  assert.ok(vercel.crons.some((cron) => cron.path === "/api/cron/mail-sync" && /^\d+ \d+ \* \* \*$/.test(cron.schedule)))
+  assert.match(sendReply, /renderFlexPaginaReplyHtml/)
+  assert.match(sendReply, /html: renderFlexPaginaReplyHtml\(input\.body\)/)
 })

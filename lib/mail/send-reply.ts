@@ -3,6 +3,51 @@ import "server-only"
 import nodemailer from "nodemailer"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { requireMailServerConfig } from "@/lib/mail/config"
+import { PLATFORM_BASE_URL, PLATFORM_BRAND_NAME } from "@/lib/platform"
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;")
+}
+
+export function renderFlexPaginaReplyHtml(body: string) {
+  const content = body
+    .trim()
+    .split(/\n\s*\n/)
+    .map((paragraph) => `<p style="margin:0 0 18px;">${escapeHtml(paragraph).replace(/\n/g, "<br>")}</p>`)
+    .join("")
+
+  return `<!doctype html>
+<html lang="nl">
+  <body style="margin:0;padding:0;background:#e9efea;color:#1d2c24;font-family:Arial,Helvetica,sans-serif;">
+    <div style="padding:32px 16px;">
+      <div style="max-width:640px;margin:0 auto;overflow:hidden;border:1px solid #d6e0d9;border-radius:20px;background:#ffffff;box-shadow:0 16px 44px rgba(29,44,36,.12);">
+        <div style="padding:24px 30px;background:#1d2c24;color:#ffffff;">
+          <table role="presentation" style="width:100%;border-collapse:collapse;">
+            <tr>
+              <td style="vertical-align:middle;">
+                <img src="${PLATFORM_BASE_URL}/logo_klein.png" width="44" height="44" alt="" style="display:inline-block;vertical-align:middle;border:0;border-radius:10px;background:#ffffff;object-fit:contain;">
+                <span style="display:inline-block;margin-left:12px;vertical-align:middle;font-size:20px;font-weight:700;letter-spacing:-.02em;">FlexPagina</span>
+              </td>
+              <td style="text-align:right;vertical-align:middle;font-size:12px;color:#adc4b6;">Support</td>
+            </tr>
+          </table>
+        </div>
+        <div style="padding:32px 30px;font-size:16px;line-height:1.7;color:#20342a;">
+          ${content}
+        </div>
+        <div style="padding:20px 30px;border-top:1px solid #e9efea;background:#f6f8f5;font-size:12px;line-height:1.6;color:#66766d;">
+          Dit bericht is verzonden door <a href="${PLATFORM_BASE_URL}" style="color:#385344;font-weight:700;text-decoration:none;">${PLATFORM_BRAND_NAME}</a>.
+        </div>
+      </div>
+    </div>
+  </body>
+</html>`
+}
 
 function bigrams(value: string) {
   const normalized = value.toLocaleLowerCase("nl-NL").replace(/\s+/g, " ").trim()
@@ -71,6 +116,7 @@ export async function sendReply(supabase: SupabaseClient, input: {
       to: inbound.from_address,
       subject: input.subject,
       text: input.body,
+      html: renderFlexPaginaReplyHtml(input.body),
       replyTo: config.user,
       inReplyTo: inbound.internet_message_id || undefined,
       references: [...(inbound.message_references ?? []), inbound.internet_message_id].filter(Boolean) as string[],
