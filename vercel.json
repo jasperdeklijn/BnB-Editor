@@ -11,7 +11,7 @@
     },
     {
       "path": "/api/cron/mail-sync",
-      "schedule": "0 11 * * *"
+      "schedule": "0 21 * * *"
     }
   ]
 }
