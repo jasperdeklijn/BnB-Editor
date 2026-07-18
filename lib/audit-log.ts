@@ -24,6 +24,11 @@ export type AuditAction =
   | "subscription.changed"
   | "payment.failed"
   | "account.deleted"
+  | "mail.sync_started"
+  | "mail.draft_generated"
+  | "mail.reply_sent"
+  | "mail.thread_updated"
+  | "mail.knowledge_changed"
 
 type AuditMetadata = Record<string, unknown> | null
 

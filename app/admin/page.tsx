@@ -6,6 +6,7 @@ import {
   ClipboardList,
   FileClock,
   Globe2,
+  Mail,
   Radio,
   Users,
   WalletCards,
@@ -58,6 +59,7 @@ export default async function AdminPage() {
     { label: "Aanvragen", value: null, description: "Ontvangen contactaanvragen", icon: ClipboardList },
     { label: "Leads", value: null, description: "Leads in de database", icon: Bot },
     { label: "Abonnementen", value: null, description: "Actief of in proefperiode", icon: WalletCards },
+    { label: "Nieuwe mails", value: null, description: "Ongelezen supportgesprekken", icon: Mail },
   ]
   let recentLogs: AuditLog[] = []
   let loadError = ""
@@ -73,6 +75,7 @@ export default async function AdminPage() {
       requestsResult,
       leadsResult,
       subscriptionsResult,
+      unreadMailResult,
       logsResult,
     ] = await Promise.all([
       admin.auth.admin.listUsers({ page: 1, perPage: 1 }),
@@ -81,6 +84,7 @@ export default async function AdminPage() {
       admin.from("contact_requests").select("*", { count: "exact", head: true }),
       admin.from("leads").select("*", { count: "exact", head: true }),
       admin.from("subscriptions").select("*", { count: "exact", head: true }).in("status", ["active", "trial"]),
+      admin.from("mail_threads").select("*", { count: "exact", head: true }).gt("unread_count", 0),
       admin.from("audit_logs").select("id, action, created_at").order("created_at", { ascending: false }).limit(5),
     ])
 
@@ -90,6 +94,7 @@ export default async function AdminPage() {
       requestsResult,
       leadsResult,
       subscriptionsResult,
+      unreadMailResult,
     ]
     const hasCountError = countResults.some((result) => result.error)
 
@@ -100,6 +105,7 @@ export default async function AdminPage() {
       { ...stats[3], value: requestsResult.error ? null : requestsResult.count ?? 0 },
       { ...stats[4], value: leadsResult.error ? null : leadsResult.count ?? 0 },
       { ...stats[5], value: subscriptionsResult.error ? null : subscriptionsResult.count ?? 0 },
+      { ...stats[6], value: unreadMailResult.error ? null : unreadMailResult.count ?? 0 },
     ]
     recentLogs = logsResult.error ? [] : ((logsResult.data ?? []) as AuditLog[])
 
@@ -161,6 +167,12 @@ export default async function AdminPage() {
               <p className="mt-1 text-sm text-white/55">Kies het onderdeel dat je wilt beheren.</p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
+              <AdminLink
+                href="/admin/mailbox"
+                icon={Mail}
+                title="AI mailbox"
+                description="Bekijk nieuwe supportmail en controleer antwoordvoorstellen."
+              />
               <AdminLink
                 href="/admin/leads"
                 icon={Bot}

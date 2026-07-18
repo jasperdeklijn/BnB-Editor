@@ -11,6 +11,7 @@
     "test:snapshots": "node --test tests/website-snapshot.test.mjs",
     "test:plan-enforcement": "node --test tests/plan-enforcement.test.mjs",
     "test:domains": "node --test tests/vercel-domains.test.mjs",
+    "test:mail": "node --test tests/mail-agent.test.mjs",
     "start": "next start"
   },
   "dependencies": {
@@ -53,8 +54,10 @@
     "cmdk": "1.0.4",
     "date-fns": "4.1.0",
     "embla-carousel-react": "8.5.1",
+    "imapflow": "^1.4.7",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
+    "mailparser": "^3.9.14",
     "next": "^16.1.6",
     "next-themes": "^0.4.6",
     "nodemailer": "^8.0.7",
@@ -74,6 +77,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "@tailwindcss/postcss": "^4.1.9",
+    "@types/mailparser": "^3.4.6",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
