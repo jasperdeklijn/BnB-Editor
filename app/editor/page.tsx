@@ -1,22 +1,22 @@
 import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
 import { EditorClient } from "@/components/editor/editor-client"
 import { getSubscriptionAccessNotice, getUserSubscription } from "@/lib/subscriptions"
 import { getPlanEnforcementMode } from "@/lib/plan-enforcement"
+import { getEditorBootstrap } from "@/lib/editor-bootstrap"
 
 export default async function EditorPage() {
-  const supabase = await createClient()
-
-  const { data, error } = await supabase.auth.getUser()
-  if (error || !data?.user) {
+  const { supabase, user, businessId, businessCategory } = await getEditorBootstrap()
+  if (!user) {
     redirect("/auth/login")
   }
 
-  const subscription = await getUserSubscription(supabase, data.user.id)
+  const subscription = await getUserSubscription(supabase, user.id)
 
   return (
     <EditorClient
-      userId={data.user.id}
+      userId={user.id}
+      initialBusinessId={businessId}
+      initialBusinessCategory={businessCategory}
       currentPlan={subscription.planId}
       subscriptionNotice={getSubscriptionAccessNotice(subscription)}
       enforcementMode={getPlanEnforcementMode()}

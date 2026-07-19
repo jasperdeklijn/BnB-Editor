@@ -5,6 +5,55 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { removeDomainFromVercel } from "@/lib/vercel-domains"
 
+const STORAGE_LIST_PAGE_SIZE = 1000
+const IMAGE_METADATA_PAGE_SIZE = 1000
+const STORAGE_DELETE_BATCH_SIZE = 500
+
+type AdminClient = Awaited<ReturnType<typeof createAdminClient>>
+
+async function listStorageFilePaths(admin: AdminClient, directory: string) {
+  const paths: string[] = []
+
+  for (let offset = 0; ; offset += STORAGE_LIST_PAGE_SIZE) {
+    const { data, error } = await admin.storage.from("user-images").list(directory, {
+      limit: STORAGE_LIST_PAGE_SIZE,
+      offset,
+      sortBy: { column: "name", order: "asc" },
+    })
+    if (error) return { paths: [], error }
+
+    const files = data ?? []
+    paths.push(
+      ...files
+        .filter((file) => file.id && file.name !== ".emptyFolderPlaceholder")
+        .map((file) => `${directory}/${file.name}`),
+    )
+    if (files.length < STORAGE_LIST_PAGE_SIZE) return { paths, error: null }
+  }
+}
+
+async function listManagedImagePaths(admin: AdminClient, userId: string) {
+  const paths: string[] = []
+
+  for (let from = 0; ; from += IMAGE_METADATA_PAGE_SIZE) {
+    const { data, error } = await admin
+      .from("user_images")
+      .select("original_path, thumbnail_path")
+      .eq("user_id", userId)
+      .order("id", { ascending: true })
+      .range(from, from + IMAGE_METADATA_PAGE_SIZE - 1)
+    if (error) return { paths: [], error }
+
+    const images = data ?? []
+    paths.push(
+      ...images.flatMap((image) =>
+        [image.original_path, image.thumbnail_path].filter((path): path is string => Boolean(path)),
+      ),
+    )
+    if (images.length < IMAGE_METADATA_PAGE_SIZE) return { paths, error: null }
+  }
+}
+
 export async function DELETE(request: Request) {
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -56,9 +105,9 @@ export async function DELETE(request: Request) {
   }
 
   const [rootFilesResult, avatarFilesResult, imageMetadataResult] = await Promise.all([
-    admin.storage.from("user-images").list(user.id, { limit: 1000 }),
-    admin.storage.from("user-images").list(`${user.id}/avatars`, { limit: 1000 }),
-    admin.from("user_images").select("original_path, thumbnail_path").eq("user_id", user.id),
+    listStorageFilePaths(admin, user.id),
+    listStorageFilePaths(admin, `${user.id}/avatars`),
+    listManagedImagePaths(admin, user.id),
   ])
 
   if (rootFilesResult.error || avatarFilesResult.error || imageMetadataResult.error) {
@@ -66,17 +115,15 @@ export async function DELETE(request: Request) {
   }
 
   const filePaths = [
-    ...(rootFilesResult.data ?? [])
-      .filter((file) => file.id && file.name !== ".emptyFolderPlaceholder")
-      .map((file) => `${user.id}/${file.name}`),
-    ...(avatarFilesResult.data ?? [])
-      .filter((file) => file.id && file.name !== ".emptyFolderPlaceholder")
-      .map((file) => `${user.id}/avatars/${file.name}`),
-    ...(imageMetadataResult.data ?? []).flatMap((image) => [image.original_path, image.thumbnail_path].filter((path): path is string => Boolean(path))),
+    ...rootFilesResult.paths,
+    ...avatarFilesResult.paths,
+    ...imageMetadataResult.paths,
   ]
 
-  if (filePaths.length) {
-    const { error: storageDeleteError } = await admin.storage.from("user-images").remove([...new Set(filePaths)])
+  const uniqueFilePaths = [...new Set(filePaths)]
+  for (let index = 0; index < uniqueFilePaths.length; index += STORAGE_DELETE_BATCH_SIZE) {
+    const batch = uniqueFilePaths.slice(index, index + STORAGE_DELETE_BATCH_SIZE)
+    const { error: storageDeleteError } = await admin.storage.from("user-images").remove(batch)
     if (storageDeleteError) {
       return NextResponse.json({ error: "Bestanden konden niet worden verwijderd." }, { status: 500 })
     }

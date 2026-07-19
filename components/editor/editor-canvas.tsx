@@ -9,25 +9,19 @@ import {
 } from "@/lib/business-naming"
 import { getDefaultSectionData as getRegistryDefaultSectionData, getSectionDefinition } from "@/components/editor/section-registry"
 import { SectionRenderer, TransitionWrapper } from "./section-renderer"
-import { useEditorLayout } from "./editor-layout-context"
-import websiteSections from "@/lib/supabase/websiteSections"
-import { createClient } from "@/lib/supabase/client"
-import type { SupabaseClient } from "@supabase/supabase-js"
-import { toast } from "sonner"
-import { applyThemeDefaultsToSections, resolveWebsiteTheme, type ThemeConfig } from "@/lib/themes"
+import { applyThemeDefaultsToSection, resolveWebsiteTheme, type ResolvedTheme, type ThemeConfig } from "@/lib/themes"
 
 interface EditorCanvasProps {
   sections: Section[]
-  setSections: (sections: Section[]) => void
+  persistSections: (sections: Section[]) => void
+  onSectionUpdate: (id: string, updates: Partial<Section>) => void
   transitions: Transition[]
   themeConfig?: ThemeConfig | null
   isPreview: boolean
   selectedSectionId: string | null
   onSectionSelect: (id: string | null) => void
   device: "desktop" | "tablet" | "mobile"
-  websiteId?: string | null
   businessId?: string | null
-  supabase?: SupabaseClient
   isDraggingNewSectionExternal?: boolean
   isDraggingImageExternal?: boolean
   onStartTutorial?: () => void
@@ -35,22 +29,20 @@ interface EditorCanvasProps {
 
 export function EditorCanvas({
   sections,
-  setSections,
+  persistSections,
+  onSectionUpdate,
   transitions,
   themeConfig,
   isPreview,
   selectedSectionId,
   onSectionSelect,
   device,
-  websiteId,
   businessId,
-  supabase,
   isDraggingNewSectionExternal = false,
   isDraggingImageExternal = false,
   onStartTutorial,
 }: EditorCanvasProps) {
   const [tutorialDismissed, setTutorialDismissed] = useState(false)
-  const { setIsSaving, setSaveState } = useEditorLayout()
   const sectionRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const canvasRef = useRef<HTMLElement | null>(null)
   const suppressNextSectionClickRef = useRef(false)
@@ -58,13 +50,28 @@ export function EditorCanvas({
   const [draggingSectionIndex, setDraggingSectionIndex] = useState<number | null>(null)
   const [isDraggingNewSection, setIsDraggingNewSection] = useState(false)
   const [isDraggingImage, setIsDraggingImage] = useState(false)
-  const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null)
+  const themedSectionCacheRef = useRef<Map<string, { source: Section; theme: ResolvedTheme; themed: Section }>>(new Map())
   const showNewSectionDropTargets = isDraggingNewSection || isDraggingNewSectionExternal
   const showImageDropTargets = isDraggingImage || isDraggingImageExternal
   const resolvedTheme = useMemo(() => resolveWebsiteTheme(themeConfig), [themeConfig])
-  const themedSections = useMemo(
-    () => applyThemeDefaultsToSections(sections, themeConfig),
-    [sections, themeConfig],
+  const themedSections = useMemo(() => {
+    const nextCache = new Map<string, { source: Section; theme: ResolvedTheme; themed: Section }>()
+    const nextSections = sections.map((section) => {
+      const cached = themedSectionCacheRef.current.get(section.id)
+      if (cached?.source === section && cached.theme === resolvedTheme) {
+        nextCache.set(section.id, cached)
+        return cached.themed
+      }
+      const themed = applyThemeDefaultsToSection(section, resolvedTheme)
+      nextCache.set(section.id, { source: section, theme: resolvedTheme, themed })
+      return themed
+    })
+    themedSectionCacheRef.current = nextCache
+    return nextSections
+  }, [resolvedTheme, sections])
+  const transitionsByPair = useMemo(
+    () => new Map(transitions.map((transition) => [`${transition.fromSectionId}:${transition.toSectionId}`, transition])),
+    [transitions],
   )
   const themeScopeStyle = useMemo(
     () =>
@@ -124,7 +131,7 @@ export function EditorCanvas({
         }
         const newSections = [...sections]
         newSections.splice(gapIndex, 0, newSection)
-        setSections(newSections)
+        persistSections(newSections)
         setHoverDropIndex(null)
         setIsDraggingNewSection(false)
         return
@@ -181,7 +188,7 @@ export function EditorCanvas({
           data: getDefaultSectionData(sectionType),
           styles: {},
         }
-        setSections([...sections, newSection])
+        persistSections([...sections, newSection])
         setIsDraggingNewSection(false)
       }
     }
@@ -196,13 +203,6 @@ export function EditorCanvas({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sections, onSectionSelect])
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutId) clearTimeout(saveTimeoutId)
-    }
-  }, [saveTimeoutId])
 
   /* -----------------------------
      Drag & Drop helpers
@@ -315,28 +315,9 @@ export function EditorCanvas({
 
       const newSections = [...sections]
       newSections.splice(index, 0, newSection)
-      setSections(newSections)
+      persistSections(newSections)
       setHoverDropIndex(null)
       setIsDraggingNewSection(false)
-
-      if (!websiteId) return
-
-      try {
-        const client = supabase ?? createClient()
-        const payload = {
-          type: sectionType,
-          content: newSection.data ?? {},
-          styles: newSection.styles ?? {},
-          transition: null,
-          position: index + 1,
-        }
-        const { data: created } = await websiteSections.createSection(websiteId, payload as any, client)
-        if (created && created.id) {
-          setSections(sections.map((s) => (s.id === tempId ? { ...s, id: created.id } : s)))
-        }
-      } catch {
-        // ignore persistence errors for now
-      }
       return
     }
 
@@ -355,7 +336,7 @@ export function EditorCanvas({
     const targetIndex = draggedIndex < index ? index - 1 : index
     newSections.splice(targetIndex, 0, removed)
 
-    setSections(newSections)
+    persistSections(newSections)
     setHoverDropIndex(null)
     setDraggingSectionIndex(null)
   }
@@ -414,7 +395,7 @@ export function EditorCanvas({
     const newSections = [...sections]
     const [item] = newSections.splice(from, 1)
     newSections.splice(to, 0, item)
-    setSections(newSections)
+    persistSections(newSections)
 
     // wait for DOM update
     await new Promise((res) => requestAnimationFrame(res))
@@ -458,54 +439,14 @@ export function EditorCanvas({
   }
 
   const handleDelete = (id: string) => {
-    setSections(sections.filter((s) => s.id !== id))
+    persistSections(sections.filter((s) => s.id !== id))
     if (selectedSectionId === id) {
       onSectionSelect(null)
     }
   }
 
   const updateSection = (id: string, newData: Partial<Section>) => {
-    // Update local state immediately
-    setSections(
-      sections.map((s) => (s.id === id ? { ...s, ...newData } : s)),
-    )
-
-    // Save to database with debouncing
-    if (saveTimeoutId) clearTimeout(saveTimeoutId)
-
-    const timeout = setTimeout(async () => {
-      // Don't save if it's a temporary section or no websiteId
-      if (!websiteId || id.startsWith('section-')) return
-
-      setIsSaving(true)
-      try {
-        const section = sections.find(s => s.id === id)
-        if (!section) return
-
-        const updatedSection = { ...section, ...newData }
-        const payload = {
-          type: updatedSection.type,
-          content: updatedSection.data,
-          styles: updatedSection.styles ?? {},
-          position: sections.findIndex(s => s.id === id) + 1,
-        }
-
-        const client = supabase || createClient()
-        await websiteSections.updateSection(id, payload as any, client)
-
-        setIsSaving(false)
-      } catch (err) {
-        console.error('Error saving section to database:', err)
-        setIsSaving(false)
-        setSaveState("error")
-        toast.error("Opslaan mislukt", {
-          position: "bottom-right",
-          duration: 2000,
-        })
-      }
-    }, 800)
-
-    setSaveTimeoutId(timeout)
+    onSectionUpdate(id, newData)
   }
 
   /* -----------------------------
@@ -593,12 +534,10 @@ export function EditorCanvas({
           <div className="website-theme-scope" style={themeScopeStyle}>
           {themedSections.map((section, i) => {
             const next = themedSections[i + 1]
-            const hasTransitionToNext = next && transitions.some(
-              t => t.fromSectionId === section.id && t.toSectionId === next.id && t.type !== "none"
-            )
-            const transitionToNext = hasTransitionToNext 
-              ? transitions.find(t => t.fromSectionId === section.id && t.toSectionId === next.id)
+            const transitionCandidate = next
+              ? transitionsByPair.get(`${section.id}:${next.id}`) ?? null
               : null
+            const transitionToNext = transitionCandidate?.type !== "none" ? transitionCandidate : null
             const sectionLabel = getSectionDefinition(section.type)?.label ?? section.type.replace("_", " ")
             const isSelected = selectedSectionId === section.id
 
@@ -715,7 +654,7 @@ export function EditorCanvas({
                       isPreview={isPreview}
                       onUpdate={(data) => updateSection(section.id, { data })}
                       wrapTransition={false}
-                      allSections={sections}
+                      allSections={section.type === "nav" || section.type === "footer" ? sections : undefined}
                       device={device}
                     />
                   </div>

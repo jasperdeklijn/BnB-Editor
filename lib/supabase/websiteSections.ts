@@ -138,6 +138,12 @@ export async function deleteSection(id: string, supabase?: SupabaseClient) {
   return { data: deleted, error: null }
 }
 
+export async function deleteSections(ids: string[], supabase?: SupabaseClient) {
+  if (ids.length === 0) return { data: [], error: null }
+  const client = await getClient(supabase)
+  return client.from('website_sections').delete().in('id', ids).select()
+}
+
 export async function reorderSections(websiteId: string, orderedIds: string[], supabase?: SupabaseClient) {
   const client = await getClient(supabase)
   const updates = orderedIds.map((id, idx) => ({ id, position: idx + 1 }))
@@ -303,6 +309,7 @@ export default {
   createSection,
   updateSection,
   deleteSection,
+  deleteSections,
   moveSection,
   reorderSections,
   duplicateSection,

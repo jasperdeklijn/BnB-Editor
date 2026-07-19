@@ -82,18 +82,27 @@ async function logEntitlementMetric(
 
 interface EditorClientProps {
   userId: string
+  initialBusinessId?: string | null
+  initialBusinessCategory?: BusinessCategory | null
   currentPlan: PlanId
   subscriptionNotice?: string | null
   enforcementMode: PlanEnforcementMode
 }
 
-export function EditorClient({ userId, currentPlan, subscriptionNotice, enforcementMode }: EditorClientProps) {
+export function EditorClient({
+  userId,
+  initialBusinessId = null,
+  initialBusinessCategory = null,
+  currentPlan,
+  subscriptionNotice,
+  enforcementMode,
+}: EditorClientProps) {
   const [sections, setSections] = useState<Section[]>([])
   const [transitions, setTransitions] = useState<Transition[]>([])
   const [websites, setWebsites] = useState<WebsiteSummary[]>([])
   const [websiteId, setWebsiteId] = useState<string | null>(null)
-  const [businessId, setBusinessId] = useState<string | null>(null)
-  const [businessCategory, setBusinessCategory] = useState<BusinessCategory | null>(null)
+  const [businessId, setBusinessId] = useState<string | null>(initialBusinessId)
+  const [businessCategory] = useState<BusinessCategory | null>(initialBusinessCategory)
   const [title, setTitle] = useState(DEFAULT_SITE_TITLE)
   const [themeConfig, setThemeConfig] = useState<ThemeConfig | null>(null)
   const [isCreatingWebsite, setIsCreatingWebsite] = useState(false)
@@ -112,6 +121,19 @@ export function EditorClient({ userId, currentPlan, subscriptionNotice, enforcem
   const { isPreview, isSaving, setIsSaving, saveState, setSaveState, device, setOnPublish, setOnLogout } = useEditorLayout()
   const requestedWebsiteId = searchParams.get("websiteId")
   const previousEntitlementViolationKeys = useRef<Set<string>>(new Set())
+  const sectionsRef = useRef<Section[]>([])
+  const sectionSaveTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+  const sectionSaveChainsRef = useRef<Map<string, Promise<void>>>(new Map())
+  const activeSectionSavesRef = useRef(0)
+
+  useEffect(() => {
+    sectionsRef.current = sections
+  }, [sections])
+
+  useEffect(() => () => {
+    sectionSaveTimeoutsRef.current.forEach((timeout) => clearTimeout(timeout))
+    sectionSaveTimeoutsRef.current.clear()
+  }, [])
 
   const entitlementResult = useMemo(
     () => inspectWebsiteEntitlements(currentPlan, { sections }),
@@ -215,28 +237,10 @@ export function EditorClient({ userId, currentPlan, subscriptionNotice, enforcem
 
   const loadWebsite = useCallback(async (preferredWebsiteId?: string | null) => {
     const supabase = createClient()
-    let resolvedBusinessId: string | null = null
-
-    // Fetch the user's current business id for service-backed sections.
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      const { data: business } = await supabase
-        .from("businesses")
-        .select("id, category")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle()
-      if (business) {
-        resolvedBusinessId = business.id
-        setBusinessId(business.id)
-        setBusinessCategory((business.category as BusinessCategory | null) ?? null)
-      }
-    }
 
     const { data: websiteRows } = await supabase
       .from("websites")
-      .select("*")
+      .select("id, title, slug, published, custom_domain, created_at, business_id, theme_config")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
 
@@ -257,21 +261,23 @@ export function EditorClient({ userId, currentPlan, subscriptionNotice, enforcem
         websiteRows[0]
       setWebsiteId(website.id)
       setTitle(website.title)
-      setBusinessId(website.business_id ?? resolvedBusinessId)
+      setBusinessId(website.business_id ?? initialBusinessId)
       setThemeConfig((website.theme_config as ThemeConfig | null) ?? null)
       setSelectedSectionId(null)
 
-      // Load normalized sections from website_sections
-      const { data: rows, error: listErr } = await websiteSections.listSections(website.id, supabase)
+      const [sectionResult, transitionResult] = await Promise.all([
+        websiteSections.listSections(website.id, supabase),
+        supabase
+          .from("section_transitions")
+          .select("from_section_id, to_section_id, transition")
+          .eq("website_id", website.id),
+      ])
+      const { data: rows, error: listErr } = sectionResult
       if (listErr) {
         console.error('Failed to load sections:', listErr)
         setSections([])
       } else {
-        // Load transitions from separate table
-        const { data: transitionRows } = await supabase
-          .from("section_transitions")
-          .select("from_section_id, to_section_id, transition")
-          .eq("website_id", website.id)
+        const transitionRows = transitionResult.data
         
         // Map transitions to Transition objects
         const mappedTransitions: Transition[] = (transitionRows || []).map((t: any) => ({
@@ -297,6 +303,7 @@ export function EditorClient({ userId, currentPlan, subscriptionNotice, enforcem
         .from("websites")
         .insert({
           user_id: userId,
+          business_id: initialBusinessId,
           title: DEFAULT_SITE_TITLE,
           slug: newSlug,
         })
@@ -320,7 +327,7 @@ export function EditorClient({ userId, currentPlan, subscriptionNotice, enforcem
         ])
       }
     }
-  }, [userId])
+  }, [initialBusinessId, userId])
 
   const handleTemplateApplied = useCallback(
     async (nextWebsiteId?: string | null) => {
@@ -455,11 +462,15 @@ export function EditorClient({ userId, currentPlan, subscriptionNotice, enforcem
     })
   }
 
-  // Persist sections immediately when updated from children
-  const persistSections = async (newSections: Section[]) => {
-    // Optimistically update UI
-    const prevSections = sections
+  const updateLocalSections = useCallback((newSections: Section[]) => {
+    sectionsRef.current = newSections
     setSections(newSections)
+  }, [])
+
+  // Structural changes only create/delete rows and persist the final order.
+  const persistSections = useCallback(async (newSections: Section[]) => {
+    const previousSections = sectionsRef.current
+    updateLocalSections(newSections)
 
     if (!websiteId) return
 
@@ -467,81 +478,149 @@ export function EditorClient({ userId, currentPlan, subscriptionNotice, enforcem
     const supabase = createClient()
 
     try {
-      // Find removed sections and delete them in DB
-      const prevIds = prevSections.map((s) => s.id)
-      const newIds = newSections.map((s) => s.id)
-      const removed = prevIds.filter((id) => !newIds.includes(id))
-      for (const id of removed) {
-        if (!id.startsWith('section-')) {
-          const deletedSection = prevSections.find((section) => section.id === id)
-          const { error } = await websiteSections.deleteSection(id, supabase)
-          if (!error && deletedSection) {
-            await logSectionAudit("section.deleted", websiteId, deletedSection)
-          }
-        }
-      }
+      const nextIds = new Set(newSections.map((section) => section.id))
+      const removedSections = previousSections.filter(
+        (section) => !section.id.startsWith("section-") && !nextIds.has(section.id),
+      )
+      const temporarySections = newSections.filter((section) => section.id.startsWith("section-"))
 
-      // Create or update sections in order
-      const finalIds: string[] = []
-      const idMapping = new Map<string, string>() // temp ID -> persisted ID
-      
-      for (let i = 0; i < newSections.length; i++) {
-        const s = newSections[i]
-        const payload = {
-          type: s.type,
-          content: s.data ?? {},
-          styles: s.styles ?? {},
-          position: i + 1,
-        }
+      const [{ error: deleteError }, createdResults] = await Promise.all([
+        websiteSections.deleteSections(removedSections.map((section) => section.id), supabase),
+        Promise.all(
+          temporarySections.map(async (section) => {
+            const position = newSections.findIndex((candidate) => candidate.id === section.id) + 1
+            const result = await websiteSections.createSection(
+              websiteId,
+              {
+                type: section.type,
+                content: section.data ?? {},
+                styles: section.styles ?? {},
+                position,
+              },
+              supabase,
+            )
+            if (result.error) throw result.error
+            return { temporaryId: section.id, section, created: result.data }
+          }),
+        ),
+      ])
 
-        if (s.id.startsWith('section-')) {
-          const { data: created } = await websiteSections.createSection(websiteId, payload as any, supabase)
-          if (created) {
-            finalIds.push(created.id)
-            idMapping.set(s.id, created.id)
-            await logSectionAudit("section.added", websiteId, { id: created.id, type: s.type })
-            // replace temp id in local state
-            setSections((prev) => prev.map((p) => (p.id === s.id ? { ...p, id: created.id } : p)))
-          }
-        } else {
-          await websiteSections.updateSection(s.id, payload as any, supabase)
-          finalIds.push(s.id)
-          idMapping.set(s.id, s.id)
-        }
-      }
+      if (deleteError) throw deleteError
 
-      // Ensure DB ordering
-      await websiteSections.reorderSections(websiteId, finalIds, supabase)
+      const idMapping = new Map(
+        createdResults
+          .filter((result) => result.created?.id)
+          .map((result) => [result.temporaryId, result.created!.id] as const),
+      )
+      await Promise.all(createdResults.map(async (result) => {
+        if (!result.created?.id) return
+        const latestTemporarySection = sectionsRef.current.find(
+          (section) => section.id === result.temporaryId,
+        )
+        if (!latestTemporarySection || latestTemporarySection === result.section) return
+        const latestPosition = sectionsRef.current.findIndex(
+          (section) => section.id === result.temporaryId,
+        ) + 1
+        const { error } = await websiteSections.updateSection(
+          result.created.id,
+          {
+            type: latestTemporarySection.type,
+            content: latestTemporarySection.data ?? {},
+            styles: latestTemporarySection.styles ?? {},
+            position: latestPosition,
+          },
+          supabase,
+        )
+        if (error) throw error
+      }))
+      const latestSections = sectionsRef.current.map((section) => {
+        const persistedId = idMapping.get(section.id)
+        return persistedId ? { ...section, id: persistedId } : section
+      })
+      updateLocalSections(latestSections)
+      setSelectedSectionId((current) => current ? idMapping.get(current) ?? current : current)
+      setTransitions((current) => current.map((transition) => ({
+        ...transition,
+        id: `${idMapping.get(transition.fromSectionId) ?? transition.fromSectionId}-${idMapping.get(transition.toSectionId) ?? transition.toSectionId}`,
+        fromSectionId: idMapping.get(transition.fromSectionId) ?? transition.fromSectionId,
+        toSectionId: idMapping.get(transition.toSectionId) ?? transition.toSectionId,
+      })))
 
-      // Save all transitions from transitions state
-      const persistedSectionIds = new Set(finalIds)
-      for (const transition of transitions) {
-        // Make sure both sections are persisted (not temp IDs)
-        const persistedFromId = idMapping.get(transition.fromSectionId) || transition.fromSectionId
-        const persistedToId = idMapping.get(transition.toSectionId) || transition.toSectionId
-        
-        if (
-          persistedSectionIds.has(persistedFromId) &&
-          persistedSectionIds.has(persistedToId) &&
-          !persistedFromId.startsWith('section-') &&
-          !persistedToId.startsWith('section-')
-        ) {
-          await websiteSections.setTransition(
-            websiteId,
-            persistedFromId,
-            persistedToId,
-            { type: transition.type },
-            supabase
-          ).catch(err => console.error('Error saving transition:', err))
-        }
-      }
+      const { error: reorderError } = await websiteSections.reorderSections(
+        websiteId,
+        latestSections.map((section) => section.id),
+        supabase,
+      )
+      if (reorderError) throw reorderError
+
+      await Promise.all([
+        ...removedSections.map((section) => logSectionAudit("section.deleted", websiteId, section)),
+        ...createdResults
+          .filter((result) => result.created?.id)
+          .map((result) => logSectionAudit("section.added", websiteId, {
+            id: result.created!.id,
+            type: result.section.type,
+          })),
+      ])
     } catch (err) {
-      console.error('Error persisting sections:', err)
+      console.error("Error persisting section structure:", err)
       setSaveState("error")
     } finally {
       setIsSaving(false)
     }
-  }
+  }, [setIsSaving, setSaveState, updateLocalSections, websiteId])
+
+  const handleCanvasSectionUpdate = useCallback((id: string, updates: Partial<Section>) => {
+    const currentSections = sectionsRef.current
+    const sectionIndex = currentSections.findIndex((section) => section.id === id)
+    if (sectionIndex < 0) return
+
+    const updatedSection = { ...currentSections[sectionIndex], ...updates }
+    const nextSections = [...currentSections]
+    nextSections[sectionIndex] = updatedSection
+    updateLocalSections(nextSections)
+
+    const previousTimeout = sectionSaveTimeoutsRef.current.get(id)
+    if (previousTimeout) clearTimeout(previousTimeout)
+    if (!websiteId || id.startsWith("section-")) return
+
+    const timeout = setTimeout(() => {
+      sectionSaveTimeoutsRef.current.delete(id)
+      const previousSave = sectionSaveChainsRef.current.get(id) ?? Promise.resolve()
+      const nextSave = previousSave
+        .catch(() => undefined)
+        .then(async () => {
+          activeSectionSavesRef.current += 1
+          setIsSaving(true)
+          try {
+            const latestSections = sectionsRef.current
+            const latestIndex = latestSections.findIndex((section) => section.id === id)
+            const latestSection = latestSections[latestIndex]
+            if (!latestSection) return
+            const { error } = await websiteSections.updateSection(
+              id,
+              {
+                type: latestSection.type,
+                content: latestSection.data ?? {},
+                styles: latestSection.styles ?? {},
+                position: latestIndex + 1,
+              },
+              createClient(),
+            )
+            if (error) throw error
+          } catch (error) {
+            console.error("Error saving section:", error)
+            setSaveState("error")
+          } finally {
+            activeSectionSavesRef.current -= 1
+            if (activeSectionSavesRef.current === 0) setIsSaving(false)
+          }
+        })
+      sectionSaveChainsRef.current.set(id, nextSave)
+    }, 800)
+
+    sectionSaveTimeoutsRef.current.set(id, timeout)
+  }, [setIsSaving, setSaveState, updateLocalSections, websiteId])
 
   const performPublish = useCallback(async () => {
     if (!websiteId) return
@@ -1076,7 +1155,8 @@ export function EditorClient({ userId, currentPlan, subscriptionNotice, enforcem
         )}
         <EditorCanvas
           sections={sections}
-          setSections={persistSections}
+          persistSections={persistSections}
+          onSectionUpdate={handleCanvasSectionUpdate}
           transitions={transitions}
           themeConfig={themeConfig}
           isPreview={isPreview}
@@ -1127,7 +1207,8 @@ export function EditorClient({ userId, currentPlan, subscriptionNotice, enforcem
           {(mobilePanel === "canvas" || isPreview) && (
             <EditorCanvas
               sections={sections}
-              setSections={persistSections}
+              persistSections={persistSections}
+              onSectionUpdate={handleCanvasSectionUpdate}
               transitions={transitions}
               themeConfig={themeConfig}
               isPreview={isPreview}

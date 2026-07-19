@@ -126,6 +126,30 @@ interface ImageCardProps {
   onDragEnd: () => void
 }
 
+type EditorImage = { name: string; url: string; previewUrl: string }
+const IMAGE_CACHE_TTL_MS = 60_000
+const imageLibraryCache = new Map<string, { images: EditorImage[]; loadedAt: number }>()
+const imageLibraryRequests = new Map<string, Promise<EditorImage[]>>()
+
+function loadEditorImages(userId: string): Promise<EditorImage[]> {
+  const cached = imageLibraryCache.get(userId)
+  if (cached && Date.now() - cached.loadedAt < IMAGE_CACHE_TTL_MS) return Promise.resolve(cached.images)
+
+  const pending = imageLibraryRequests.get(userId)
+  if (pending) return pending
+
+  const request = loadUserImages(createClient(), userId)
+    .then((pictures) => pictures.map(({ name, url, previewUrl }) => ({ name, url, previewUrl })))
+    .then((images) => {
+      imageLibraryCache.set(userId, { images, loadedAt: Date.now() })
+      return images
+    })
+    .finally(() => imageLibraryRequests.delete(userId))
+
+  imageLibraryRequests.set(userId, request)
+  return request
+}
+
 function ImageCard({ name, url, previewUrl, collapsed, isDragging, onDragStart, onDragEnd }: ImageCardProps) {
   const { onTouchStart, onTouchMove, onTouchEnd } = useTouchDrag({ payload: { imageUrl: url } })
   return (
@@ -142,7 +166,13 @@ function ImageCard({ name, url, previewUrl, collapsed, isDragging, onDragStart, 
       }`}
       title={name}
     >
-      <img src={previewUrl} alt={name} className={`${collapsed ? "h-10" : "h-12"} w-full object-cover rounded`} />
+      <img
+        src={previewUrl}
+        alt={name}
+        loading="lazy"
+        decoding="async"
+        className={`${collapsed ? "h-10" : "h-12"} w-full object-cover rounded`}
+      />
       {!collapsed && (
         <div className="text-[10px] text-muted-foreground truncate text-center mt-1">{name}</div>
       )}
@@ -165,7 +195,7 @@ export function SectionsSelector({ className = "", userId, onSectionAdded, onSec
   const [collapsed, setCollapsed] = useState(false)
   const [draggingType, setDraggingType] = useState<SectionType | null>(null)
   const [tab, setTab] = useState("sections")
-  const [images, setImages] = useState<{ name: string; url: string; previewUrl: string }[]>([])
+  const [images, setImages] = useState<EditorImage[]>([])
   const [isLoadingImages, setIsLoadingImages] = useState(false)
   const [draggingImage, setDraggingImage] = useState<string | null>(null)
 
@@ -182,9 +212,8 @@ export function SectionsSelector({ className = "", userId, onSectionAdded, onSec
   useEffect(() => {
     if (tab === "images" && userId) {
       setIsLoadingImages(true)
-      const supabase = createClient()
-      loadUserImages(supabase, userId)
-        .then((pics) => setImages(pics.map(({ name, url, previewUrl }) => ({ name, url, previewUrl }))))
+      loadEditorImages(userId)
+        .then(setImages)
         .catch(() => setImages([]))
         .finally(() => setIsLoadingImages(false))
     }

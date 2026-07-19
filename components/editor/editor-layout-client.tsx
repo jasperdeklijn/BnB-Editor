@@ -6,23 +6,24 @@ import { usePathname, useRouter } from "next/navigation"
 import { EditorLayoutProvider, type EditorSaveState } from "./editor-layout-context"
 import { CalendarDays, ImageIcon, Globe, Home, Briefcase, LayoutTemplate, Search, CreditCard, User } from "lucide-react"
 import { DEFAULT_SITE_TITLE } from "@/lib/business-naming"
-import { createClient } from "@/lib/supabase/client"
 import { getOfferingCopy, type BusinessCategory } from "@/lib/business/categories"
 
 interface EditorLayoutClientProps {
   children: React.ReactNode
   avatarUrl: string | null
   displayName: string | null
+  initialBusinessCategory?: BusinessCategory | null
 }
 
 export function EditorLayoutClient({
   children,
   avatarUrl,
   displayName,
+  initialBusinessCategory = null,
 }: EditorLayoutClientProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const [businessCategory, setBusinessCategory] = useState<BusinessCategory | string | null>(null)
+  const [businessCategory, setBusinessCategory] = useState<BusinessCategory | string | null>(initialBusinessCategory)
   const offeringCopy = getOfferingCopy(businessCategory)
 
   const pageTitles: Record<string, string> = {
@@ -69,36 +70,14 @@ export function EditorLayoutClient({
   const [infoText, setInfoText] = useState<string | undefined>()
 
   useEffect(() => {
-    let cancelled = false
-    const supabase = createClient()
-
-    const loadBusinessCategory = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user || cancelled) return
-
-      const { data: business } = await supabase
-        .from("businesses")
-        .select("category")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle()
-
-      if (!cancelled) {
-        setBusinessCategory((business?.category as BusinessCategory | null) ?? null)
-      }
-    }
-
     const handleCategoryChange = (event: Event) => {
       const detail = (event as CustomEvent<{ category?: BusinessCategory | string | null }>).detail
       setBusinessCategory(detail?.category ?? null)
     }
 
-    loadBusinessCategory()
     window.addEventListener("business-category-change", handleCategoryChange)
 
     return () => {
-      cancelled = true
       window.removeEventListener("business-category-change", handleCategoryChange)
     }
   }, [])

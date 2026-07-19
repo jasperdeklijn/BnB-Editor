@@ -1,6 +1,6 @@
 import type { BusinessCategory } from "@/lib/business/categories"
 import type { Section, Transition } from "@/lib/types"
-import type { ReactNode } from "react"
+import type { ComponentType } from "react"
 import type { PlanId } from "@/lib/types/pricing"
 
 export interface SectionTargetOption {
@@ -31,4 +31,4 @@ export interface SectionEditorProps {
   updateStringListItem: (field: string, index: number, value: string, fallback?: string[]) => void
 }
 
-export type SectionEditorComponent = (props: SectionEditorProps) => ReactNode
+export type SectionEditorComponent = ComponentType<SectionEditorProps>

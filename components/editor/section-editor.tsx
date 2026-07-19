@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import Link from "next/link"
 import {
@@ -161,15 +161,15 @@ export function SelectionEditor({
   businessCategory,
   currentPlan,
 }: SelectionEditorProps) {
-  const [saveTimeoutId, setSaveTimeoutId] = useState<NodeJS.Timeout | null>(null)
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [layoutDialogOpen, setLayoutDialogOpen] = useState(false)
   const { setIsSaving, setSaveState } = useEditorLayout()
 
   useEffect(() => {
     return () => {
-      if (saveTimeoutId) clearTimeout(saveTimeoutId)
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
     }
-  }, [saveTimeoutId])
+  }, [])
 
   if (!selectedSection) {
     return (
@@ -273,11 +273,11 @@ export function SelectionEditor({
   }
 
   const queueSave = (updatedData: Record<string, unknown>) => {
-    if (saveTimeoutId) clearTimeout(saveTimeoutId)
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
     const timeout = setTimeout(async () => {
       await saveToDatabase(updatedData)
     }, 800)
-    setSaveTimeoutId(timeout)
+    saveTimeoutRef.current = timeout
   }
 
   const updateField = (field: string, value: any) => {
@@ -332,11 +332,11 @@ export function SelectionEditor({
       const nextSection = sections[nextSectionIdx]
       onTransitionUpdate(selectedSection.id, nextSection.id, newType)
 
-      if (saveTimeoutId) clearTimeout(saveTimeoutId)
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
       const timeout = setTimeout(() => {
         setIsSaving(false)
       }, 800)
-      setSaveTimeoutId(timeout)
+      saveTimeoutRef.current = timeout
     }
   }
 
@@ -372,11 +372,11 @@ export function SelectionEditor({
     }
 
     onStyleUpdate(newStyles)
-    if (saveTimeoutId) clearTimeout(saveTimeoutId)
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
     const timeout = setTimeout(async () => {
       await saveStylesToDatabase(newStyles)
     }, 800)
-    setSaveTimeoutId(timeout)
+    saveTimeoutRef.current = timeout
   }
 
   return (

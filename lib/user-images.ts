@@ -36,7 +36,7 @@ const publicUrl = (supabase: SupabaseClient, path: string) =>
 
 /** Load managed image records plus legacy flat-folder uploads during migration. */
 export async function loadUserImages(supabase: SupabaseClient, userId: string): Promise<UserImageAsset[]> {
-  const [{ data: rows }, { data: legacyFiles, error: storageError }] = await Promise.all([
+  const [{ data: rows, error: metadataError }, { data: legacyFiles, error: storageError }] = await Promise.all([
     supabase
       .from("user_images")
       .select("id, display_name, original_path, thumbnail_path, original_size, thumbnail_size, created_at")
@@ -48,7 +48,8 @@ export async function loadUserImages(supabase: SupabaseClient, userId: string): 
     }),
   ])
 
-  if (storageError && !rows) throw storageError
+  if (metadataError) throw metadataError
+  if (storageError && (rows?.length ?? 0) === 0) throw storageError
 
   const managed = ((rows ?? []) as UserImageRow[]).map((row) => {
     const url = publicUrl(supabase, row.original_path)

@@ -1,4 +1,5 @@
 import type { ComponentType } from "react"
+import dynamic from "next/dynamic"
 import type { SectionDataResolver } from "@/lib/supabase/section-resolver"
 import { servicesResolver } from "@/lib/supabase/section-resolver"
 import {
@@ -28,23 +29,24 @@ import {
   DEFAULT_GALLERY_IMAGES,
   SECTION_COPY,
 } from "@/lib/business-naming"
-import { AboutSection } from "@/components/sections/about-section"
-import { ContactSection } from "@/components/sections/contact-section"
-import { FeaturesSection } from "@/components/sections/features-section"
-import { FooterSection } from "@/components/sections/footer-section"
-import { GallerySection } from "@/components/sections/gallery-section"
-import { HeroSection } from "@/components/sections/hero-section"
-import { NavSection } from "@/components/sections/nav-section"
-import { ServicesSection } from "@/components/sections/services-section"
-import { TestimonialsSection } from "@/components/sections/testimonials-section"
-import { FaqSection } from "@/components/sections/faq-section"
-import { OpeningHoursSection } from "@/components/sections/opening-hours-section"
-import { PricingSection } from "@/components/sections/pricing-section"
-import { MapSection } from "@/components/sections/map-section"
-import { CtaSection } from "@/components/sections/cta-section"
-import { RequestFormSection } from "@/components/sections/request-form-section"
-import { TeamSection } from "@/components/sections/team-section"
 import { getDefaultLayoutForSection } from "@/lib/section-layouts"
+
+const AboutSection = dynamic<SectionRenderProps>(() => import("@/components/sections/about-section").then((module) => module.AboutSection))
+const ContactSection = dynamic<SectionRenderProps>(() => import("@/components/sections/contact-section").then((module) => module.ContactSection))
+const FeaturesSection = dynamic<SectionRenderProps>(() => import("@/components/sections/features-section").then((module) => module.FeaturesSection))
+const FooterSection = dynamic<SectionRenderProps>(() => import("@/components/sections/footer-section").then((module) => module.FooterSection))
+const GallerySection = dynamic<SectionRenderProps>(() => import("@/components/sections/gallery-section").then((module) => module.GallerySection))
+const HeroSection = dynamic<SectionRenderProps>(() => import("@/components/sections/hero-section").then((module) => module.HeroSection))
+const NavSection = dynamic<SectionRenderProps>(() => import("@/components/sections/nav-section").then((module) => module.NavSection))
+const ServicesSection = dynamic<SectionRenderProps>(() => import("@/components/sections/services-section").then((module) => module.ServicesSection))
+const TestimonialsSection = dynamic<SectionRenderProps>(() => import("@/components/sections/testimonials-section").then((module) => module.TestimonialsSection))
+const FaqSection = dynamic<SectionRenderProps>(() => import("@/components/sections/faq-section").then((module) => module.FaqSection))
+const OpeningHoursSection = dynamic<SectionRenderProps>(() => import("@/components/sections/opening-hours-section").then((module) => module.OpeningHoursSection))
+const PricingSection = dynamic<SectionRenderProps>(() => import("@/components/sections/pricing-section").then((module) => module.PricingSection))
+const MapSection = dynamic<SectionRenderProps>(() => import("@/components/sections/map-section").then((module) => module.MapSection))
+const CtaSection = dynamic<SectionRenderProps>(() => import("@/components/sections/cta-section").then((module) => module.CtaSection))
+const RequestFormSection = dynamic<SectionRenderProps>(() => import("@/components/sections/request-form-section").then((module) => module.RequestFormSection))
+const TeamSection = dynamic<SectionRenderProps>(() => import("@/components/sections/team-section").then((module) => module.TeamSection))
 
 export interface SectionDefaultContext {
   businessId?: string | null

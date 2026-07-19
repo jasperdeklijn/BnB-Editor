@@ -163,7 +163,7 @@ export function TransitionWrapper({
   )
 }
 
-export function SectionRenderer({ section, isPreview, onUpdate, wrapTransition, allSections, device }: SectionRendererProps) {
+function SectionRendererComponent({ section, isPreview, onUpdate, wrapTransition, allSections, device }: SectionRendererProps) {
   const commonProps = {
     data: section.data,
     isPreview,
@@ -183,3 +183,13 @@ export function SectionRenderer({ section, isPreview, onUpdate, wrapTransition, 
   // Otherwise just render the inner component
   return inner
 }
+
+export const SectionRenderer = React.memo(
+  SectionRendererComponent,
+  (previous, next) =>
+    previous.section === next.section &&
+    previous.isPreview === next.isPreview &&
+    previous.wrapTransition === next.wrapTransition &&
+    previous.allSections === next.allSections &&
+    previous.device === next.device,
+)
