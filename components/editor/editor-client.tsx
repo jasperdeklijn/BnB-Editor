@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { SectionsSelector } from "./sections-selector"
 import { EditorCanvas } from "./editor-canvas"
 import { EditorInspector } from "./editor-inspector"
+import { EditorWorkspaceSkeleton } from "./editor-loading-skeleton"
 import { useEditorLayout } from "./editor-layout-context"
 import type { Section, SectionStyles, SectionType, Transition } from "@/lib/types"
 import { DEFAULT_SITE_TITLE } from "@/lib/business-naming"
@@ -116,6 +117,7 @@ export function EditorClient({
   const [publishPreflightOpen, setPublishPreflightOpen] = useState(false)
   const [publishConfirmationOpen, setPublishConfirmationOpen] = useState(false)
   const [serverPublishViolations, setServerPublishViolations] = useState<EntitlementViolation[]>([])
+  const [isLoadingWebsite, setIsLoadingWebsite] = useState(true)
   const router = useRouter()
   const searchParams = useSearchParams()
   const { isPreview, isSaving, setIsSaving, saveState, setSaveState, device, setOnPublish, setOnLogout } = useEditorLayout()
@@ -236,7 +238,9 @@ export function EditorClient({
   }, [])
 
   const loadWebsite = useCallback(async (preferredWebsiteId?: string | null) => {
-    const supabase = createClient()
+    setIsLoadingWebsite(true)
+    try {
+      const supabase = createClient()
 
     const { data: websiteRows } = await supabase
       .from("websites")
@@ -326,6 +330,9 @@ export function EditorClient({
           },
         ])
       }
+    }
+    } finally {
+      setIsLoadingWebsite(false)
     }
   }, [initialBusinessId, userId])
 
@@ -1144,8 +1151,9 @@ export function EditorClient({
           </div>
         </details>
       ) : null}
+      {isLoadingWebsite ? <EditorWorkspaceSkeleton /> : null}
       {/* Desktop layout: side-by-side panels */}
-      <div className="hidden md:flex flex-1 overflow-hidden">
+      <div className={`${isLoadingWebsite ? "hidden" : "hidden md:flex"} flex-1 overflow-hidden`}>
         {!isPreview && (
           <SectionsSelector
             userId={userId}
@@ -1192,7 +1200,7 @@ export function EditorClient({
       </div>
 
       {/* Mobile layout: single panel with bottom tab bar */}
-      <div className="flex md:hidden flex-1 overflow-hidden flex-col">
+      <div className={`${isLoadingWebsite ? "hidden" : "flex md:hidden"} flex-1 overflow-hidden flex-col`}>
         {/* Panel content */}
         <div className="relative flex min-h-0 flex-1 overflow-hidden pb-[calc(4.5rem+env(safe-area-inset-bottom))]">
           {mobilePanel === "sections" && !isPreview && (
