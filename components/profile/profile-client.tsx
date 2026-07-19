@@ -66,7 +66,7 @@ export function ProfileClient({ userId, email, initialMeta, initialWebsites }: P
     setHeaderSaving(true)
     const supabase = createClient()
     const ext = file.name.split(".").pop()
-    const path = `${userId}/avatar.${ext}`
+    const path = `${userId}/avatars/avatar.${ext}`
 
     const { error } = await supabase.storage
       .from("user-images")

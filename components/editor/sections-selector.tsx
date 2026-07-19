@@ -14,6 +14,7 @@ import type { SectionType } from "@/lib/types"
 import { selectableSectionDefinitions } from "@/components/editor/section-registry"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { createClient } from "@/lib/supabase/client"
+import { loadUserImages } from "@/lib/user-images"
 import { useTouchDrag } from "@/hooks/use-touch-drag"
 import type { PlanId } from "@/lib/types/pricing"
 import { getMinimumPlanForSection, planMeetsRequirement } from "@/lib/entitlements"
@@ -118,13 +119,14 @@ function SectionCard({ type, label, Icon, description, collapsed, isDragging, on
 interface ImageCardProps {
   name: string
   url: string
+  previewUrl: string
   collapsed: boolean
   isDragging: boolean
   onDragStart: (e: React.DragEvent, url: string) => void
   onDragEnd: () => void
 }
 
-function ImageCard({ name, url, collapsed, isDragging, onDragStart, onDragEnd }: ImageCardProps) {
+function ImageCard({ name, url, previewUrl, collapsed, isDragging, onDragStart, onDragEnd }: ImageCardProps) {
   const { onTouchStart, onTouchMove, onTouchEnd } = useTouchDrag({ payload: { imageUrl: url } })
   return (
     <div
@@ -140,7 +142,7 @@ function ImageCard({ name, url, collapsed, isDragging, onDragStart, onDragEnd }:
       }`}
       title={name}
     >
-      <img src={url} alt={name} className={`${collapsed ? "h-10" : "h-12"} w-full object-cover rounded`} />
+      <img src={previewUrl} alt={name} className={`${collapsed ? "h-10" : "h-12"} w-full object-cover rounded`} />
       {!collapsed && (
         <div className="text-[10px] text-muted-foreground truncate text-center mt-1">{name}</div>
       )}
@@ -163,7 +165,7 @@ export function SectionsSelector({ className = "", userId, onSectionAdded, onSec
   const [collapsed, setCollapsed] = useState(false)
   const [draggingType, setDraggingType] = useState<SectionType | null>(null)
   const [tab, setTab] = useState("sections")
-  const [images, setImages] = useState<{ name: string; url: string }[]>([])
+  const [images, setImages] = useState<{ name: string; url: string; previewUrl: string }[]>([])
   const [isLoadingImages, setIsLoadingImages] = useState(false)
   const [draggingImage, setDraggingImage] = useState<string | null>(null)
 
@@ -181,42 +183,10 @@ export function SectionsSelector({ className = "", userId, onSectionAdded, onSec
     if (tab === "images" && userId) {
       setIsLoadingImages(true)
       const supabase = createClient()
-      supabase.storage
-        .from("user-images")
-        .list(userId, { limit: 100, sortBy: { column: "created_at", order: "desc" } })
-        .then(({ data, error }) => {
-          if (error) {
-            setImages([])
-            setIsLoadingImages(false)
-            return
-          }
-          if (!data) {
-            setImages([])
-            setIsLoadingImages(false)
-            return
-          }
-          const validFiles = data.filter((file) => file.name !== ".emptyFolderPlaceholder")
-          if (validFiles.length === 0) {
-            setImages([])
-            setIsLoadingImages(false)
-            return
-          }
-
-          const pics = validFiles
-            .map((file) => {
-              const { data: urlData } = supabase.storage
-                .from("user-images")
-                .getPublicUrl(`${userId}/${file.name}`)
-              return {
-                name: file.name,
-                url: urlData.publicUrl || "",
-              }
-            })
-            .filter((img) => img.url)
-
-          setImages(pics)
-          setIsLoadingImages(false)
-        })
+      loadUserImages(supabase, userId)
+        .then((pics) => setImages(pics.map(({ name, url, previewUrl }) => ({ name, url, previewUrl }))))
+        .catch(() => setImages([]))
+        .finally(() => setIsLoadingImages(false))
     }
   }, [tab, userId])
 
@@ -389,9 +359,10 @@ export function SectionsSelector({ className = "", userId, onSectionAdded, onSec
             <div className={`grid ${collapsed ? "grid-cols-1" : "grid-cols-2"} gap-2`}>
               {images.map((img) => (
                 <ImageCard
-                  key={img.name}
+                  key={img.url}
                   name={img.name}
                   url={img.url}
+                  previewUrl={img.previewUrl}
                   collapsed={collapsed}
                   isDragging={draggingImage === img.url}
                   onDragStart={handleImageDragStart}

@@ -55,20 +55,28 @@ export async function DELETE(request: Request) {
     )
   }
 
-  const { data: files, error: storageListError } = await admin.storage
-    .from("user-images")
-    .list(user.id, { limit: 1000 })
+  const [rootFilesResult, avatarFilesResult, imageMetadataResult] = await Promise.all([
+    admin.storage.from("user-images").list(user.id, { limit: 1000 }),
+    admin.storage.from("user-images").list(`${user.id}/avatars`, { limit: 1000 }),
+    admin.from("user_images").select("original_path, thumbnail_path").eq("user_id", user.id),
+  ])
 
-  if (storageListError) {
+  if (rootFilesResult.error || avatarFilesResult.error || imageMetadataResult.error) {
     return NextResponse.json({ error: "Bestanden konden niet worden gecontroleerd." }, { status: 500 })
   }
 
-  const filePaths = (files ?? [])
-    .filter((file) => file.name !== ".emptyFolderPlaceholder")
-    .map((file) => `${user.id}/${file.name}`)
+  const filePaths = [
+    ...(rootFilesResult.data ?? [])
+      .filter((file) => file.id && file.name !== ".emptyFolderPlaceholder")
+      .map((file) => `${user.id}/${file.name}`),
+    ...(avatarFilesResult.data ?? [])
+      .filter((file) => file.id && file.name !== ".emptyFolderPlaceholder")
+      .map((file) => `${user.id}/avatars/${file.name}`),
+    ...(imageMetadataResult.data ?? []).flatMap((image) => [image.original_path, image.thumbnail_path].filter((path): path is string => Boolean(path))),
+  ]
 
   if (filePaths.length) {
-    const { error: storageDeleteError } = await admin.storage.from("user-images").remove(filePaths)
+    const { error: storageDeleteError } = await admin.storage.from("user-images").remove([...new Set(filePaths)])
     if (storageDeleteError) {
       return NextResponse.json({ error: "Bestanden konden niet worden verwijderd." }, { status: 500 })
     }

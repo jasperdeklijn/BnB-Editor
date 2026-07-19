@@ -19,6 +19,7 @@ create extension if not exists "pgcrypto";
 -- ------------------------------------------------------------
 
 drop table if exists public.contact_requests cascade;
+drop table if exists public.user_images cascade;
 drop table if exists public.subscriptions cascade;
 drop table if exists public.calendar_availability_windows cascade;
 drop table if exists public.calendar_entries cascade;
@@ -563,6 +564,29 @@ begin
 end;
 $$;
 
+create table public.user_images (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  display_name text not null check (char_length(trim(display_name)) between 1 and 120),
+  original_path text not null unique,
+  thumbnail_path text unique,
+  original_size bigint not null default 0 check (original_size >= 0),
+  thumbnail_size bigint not null default 0 check (thumbnail_size >= 0),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint user_images_paths_owned check (
+    original_path like user_id::text || '/%'
+    and (thumbnail_path is null or thumbnail_path like user_id::text || '/%')
+  )
+);
+
+create index idx_user_images_user_created
+  on public.user_images (user_id, created_at desc);
+
+create trigger set_user_images_updated_at
+  before update on public.user_images
+  for each row execute procedure public.set_updated_at();
+
 create trigger bump_website_own_draft_version
   before update on public.websites
   for each row execute procedure public.bump_website_own_draft_version();
@@ -888,6 +912,7 @@ create index idx_audit_logs_action_created_at on public.audit_logs (action, crea
 -- ------------------------------------------------------------
 
 alter table public.businesses enable row level security;
+alter table public.user_images enable row level security;
 alter table public.subscriptions enable row level security;
 alter table public.services enable row level security;
 alter table public.websites enable row level security;
@@ -916,6 +941,22 @@ create policy "Users can view own subscription"
 
 comment on table public.subscriptions is
   'Server-owned subscription and entitlement state. Authenticated users may read only their own row; writes require trusted server/service-role access.';
+
+create policy "Users can view own image metadata"
+  on public.user_images for select to authenticated
+  using (user_id = auth.uid());
+
+create policy "Users can insert own image metadata"
+  on public.user_images for insert to authenticated
+  with check (user_id = auth.uid());
+
+create policy "Users can update own image metadata"
+  on public.user_images for update to authenticated
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+create policy "Users can delete own image metadata"
+  on public.user_images for delete to authenticated
+  using (user_id = auth.uid());
 
 -- Businesses
 create policy "Anyone can view published website businesses"

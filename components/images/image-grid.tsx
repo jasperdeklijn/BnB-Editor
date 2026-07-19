@@ -1,133 +1,70 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
 import Image from "next/image"
-
-interface UserImage {
-  name: string
-  url: string
-  size: number
-  createdAt: string
-}
+import { Check, ImageIcon, Pencil, Trash2, X } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import type { UserImageAsset } from "@/lib/user-images"
 
 interface ImageGridProps {
-  images: UserImage[]
+  images: UserImageAsset[]
   isLoading: boolean
-  onDelete: (fileName: string) => void
-  onCopyUrl: (fileName: string) => void
+  onDelete: (image: UserImageAsset) => Promise<void>
+  onCopyUrl: (image: UserImageAsset) => Promise<void>
+  onRename: (image: UserImageAsset, name: string) => Promise<boolean>
   formatBytes: (bytes: number) => string
 }
 
-export function ImageGrid({
-  images,
-  isLoading,
-  onDelete,
-  onCopyUrl,
-  formatBytes,
-}: ImageGridProps) {
+export function ImageGrid({ images, isLoading, onDelete, onCopyUrl, onRename, formatBytes }: ImageGridProps) {
   const [deletingImage, setDeletingImage] = useState<string | null>(null)
+  const [editingImage, setEditingImage] = useState<string | null>(null)
+  const [editedName, setEditedName] = useState("")
+  const [isRenaming, setIsRenaming] = useState(false)
 
-  const handleDelete = async (fileName: string) => {
-    setDeletingImage(fileName)
-    await onDelete(fileName)
+  const handleDelete = async (image: UserImageAsset) => {
+    setDeletingImage(image.originalPath)
+    await onDelete(image)
     setDeletingImage(null)
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </div>
-    )
+  const saveName = async (image: UserImageAsset) => {
+    setIsRenaming(true)
+    const saved = await onRename(image, editedName)
+    setIsRenaming(false)
+    if (saved) setEditingImage(null)
   }
 
-  if (images.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-          <svg
-            className="h-8 w-8 text-primary"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-        </div>
-        <p className="mt-4 text-sm font-medium text-foreground">No images yet</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Upload your first image to get started
-        </p>
-      </div>
-    )
-  }
+  if (isLoading) return <div className="flex items-center justify-center py-12"><div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>
+  if (images.length === 0) return <div className="flex flex-col items-center justify-center py-12 text-center"><div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"><ImageIcon className="h-8 w-8 text-primary" aria-hidden /></div><p className="mt-4 text-sm font-medium text-foreground">Nog geen afbeeldingen</p><p className="mt-1 text-xs text-muted-foreground">Upload je eerste afbeelding om te beginnen</p></div>
 
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
       {images.map((image) => (
-        <div
-          key={image.name}
-          className="group relative overflow-hidden rounded-lg border border-border bg-muted"
-        >
-          <div className="aspect-square">
-            <Image
-              src={image.url}
-              alt={image.name}
-              fill
-              className="object-cover transition-transform group-hover:scale-105"
-              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
-            />
+        <div key={image.originalPath} className="overflow-hidden rounded-lg border border-border bg-muted">
+          <div className="group relative aspect-square">
+            <Image src={image.previewUrl} alt={image.name} fill className="object-cover transition-transform group-hover:scale-105" sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw" />
+            <div className="absolute inset-0 flex flex-col justify-between bg-black/0 p-2 opacity-0 transition-all group-hover:bg-black/50 group-hover:opacity-100 group-focus-within:bg-black/50 group-focus-within:opacity-100">
+              <div className="flex justify-end">
+                <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => void handleDelete(image)} disabled={deletingImage === image.originalPath} aria-label={`${image.name} verwijderen`}>
+                  {deletingImage === image.originalPath ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Trash2 className="h-4 w-4" />}
+                </Button>
+              </div>
+              <div className="space-y-1">
+                <Button variant="secondary" size="sm" className="w-full text-xs" onClick={() => void onCopyUrl(image)}>URL kopiëren</Button>
+                <p className="truncate text-center text-xs text-white">{formatBytes(image.size)}</p>
+              </div>
+            </div>
           </div>
-          
-          {/* Overlay */}
-          <div className="absolute inset-0 flex flex-col justify-between bg-black/0 p-2 opacity-0 transition-all group-hover:bg-black/50 group-hover:opacity-100">
-            <div className="flex justify-end">
-              <Button
-                variant="destructive"
-                size="sm"
-                className="h-7 w-7 p-0"
-                onClick={() => handleDelete(image.name)}
-                disabled={deletingImage === image.name}
-              >
-                {deletingImage === image.name ? (
-                  <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                ) : (
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                )}
-              </Button>
-            </div>
-            
-            <div className="space-y-1">
-              <Button
-                variant="secondary"
-                size="sm"
-                className="w-full text-xs"
-                onClick={() => onCopyUrl(image.name)}
-              >
-                Copy URL
-              </Button>
-              <p className="truncate text-center text-xs text-white">
-                {formatBytes(image.size)}
-              </p>
-            </div>
+          <div className="border-t border-border bg-card p-2">
+            {editingImage === image.originalPath ? (
+              <div className="flex items-center gap-1">
+                <input value={editedName} onChange={(event) => setEditedName(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void saveName(image); if (event.key === "Escape") setEditingImage(null) }} maxLength={120} autoFocus className="h-7 min-w-0 flex-1 rounded border border-input bg-background px-2 text-xs" aria-label="Naam van afbeelding" />
+                <Button size="icon" variant="ghost" className="h-7 w-7" disabled={isRenaming} onClick={() => void saveName(image)} aria-label="Naam opslaan"><Check className="h-3.5 w-3.5" /></Button>
+                <Button size="icon" variant="ghost" className="h-7 w-7" disabled={isRenaming} onClick={() => setEditingImage(null)} aria-label="Annuleren"><X className="h-3.5 w-3.5" /></Button>
+              </div>
+            ) : (
+              <button type="button" className="flex w-full items-center justify-between gap-2 text-left text-xs text-foreground hover:text-primary" onClick={() => { setEditingImage(image.originalPath); setEditedName(image.name) }} title="Naam wijzigen"><span className="truncate">{image.name}</span><Pencil className="h-3 w-3 shrink-0" /></button>
+            )}
           </div>
         </div>
       ))}

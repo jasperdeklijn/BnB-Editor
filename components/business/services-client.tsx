@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { loadUserImages } from "@/lib/user-images"
 import {
   createService as apiCreateService,
   updateService as apiUpdateService,
@@ -104,12 +105,13 @@ function formatPlanningRange(entry: CalendarEntry, isAccommodation: boolean) {
 interface SidebarImageCardProps {
   name: string
   url: string
+  previewUrl: string
   isDragging: boolean
   onDragStart: (e: React.DragEvent, url: string) => void
   onDragEnd: () => void
 }
 
-function SidebarImageCard({ name, url, isDragging, onDragStart, onDragEnd }: SidebarImageCardProps) {
+function SidebarImageCard({ name, url, previewUrl, isDragging, onDragStart, onDragEnd }: SidebarImageCardProps) {
   const { onTouchStart, onTouchMove, onTouchEnd } = useTouchDrag({ payload: { imageUrl: url } })
   return (
     <div
@@ -125,7 +127,7 @@ function SidebarImageCard({ name, url, isDragging, onDragStart, onDragEnd }: Sid
         isDragging ? "ring-2 ring-primary shadow-lg scale-105 opacity-70" : ""
       }`}
     >
-      <img src={url} alt={name} className="w-full h-20 object-cover rounded" />
+      <img src={previewUrl} alt={name} className="w-full h-20 object-cover rounded" />
       <div className="text-[10px] text-muted-foreground truncate text-center mt-1 px-1">{name}</div>
     </div>
   )
@@ -449,7 +451,7 @@ export function ServicesClient({
   const offeringCopy = getOfferingCopy(businessCategory)
   const planningCopy = getOfferingPlanningCopy(businessCategory)
   const isAccommodation = businessCategory === "bnb"
-  const [images, setImages] = useState<{ name: string; url: string }[]>([])
+  const [images, setImages] = useState<{ name: string; url: string; previewUrl: string }[]>([])
   const [isLoadingImages, setIsLoadingImages] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -477,26 +479,10 @@ export function ServicesClient({
   useEffect(() => {
     setIsLoadingImages(true)
     const supabase = createClient()
-    supabase.storage
-      .from("user-images")
-      .list(userId, { limit: 100, sortBy: { column: "created_at", order: "desc" } })
-      .then(({ data, error }) => {
-        if (error || !data) {
-          setIsLoadingImages(false)
-          return
-        }
-        const validFiles = data.filter((f) => f.name !== ".emptyFolderPlaceholder")
-        const pics = validFiles
-          .map((file) => {
-            const { data: urlData } = supabase.storage
-              .from("user-images")
-              .getPublicUrl(`${userId}/${file.name}`)
-            return { name: file.name, url: urlData.publicUrl ?? "" }
-          })
-          .filter((img) => img.url)
-        setImages(pics)
-        setIsLoadingImages(false)
-      })
+    loadUserImages(supabase, userId)
+      .then((pics) => setImages(pics.map(({ name, url, previewUrl }) => ({ name, url, previewUrl }))))
+      .catch(() => setImages([]))
+      .finally(() => setIsLoadingImages(false))
   }, [userId])
 
   const handleCreateService = useCallback(async () => {
@@ -637,9 +623,10 @@ export function ServicesClient({
               ) : (
                 images.map((img) => (
                   <SidebarImageCard
-                    key={img.name}
+                    key={img.url}
                     name={img.name}
                     url={img.url}
+                    previewUrl={img.previewUrl}
                     isDragging={draggingImage === img.url}
                     onDragStart={handleImageDragStart}
                     onDragEnd={handleImageDragEnd}
