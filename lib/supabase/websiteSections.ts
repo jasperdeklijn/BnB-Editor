@@ -27,6 +27,29 @@ async function getClient(supabase?: SupabaseClient) {
   return await createServerClient()
 }
 
+async function updateSectionPositions(
+  client: SupabaseClient,
+  websiteId: string,
+  updates: Array<{ id: string; position: number }>,
+) {
+  const results = await Promise.all(
+    updates.map(({ id, position }) =>
+      client
+        .from('website_sections')
+        .update({ position })
+        .eq('id', id)
+        .eq('website_id', websiteId)
+        .select('id, position')
+        .single()
+    )
+  )
+  const failed = results.find((result) => result.error)
+  return {
+    data: results.flatMap((result) => result.data ? [result.data] : []),
+    error: failed?.error ?? null,
+  }
+}
+
 export async function fetchWebsiteWithSectionsBySlug(slug: string, supabase?: SupabaseClient) {
   const client = await getClient(supabase)
 
@@ -132,7 +155,8 @@ export async function deleteSection(id: string, supabase?: SupabaseClient) {
 
   if (remaining && remaining.length) {
     const updates = (remaining as any[]).map((row, idx) => ({ id: row.id, position: idx + 1 }))
-    await client.from('website_sections').upsert(updates, { onConflict: 'id' })
+    const { error } = await updateSectionPositions(client, websiteId, updates)
+    if (error) return { data: deleted, error }
   }
 
   return { data: deleted, error: null }
@@ -147,8 +171,7 @@ export async function deleteSections(ids: string[], supabase?: SupabaseClient) {
 export async function reorderSections(websiteId: string, orderedIds: string[], supabase?: SupabaseClient) {
   const client = await getClient(supabase)
   const updates = orderedIds.map((id, idx) => ({ id, position: idx + 1 }))
-  const { data, error } = await client.from('website_sections').upsert(updates, { onConflict: 'id' }).select()
-  return { data, error }
+  return updateSectionPositions(client, websiteId, updates)
 }
 
 export async function moveSection(sectionId: string, newPosition: number, supabase?: SupabaseClient) {
@@ -179,8 +202,7 @@ export async function moveSection(sectionId: string, newPosition: number, supaba
   ids.splice(clamped - 1, 0, sectionId)
 
   const updates = ids.map((id, idx) => ({ id, position: idx + 1 }))
-  const { data, error } = await client.from('website_sections').upsert(updates, { onConflict: 'id' }).select()
-  return { data, error }
+  return updateSectionPositions(client, websiteId, updates)
 }
 
 export async function duplicateSection(sectionId: string, supabase?: SupabaseClient) {
@@ -202,7 +224,8 @@ export async function duplicateSection(sectionId: string, supabase?: SupabaseCli
 
   if (later && later.length) {
     const inc = later.map((r: any) => ({ id: r.id, position: r.position + 1 }))
-    await client.from('website_sections').upsert(inc, { onConflict: 'id' })
+    const { error } = await updateSectionPositions(client, websiteId, inc)
+    if (error) return { data: null, error }
   }
 
   const payload = {

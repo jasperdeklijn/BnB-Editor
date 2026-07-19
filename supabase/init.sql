@@ -19,6 +19,7 @@ create extension if not exists "pgcrypto";
 -- ------------------------------------------------------------
 
 drop table if exists public.contact_requests cascade;
+drop table if exists public.audit_logs cascade;
 drop table if exists public.user_images cascade;
 drop table if exists public.subscriptions cascade;
 drop table if exists public.calendar_availability_windows cascade;
@@ -34,6 +35,7 @@ drop table if exists public.mail_sync_runs cascade;
 drop table if exists public.mail_knowledge_answers cascade;
 drop table if exists public.mail_accounts cascade;
 drop table if exists public.section_transitions cascade;
+drop table if exists public.website_domains cascade;
 drop table if exists public.website_sections cascade;
 drop table if exists public.services cascade;
 drop table if exists public.rooms cascade;

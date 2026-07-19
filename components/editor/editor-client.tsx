@@ -12,7 +12,7 @@ import { getDefaultSectionData as getRegistryDefaultSectionData, getSectionDefin
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
 import { useRouter, useSearchParams } from "next/navigation"
-import { AlertCircle, CheckCircle2, ExternalLink, Eye, Globe2, Layers, LayoutTemplate, Loader2, Paintbrush, Plus, Sparkles } from "lucide-react"
+import { AlertCircle, CheckCircle2, ChevronDown, ExternalLink, Eye, Globe2, Layers, LayoutTemplate, Loader2, Paintbrush, Plus, Sparkles } from "lucide-react"
 import type { ThemeConfig } from "@/lib/themes"
 import type { BusinessCategory } from "@/lib/business/categories"
 import { Button } from "@/components/ui/button"
@@ -886,7 +886,7 @@ export function EditorClient({
   return (
     <div className="flex h-full min-h-0 flex-col bg-muted">
       <div className="border-b border-border bg-background px-2 py-2 md:px-4">
-        <div className="mx-auto hidden max-w-7xl flex-wrap items-center gap-2 md:flex">
+        <div className="hidden w-full flex-nowrap items-center gap-2 overflow-hidden md:flex">
           <label htmlFor="website-selector" className="sr-only">
             Website
           </label>
@@ -894,7 +894,7 @@ export function EditorClient({
             id="website-selector"
             value={websiteId ?? ""}
             onChange={(event) => handleWebsiteChange(event.target.value)}
-            className="h-8 min-w-0 rounded-md border border-input bg-background px-2 text-xs font-medium text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 sm:w-56"
+            className="h-8 w-36 min-w-0 shrink-0 rounded-md border border-input bg-background px-2 text-xs font-medium text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 lg:w-48 xl:w-56"
           >
             {websites.map((website) => (
               <option key={website.id} value={website.id}>
@@ -902,6 +902,18 @@ export function EditorClient({
               </option>
             ))}
           </select>
+          <div
+            aria-disabled="true"
+            title="Talen bewerken wordt binnenkort beschikbaar"
+            className="flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-input bg-background px-2 text-xs font-medium text-foreground shadow-sm"
+          >
+            <Globe2 className="h-3.5 w-3.5 text-primary" />
+            <span className="hidden lg:inline">Nederlands</span>
+            <ChevronDown className="hidden h-3 w-3 text-muted-foreground lg:block" />
+            <span className="ml-1 hidden rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary 2xl:inline">
+              Binnenkort
+            </span>
+          </div>
           <label htmlFor="website-name" className="sr-only">
             Websitenaam
           </label>
@@ -909,7 +921,7 @@ export function EditorClient({
             id="website-name"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            className="h-8 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-xs text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 sm:max-w-64"
+            className="h-8 w-32 min-w-0 shrink rounded-md border border-input bg-background px-2 text-xs text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 lg:w-44 xl:w-56"
             placeholder="Websitenaam"
           />
           <Button type="button" size="xs" onClick={handleSave} disabled={!websiteId || isRenamingWebsite}>
@@ -918,16 +930,16 @@ export function EditorClient({
           </Button>
           <Button type="button" variant="outline" size="xs" onClick={handleCreateWebsite} disabled={isCreatingWebsite}>
             {isCreatingWebsite ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
-            Nieuw
+            <span className="hidden xl:inline">Nieuw</span>
           </Button>
-          <TierBadge plan={currentPlan} prefix="Actief" className="border-primary/30 bg-primary/10 text-primary" />
+          <TierBadge plan={currentPlan} prefix="Actief" className="hidden border-primary/30 bg-primary/10 text-primary 2xl:inline-flex" />
           {selectedWebsite ? (
-            <div className="ml-auto flex min-w-0 items-center gap-2 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-xs">
+            <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden whitespace-nowrap rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-xs">
               <a
                 href={selectedWebsitePreviewHref}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex shrink-0 items-center gap-1 rounded border border-border bg-background px-2 py-1 font-medium text-primary transition-colors hover:bg-accent"
+                className="hidden shrink-0 items-center gap-1 rounded border border-border bg-background px-2 py-1 font-medium text-primary transition-colors hover:bg-accent xl:inline-flex"
                 title={`Preview openen: ${selectedWebsitePreviewUrl}`}
                 aria-label={`Preview openen: ${selectedWebsitePreviewUrl}`}
               >
@@ -944,18 +956,18 @@ export function EditorClient({
                 aria-hidden="true"
               />
               <span className="shrink-0 font-medium text-foreground">{selectedWebsite.published ? "Live" : "Offline"}</span>
-              <span className="hidden text-muted-foreground lg:inline">{liveStatusDescription}</span>
+              <span className="hidden text-muted-foreground 2xl:inline">{liveStatusDescription}</span>
               {selectedWebsite.published ? (
                 <>
                   <a
                     href={selectedWebsiteLiveHref}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex min-w-0 items-center gap-1 rounded border border-border bg-background px-2 py-1 font-medium text-primary hover:bg-accent"
+                    className="hidden min-w-0 items-center gap-1 rounded border border-border bg-background px-2 py-1 font-medium text-primary hover:bg-accent lg:inline-flex"
                     title={selectedWebsiteLiveUrl}
                   >
                     <Globe2 className="h-3.5 w-3.5 shrink-0 text-primary" />
-                    <span className="max-w-[28vw] truncate font-mono">
+                    <span className="max-w-28 truncate font-mono xl:max-w-[20vw]">
                       {selectedWebsiteLiveUrl}
                     </span>
                     <ExternalLink className="h-3 w-3 shrink-0" />
@@ -1025,6 +1037,24 @@ export function EditorClient({
                   : "Blokkades"}
               </Button>
             ) : null}
+          </div>
+
+          <div
+            aria-disabled="true"
+            title="Talen bewerken wordt binnenkort beschikbaar"
+            className="flex min-h-11 items-center justify-between gap-3 rounded-md border border-border bg-background px-3 shadow-sm"
+          >
+            <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-foreground">
+              <Globe2 className="h-4 w-4 shrink-0 text-primary" />
+              <span>Taal van website</span>
+            </span>
+            <span className="flex shrink-0 items-center gap-1.5 text-sm font-medium text-foreground">
+              Nederlands
+              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                Binnenkort
+              </span>
+            </span>
           </div>
 
           <details className="group rounded-md border border-border bg-muted/30">
