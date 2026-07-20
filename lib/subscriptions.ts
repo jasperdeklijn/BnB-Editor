@@ -24,6 +24,9 @@ export interface SubscriptionRecord {
   stripe_customer_id: string | null
   stripe_subscription_id: string | null
   stripe_price_id: string | null
+  multilingual_addon_active: boolean
+  multilingual_addon_price: number
+  stripe_multilingual_addon_item_id: string | null
   created_at: string
   updated_at: string
 }
@@ -38,6 +41,25 @@ export interface ResolvedSubscription {
 }
 
 const SUBSCRIPTION_COLUMNS = [
+  "id",
+  "user_id",
+  "plan_id",
+  "status",
+  "current_price",
+  "currency",
+  "current_period_start",
+  "current_period_end",
+  "stripe_customer_id",
+  "stripe_subscription_id",
+  "stripe_price_id",
+  "multilingual_addon_active",
+  "multilingual_addon_price",
+  "stripe_multilingual_addon_item_id",
+  "created_at",
+  "updated_at",
+].join(", ")
+
+const LEGACY_SUBSCRIPTION_COLUMNS = [
   "id",
   "user_id",
   "plan_id",
@@ -99,17 +121,39 @@ export async function getUserSubscription(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<ResolvedSubscription> {
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("subscriptions")
     .select(SUBSCRIPTION_COLUMNS)
     .eq("user_id", userId)
     .maybeSingle()
 
+  if (error?.code === "42703" && error.message.includes("multilingual_addon")) {
+    const legacyResult = await supabase
+      .from("subscriptions")
+      .select(LEGACY_SUBSCRIPTION_COLUMNS)
+      .eq("user_id", userId)
+      .maybeSingle()
+    data = legacyResult.data
+    error = legacyResult.error
+  }
+
   if (error) {
     throw new Error(`Could not resolve subscription: ${error.message}`)
   }
 
-  const record = data ? (data as unknown as SubscriptionRecord) : null
+  const record = data ? {
+    ...(data as unknown as SubscriptionRecord),
+    multilingual_addon_active: Boolean(
+      (data as unknown as Record<string, unknown>).multilingual_addon_active,
+    ),
+    multilingual_addon_price: Number(
+      (data as unknown as Record<string, unknown>).multilingual_addon_price ?? 2.99,
+    ),
+    stripe_multilingual_addon_item_id:
+      typeof (data as unknown as Record<string, unknown>).stripe_multilingual_addon_item_id === "string"
+        ? (data as unknown as Record<string, string>).stripe_multilingual_addon_item_id
+        : null,
+  } : null
   return {
     userId,
     record,
@@ -140,6 +184,12 @@ export function getSubscriptionAccessNotice(resolved: ResolvedSubscription): str
   return null
 }
 
+export function hasMultilingualWebsiteAccess(resolved: ResolvedSubscription): boolean {
+  if (resolved.planId === "gold") return true
+
+  return resolved.source === "subscription" && resolved.record?.multilingual_addon_active === true
+}
+
 export function toUserBillingData(resolved: ResolvedSubscription): UserBillingData {
   const plan = getPlanById(resolved.planId)
   const record = resolved.record
@@ -156,7 +206,11 @@ export function toUserBillingData(resolved: ResolvedSubscription): UserBillingDa
         ? Number(record.current_price)
         : plan.monthlyPrice,
     nextBillingDate: record?.current_period_end ? new Date(record.current_period_end) : null,
-    addons: { bookingAddon: false },
+    addons: {
+      bookingAddon: false,
+      multilingualAddon:
+        resolved.source === "subscription" && record?.multilingual_addon_active === true,
+    },
     invoices: [],
     createdAt: record ? new Date(record.created_at) : null,
   }

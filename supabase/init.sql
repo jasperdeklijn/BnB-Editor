@@ -591,6 +591,10 @@ create table public.subscriptions (
   stripe_customer_id text unique,
   stripe_subscription_id text unique,
   stripe_price_id text,
+  multilingual_addon_active boolean not null default false,
+  multilingual_addon_price numeric(10, 2) not null default 2.99
+    check (multilingual_addon_price >= 0),
+  stripe_multilingual_addon_item_id text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint subscriptions_period_check check (

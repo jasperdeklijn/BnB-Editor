@@ -108,6 +108,7 @@ test("all standalone capability tiers are represented", () => {
     "availability_calendar",
     "automatic_booking_confirmations",
     "booking_management",
+    "multilingual_websites",
     "priority_support",
   ]) {
     assert.ok(getMinimumPlanForCapability(capability))
@@ -119,6 +120,23 @@ test("all standalone capability tiers are represented", () => {
   })
   assert.equal(result.requiredPlan, "gold")
   assert.equal(result.violations.length, 2)
+})
+
+test("multilingual websites require Gold unless the billing add-on overrides the capability", () => {
+  const blocked = inspectWebsiteEntitlements("silver", {
+    sections: [],
+    enabledCapabilities: ["multilingual_websites"],
+  })
+  assert.equal(blocked.allowed, false)
+  assert.equal(blocked.violations[0].capability, "multilingual_websites")
+  assert.equal(blocked.requiredPlan, "gold")
+
+  const withAddon = inspectWebsiteEntitlements("silver", {
+    sections: [],
+    enabledCapabilities: ["multilingual_websites"],
+    capabilityOverrides: ["multilingual_websites"],
+  })
+  assert.equal(withAddon.allowed, true)
 })
 
 test("public request types map to the correct runtime capability", () => {

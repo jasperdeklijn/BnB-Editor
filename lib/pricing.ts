@@ -5,6 +5,7 @@
 import { FeatureComparison, PlanId, PricingPlan } from "@/lib/types/pricing"
 
 export const PLAN_ORDER: PlanId[] = ["bronze", "silver", "gold"]
+export const MULTILINGUAL_ADDON_MONTHLY_PRICE = 2.99
 
 export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
   bronze: {
@@ -58,6 +59,7 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
       "Beschikbaarheid beheren",
       "Automatische bevestigingen",
       "Boekingsdashboard",
+      "Meertalige website",
       "Priority support",
     ],
     isAddon: false,
@@ -146,6 +148,12 @@ export const FEATURE_COMPARISON: FeatureComparison[] = [
     gold: true,
   },
   {
+    feature: "Meertalige website",
+    bronze: "Add-on € 2,99/mnd",
+    silver: "Add-on € 2,99/mnd",
+    gold: "Inbegrepen",
+  },
+  {
     feature: "Priority support",
     bronze: false,
     silver: false,
@@ -154,6 +162,11 @@ export const FEATURE_COMPARISON: FeatureComparison[] = [
 ]
 
 export const PRICING_FAQ = [
+  {
+    question: "Kan ik een meertalige website maken?",
+    answer:
+      "Ja. Meertaligheid is inbegrepen bij Gold. Bij Bronze en Silver kunt u het talenpakket voor € 2,99 per maand exclusief btw toevoegen.",
+  },
   {
     question: "Kan ik later van abonnement wisselen?",
     answer:
@@ -198,9 +211,12 @@ export function getPopularPlan(): PricingPlan {
 
 export function calculateMonthlyPrice(
   planId: PlanId,
-  _addons: { bookingAddon: boolean }
+  addons: { bookingAddon: boolean; multilingualAddon: boolean }
 ): number {
-  return getPlanById(planId).monthlyPrice
+  const multilingualAddonPrice = planId !== "gold" && addons.multilingualAddon
+    ? MULTILINGUAL_ADDON_MONTHLY_PRICE
+    : 0
+  return getPlanById(planId).monthlyPrice + multilingualAddonPrice
 }
 
 export function formatPrice(amount: number, currency: "EUR" = "EUR"): string {

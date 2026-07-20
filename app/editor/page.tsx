@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { EditorClient } from "@/components/editor/editor-client"
-import { getSubscriptionAccessNotice, getUserSubscription } from "@/lib/subscriptions"
+import { getSubscriptionAccessNotice, getUserSubscription, hasMultilingualWebsiteAccess } from "@/lib/subscriptions"
 import { getPlanEnforcementMode } from "@/lib/plan-enforcement"
 import { getEditorBootstrap } from "@/lib/editor-bootstrap"
 
@@ -18,6 +18,7 @@ export default async function EditorPage() {
       initialBusinessId={businessId}
       initialBusinessCategory={businessCategory}
       currentPlan={subscription.planId}
+      hasMultilingualAccess={hasMultilingualWebsiteAccess(subscription)}
       subscriptionNotice={getSubscriptionAccessNotice(subscription)}
       enforcementMode={getPlanEnforcementMode()}
     />

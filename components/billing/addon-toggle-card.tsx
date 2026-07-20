@@ -13,17 +13,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { handleAddonToggle } from "@/lib/stripe-placeholder"
 import { toast } from "sonner"
-import { Zap } from "lucide-react"
+import { CheckCircle2, Zap } from "lucide-react"
 
 interface AddonToggleCardProps {
-  addonId: "bookingAddon"
+  addonId: "bookingAddon" | "multilingualAddon"
   addonName: string
   isEnabled: boolean
   monthlyPrice: number
   features: string[]
-  userId: string
+  included?: boolean
+  changesEnabled?: boolean
   onToggle?: (enabled: boolean) => void
 }
 
@@ -32,12 +32,12 @@ interface AddonToggleCardProps {
  * Allows users to enable/disable add-ons with confirmation
  */
 export function AddonToggleCard({
-  addonId,
   addonName,
   isEnabled,
   monthlyPrice,
   features,
-  userId,
+  included = false,
+  changesEnabled = false,
   onToggle,
 }: AddonToggleCardProps) {
   const [showConfirmation, setShowConfirmation] = useState(false)
@@ -45,6 +45,7 @@ export function AddonToggleCard({
   const [isLoading, setIsLoading] = useState(false)
 
   const handleToggleClick = (checked: boolean) => {
+    if (included || !changesEnabled) return
     setPendingState(checked)
     setShowConfirmation(true)
   }
@@ -53,23 +54,8 @@ export function AddonToggleCard({
     setIsLoading(true)
 
     try {
-      await handleAddonToggle(addonId, pendingState, userId)
-      await fetch("/api/audit/billing", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "subscription.changed",
-          metadata: {
-            addonId,
-            enabled: pendingState,
-            source: "billing_addon_toggle",
-          },
-        }),
-      }).catch(() => null)
-
-      if (onToggle) {
-        onToggle(pendingState)
-      }
+      if (!onToggle) throw new Error("Add-ons wijzigen is nog niet beschikbaar.")
+      await onToggle(pendingState)
 
       toast.success(
         `${addonName} ${pendingState ? "geactiveerd" : "gedeactiveerd"}`
@@ -99,7 +85,7 @@ export function AddonToggleCard({
                 {addonName}
               </h3>
               <p className="text-sm text-muted-foreground">
-                {formatPrice(monthlyPrice)}/maand
+                {included ? "Inbegrepen bij Gold" : `${formatPrice(monthlyPrice)}/maand`}
               </p>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 Exclusief btw
@@ -108,9 +94,9 @@ export function AddonToggleCard({
           </div>
 
           <Switch
-            checked={isEnabled}
+            checked={included || isEnabled}
             onCheckedChange={handleToggleClick}
-            disabled={isLoading}
+            disabled={isLoading || included || !changesEnabled}
             className="ml-4"
           />
         </div>
@@ -124,13 +110,21 @@ export function AddonToggleCard({
         </div>
 
         {/* Status */}
-        {isEnabled && (
-          <div className="mt-6 p-3 bg-success/10 border border-success/30 rounded-lg">
-            <p className="text-sm text-success font-medium">
-              ✓ Momenteel geactiveerd
-            </p>
+        {included ? (
+          <div className="mt-6 flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 p-3 text-success">
+            <CheckCircle2 className="h-4 w-4" />
+            <p className="text-sm font-medium">Inbegrepen bij uw Gold-abonnement</p>
           </div>
-        )}
+        ) : isEnabled ? (
+          <div className="mt-6 rounded-lg border border-success/30 bg-success/10 p-3">
+            <p className="text-sm font-medium text-success">Momenteel geactiveerd</p>
+          </div>
+        ) : !changesEnabled ? (
+          <div className="mt-6 rounded-lg border border-border bg-secondary/60 p-3">
+            <p className="text-sm font-medium text-foreground">Activeren via facturering volgt binnenkort</p>
+            <p className="mt-1 text-xs text-muted-foreground">De toegangs- en publicatieregels zijn al voorbereid; de betaalprovider is nog niet gekoppeld.</p>
+          </div>
+        ) : null}
       </div>
 
       {/* Confirmation Dialog */}

@@ -100,6 +100,9 @@ export default function PricingPage() {
                 <PricingCard key={plan.id} plan={plan} isPopular={plan.isPopular} />
               ))}
             </div>
+            <p className="mt-8 text-center text-sm font-semibold text-[var(--landing-primary-dark)]">
+              Meertaligheid is inbegrepen bij Gold en beschikbaar als add-on van € 2,99 per maand bij Bronze en Silver.
+            </p>
           </div>
         </section>
 

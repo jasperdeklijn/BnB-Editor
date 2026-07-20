@@ -42,6 +42,7 @@ export interface Subscription {
   // Kept for existing billing records while pricing is plan-based.
   addons: {
     bookingAddon: boolean
+    multilingualAddon: boolean
   }
   // Stripe references (for future integration)
   stripeCustomerId?: string
@@ -101,6 +102,7 @@ export interface UserBillingData {
   nextBillingDate: Date | null
   addons: {
     bookingAddon: boolean
+    multilingualAddon: boolean
   }
   invoices: Invoice[]
   createdAt: Date | null
@@ -133,7 +135,7 @@ export interface PlanComparisonTableProps {
 }
 
 export interface AddonToggleCardProps {
-  addonId: "bookingAddon"
+  addonId: "bookingAddon" | "multilingualAddon"
   addonName: string
   isEnabled: boolean
   monthlyPrice: number

@@ -33,6 +33,10 @@ export function PricingSection() {
           ))}
         </div>
 
+        <p className="mb-10 text-center text-sm font-semibold text-[var(--landing-primary-dark)]">
+          Meertaligheid is inbegrepen bij Gold en kost als add-on € 2,99 per maand bij Bronze en Silver.
+        </p>
+
         <div className="text-center animate-in fade-in duration-700 delay-300">
           <Button
             asChild

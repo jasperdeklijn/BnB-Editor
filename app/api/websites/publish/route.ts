@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { logAuditEvent } from "@/lib/audit-log"
 import { createClient } from "@/lib/supabase/server"
-import { getUserSubscription } from "@/lib/subscriptions"
+import { getUserSubscription, hasMultilingualWebsiteAccess } from "@/lib/subscriptions"
 import { buildWebsiteLiveSnapshot } from "@/lib/website-snapshot"
 import { inspectWebsiteEntitlements } from "@/lib/entitlements"
 import { getPlanEnforcementMode, shouldEnforcePlanEntitlements } from "@/lib/plan-enforcement"
@@ -48,6 +48,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Website not found" }, { status: 404 })
   }
 
+  const hasMultilingualAccess = hasMultilingualWebsiteAccess(subscription)
+
   if (!published) {
     const { error: unpublishError } = await supabase
       .from("websites")
@@ -73,6 +75,49 @@ export async function POST(request: Request) {
     })
 
     return NextResponse.json({ success: true, websiteId, published: false })
+  }
+
+  const { data: localeRows, error: localesError } = await supabase
+    .from("website_locales")
+    .select("is_default, is_enabled")
+    .eq("website_id", websiteId)
+
+  if (localesError) {
+    return NextResponse.json({ error: "De talen van deze website konden niet worden gecontroleerd." }, { status: 500 })
+  }
+
+  const usesMultilingualWebsite = (localeRows ?? []).some(
+    (locale) => !locale.is_default && locale.is_enabled,
+  )
+  const languageEntitlementResult = inspectWebsiteEntitlements(currentPlan, {
+    sections: [],
+    enabledCapabilities: usesMultilingualWebsite ? ["multilingual_websites"] : [],
+    capabilityOverrides: hasMultilingualAccess ? ["multilingual_websites"] : [],
+  })
+
+  if (!languageEntitlementResult.allowed && shouldEnforcePlanEntitlements(enforcementMode)) {
+    await logAuditEvent({
+      userId: user.id,
+      websiteId,
+      action: "website.publish_denied",
+      metadata: {
+        reason: "multilingual_access_required",
+        plan: currentPlan,
+        requiredPlan: "gold",
+        multilingualAddonActive: subscription.record?.multilingual_addon_active === true,
+      },
+      request,
+    })
+    return NextResponse.json(
+      {
+        error: "Een meertalige website is inbegrepen bij Gold. Voeg bij Bronze of Silver het talenpakket van € 2,99 per maand toe.",
+        code: "ENTITLEMENT_VIOLATIONS",
+        currentPlan,
+        requiredPlan: "gold",
+        violations: languageEntitlementResult.violations,
+      },
+      { status: 422 },
+    )
   }
 
   let liveSnapshot
@@ -128,6 +173,10 @@ export async function POST(request: Request) {
 
   const entitlementResult = inspectWebsiteEntitlements(currentPlan, {
     sections: liveSnapshot.sections,
+    enabledCapabilities: liveSnapshot.locales && liveSnapshot.locales.length > 1
+      ? ["multilingual_websites"]
+      : [],
+    capabilityOverrides: hasMultilingualAccess ? ["multilingual_websites"] : [],
   })
 
   if (!entitlementResult.allowed) {

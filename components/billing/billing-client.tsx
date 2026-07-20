@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react"
 
 import { BillingStatusBadge } from "@/components/billing/billing-status-badge"
+import { AddonToggleCard } from "@/components/billing/addon-toggle-card"
 import { BillingSummarySidebar } from "@/components/billing/billing-summary-sidebar"
 import { InvoiceHistoryTable } from "@/components/billing/invoice-history-table"
 import { PlanComparisonTable } from "@/components/billing/plan-comparison-table"
 import { Card } from "@/components/ui/card"
-import { getPlanById } from "@/lib/pricing"
+import { getPlanById, MULTILINGUAL_ADDON_MONTHLY_PRICE } from "@/lib/pricing"
 import type { UserBillingData } from "@/lib/types/pricing"
 
 interface BillingClientProps {
@@ -23,6 +24,9 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
   }, [])
 
   const currentPlan = getPlanById(billingData.currentPlan)
+  const multilingualAddonPrice = currentPlan.id !== "gold" && billingData.addons.multilingualAddon
+    ? MULTILINGUAL_ADDON_MONTHLY_PRICE
+    : 0
 
   if (!mounted) {
     return (
@@ -77,6 +81,25 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
 
           <div className="animate-in fade-in duration-700 delay-300">
             <h3 className="mb-4 text-xl font-semibold text-foreground">
+              Talenpakket
+            </h3>
+            <AddonToggleCard
+              addonId="multilingualAddon"
+              addonName="Meertalige website"
+              isEnabled={billingData.addons.multilingualAddon}
+              included={currentPlan.id === "gold"}
+              changesEnabled={false}
+              monthlyPrice={MULTILINGUAL_ADDON_MONTHLY_PRICE}
+              features={[
+                "Nederlands, Engels, Duits en Frans",
+                "Vertaalbare navigatie en website-inhoud",
+                "Taalkeuze op de gepubliceerde website",
+              ]}
+            />
+          </div>
+
+          <div className="animate-in fade-in duration-700 delay-300">
+            <h3 className="mb-4 text-xl font-semibold text-foreground">
               Factuuroverzicht
             </h3>
             <InvoiceHistoryTable invoices={billingData.invoices} />
@@ -88,6 +111,7 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
             currentPlan={currentPlan}
             nextBillingDate={billingData.nextBillingDate}
             monthlyCharge={billingData.currentPrice}
+            addonsPrice={multilingualAddonPrice}
           />
         </div>
       </div>
@@ -101,6 +125,7 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
           <li>U kunt op elk moment van abonnement wisselen.</li>
           <li>Uw abonnement wordt automatisch maandelijks verlengd.</li>
           <li>Gold bevat online afspraken, beschikbaarheid en boekingsbeheer.</li>
+          <li>Meertaligheid is inbegrepen bij Gold en kost bij Bronze of Silver € 2,99 per maand extra.</li>
           <li>Priority support is inbegrepen bij Gold.</li>
         </ul>
       </div>

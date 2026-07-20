@@ -38,6 +38,7 @@ import {
 } from "@/lib/i18n/section-translations"
 import { isMultilingualWebsitesEnabled } from "@/lib/i18n/feature"
 import { useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
 import { AlertCircle, CheckCircle2, ChevronDown, ExternalLink, Eye, Globe2, Layers, LayoutTemplate, Loader2, Paintbrush, Plus, Sparkles } from "lucide-react"
 import type { ThemeConfig } from "@/lib/themes"
 import type { BusinessCategory } from "@/lib/business/categories"
@@ -157,6 +158,7 @@ interface EditorClientProps {
   initialBusinessId?: string | null
   initialBusinessCategory?: BusinessCategory | null
   currentPlan: PlanId
+  hasMultilingualAccess: boolean
   subscriptionNotice?: string | null
   enforcementMode: PlanEnforcementMode
 }
@@ -166,6 +168,7 @@ export function EditorClient({
   initialBusinessId = null,
   initialBusinessCategory = null,
   currentPlan,
+  hasMultilingualAccess,
   subscriptionNotice,
   enforcementMode,
 }: EditorClientProps) {
@@ -201,6 +204,7 @@ export function EditorClient({
   const { isPreview, isSaving, setIsSaving, saveState, setSaveState, device, setOnPublish, setOnLogout } = useEditorLayout()
   const requestedWebsiteId = searchParams.get("websiteId")
   const multilingualEnabled = isMultilingualWebsitesEnabled()
+  const multilingualAvailable = multilingualEnabled && hasMultilingualAccess
   const previousEntitlementViolationKeys = useRef<Set<string>>(new Set())
   const sectionsRef = useRef<Section[]>([])
   const sectionSaveTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
@@ -216,10 +220,13 @@ export function EditorClient({
     sectionSaveTimeoutsRef.current.clear()
   }, [])
 
-  const entitlementResult = useMemo(
-    () => inspectWebsiteEntitlements(currentPlan, { sections }),
-    [currentPlan, sections],
-  )
+  const entitlementResult = useMemo(() => inspectWebsiteEntitlements(currentPlan, {
+    sections,
+    enabledCapabilities: multilingualEnabled && websiteLocales.some(
+      (locale) => !locale.is_default && locale.is_enabled,
+    ) ? ["multilingual_websites"] : [],
+    capabilityOverrides: hasMultilingualAccess ? ["multilingual_websites"] : [],
+  }), [currentPlan, hasMultilingualAccess, multilingualEnabled, sections, websiteLocales])
   const publishEnforcementActive = enforcementMode === "enforce"
   const canPublishDraft = !publishEnforcementActive || entitlementResult.allowed
   const activePreflightViolations = serverPublishViolations.length > 0
@@ -1006,12 +1013,20 @@ export function EditorClient({
   })) as Partial<Record<SupportedWebsiteLocale, "complete" | "missing" | "stale">>, [sectionTranslations, sharedLocaleStatuses, translationSourceSections, websiteLocales])
 
   const handleLocaleChange = (locale: SupportedWebsiteLocale) => {
+    if (!hasMultilingualAccess && locale !== defaultWebsiteLocale?.locale) {
+      toast.error("Talen zijn inbegrepen bij Gold of beschikbaar als add-on.")
+      return
+    }
     setActiveLocale(locale)
     setMobilePanel("canvas")
     if (!selectedSectionId && sections.length > 0) setSelectedSectionId(sections[0].id)
   }
 
   const handleAddLocale = async (locale: SupportedWebsiteLocale) => {
+    if (!hasMultilingualAccess) {
+      toast.error("Talen zijn inbegrepen bij Gold of beschikbaar als add-on.")
+      return
+    }
     if (!websiteId) return
     setSaveState("saving")
     const result = await addWebsiteLocale(createClient(), websiteId, locale)
@@ -1029,6 +1044,10 @@ export function EditorClient({
   }
 
   const handleToggleLocale = async (locale: SupportedWebsiteLocale, enabled: boolean) => {
+    if (!hasMultilingualAccess) {
+      toast.error("Talen zijn inbegrepen bij Gold of beschikbaar als add-on.")
+      return
+    }
     if (!websiteId) return
     setSaveState("saving")
     if (enabled) {
@@ -1081,6 +1100,10 @@ export function EditorClient({
   }
 
   const handleRemoveLocale = async (locale: SupportedWebsiteLocale) => {
+    if (!hasMultilingualAccess) {
+      toast.error("Talen zijn inbegrepen bij Gold of beschikbaar als add-on.")
+      return
+    }
     if (!websiteId) return
     setSaveState("saving")
     const result = await removeWebsiteLocale(createClient(), websiteId, locale)
@@ -1108,6 +1131,10 @@ export function EditorClient({
     locale: SupportedWebsiteLocale,
     updates: { display_name?: string; path_segment?: string; seo?: Record<string, unknown> },
   ) => {
+    if (!hasMultilingualAccess) {
+      toast.error("Talen zijn inbegrepen bij Gold of beschikbaar als add-on.")
+      return
+    }
     if (!websiteId) return
     setSaveState("saving")
     const result = await updateWebsiteLocale(createClient(), websiteId, locale, updates)
@@ -1123,6 +1150,10 @@ export function EditorClient({
   }
 
   const handleSetDefaultLocale = async (locale: SupportedWebsiteLocale) => {
+    if (!hasMultilingualAccess) {
+      toast.error("Talen zijn inbegrepen bij Gold of beschikbaar als add-on.")
+      return
+    }
     if (!websiteId) return
     setSaveState("saving")
     const { error } = await setWebsiteDefaultLocale(createClient(), websiteId, locale)
@@ -1151,6 +1182,10 @@ export function EditorClient({
   }
 
   const handleSaveTranslation = async (section: Section, values: Record<string, unknown>) => {
+    if (!hasMultilingualAccess) {
+      toast.error("Talen zijn inbegrepen bij Gold of beschikbaar als add-on.")
+      return
+    }
     if (!websiteId || !activeWebsiteLocale || activeWebsiteLocale.is_default) return
     setIsSaving(true)
     const sourceHash = getSectionSourceHash(section)
@@ -1234,7 +1269,7 @@ export function EditorClient({
             </select>
             <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground transition-transform group-focus-within:rotate-180 group-focus-within:text-primary" />
           </div>
-          {multilingualEnabled ? <WebsiteLanguageControl
+          {multilingualAvailable ? <WebsiteLanguageControl
             locales={websiteLocales}
             activeLocale={activeLocale}
             onLocaleChange={handleLocaleChange}
@@ -1245,7 +1280,16 @@ export function EditorClient({
             onSetDefault={handleSetDefaultLocale}
             canSetDefault={!selectedWebsite?.published && sectionTranslations.size === 0}
             statuses={localeStatuses}
-          /> : null}
+          /> : multilingualEnabled ? (
+            <Link
+              href="/editor/account/billing"
+              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-amber-300/70 bg-amber-50 px-2.5 text-xs font-semibold text-amber-900 shadow-sm transition-colors hover:bg-amber-100"
+              title="Talen zijn inbegrepen bij Gold of beschikbaar als add-on"
+            >
+              <Globe2 className="h-3.5 w-3.5" />
+              Talen · Gold/add-on
+            </Link>
+          ) : null}
           <label htmlFor="website-name" className="sr-only">
             Websitenaam
           </label>
@@ -1375,7 +1419,7 @@ export function EditorClient({
             ) : null}
           </div>
 
-          {multilingualEnabled ? <WebsiteLanguageControl
+          {multilingualAvailable ? <WebsiteLanguageControl
             locales={websiteLocales}
             activeLocale={activeLocale}
             onLocaleChange={handleLocaleChange}
@@ -1387,7 +1431,16 @@ export function EditorClient({
             canSetDefault={!selectedWebsite?.published && sectionTranslations.size === 0}
             statuses={localeStatuses}
             mobile
-          /> : null}
+          /> : multilingualEnabled ? (
+            <Link
+              href="/editor/account/billing"
+              className="flex min-h-11 items-center gap-2 rounded-xl border border-amber-300/70 bg-amber-50 px-3 text-sm font-semibold text-amber-900 shadow-sm"
+            >
+              <Globe2 className="h-4 w-4" />
+              Talen ontgrendelen
+              <span className="ml-auto text-xs font-medium">Gold of € 2,99/mnd</span>
+            </Link>
+          ) : null}
 
           <details className="group rounded-md border border-border bg-muted/30">
             <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 text-sm font-medium text-foreground">

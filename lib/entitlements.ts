@@ -13,6 +13,7 @@ export type EntitlementCapability =
   | "availability_calendar"
   | "automatic_booking_confirmations"
   | "booking_management"
+  | "multilingual_websites"
   | "priority_support"
 
 export type EntitlementViolationCode =
@@ -35,6 +36,7 @@ export interface EntitlementViolation {
 export interface WebsiteEntitlementInput {
   sections: readonly Pick<Section, "id" | "type" | "data">[]
   enabledCapabilities?: readonly EntitlementCapability[]
+  capabilityOverrides?: readonly EntitlementCapability[]
 }
 
 export interface WebsiteEntitlementResult {
@@ -79,6 +81,7 @@ export const CAPABILITY_MINIMUM_PLAN = {
   availability_calendar: "gold",
   automatic_booking_confirmations: "gold",
   booking_management: "gold",
+  multilingual_websites: "gold",
   priority_support: "gold",
 } as const satisfies Record<EntitlementCapability, PlanId>
 
@@ -92,6 +95,7 @@ const CAPABILITY_LABELS = {
   availability_calendar: "Beschikbaarheidskalender",
   automatic_booking_confirmations: "Automatische boekingsbevestigingen",
   booking_management: "Boekingsbeheer",
+  multilingual_websites: "Meertalige website",
   priority_support: "Priority support",
 } as const satisfies Record<EntitlementCapability, string>
 
@@ -202,6 +206,7 @@ export function inspectWebsiteEntitlements(
   }
 
   const capabilities = new Map<string, { capability: EntitlementCapability; section?: Pick<Section, "id" | "type"> }>()
+  const capabilityOverrides = new Set(input.capabilityOverrides ?? [])
 
   for (const section of input.sections) {
     const requiredPlan = getMinimumPlanForSection(section.type)
@@ -230,6 +235,7 @@ export function inspectWebsiteEntitlements(
   for (const { capability, section } of capabilities.values()) {
     const requiredPlan = getMinimumPlanForCapability(capability)
     requiredPlans.push(requiredPlan)
+    if (capabilityOverrides.has(capability)) continue
     if (planMeetsRequirement(currentPlan, requiredPlan)) continue
 
     violations.push({

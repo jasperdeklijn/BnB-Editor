@@ -18,7 +18,7 @@ Function("module", "exports", "require", compiled.outputText)(module, module.exp
   throw new Error(`Unexpected runtime dependency: ${specifier}`)
 })
 
-const { getSubscriptionAccessNotice, resolveEffectivePlan } = module.exports
+const { getSubscriptionAccessNotice, hasMultilingualWebsiteAccess, resolveEffectivePlan } = module.exports
 const now = new Date("2026-07-12T12:00:00.000Z")
 const record = (status, overrides = {}) => ({
   id: "sub-1",
@@ -32,6 +32,9 @@ const record = (status, overrides = {}) => ({
   stripe_customer_id: null,
   stripe_subscription_id: null,
   stripe_price_id: null,
+  multilingual_addon_active: false,
+  multilingual_addon_price: 2.99,
+  stripe_multilingual_addon_item_id: null,
   created_at: "2026-07-01T00:00:00.000Z",
   updated_at: "2026-07-01T00:00:00.000Z",
   ...overrides,
@@ -72,4 +75,25 @@ test("inactive states explain the temporary Gold default", () => {
   }
   const notice = getSubscriptionAccessNotice(resolved)
   assert.match(notice, /standaardabonnement Gold/)
+})
+
+test("multilingual access is included in Gold and add-on based for paid Bronze or Silver", () => {
+  const silver = record("active")
+  const silverWithAddon = record("active", { multilingual_addon_active: true })
+
+  assert.equal(hasMultilingualWebsiteAccess({
+    userId: "user-1",
+    record: silver,
+    ...resolveEffectivePlan(silver, now),
+  }), false)
+  assert.equal(hasMultilingualWebsiteAccess({
+    userId: "user-1",
+    record: silverWithAddon,
+    ...resolveEffectivePlan(silverWithAddon, now),
+  }), true)
+  assert.equal(hasMultilingualWebsiteAccess({
+    userId: "user-1",
+    record: record("active", { plan_id: "gold" }),
+    ...resolveEffectivePlan(record("active", { plan_id: "gold" }), now),
+  }), true)
 })
