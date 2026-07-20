@@ -7,10 +7,10 @@ import type { SectionEditorProps } from "@/components/editor/section-editor-type
 import { Type } from "lucide-react"
 
 const fallbackItems = [
-  { question: "Hoe snel kan ik terecht?", answer: "In de meeste gevallen kunnen we binnen 1-3 werkdagen bij u terecht. Neem contact op voor een exacte planning." },
-  { question: "Wat zijn de kosten?", answer: "De kosten zijn afhankelijk van het type dienst en de omvang van het werk. We brengen graag een vrijblijvende offerte uit." },
-  { question: "Werken jullie met garantie?", answer: "Ja, op al ons werk geven wij garantie. De exacte voorwaarden bespreken we bij de opdrachtbevestiging." },
-  { question: "Hoe kan ik een afspraak maken?", answer: "U kunt ons bellen, mailen of het contactformulier op deze pagina gebruiken. We reageren zo snel mogelijk." },
+  { id: "faq-1", question: "Hoe snel kan ik terecht?", answer: "In de meeste gevallen kunnen we binnen 1-3 werkdagen bij u terecht. Neem contact op voor een exacte planning." },
+  { id: "faq-2", question: "Wat zijn de kosten?", answer: "De kosten zijn afhankelijk van het type dienst en de omvang van het werk. We brengen graag een vrijblijvende offerte uit." },
+  { id: "faq-3", question: "Werken jullie met garantie?", answer: "Ja, op al ons werk geven wij garantie. De exacte voorwaarden bespreken we bij de opdrachtbevestiging." },
+  { id: "faq-4", question: "Hoe kan ik een afspraak maken?", answer: "U kunt ons bellen, mailen of het contactformulier op deze pagina gebruiken. We reageren zo snel mogelijk." },
 ]
 
 export function FaqSectionEditor({ section, updateField, updateListItemField }: SectionEditorProps) {
@@ -42,7 +42,7 @@ export function FaqSectionEditor({ section, updateField, updateListItemField }: 
         FAQ-items worden opgeslagen op deze sectie.
       </p>
       {items.map((item, index) => (
-        <div key={index} className="space-y-2 rounded-lg border border-border p-3">
+        <div key={item.id ?? index} className="space-y-2 rounded-lg border border-border p-3">
           <Input value={item.question || ""} onChange={(e) => updateListItemField("items", index, "question", e.target.value, fallbackItems)} placeholder="Vraag" />
           <textarea
             value={item.answer || ""}

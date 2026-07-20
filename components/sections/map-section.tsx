@@ -4,6 +4,7 @@ import { MapPin, Phone, Mail, ExternalLink } from "lucide-react"
 import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
+import { useWebsiteLocale } from "@/lib/site-i18n/provider"
 
 interface MapSectionProps {
   data: Record<string, unknown>
@@ -21,6 +22,7 @@ function buildEmbedUrl(embedUrl?: string, address?: string): string | null {
 }
 
 export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProps) {
+  const { messages } = useWebsiteLocale()
   const title = (data.title as string) || "Onze locatie"
   const subtitle = data.subtitle as string | undefined
   const address = data.address as string | undefined
@@ -51,7 +53,7 @@ export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProp
       <div className={`mx-auto ${layout.container}`}>
         <div className={`mb-10 ${layout.heading}`}>
           <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-amber-600">
-            Locatie
+            {messages.location}
           </p>
           <EditableText
             as="h2"
@@ -72,7 +74,7 @@ export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProp
           <div className={`grid ${layout.layout === "compact" ? "" : "md:grid-cols-5"}`}>
             {/* Info panel */}
             <div className={`flex flex-col justify-center gap-5 px-8 py-10 ${layout.layout === "compact" ? "" : "md:col-span-2"}`} style={{ backgroundColor: styles?.accentColor || "#b45309" }}>
-              <h3 className="text-lg font-semibold text-white">Kom langs</h3>
+              <h3 className="text-lg font-semibold text-white">{messages.visitUs}</h3>
 
               {address && (
                 <div className="flex items-start gap-3">
@@ -86,7 +88,7 @@ export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProp
                         rel="noopener noreferrer"
                         className="mt-1 inline-flex items-center gap-1 text-xs text-amber-300 hover:text-white transition-colors"
                       >
-                        Open in Google Maps
+                        {messages.openMaps}
                         <ExternalLink className="h-3 w-3" />
                       </a>
                     )}

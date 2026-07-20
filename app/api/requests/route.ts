@@ -12,6 +12,7 @@ import { getUserSubscription } from "@/lib/subscriptions"
 import { getPlanEnforcementMode, shouldEnforcePlanEntitlements } from "@/lib/plan-enforcement"
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
 import { PLATFORM_EMAILS } from "@/lib/platform"
+import { DEFAULT_WEBSITE_LOCALE, isSupportedWebsiteLocale } from "@/lib/i18n/locales"
 
 const FROM_EMAIL = process.env.SMTP_FROM?.trim() || PLATFORM_EMAILS.info
 const FROM_NAME = process.env.SMTP_FROM_NAME?.trim() || "Website aanvraag"
@@ -40,6 +41,7 @@ const FIELD_LIMITS = {
   businessId: 80,
   recipientEmail: 254,
   source: 80,
+  locale: 20,
 }
 
 const GENERIC_ERROR = "Aanvraag kon niet worden verzonden. Controleer de velden en probeer het opnieuw."
@@ -170,6 +172,7 @@ async function resolveRequestContext(input: {
   let businessName = "uw website"
   let acceptsPublicRequests = false
   let liveServiceIds: string[] = []
+  let liveLocales: string[] = [DEFAULT_WEBSITE_LOCALE]
 
   if (websiteId) {
     const { data: website } = await supabase
@@ -186,6 +189,7 @@ async function resolveRequestContext(input: {
       liveServiceIds = snapshot?.services
         ?.map((service) => service.id)
         .filter((id): id is string => typeof id === "string") ?? []
+      liveLocales = snapshot?.locales?.map((entry) => entry.locale) ?? [DEFAULT_WEBSITE_LOCALE]
       userId = website.user_id ?? null
       businessId = snapshot?.website.businessId || businessId || website.business_id || null
       businessName = snapshot?.business?.name || snapshot?.website.title || website.title || businessName
@@ -215,7 +219,7 @@ async function resolveRequestContext(input: {
 
   const recipientEmail = businessEmail || userEmail || input.recipientEmail || FROM_EMAIL
 
-  return { supabase, websiteId, businessId, userId, recipientEmail, businessName, acceptsPublicRequests, liveServiceIds }
+  return { supabase, websiteId, businessId, userId, recipientEmail, businessName, acceptsPublicRequests, liveServiceIds, liveLocales }
 }
 
 function buildEmailHtml(input: {
@@ -229,6 +233,7 @@ function buildEmailHtml(input: {
   budget: string
   message: string
   recipientEmail: string
+  locale: string
 }) {
   const rows = [
     ["Naam", input.name],
@@ -237,6 +242,7 @@ function buildEmailHtml(input: {
     ["Gewenste dienst", input.service],
     ["Gewenste datum", input.preferredDate],
     ["Budget", input.budget],
+    ["Taal", input.locale],
   ].filter(([, value]) => value)
 
   return `
@@ -304,6 +310,8 @@ export async function POST(request: NextRequest) {
     const websiteId = limitString(body.websiteId, FIELD_LIMITS.websiteId)
     const businessId = limitString(body.businessId, FIELD_LIMITS.businessId)
     const source = limitString(body.source, FIELD_LIMITS.source) || "website_form"
+    const requestedLocale = limitString(body.locale, FIELD_LIMITS.locale)
+    const locale = isSupportedWebsiteLocale(requestedLocale) ? requestedLocale : DEFAULT_WEBSITE_LOCALE
 
     if (!name || !email || !EMAIL_PATTERN.test(email)) {
       logRejectedRequest("invalid_required_fields", request, { requestType, hasName: Boolean(name), hasEmail: Boolean(email) })
@@ -324,6 +332,7 @@ export async function POST(request: NextRequest) {
       businessId,
       recipientEmail: limitString(body.recipientEmail, FIELD_LIMITS.recipientEmail),
     })
+    const submissionLocale = context.liveLocales.includes(locale) ? locale : DEFAULT_WEBSITE_LOCALE
 
     if (!context.acceptsPublicRequests) {
       logRejectedRequest("website_not_live", request, { websiteId })
@@ -398,6 +407,7 @@ export async function POST(request: NextRequest) {
         preferred_date: preferredDate,
         budget,
         message,
+        locale: submissionLocale,
         payload: {
           requestType,
           phone,
@@ -406,6 +416,7 @@ export async function POST(request: NextRequest) {
           preferredDate,
           budget,
           source,
+          locale: submissionLocale,
         },
         recipient_email: context.recipientEmail,
         source,
@@ -451,6 +462,7 @@ export async function POST(request: NextRequest) {
           preferred_date: preferredDate,
           service_id: calendarServiceId,
           source,
+          locale: submissionLocale,
         },
       })
 
@@ -483,8 +495,9 @@ export async function POST(request: NextRequest) {
             budget: escapeHtml(budget),
             message: escapeHtml(message),
             recipientEmail: escapeHtml(context.recipientEmail),
+            locale: escapeHtml(submissionLocale),
           }),
-          text: `${requestLabel}\n\nNaam: ${name}\nE-mail: ${email}${phone ? `\nTelefoon: ${phone}` : ""}${service ? `\nDienst: ${service}` : ""}${preferredDate ? `\nGewenste datum: ${preferredDate}` : ""}${budget ? `\nBudget: ${budget}` : ""}\n\nBericht:\n${message || "Geen bericht ingevuld."}`,
+          text: `${requestLabel}\n\nNaam: ${name}\nE-mail: ${email}${phone ? `\nTelefoon: ${phone}` : ""}${service ? `\nDienst: ${service}` : ""}${preferredDate ? `\nGewenste datum: ${preferredDate}` : ""}${budget ? `\nBudget: ${budget}` : ""}\nTaal: ${submissionLocale}\n\nBericht:\n${message || "Geen bericht ingevuld."}`,
         })
         emailSent = true
       } catch (emailError) {

@@ -7,6 +7,7 @@ import type { SectionEditorProps } from "@/components/editor/section-editor-type
 import { Plus, Type } from "lucide-react"
 
 export function FeaturesSectionEditor({ section, updateField }: SectionEditorProps) {
+  const features = (((section.data as any).features as Array<string | { id?: string; text?: string }> | undefined) || [])
   return (
     <Card className="p-4 space-y-3">
       <Label className="flex items-center gap-2">
@@ -24,11 +25,14 @@ export function FeaturesSectionEditor({ section, updateField }: SectionEditorPro
       </Label>
       <Input
         placeholder="Persoonlijke service, Heldere afspraken, Vakmanschap"
-        value={(((section.data as any).features as string[] | undefined) || []).join(", ")}
+        value={features.map((feature) => typeof feature === "string" ? feature : feature.text ?? "").join(", ")}
         onChange={(e) =>
           updateField(
             "features",
-            e.target.value.split(",").map((value) => value.trim()).filter(Boolean),
+            e.target.value.split(",").map((value) => value.trim()).filter(Boolean).map((text, index) => ({
+              id: typeof features[index] === "object" && features[index]?.id ? features[index].id : `feature-${Date.now()}-${index}`,
+              text,
+            })),
           )
         }
       />

@@ -4,6 +4,7 @@ import { Clock } from "lucide-react"
 import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
+import { useWebsiteLocale } from "@/lib/site-i18n/provider"
 
 export interface OpeningHoursDay {
   label: string
@@ -38,16 +39,6 @@ const DAY_KEYS = [
   "sunday",
 ] as const
 
-const DAY_LABELS: Record<string, string> = {
-  monday: "Maandag",
-  tuesday: "Dinsdag",
-  wednesday: "Woensdag",
-  thursday: "Donderdag",
-  friday: "Vrijdag",
-  saturday: "Zaterdag",
-  sunday: "Zondag",
-}
-
 function getToday(): string {
   const days = [
     "sunday",
@@ -62,6 +53,7 @@ function getToday(): string {
 }
 
 export function OpeningHoursSection({ data, isPreview, styles, onUpdate }: OpeningHoursSectionProps) {
+  const { locale, messages } = useWebsiteLocale()
   const title = (data.title as string) || "Openingstijden"
   const subtitle = data.subtitle as string | undefined
   const note = data.note as string | undefined
@@ -95,7 +87,7 @@ export function OpeningHoursSection({ data, isPreview, styles, onUpdate }: Openi
         closed = true
       }
       return {
-        label: DAY_LABELS[key],
+        label: new Intl.DateTimeFormat(locale, { weekday: "long" }).format(new Date(2026, 0, 5 + DAY_KEYS.indexOf(key))),
         hours,
         closed,
         isToday: key === today,
@@ -107,10 +99,12 @@ export function OpeningHoursSection({ data, isPreview, styles, onUpdate }: Openi
         ? (data.items as OpeningHoursDay[])
         : DEFAULT_HOURS
     rows = fallback.map((item, idx) => ({
-      label: item.label,
+      label: Array.isArray(data.items)
+        ? item.label
+        : new Intl.DateTimeFormat(locale, { weekday: "long" }).format(new Date(2026, 0, 5 + idx)),
       hours: item.hours,
       closed: item.closed ?? !item.hours,
-      isToday: idx === new Date().getDay(),
+      isToday: DAY_KEYS[idx] === today,
     }))
   }
 
@@ -123,7 +117,7 @@ export function OpeningHoursSection({ data, isPreview, styles, onUpdate }: Openi
         <div className={`mb-10 ${layout.heading}`}>
           <div className="mb-3 inline-flex items-center justify-center gap-2 rounded-full bg-amber-100 px-4 py-2 text-sm font-medium text-amber-800">
             <Clock className="h-4 w-4" />
-            Openingstijden
+            {messages.openingHours}
           </div>
           <EditableText
             as="h2"
@@ -155,7 +149,7 @@ export function OpeningHoursSection({ data, isPreview, styles, onUpdate }: Openi
                 {row.label}
                 {row.isToday && (
                   <span className="ml-2 rounded-full bg-amber-200 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
-                    Vandaag
+                    {messages.today}
                   </span>
                 )}
               </span>
@@ -164,7 +158,7 @@ export function OpeningHoursSection({ data, isPreview, styles, onUpdate }: Openi
                 style={textStyle}
               >
                 {row.closed ? (
-                  "Gesloten"
+                  messages.closed
                 ) : (
                   <EditableText
                     data={data}

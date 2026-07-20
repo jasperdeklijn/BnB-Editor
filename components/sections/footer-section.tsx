@@ -6,6 +6,7 @@ import { Building2, Mail, MapPin, Phone } from "lucide-react"
 import { EditableText } from "@/components/editor/inline-editable-text"
 import type { Section, SectionStyles, SectionType } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
+import { useWebsiteLocale } from "@/lib/site-i18n/provider"
 
 interface FooterLink { label: string; href: string }
 interface FooterColumn { title: string; links: FooterLink[] }
@@ -15,6 +16,7 @@ const fallbackColumns: FooterColumn[] = [
 ]
 
 export function FooterSection({ data, isPreview, styles, onUpdate, allSections }: { data: Record<string, unknown>; isPreview: boolean; styles?: SectionStyles; onUpdate?: (newData: Record<string, unknown>) => void; allSections?: Section[] }) {
+  const { messages } = useWebsiteLocale()
   const companyName = (data.companyName as string) || (data.brandName as string) || "Mijn bedrijf"
   const companyDescription = (data.companyDescription as string) || "Persoonlijke service en heldere afspraken."
   const columns = Array.isArray(data.columns) ? data.columns as FooterColumn[] : fallbackColumns
@@ -50,13 +52,13 @@ export function FooterSection({ data, isPreview, styles, onUpdate, allSections }
           </div>
 
           {hasCompanyInfo ? <div>
-            <h4 className="mb-4 text-sm font-semibold">Bedrijfsgegevens</h4>
+            <h4 className="mb-4 text-sm font-semibold">{messages.companyDetails}</h4>
             <ul className="space-y-2.5 text-sm opacity-80">
               {address ? <li className="flex items-start gap-2"><MapPin className="mt-0.5 h-4 w-4 shrink-0" /><EditableText data={data} path={["address"]} value={address} isPreview={isPreview} onUpdate={onUpdate} multiline /></li> : null}
               {phone ? <li><a href={`tel:${phone}`} className="flex items-center gap-2 hover:opacity-100"><Phone className="h-4 w-4 shrink-0" /><EditableText data={data} path={["phone"]} value={phone} isPreview={isPreview} onUpdate={onUpdate} /></a></li> : null}
               {email ? <li><a href={`mailto:${email}`} className="flex items-center gap-2 hover:opacity-100"><Mail className="h-4 w-4 shrink-0" /><EditableText data={data} path={["email"]} value={email} isPreview={isPreview} onUpdate={onUpdate} /></a></li> : null}
-              {registrationNumber ? <li className="flex items-center gap-2"><Building2 className="h-4 w-4 shrink-0" /><span>KvK: <EditableText data={data} path={["registrationNumber"]} value={registrationNumber} isPreview={isPreview} onUpdate={onUpdate} /></span></li> : null}
-              {vatNumber ? <li className="pl-6">BTW: <EditableText data={data} path={["vatNumber"]} value={vatNumber} isPreview={isPreview} onUpdate={onUpdate} /></li> : null}
+              {registrationNumber ? <li className="flex items-center gap-2"><Building2 className="h-4 w-4 shrink-0" /><span>{messages.registrationNumber}: <EditableText data={data} path={["registrationNumber"]} value={registrationNumber} isPreview={isPreview} onUpdate={onUpdate} /></span></li> : null}
+              {vatNumber ? <li className="pl-6">{messages.vatNumber}: <EditableText data={data} path={["vatNumber"]} value={vatNumber} isPreview={isPreview} onUpdate={onUpdate} /></li> : null}
             </ul>
           </div> : null}
 
@@ -72,7 +74,7 @@ export function FooterSection({ data, isPreview, styles, onUpdate, allSections }
 
         <div className="border-t border-white/20 pt-6">
           <div className="flex flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
-            <p className="text-sm opacity-75">&copy; {currentYear} <EditableText data={editableData} path={["companyName"]} value={companyName} isPreview={isPreview} onUpdate={onUpdate} />. Alle rechten voorbehouden.</p>
+            <p className="text-sm opacity-75">&copy; {currentYear} <EditableText data={editableData} path={["companyName"]} value={companyName} isPreview={isPreview} onUpdate={onUpdate} />. {messages.rightsReserved}</p>
             {showSocialLinks ? <div className="flex flex-wrap justify-center gap-4">{socialLinks.map((link, index) => <a key={`${link.href}-${index}`} href={link.href} className="text-sm opacity-75 transition hover:opacity-100"><EditableText data={editableData} path={["socialLinks", index, "label"]} value={link.label} isPreview={isPreview} onUpdate={onUpdate} /></a>)}</div> : null}
           </div>
         </div>

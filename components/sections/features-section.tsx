@@ -16,7 +16,7 @@ interface FeaturesSectionProps {
 
 export function FeaturesSection({ data, isPreview, styles, onUpdate }: FeaturesSectionProps) {
   const title = data.title as string
-  const features = (data.features as string[]) || []
+  const features = (data.features as Array<string | { id?: string; text?: string }>) || []
   const layout = getLayoutClasses(data.layout)
 
   const sectionStyle: React.CSSProperties = {
@@ -45,14 +45,14 @@ export function FeaturesSection({ data, isPreview, styles, onUpdate }: FeaturesS
         />
         <div className={`grid gap-3 sm:gap-4 ${layout.grid}`}>
           {features.map((feature, index) => (
-            <div key={index} className={`flex items-center gap-3 ${layout.layout === "card" || layout.layout === "showcase" ? "rounded-2xl border border-border bg-white/70 p-5 shadow-sm backdrop-blur" : ""}`}>
+            <div key={typeof feature === "string" ? `${feature}-${index}` : feature.id ?? index} className={`flex items-center gap-3 ${layout.layout === "card" || layout.layout === "showcase" ? "rounded-2xl border border-border bg-white/70 p-5 shadow-sm backdrop-blur" : ""}`}>
               <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-amber-700">
                 <Check className="h-5 w-5 text-amber-50" />
               </div>
               <EditableText
                 data={data}
-                path={["features", index]}
-                value={feature}
+                path={typeof feature === "string" ? ["features", index] : ["features", index, "text"]}
+                value={typeof feature === "string" ? feature : feature.text ?? ""}
                 isPreview={isPreview}
                 onUpdate={onUpdate}
                 className="text-amber-800"

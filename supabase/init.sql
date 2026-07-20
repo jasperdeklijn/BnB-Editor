@@ -20,6 +20,10 @@ create extension if not exists "pgcrypto";
 
 drop table if exists public.contact_requests cascade;
 drop table if exists public.audit_logs cascade;
+drop table if exists public.website_section_translations cascade;
+drop table if exists public.website_locales cascade;
+drop table if exists public.service_translations cascade;
+drop table if exists public.business_translations cascade;
 drop table if exists public.user_images cascade;
 drop table if exists public.subscriptions cascade;
 drop table if exists public.calendar_availability_windows cascade;
@@ -116,6 +120,29 @@ create table public.services (
   updated_at timestamptz not null default now()
 );
 
+create table public.business_translations (
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  locale text not null check (locale in ('nl-NL', 'en-GB', 'de-DE', 'fr-FR')),
+  name text not null default '',
+  description text not null default '',
+  opening_note text not null default '',
+  source_hash text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  primary key (business_id, locale)
+);
+
+create table public.service_translations (
+  service_id uuid not null references public.services(id) on delete cascade,
+  locale text not null check (locale in ('nl-NL', 'en-GB', 'de-DE', 'fr-FR')),
+  title text not null default '',
+  description text not null default '',
+  source_hash text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  primary key (service_id, locale)
+);
+
 create trigger set_businesses_updated_at
   before update on public.businesses
   for each row execute procedure public.set_updated_at();
@@ -146,6 +173,22 @@ create table public.websites (
   updated_at timestamptz not null default now()
 );
 
+create table public.website_locales (
+  id uuid primary key default gen_random_uuid(),
+  website_id uuid not null references public.websites(id) on delete cascade,
+  locale text not null check (locale in ('nl-NL', 'en-GB', 'de-DE', 'fr-FR')),
+  path_segment text not null check (path_segment ~ '^[a-z]{2}(?:-[a-z0-9]+)?$'),
+  display_name text not null check (char_length(btrim(display_name)) between 1 and 40),
+  is_default boolean not null default false,
+  is_enabled boolean not null default false,
+  seo jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint website_locales_default_enabled check (not is_default or is_enabled),
+  unique (website_id, locale),
+  unique (website_id, path_segment)
+);
+
 comment on column public.websites.theme_config is
   'Theme configuration including paletteId, fontPairId, spacing, and radius';
 
@@ -166,7 +209,23 @@ create table public.website_sections (
   content jsonb not null default '{}'::jsonb,
   styles jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  constraint website_sections_id_website_unique unique (id, website_id)
+);
+
+create table public.website_section_translations (
+  website_id uuid not null references public.websites(id) on delete cascade,
+  section_id uuid not null,
+  locale text not null,
+  values jsonb not null default '{}'::jsonb,
+  source_hash text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  primary key (section_id, locale),
+  foreign key (section_id, website_id)
+    references public.website_sections(id, website_id) on delete cascade,
+  foreign key (website_id, locale)
+    references public.website_locales(website_id, locale) on delete cascade
 );
 
 create table public.website_domains (
@@ -211,6 +270,7 @@ create table public.contact_requests (
   preferred_date text not null default '',
   budget text not null default '',
   message text not null default '',
+  locale text not null default 'nl-NL',
   payload jsonb not null default '{}'::jsonb,
   recipient_email text not null default '',
   source text not null default 'website_form',
@@ -548,6 +608,109 @@ create trigger set_website_domains_updated_at
   before update on public.website_domains
   for each row execute procedure public.set_updated_at();
 
+create trigger set_website_locales_updated_at
+  before update on public.website_locales
+  for each row execute procedure public.set_updated_at();
+
+create trigger set_website_section_translations_updated_at
+  before update on public.website_section_translations
+  for each row execute procedure public.set_updated_at();
+
+create trigger set_business_translations_updated_at
+  before update on public.business_translations
+  for each row execute procedure public.set_updated_at();
+
+create trigger set_service_translations_updated_at
+  before update on public.service_translations
+  for each row execute procedure public.set_updated_at();
+
+create or replace function public.ensure_default_website_locale()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.website_locales (
+    website_id, locale, path_segment, display_name, is_default, is_enabled
+  ) values (
+    new.id, 'nl-NL', 'nl', 'Nederlands', true, true
+  ) on conflict (website_id, locale) do nothing;
+  return new;
+end;
+$$;
+
+create trigger ensure_default_website_locale
+  after insert on public.websites
+  for each row execute procedure public.ensure_default_website_locale();
+
+create or replace function public.protect_default_website_locale()
+returns trigger
+language plpgsql
+as $$
+begin
+  if tg_op = 'DELETE' and old.is_default then
+    raise exception 'The default website locale cannot be removed or disabled';
+  end if;
+  if tg_op = 'UPDATE' and old.is_default and not new.is_enabled then
+    raise exception 'The default website locale cannot be removed or disabled';
+  end if;
+  if tg_op = 'UPDATE' and old.is_default and not new.is_default
+     and coalesce(current_setting('app.allow_default_locale_change', true), '') <> 'on' then
+    raise exception 'Use set_website_default_locale to change the default locale';
+  end if;
+  if tg_op = 'DELETE' then return old; end if;
+  return new;
+end;
+$$;
+
+create trigger protect_default_website_locale
+  before update or delete on public.website_locales
+  for each row execute procedure public.protect_default_website_locale();
+
+create or replace function public.set_website_default_locale(p_website_id uuid, p_locale text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  snapshot_locale_count integer;
+begin
+  if not exists (select 1 from public.websites where id = p_website_id and user_id = auth.uid()) then
+    raise exception 'Website not found';
+  end if;
+  if not exists (select 1 from public.website_locales where website_id = p_website_id and locale = p_locale) then
+    raise exception 'Locale not configured';
+  end if;
+  select case when jsonb_typeof(live_snapshot->'locales') = 'array' then jsonb_array_length(live_snapshot->'locales') else 0 end
+    into snapshot_locale_count from public.websites where id = p_website_id;
+  if snapshot_locale_count > 1 then
+    raise exception 'The default locale cannot change after multilingual publication';
+  end if;
+  if exists (select 1 from public.website_section_translations where website_id = p_website_id) then
+    raise exception 'Remove draft translations before changing the default locale';
+  end if;
+  if exists (
+    select 1 from public.websites w
+    join public.business_translations bt on bt.business_id = w.business_id
+    where w.id = p_website_id
+  ) or exists (
+    select 1 from public.websites w
+    join public.services s on s.business_id = w.business_id
+    join public.service_translations st on st.service_id = s.id
+    where w.id = p_website_id
+  ) then
+    raise exception 'Remove draft translations before changing the default locale';
+  end if;
+  perform set_config('app.allow_default_locale_change', 'on', true);
+  update public.website_locales set is_default = false where website_id = p_website_id and is_default;
+  update public.website_locales set is_default = true, is_enabled = true where website_id = p_website_id and locale = p_locale;
+end;
+$$;
+
+grant execute on function public.set_website_default_locale(uuid, text) to authenticated;
+
 -- ------------------------------------------------------------
 -- Draft version tracking and atomic live promotion
 -- ------------------------------------------------------------
@@ -645,6 +808,48 @@ create trigger bump_website_draft_from_services
 create trigger bump_website_draft_from_availability
   after insert or update or delete on public.calendar_availability_windows
   for each row execute procedure public.bump_related_website_draft_versions();
+
+create or replace function public.bump_multilingual_website_draft_versions()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  target_website_id uuid;
+  target_business_id uuid;
+  target_service_id uuid;
+begin
+  if tg_table_name in ('website_locales', 'website_section_translations') then
+    target_website_id = case when tg_op = 'DELETE' then old.website_id else new.website_id end;
+    update public.websites set draft_version = gen_random_uuid() where id = target_website_id;
+  elsif tg_table_name = 'business_translations' then
+    target_business_id = case when tg_op = 'DELETE' then old.business_id else new.business_id end;
+    update public.websites set draft_version = gen_random_uuid() where business_id = target_business_id;
+  elsif tg_table_name = 'service_translations' then
+    target_service_id = case when tg_op = 'DELETE' then old.service_id else new.service_id end;
+    select business_id into target_business_id from public.services where id = target_service_id;
+    update public.websites set draft_version = gen_random_uuid() where business_id = target_business_id;
+  end if;
+  return null;
+end;
+$$;
+
+create trigger bump_website_draft_from_locales
+  after insert or update or delete on public.website_locales
+  for each row execute procedure public.bump_multilingual_website_draft_versions();
+
+create trigger bump_website_draft_from_section_translations
+  after insert or update or delete on public.website_section_translations
+  for each row execute procedure public.bump_multilingual_website_draft_versions();
+
+create trigger bump_website_draft_from_business_translations
+  after insert or update or delete on public.business_translations
+  for each row execute procedure public.bump_multilingual_website_draft_versions();
+
+create trigger bump_website_draft_from_service_translations
+  after insert or update or delete on public.service_translations
+  for each row execute procedure public.bump_multilingual_website_draft_versions();
 
 create or replace function public.promote_website_live_snapshot(
   p_website_id uuid,
@@ -848,6 +1053,12 @@ create index websites_user_id_idx on public.websites (user_id);
 create index idx_websites_business_id on public.websites (business_id);
 create index idx_websites_custom_domain on public.websites (custom_domain)
   where custom_domain is not null;
+create unique index website_locales_one_default_idx
+  on public.website_locales (website_id)
+  where is_default;
+create index website_locales_enabled_idx on public.website_locales (website_id, is_enabled);
+create index website_section_translations_website_locale_idx
+  on public.website_section_translations (website_id, locale);
 create unique index website_domains_one_primary_idx
   on public.website_domains (website_id)
   where is_primary;
@@ -917,9 +1128,13 @@ alter table public.businesses enable row level security;
 alter table public.user_images enable row level security;
 alter table public.subscriptions enable row level security;
 alter table public.services enable row level security;
+alter table public.business_translations enable row level security;
+alter table public.service_translations enable row level security;
 alter table public.websites enable row level security;
+alter table public.website_locales enable row level security;
 alter table public.website_domains enable row level security;
 alter table public.website_sections enable row level security;
+alter table public.website_section_translations enable row level security;
 alter table public.section_transitions enable row level security;
 alter table public.contact_requests enable row level security;
 alter table public.calendar_entries enable row level security;
@@ -1126,6 +1341,53 @@ create policy "Users can delete their own website domains"
         and w.user_id = auth.uid()
     )
   );
+
+-- Website locales and translations
+create policy "Users can manage own website locales"
+  on public.website_locales for all to authenticated
+  using (exists (
+    select 1 from public.websites w
+    where w.id = website_locales.website_id and w.user_id = auth.uid()
+  ))
+  with check (exists (
+    select 1 from public.websites w
+    where w.id = website_locales.website_id and w.user_id = auth.uid()
+  ));
+
+create policy "Users can manage own website section translations"
+  on public.website_section_translations for all to authenticated
+  using (exists (
+    select 1 from public.websites w
+    where w.id = website_section_translations.website_id and w.user_id = auth.uid()
+  ))
+  with check (exists (
+    select 1 from public.websites w
+    where w.id = website_section_translations.website_id and w.user_id = auth.uid()
+  ));
+
+create policy "Users can manage own business translations"
+  on public.business_translations for all to authenticated
+  using (exists (
+    select 1 from public.businesses b
+    where b.id = business_translations.business_id and b.user_id = auth.uid()
+  ))
+  with check (exists (
+    select 1 from public.businesses b
+    where b.id = business_translations.business_id and b.user_id = auth.uid()
+  ));
+
+create policy "Users can manage own service translations"
+  on public.service_translations for all to authenticated
+  using (exists (
+    select 1 from public.services s
+    join public.businesses b on b.id = s.business_id
+    where s.id = service_translations.service_id and b.user_id = auth.uid()
+  ))
+  with check (exists (
+    select 1 from public.services s
+    join public.businesses b on b.id = s.business_id
+    where s.id = service_translations.service_id and b.user_id = auth.uid()
+  ));
 
 -- Website sections
 create policy "Anyone can view sections of published websites"

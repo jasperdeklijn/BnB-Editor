@@ -4,8 +4,10 @@ import { ImageIcon } from "lucide-react"
 import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
+import { useWebsiteLocale } from "@/lib/site-i18n/provider"
 
 export function AboutSection({ data, isPreview, styles, onUpdate }: { data: Record<string, unknown>; isPreview: boolean; styles?: SectionStyles; onUpdate?: (newData: Record<string, unknown>) => void }) {
+  const { messages } = useWebsiteLocale()
   const title = (data.title as string) || "Over ons"
   const description = (data.description as string) || "Vertel wie je bent, wat je doet en waarom klanten voor je kiezen."
   const images = Array.isArray(data.images) ? data.images.filter((image): image is string => typeof image === "string" && image.trim().length > 0) : []
@@ -27,7 +29,7 @@ export function AboutSection({ data, isPreview, styles, onUpdate }: { data: Reco
       ))}
     </div>
   ) : isPreview ? null : (
-    <div className="flex min-h-44 items-center justify-center rounded-2xl border border-dashed text-muted-foreground"><ImageIcon className="mr-2 h-5 w-5" />Sleep hier een afbeelding uit de beeldbank</div>
+    <div className="flex min-h-44 items-center justify-center rounded-2xl border border-dashed text-muted-foreground"><ImageIcon className="mr-2 h-5 w-5" />{messages.imagePlaceholder}</div>
   )
 
   return (

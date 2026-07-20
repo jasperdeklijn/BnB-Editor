@@ -12,7 +12,12 @@ const compiled = ts.transpileModule(source, {
 })
 const module = { exports: {} }
 Function("module", "exports", "require", compiled.outputText)(module, module.exports, (specifier) => {
-  throw new Error(`website-snapshot.ts must remain runtime dependency-free: ${specifier}`)
+  if (specifier.includes("i18n/locales")) return { DEFAULT_WEBSITE_LOCALE: "nl-NL" }
+  if (specifier.includes("i18n/section-translations")) return {
+    applySectionTranslation: (section) => section,
+    getSectionTranslationStatus: () => ({ status: "complete" }),
+  }
+  return {}
 })
 
 const { isWebsiteLiveSnapshot, WEBSITE_SNAPSHOT_VERSION } = module.exports
@@ -31,14 +36,16 @@ const validSnapshot = {
 }
 
 test("accepts complete versioned live snapshots", () => {
-  assert.equal(WEBSITE_SNAPSHOT_VERSION, 1)
+  assert.equal(WEBSITE_SNAPSHOT_VERSION, 2)
   assert.equal(isWebsiteLiveSnapshot(validSnapshot), true)
+  assert.equal(isWebsiteLiveSnapshot({ ...validSnapshot, version: 2, locales: [] }), true)
 })
 
 test("rejects missing, partial, and future snapshots", () => {
   assert.equal(isWebsiteLiveSnapshot(null), false)
   assert.equal(isWebsiteLiveSnapshot({ ...validSnapshot, sections: undefined }), false)
   assert.equal(isWebsiteLiveSnapshot({ ...validSnapshot, version: 2 }), false)
+  assert.equal(isWebsiteLiveSnapshot({ ...validSnapshot, version: 3, locales: [] }), false)
 })
 
 test("a copied live snapshot is isolated from later draft mutations", () => {

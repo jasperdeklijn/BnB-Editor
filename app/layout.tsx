@@ -5,6 +5,7 @@ import { Toaster } from 'sonner'
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { PLATFORM_BRAND_NAME } from "@/lib/platform"
 import { PLATFORM_BASE_URL } from "@/lib/platform"
+import { headers } from "next/headers"
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -39,13 +40,15 @@ export const metadata: Metadata = {
   ],
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const requestHeaders = await headers()
+  const websiteLocale = requestHeaders.get("x-website-locale") || "nl-NL"
   return (
-    <html lang="nl">
+    <html lang={websiteLocale}>
       <body className={`font-sans antialiased`}>
         {children}
         <Analytics />

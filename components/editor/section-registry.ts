@@ -31,6 +31,7 @@ import {
 } from "@/lib/business-naming"
 import { getDefaultLayoutForSection } from "@/lib/section-layouts"
 import { SectionCanvasSkeleton } from "@/components/editor/editor-loading-skeleton"
+import { SECTION_TRANSLATABLE_FIELDS, type TranslatableFieldDefinition } from "@/lib/i18n/section-translations"
 
 const AboutSection = dynamic<SectionRenderProps>(() => import("@/components/sections/about-section").then((module) => module.AboutSection), { loading: () => SectionCanvasSkeleton({}) })
 const ContactSection = dynamic<SectionRenderProps>(() => import("@/components/sections/contact-section").then((module) => module.ContactSection), { loading: () => SectionCanvasSkeleton({}) })
@@ -73,6 +74,7 @@ export interface SectionDefinition {
   /** Optional server-side data resolver. When present, page-loader calls this
    *  before rendering to enrich section.data with live database content. */
   resolveData?: SectionDataResolver
+  translatableFields?: TranslatableFieldDefinition[]
   Renderer: ComponentType<SectionRenderProps>
 }
 
@@ -193,6 +195,7 @@ export const sectionDefinitions = {
     category: "conversion",
     defaultData: () => ({
       title: SECTION_COPY.contact.defaultTitle,
+      subtitle: "Neem gerust contact met ons op. We helpen je graag verder.",
       address: "Straatnaam 1, 1234 AB Plaats",
       phone: "+31 6 00000000",
       email: DEFAULT_BUSINESS_EMAIL,
@@ -220,11 +223,12 @@ export const sectionDefinitions = {
       showLinks: true,
       columns: [
         {
+          id: "footer-column-1",
           title: "Snel naar",
           links: [
-            { label: "Over ons", href: "#over-ons" },
-            { label: "Diensten", href: "#diensten" },
-            { label: "Contact", href: "#contact" },
+            { id: "footer-link-1", label: "Over ons", href: "#over-ons" },
+            { id: "footer-link-2", label: "Diensten", href: "#diensten" },
+            { id: "footer-link-3", label: "Contact", href: "#contact" },
           ],
         },
       ],
@@ -243,7 +247,11 @@ export const sectionDefinitions = {
     defaultData: () => ({
       title: SECTION_COPY.testimonials.defaultTitle,
       subtitle: "Lees wat onze klanten over ons zeggen.",
-      items: [],
+      items: [
+        { id: "testimonial-1", name: "Anna de Vries", role: "Vaste klant", quote: "Uitstekende service! Ik ben heel tevreden met het resultaat en de persoonlijke aanpak.", rating: 5 },
+        { id: "testimonial-2", name: "Mark Janssen", role: "Ondernemer", quote: "Professioneel, betrouwbaar en snel. Ik zou het iedereen aanraden.", rating: 5 },
+        { id: "testimonial-3", name: "Sophie Bakker", role: "Particuliere klant", quote: "Fijn contact en top vakwerk. We zijn meer dan tevreden met het eindresultaat.", rating: 5 },
+      ],
       layout: getDefaultLayoutForSection("testimonials"),
     }),
     Renderer: TestimonialsSection,
@@ -257,7 +265,12 @@ export const sectionDefinitions = {
     defaultData: () => ({
       title: SECTION_COPY.faq.defaultTitle,
       subtitle: "Alles wat je wil weten.",
-      items: [],
+      items: [
+        { id: "faq-1", question: "Hoe snel kan ik terecht?", answer: "In de meeste gevallen kunnen we binnen 1-3 werkdagen bij u terecht. Neem contact op voor een exacte planning." },
+        { id: "faq-2", question: "Wat zijn de kosten?", answer: "De kosten zijn afhankelijk van het type dienst en de omvang van het werk. We brengen graag een vrijblijvende offerte uit." },
+        { id: "faq-3", question: "Werken jullie met garantie?", answer: "Ja, op al ons werk geven wij garantie. De exacte voorwaarden bespreken we bij de opdrachtbevestiging." },
+        { id: "faq-4", question: "Hoe kan ik een afspraak maken?", answer: "U kunt ons bellen, mailen of het contactformulier op deze pagina gebruiken. We reageren zo snel mogelijk." },
+      ],
       layout: getDefaultLayoutForSection("faq"),
     }),
     Renderer: FaqSection,
@@ -285,8 +298,8 @@ export const sectionDefinitions = {
       subtitle: "Transparante tarieven zonder verrassingen.",
       displayMode: "packages",
       plans: [
-        { id: "plan-1", name: "Basis", price: "€ 49", period: "per keer", description: "Ideaal om kennis te maken.", features: ["Persoonlijk advies", "Heldere afspraken"], showButton: true, ctaText: "Kies basis" },
-        { id: "plan-2", name: "Compleet", price: "€ 99", period: "per maand", description: "Voor klanten die meer ondersteuning willen.", features: ["Alles uit Basis", "Snellere service"], highlighted: true, showButton: true, ctaText: "Kies compleet" },
+        { id: "plan-1", name: "Basis", price: "€ 49", period: "per keer", description: "Ideaal om kennis te maken.", features: [{ id: "plan-1-feature-1", text: "Persoonlijk advies" }, { id: "plan-1-feature-2", text: "Heldere afspraken" }], showButton: true, ctaText: "Kies basis" },
+        { id: "plan-2", name: "Compleet", price: "€ 99", period: "per maand", description: "Voor klanten die meer ondersteuning willen.", features: [{ id: "plan-2-feature-1", text: "Alles uit Basis" }, { id: "plan-2-feature-2", text: "Snellere service" }], highlighted: true, showButton: true, ctaText: "Kies compleet" },
       ],
       tariffs: [
         { id: "tariff-1", name: "Kennismakingsgesprek", description: "Vrijblijvend gesprek van 30 minuten", price: "Gratis" },
@@ -362,6 +375,10 @@ export const sectionDefinitions = {
     Renderer: RequestFormSection,
   },
 } satisfies Record<SectionType, SectionDefinition>
+
+for (const definition of Object.values(sectionDefinitions) as SectionDefinition[]) {
+  definition.translatableFields = SECTION_TRANSLATABLE_FIELDS[definition.type]
+}
 
 export const selectableSectionDefinitions = (Object.values(sectionDefinitions) as SectionDefinition[]).filter(
   (definition) => definition.selectable !== false,

@@ -30,15 +30,23 @@ export async function GET() {
   const websiteIds = websites.map((website) => website.id)
 
   const emptyResult = { data: [], error: null }
-  const [servicesResult, entriesResult, availabilityResult, sectionsResult, transitionsResult] = await Promise.all([
+  const [servicesResult, entriesResult, availabilityResult, sectionsResult, transitionsResult, localesResult, sectionTranslationsResult, businessTranslationsResult] = await Promise.all([
     businessIds.length ? supabase.from("services").select("*").in("business_id", businessIds) : Promise.resolve(emptyResult),
     businessIds.length ? supabase.from("calendar_entries").select("*").in("business_id", businessIds) : Promise.resolve(emptyResult),
     businessIds.length ? supabase.from("calendar_availability_windows").select("*").in("business_id", businessIds) : Promise.resolve(emptyResult),
     websiteIds.length ? supabase.from("website_sections").select("*").in("website_id", websiteIds) : Promise.resolve(emptyResult),
     websiteIds.length ? supabase.from("section_transitions").select("*").in("website_id", websiteIds) : Promise.resolve(emptyResult),
+    websiteIds.length ? supabase.from("website_locales").select("*").in("website_id", websiteIds) : Promise.resolve(emptyResult),
+    websiteIds.length ? supabase.from("website_section_translations").select("*").in("website_id", websiteIds) : Promise.resolve(emptyResult),
+    businessIds.length ? supabase.from("business_translations").select("*").in("business_id", businessIds) : Promise.resolve(emptyResult),
   ])
 
-  const relatedError = servicesResult.error || entriesResult.error || availabilityResult.error || sectionsResult.error || transitionsResult.error
+  const serviceIds = (servicesResult.data ?? []).map((service) => service.id)
+  const serviceTranslationsResult = serviceIds.length
+    ? await supabase.from("service_translations").select("*").in("service_id", serviceIds)
+    : emptyResult
+
+  const relatedError = servicesResult.error || entriesResult.error || availabilityResult.error || sectionsResult.error || transitionsResult.error || localesResult.error || sectionTranslationsResult.error || businessTranslationsResult.error || serviceTranslationsResult.error
   if (relatedError) {
     console.warn("[account-export] Related export query failed", { message: relatedError.message })
     return Response.json({ error: "De gegevens konden niet volledig worden geëxporteerd." }, { status: 500 })
@@ -60,7 +68,7 @@ export async function GET() {
   }
 
   const payload = {
-    schemaVersion: "1.0",
+    schemaVersion: "2.0",
     exportedAt: new Date().toISOString(),
     account: {
       id: user.id,
@@ -73,6 +81,10 @@ export async function GET() {
     websites,
     websiteSections: sectionsResult.data ?? [],
     sectionTransitions: transitionsResult.data ?? [],
+    websiteLocales: localesResult.data ?? [],
+    websiteSectionTranslations: sectionTranslationsResult.data ?? [],
+    businessTranslations: businessTranslationsResult.data ?? [],
+    serviceTranslations: serviceTranslationsResult.data ?? [],
     services: servicesResult.data ?? [],
     contactRequests: requestResult.data ?? [],
     calendarEntries: entriesResult.data ?? [],

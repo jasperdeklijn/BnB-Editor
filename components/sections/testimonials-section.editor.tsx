@@ -7,9 +7,9 @@ import type { SectionEditorProps } from "@/components/editor/section-editor-type
 import { Type } from "lucide-react"
 
 const fallbackItems = [
-  { name: "Anna de Vries", role: "Vaste klant", quote: "Uitstekende service! Ik ben heel tevreden met het resultaat en de persoonlijke aanpak.", rating: 5 },
-  { name: "Mark Janssen", role: "Ondernemer", quote: "Professioneel, betrouwbaar en snel. Ik zou het iedereen aanraden.", rating: 5 },
-  { name: "Sophie Bakker", role: "Particuliere klant", quote: "Fijn contact en top vakwerk. We zijn meer dan tevreden met het eindresultaat.", rating: 5 },
+  { id: "testimonial-1", name: "Anna de Vries", role: "Vaste klant", quote: "Uitstekende service! Ik ben heel tevreden met het resultaat en de persoonlijke aanpak.", rating: 5 },
+  { id: "testimonial-2", name: "Mark Janssen", role: "Ondernemer", quote: "Professioneel, betrouwbaar en snel. Ik zou het iedereen aanraden.", rating: 5 },
+  { id: "testimonial-3", name: "Sophie Bakker", role: "Particuliere klant", quote: "Fijn contact en top vakwerk. We zijn meer dan tevreden met het eindresultaat.", rating: 5 },
 ]
 
 export function TestimonialsSectionEditor({ section, updateField, updateListItemField }: SectionEditorProps) {
@@ -41,7 +41,7 @@ export function TestimonialsSectionEditor({ section, updateField, updateListItem
         Recensies worden opgeslagen op deze sectie.
       </p>
       {items.map((item, index) => (
-        <div key={index} className="space-y-2 rounded-lg border border-border p-3">
+        <div key={item.id ?? index} className="space-y-2 rounded-lg border border-border p-3">
           <Input value={item.name || ""} onChange={(e) => updateListItemField("items", index, "name", e.target.value, fallbackItems)} placeholder="Naam" />
           <Input value={item.role || ""} onChange={(e) => updateListItemField("items", index, "role", e.target.value, fallbackItems)} placeholder="Rol" />
           <textarea

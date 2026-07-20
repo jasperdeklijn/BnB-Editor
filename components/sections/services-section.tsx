@@ -9,6 +9,8 @@ import type { SectionStyles } from "@/lib/types"
 import Link from "next/link"
 import { AlertCircle, Briefcase, CalendarDays, CheckCircle, ChevronLeft, ChevronRight, DollarSign, Send, Users, X } from "lucide-react"
 import { normalizeSectionLayout } from "@/lib/section-layouts"
+import { useWebsiteLocale } from "@/lib/site-i18n/provider"
+import type { SiteMessages } from "@/lib/site-i18n/messages"
 
 export type ServicesLayout = "grid" | "list" | "featured" | "magazine" | "minimal" | "carousel"
 
@@ -85,29 +87,29 @@ interface BookingFormState {
 
 // ---- Shared helpers ----
 
-function getBookingDefaults(isAccommodation: boolean) {
+function getBookingDefaults(isAccommodation: boolean, messages: SiteMessages) {
   return isAccommodation
     ? {
-        heading: "Boek je verblijf",
-        intro: "Kies een accommodatie en stuur een boekingsaanvraag met je gewenste check-in datum.",
-        buttonLabel: "Boeking aanvragen",
-        successText: "Boekingsaanvraag ontvangen. We nemen zo snel mogelijk contact met je op.",
-        helperText: "Je aanvraag wordt als voorlopige boeking in de planning gezet.",
+        heading: messages.bookStay,
+        intro: messages.bookStayIntro,
+        buttonLabel: messages.requestBooking,
+        successText: messages.bookingSuccess,
+        helperText: messages.bookingHelper,
         requestType: "booking_request" as BookingSpaceRequestType,
       }
     : {
-        heading: "Plan een afspraak",
-        intro: "Kies een dienst en stuur een aanvraag met je gewenste datum en tijd.",
-        buttonLabel: "Afspraak aanvragen",
-        successText: "Aanvraag ontvangen. We nemen zo snel mogelijk contact met je op.",
-        helperText: "Je aanvraag wordt als voorlopige afspraak in de planning gezet.",
+        heading: messages.planAppointment,
+        intro: messages.appointmentIntro,
+        buttonLabel: messages.requestAppointment,
+        successText: messages.appointmentSuccess,
+        helperText: messages.appointmentHelper,
         requestType: "appointment" as BookingSpaceRequestType,
       }
 }
 
-function getBookingSpaceSettings(data: Record<string, unknown>): BookingSpaceSettings {
+function getBookingSpaceSettings(data: Record<string, unknown>, messages: SiteMessages): BookingSpaceSettings {
   const isAccommodation = data.businessCategory === "bnb" || data.bookingSpaceRequestType === "booking_request"
-  const defaults = getBookingDefaults(isAccommodation)
+  const defaults = getBookingDefaults(isAccommodation, messages)
   const mode = data.bookingSpaceMode === "cta" || data.bookingSpaceMode === "calendar"
     ? data.bookingSpaceMode
     : "inline"
@@ -670,6 +672,7 @@ function ServiceInfoPopup({
   settings: ServiceInfoPopupSettings
   onClose: () => void
 }) {
+  const { messages } = useWebsiteLocale()
   const title = settings.title || service.name
   const intro = settings.intro || service.description
 
@@ -728,13 +731,13 @@ function ServiceInfoPopup({
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {settings.showPrice && service.price ? (
                 <div className="rounded-xl border border-border bg-muted/50 p-3">
-                  <p className="text-xs font-medium uppercase tracking-wide text-primary">Prijs</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-primary">{messages.price}</p>
                   <p className="mt-1 font-bold text-foreground">{service.price}</p>
                 </div>
               ) : null}
               {service.capacity ? (
                 <div className="rounded-xl border border-border bg-muted/50 p-3">
-                  <p className="text-xs font-medium uppercase tracking-wide text-primary">Capaciteit</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-primary">{messages.capacity}</p>
                   <p className="mt-1 font-bold text-foreground">{service.capacity} deelnemers</p>
                 </div>
               ) : null}
@@ -768,6 +771,7 @@ function ServicesBookingSpace({
   businessId,
   websiteId,
   recipientEmail,
+  locale,
   isPreview,
 }: {
   settings: BookingSpaceSettings
@@ -775,8 +779,10 @@ function ServicesBookingSpace({
   businessId?: string | null
   websiteId?: string | null
   recipientEmail?: string
+  locale?: string
   isPreview?: boolean
 }) {
+  const { messages } = useWebsiteLocale()
   const [form, setForm] = useState<BookingFormState>({
     name: "",
     email: "",
@@ -829,13 +835,14 @@ function ServicesBookingSpace({
           businessId,
           websiteId,
           recipientEmail,
+          locale,
           source: "services_booking_space",
         }),
       })
-      const json = await res.json()
+      await res.json()
 
       if (!res.ok) {
-        setErrorMsg(json.error || "Aanvraag kon niet worden verzonden.")
+        setErrorMsg(messages.error)
         setStatus("error")
         return
       }
@@ -851,7 +858,7 @@ function ServicesBookingSpace({
         company: "",
       })
     } catch {
-      setErrorMsg("Aanvraag kon niet worden verzonden. Probeer het opnieuw.")
+      setErrorMsg(messages.error)
       setStatus("error")
     }
   }
@@ -865,7 +872,7 @@ function ServicesBookingSpace({
           <div className="min-w-0">
             <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-primary">
               <CalendarDays className="h-3.5 w-3.5" />
-              {isAccommodation ? "Boeking" : "Afspraak"}
+              {isAccommodation ? messages.booking : messages.appointment}
             </div>
             <h3 className="text-xl font-bold text-foreground">{settings.heading}</h3>
             <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">{settings.intro}</p>
@@ -894,7 +901,7 @@ function ServicesBookingSpace({
         <div className="bg-secondary p-5 sm:p-6">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-primary">
             <CalendarDays className="h-3.5 w-3.5" />
-            {isAccommodation ? "Boekingsaanvraag" : "Afspraakaanvraag"}
+            {isAccommodation ? messages.bookingRequest : messages.appointmentRequest}
           </div>
           <h3 className="text-2xl font-bold text-foreground">{settings.heading}</h3>
           <p className="mt-3 text-sm leading-7 text-muted-foreground">{settings.intro}</p>
@@ -910,7 +917,7 @@ function ServicesBookingSpace({
             <div className="flex min-h-64 flex-col items-center justify-center gap-3 text-center">
               <CheckCircle className="h-10 w-10 text-primary" />
               <p className="font-semibold text-foreground">
-                {isPreview ? "Preview geslaagd — er is geen boeking of afspraak aangemaakt." : settings.successText}
+                {isPreview ? messages.previewNoSubmission : settings.successText}
               </p>
             </div>
           ) : (
@@ -929,7 +936,7 @@ function ServicesBookingSpace({
               {services.length > 0 ? (
                 <div className="space-y-1.5">
                   <label htmlFor="services-booking-service" className="text-sm font-medium text-foreground">
-                    {isAccommodation ? "Accommodatie" : "Dienst"}
+                    {isAccommodation ? messages.accommodation : messages.service}
                   </label>
                   <select
                     id="services-booking-service"
@@ -950,7 +957,7 @@ function ServicesBookingSpace({
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label htmlFor="services-booking-name" className="text-sm font-medium text-foreground">
-                    Naam *
+                    {messages.name} *
                   </label>
                   <input
                     id="services-booking-name"
@@ -963,7 +970,7 @@ function ServicesBookingSpace({
                 </div>
                 <div className="space-y-1.5">
                   <label htmlFor="services-booking-email" className="text-sm font-medium text-foreground">
-                    E-mail *
+                    {messages.email} *
                   </label>
                   <input
                     id="services-booking-email"
@@ -980,7 +987,7 @@ function ServicesBookingSpace({
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label htmlFor="services-booking-phone" className="text-sm font-medium text-foreground">
-                    Telefoon
+                    {messages.phone}
                   </label>
                   <input
                     id="services-booking-phone"
@@ -993,7 +1000,7 @@ function ServicesBookingSpace({
                 </div>
                 <div className="space-y-1.5">
                   <label htmlFor="services-booking-date" className="text-sm font-medium text-foreground">
-                    {isAccommodation ? "Check-in datum" : "Gewenste datum"} *
+                    {isAccommodation ? messages.checkInDate : messages.date} *
                   </label>
                   <input
                     id="services-booking-date"
@@ -1008,7 +1015,7 @@ function ServicesBookingSpace({
 
               <div className="space-y-1.5">
                 <label htmlFor="services-booking-message" className="text-sm font-medium text-foreground">
-                  Bericht
+                  {messages.message}
                 </label>
                 <textarea
                   id="services-booking-message"
@@ -1036,7 +1043,7 @@ function ServicesBookingSpace({
                 {status === "loading" ? (
                   <span className="flex items-center gap-2">
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    Verzenden...
+                    {messages.submitting}
                   </span>
                 ) : (
                   <span className="flex items-center gap-2">
@@ -1056,20 +1063,21 @@ function ServicesBookingSpace({
 // ---- Main section component ----
 
 export function ServicesSection({ data, styles, isPreview, onUpdate }: ServicesSectionProps) {
-  const title = (data.title as string) || "Ons aanbod"
+  const { messages } = useWebsiteLocale()
+  const title = (data.title as string) || messages.offering
   const layout = (servicesLayoutMap[normalizeSectionLayout(data.layout)] ?? "grid") as ServicesLayout
   const serviceIds = data.serviceIds as string[] | undefined
-  const bookingSettings = getBookingSpaceSettings(data)
+  const bookingSettings = getBookingSpaceSettings(data, messages)
   const popupSettings: ServiceInfoPopupSettings = {
-    buttonLabel: (data.moreInfoButtonLabel as string) || "Meer info",
-    eyebrow: (data.infoPopupEyebrow as string) || "Aanbod",
+    buttonLabel: (data.moreInfoButtonLabel as string) || messages.moreInfo,
+    eyebrow: (data.infoPopupEyebrow as string) || messages.offering,
     title: (data.infoPopupTitle as string) || "",
     intro: (data.infoPopupIntro as string) || "",
-    ctaLabel: (data.infoPopupCtaLabel as string) || "Aanvragen",
+    ctaLabel: (data.infoPopupCtaLabel as string) || messages.request,
     ctaHref: (data.infoPopupCtaHref as string) || "",
     helperText:
       (data.infoPopupHelperText as string) ||
-      "Neem contact op voor beschikbaarheid, planning en mogelijkheden.",
+      messages.availabilityHelp,
     showImage: (data.infoPopupShowImage as boolean | undefined) ?? true,
     showPrice: (data.infoPopupShowPrice as boolean | undefined) ?? true,
   }
@@ -1336,6 +1344,7 @@ export function ServicesSection({ data, styles, isPreview, onUpdate }: ServicesS
           businessId={businessId}
           websiteId={websiteId}
           recipientEmail={recipientEmail}
+          locale={data.activeLocale as string | undefined}
           isPreview={isPreview}
         />
         {activeService ? (

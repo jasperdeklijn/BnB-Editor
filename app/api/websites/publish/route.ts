@@ -31,6 +31,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null)
   const websiteId = typeof body?.websiteId === "string" ? body.websiteId : null
   const published = typeof body?.published === "boolean" ? body.published : true
+  const acknowledgeStaleTranslations = body?.acknowledgeStaleTranslations === true
 
   if (!websiteId) {
     return NextResponse.json({ error: "Missing websiteId" }, { status: 400 })
@@ -83,6 +84,8 @@ export async function POST(request: Request) {
       ownerEmail: user.email,
     })
   } catch (snapshotError) {
+    const snapshotMessage = snapshotError instanceof Error ? snapshotError.message : ""
+    const translationsIncomplete = snapshotMessage.includes("vertaling") || snapshotMessage.includes("Vertaling")
     await logAuditEvent({
       userId: user.id,
       websiteId,
@@ -100,8 +103,27 @@ export async function POST(request: Request) {
             ? `De live versie kon niet worden opgebouwd: ${snapshotError.message}`
             : "De live versie kon niet worden opgebouwd.",
       },
-      { status: 500 },
+      { status: translationsIncomplete ? 422 : 500 },
     )
+  }
+
+  if (liveSnapshot.translationWarnings?.length && !acknowledgeStaleTranslations) {
+    await logAuditEvent({
+      userId: user.id,
+      websiteId,
+      action: "website.publish_denied",
+      metadata: {
+        reason: "stale_translations_not_acknowledged",
+        warningCount: liveSnapshot.translationWarnings.length,
+        locales: [...new Set(liveSnapshot.translationWarnings.map((warning) => warning.locale))],
+      },
+      request,
+    })
+    return NextResponse.json({
+      error: "Een of meer vertalingen zijn verouderd. Controleer de lijst en bevestig dat je toch wilt publiceren.",
+      code: "STALE_TRANSLATIONS",
+      warnings: liveSnapshot.translationWarnings,
+    }, { status: 409 })
   }
 
   const entitlementResult = inspectWebsiteEntitlements(currentPlan, {

@@ -11,20 +11,29 @@ import { WebsiteThemeProvider } from "@/components/themes/website-theme-provider
 import { applyThemeDefaultsToSections, type ThemeConfig } from "@/lib/themes"
 import { buildLocalBusinessJsonLd } from "@/lib/business/structured-data"
 import { isWebsiteLiveSnapshot, type WebsiteLiveSnapshot } from "@/lib/website-snapshot"
+import { DEFAULT_WEBSITE_LOCALE, type SupportedWebsiteLocale } from "@/lib/i18n/locales"
+import { applySectionTranslation, materializeNavigationTranslationSource } from "@/lib/i18n/section-translations"
+import { getSiteMessages } from "@/lib/site-i18n/messages"
+import { WebsiteLocaleProvider } from "@/lib/site-i18n/provider"
+import { isMultilingualWebsitesEnabled } from "@/lib/i18n/feature"
 
 interface PageLoaderOptions {
   slug: string
   isPreview?: boolean
   /** Optional pre-built client. Pass an admin client to bypass RLS (for preview). */
   client?: SupabaseClient
+  locale?: string
 }
 
 export async function loadPublicWebsitePage({
   slug,
   isPreview = true,
   client,
+  locale,
 }: PageLoaderOptions) {
   const supabase = client ?? (await createClient())
+  const multilingualEnabled = isMultilingualWebsitesEnabled()
+  if (locale && !multilingualEnabled) return notFound()
 
   const { data: website, error } = isPreview
     ? await websiteSections.fetchWebsiteWithSectionsBySlug(slug, supabase)
@@ -45,6 +54,13 @@ export async function loadPublicWebsitePage({
 
   // A published flag without a complete snapshot is not a renderable live revision.
   if (!isPreview && !liveSnapshot) return notFound()
+
+  const liveLocale = liveSnapshot
+    ? (locale
+        ? liveSnapshot.locales?.find((entry) => entry.pathSegment === locale && !entry.isDefault)
+        : liveSnapshot.locales?.find((entry) => entry.isDefault))
+    : null
+  if (liveSnapshot?.locales?.length && !liveLocale) return notFound()
 
   const adminSupabase = await createAdminClient()
 
@@ -75,7 +91,8 @@ export async function loadPublicWebsitePage({
         .maybeSingle()
     : { data: null }
 
-  const businessDetails = liveSnapshot?.business ?? currentBusinessDetails
+  let businessDetails = liveLocale?.business ?? liveSnapshot?.business ?? currentBusinessDetails
+  let previewServiceTranslations = new Map<string, { title: string; description: string }>()
 
   const draftSections: Section[] = (website.website_sections || []).map(
     (r: any): Section => ({
@@ -93,14 +110,14 @@ export async function loadPublicWebsitePage({
     })
   )
 
-  const sections: Section[] = liveSnapshot
-    ? liveSnapshot.sections.map((section) => {
+  let sections: Section[] = liveSnapshot
+    ? (liveLocale?.sections ?? liveSnapshot.sections).map((section) => {
         const selectedServiceIds = Array.isArray(section.data.serviceIds)
           ? section.data.serviceIds.filter((id): id is string => typeof id === "string")
           : []
         const snapshotServices = selectedServiceIds.length > 0
-          ? liveSnapshot.services.filter((service) => selectedServiceIds.includes(service.id))
-          : liveSnapshot.services
+          ? (liveLocale?.services ?? liveSnapshot.services).filter((service) => selectedServiceIds.includes(service.id))
+          : (liveLocale?.services ?? liveSnapshot.services)
 
         return {
           ...section,
@@ -119,18 +136,114 @@ export async function loadPublicWebsitePage({
       })
     : draftSections
 
+  let activeLocale: SupportedWebsiteLocale = liveLocale?.locale ?? DEFAULT_WEBSITE_LOCALE
+  let localeOptions = liveSnapshot?.locales?.filter((entry) => multilingualEnabled || entry.isDefault).map((entry) => ({
+    locale: entry.locale,
+    pathSegment: entry.pathSegment,
+    displayName: entry.displayName,
+    isDefault: entry.isDefault,
+  })) ?? []
+
+  if (!liveSnapshot) {
+    const { data: configuredLocales } = await adminSupabase
+      .from("website_locales")
+      .select("locale, path_segment, display_name, is_default, is_enabled")
+      .eq("website_id", website.id)
+      .or("is_default.eq.true,is_enabled.eq.true")
+      .order("is_default", { ascending: false })
+
+    localeOptions = (configuredLocales ?? []).map((entry) => ({
+      locale: entry.locale as SupportedWebsiteLocale,
+      pathSegment: entry.path_segment,
+      displayName: entry.display_name,
+      isDefault: entry.is_default,
+    }))
+    if (localeOptions.length === 0) {
+      localeOptions = [{ locale: DEFAULT_WEBSITE_LOCALE, pathSegment: "nl", displayName: "Nederlands", isDefault: true }]
+    }
+    const previewLocale = locale
+      ? localeOptions.find((entry) => entry.pathSegment === locale && !entry.isDefault)
+      : localeOptions.find((entry) => entry.isDefault)
+    if (!previewLocale) return notFound()
+    activeLocale = previewLocale.locale
+
+    if (!previewLocale.isDefault) {
+      const { data: translations } = await adminSupabase
+        .from("website_section_translations")
+        .select("section_id, values")
+        .eq("website_id", website.id)
+        .eq("locale", previewLocale.locale)
+      const translationsBySection = new Map(
+        (translations ?? []).map((entry) => [entry.section_id, entry.values as Record<string, unknown>]),
+      )
+      const translationSources = sections.map((section) => materializeNavigationTranslationSource(section, sections))
+      sections = translationSources.map((section) => applySectionTranslation(section, translationsBySection.get(section.id)))
+      if (websiteBusinessId) {
+        const [{ data: businessTranslation }, { data: serviceRows }] = await Promise.all([
+          adminSupabase.from("business_translations").select("name, description, opening_note").eq("business_id", websiteBusinessId).eq("locale", previewLocale.locale).maybeSingle(),
+          adminSupabase.from("services").select("id").eq("business_id", websiteBusinessId),
+        ])
+        if (businessTranslation && businessDetails) {
+          businessDetails = { ...businessDetails, ...businessTranslation }
+        }
+        if ((serviceRows ?? []).length > 0) {
+          const { data } = await adminSupabase
+            .from("service_translations")
+            .select("service_id, title, description")
+            .in("service_id", (serviceRows ?? []).map((service) => service.id))
+            .eq("locale", previewLocale.locale)
+          previewServiceTranslations = new Map((data ?? []).map((entry) => [entry.service_id, {
+            title: entry.title,
+            description: entry.description,
+          }]))
+        }
+      }
+    }
+  }
+
   // Resolve live data for all sections that need it.
   // The admin client is used so RLS does not block reads for published sites.
   // Preview shares the same resolver path — resolvers are safe for both modes.
-  const resolvedSections = liveSnapshot
+  let resolvedSections = liveSnapshot
     ? sections
     : await resolveAllSections(sections, {
         businessId: websiteBusinessId,
         supabase: adminSupabase,
         isPreview,
       })
+  if (previewServiceTranslations.size > 0) {
+    resolvedSections = resolvedSections.map((section) => section.type !== "services" ? section : ({
+      ...section,
+      data: {
+        ...section.data,
+        services: Array.isArray(section.data.services)
+          ? section.data.services.map((service: Record<string, unknown>) => ({
+              ...service,
+              ...(previewServiceTranslations.get(String(service.id)) ?? {}),
+            }))
+          : section.data.services,
+      },
+    }))
+  }
   const themeConfig = liveSnapshot?.website.themeConfig ?? (website.theme_config as ThemeConfig | null) ?? null
   sections.splice(0, sections.length, ...applyThemeDefaultsToSections(resolvedSections, themeConfig))
+
+  const localeLinks = localeOptions.map((entry) => ({
+    locale: entry.locale,
+    label: entry.displayName,
+    href: entry.isDefault ? "/" : `/${entry.pathSegment}`,
+    isActive: entry.locale === activeLocale,
+  }))
+  const messages = getSiteMessages(activeLocale)
+  sections.splice(0, sections.length, ...sections.map((section) => ({
+    ...section,
+    data: {
+      ...section.data,
+      activeLocale,
+      localeLinks,
+      siteMessages: messages,
+    },
+  })))
 
   // Fetch transitions from section_transitions table
   const { data: transitionRows } = liveSnapshot
@@ -272,21 +385,23 @@ export async function loadPublicWebsitePage({
 
   const jsonLd = buildLocalBusinessJsonLd(
     businessDetails as Parameters<typeof buildLocalBusinessJsonLd>[0],
-    liveSnapshot?.website.customDomain
+    `${liveSnapshot?.website.customDomain
       ? `https://${liveSnapshot.website.customDomain}`
-      : `/site/${liveSnapshot?.website.slug ?? website.slug}`,
+      : `/site/${liveSnapshot?.website.slug ?? website.slug}`}${liveLocale && !liveLocale.isDefault ? `/${liveLocale.pathSegment}` : locale ? `/${locale}` : ""}`,
   )
 
   return (
-    <WebsiteThemeProvider initialConfig={themeConfig ?? undefined}>
-      <div className="website-theme-scope min-h-screen bg-background">{nodes}</div>
-      {jsonLd && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-      )}
-    </WebsiteThemeProvider>
+    <WebsiteLocaleProvider locale={activeLocale}>
+      <WebsiteThemeProvider initialConfig={themeConfig ?? undefined}>
+        <div lang={activeLocale} className="website-theme-scope min-h-screen bg-background">{nodes}</div>
+        {jsonLd && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          />
+        )}
+      </WebsiteThemeProvider>
+    </WebsiteLocaleProvider>
   )
 }
 

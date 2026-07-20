@@ -34,6 +34,31 @@ Shared `styles` fields:
 
 The inspector exposes all four style fields for most sections. `nav` and `footer` expose only `backgroundColor` and `textColor`.
 
+## Multilingual content contract
+
+The source language remains in `website_sections.content`. Non-default languages store text-only overlays in `website_section_translations.values`; section structure, targets, media, prices, layout, styles, toggles, ids, and service selections stay shared. `components/editor/section-registry.ts` exposes the descriptor for every type through `translatableFields`, backed by `lib/i18n/section-translations.ts`.
+
+| Section | Translatable fields |
+| --- | --- |
+| `nav` | `brandName`, navigation link labels |
+| `hero` | `title`, `subtitle`, `ctaText` |
+| `about` | `title`, `description` |
+| `services` | section, popup, and booking-area headings/button/help copy; service titles/descriptions use `service_translations` |
+| `gallery` | `title`, `subtitle` |
+| `features` | `title`, feature text |
+| `contact` | `title`; form system labels use the locale message catalog |
+| `footer` | brand/company text, copyright, column titles, link labels |
+| `testimonials` | `title`, `subtitle`, item name/role/quote |
+| `faq` | `title`, `subtitle`, item question/answer |
+| `opening_hours` | `title`, `subtitle`, note, custom day labels; weekdays/status labels use the locale catalog |
+| `pricing` | `title`, `subtitle`, package/tariff text and CTA labels; numeric prices stay shared |
+| `team` | `title`, `subtitle`, member name/title/bio |
+| `map` | `title`; address and coordinates stay shared |
+| `cta` | `title`, `subtitle`, CTA labels; targets stay shared |
+| `request_form` | `title`, `subtitle`; labels, status, and errors use the locale message catalog |
+
+Repeating visitor content carries stable item ids. Translation overlays are matched by those ids and merged back into source order, so reordering does not reassign copy. Unknown fields and behavioral keys nested into translation JSON are ignored. Business name/description/opening note use `business_translations`; service title/description use `service_translations`.
+
 ## Components
 
 ### `nav`

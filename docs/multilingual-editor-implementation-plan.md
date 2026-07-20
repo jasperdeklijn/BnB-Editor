@@ -2,16 +2,32 @@
 
 Plan date: 2026-07-19
 
+## Implementation status
+
+Implemented in the repository on 2026-07-20: locale/translation schema and RLS, source-hash and safe overlay utilities, stable repeater ids, editor language management and translation panels, localized business/service copy, visitor message catalogs, locale-aware preview/live routes and middleware, navigation language selector, snapshot v2 publication with missing/stale preflight, localized SEO/structured data/document language, request-locale capture, template checkpoint/restore, section duplication, account export, feature flag, and focused automated tests.
+
+Verified locally with `npx tsc --noEmit`, focused ESLint, snapshot tests, and multilingual unit/source-contract tests. Applying the migration to a real Supabase project, authenticated cross-account RLS tests, live form/email checks, and desktop/mobile browser smoke tests remain release-environment checks; they are intentionally not claimed as completed by source verification.
+
 ## Goal
 
 Let a website owner maintain one website in multiple languages without duplicating the website, sections, styling, domains, or publication flow.
 
 This plan covers languages for customer websites built in the editor. Translating the FlexPagina dashboard/editor interface itself is a separate project because it has different users, copy, routing, and release risks.
 
+## Current state
+
+- A visual, non-functional language placeholder is already present in `components/editor/editor-client.tsx`.
+- On desktop it sits in the second editor header, directly after the website selector. That header must remain one row and use the full available width.
+- On mobile it appears as `Taal van website` above the `Website beheren` disclosure.
+- The placeholder currently shows `Nederlands` and `Binnenkort`; it does not read or save language data.
+- No locale tables, translation editor, localized public routing, multilingual snapshot, or visitor language selector exist yet.
+
+The implementation should replace this placeholder in place rather than add a third language control elsewhere in the editor.
+
 ## Product decisions
 
 - Use the website's current content as the default/source language.
-- Store locale codes as validated BCP 47 tags, for example `nl-NL`, `en-GB`, and `de-DE`.
+- Store locale codes as validated BCP 47 tags, for example `nl-NL`, `en-GB`, `de-DE`, and `fr-FR`.
 - Keep one shared section tree. Section order, type, layout, styling, images, links, and feature configuration remain shared between languages.
 - Store translated text as overlays for each non-default language; do not clone complete websites or complete section records.
 - Serve the default language at `/` and translated languages at `/{locale}`, for example `/en` and `/de`.
@@ -50,14 +66,19 @@ The default language can be changed before the first multilingual publication. C
 
 One overlay per section and non-default locale:
 
+- `website_id uuid not null references websites(id) on delete cascade`
 - `section_id uuid not null references website_sections(id) on delete cascade`
 - `locale text not null`
 - `values jsonb not null default '{}'`
 - `source_hash text not null`
 - `created_at`, `updated_at`
 - Primary key on `(section_id, locale)`
+- Foreign-key/integrity rule ensuring the section belongs to `website_id`
+- Foreign-key/integrity rule ensuring `(website_id, locale)` is configured in `website_locales`
 
 `values` contains only fields declared translatable by that section type. `source_hash` records the source-language text used when the translation was last saved, so the editor can mark translations as stale after source copy changes.
+
+Keeping `website_id` in this table makes ownership RLS, locale validation, export, and completeness queries explicit instead of depending on client-supplied joins.
 
 ### Shared business data translations
 
@@ -115,6 +136,28 @@ It should cover:
 
 Provide a `WebsiteLocaleProvider` to section renderers. Avoid translating the entire FlexPagina application as part of this work.
 
+## Owner language selector and editing flow
+
+The editor control is for the website owner and replaces the existing `Nederlands / Binnenkort` placeholder.
+
+- Desktop: keep it directly after the website selector in the second editor header. The control may collapse to a globe icon at narrower desktop widths, but it must not make the header wrap.
+- Mobile: keep it as the full-width `Taal van website` row above `Website beheren`.
+- The closed control shows the current editing language's native name and its status when relevant.
+- The menu lists configured languages, marks the default language, and shows `Compleet`, `Ontbreekt`, or `Verouderd` status.
+- The menu footer contains `Talen beheren`, which opens website language settings for add, enable, disable, URL segment, and removal actions.
+- Selecting a language changes the editor content and preview language only; it does not publish or change the visitor's live default language.
+- Shared controls such as layout, styling, images, section order, services, and links remain available but are visibly marked as applying to all languages.
+- The owner can always return to the source language, and unsaved translation changes use the existing navbar save-state contract.
+
+## Translation completeness and fallback
+
+- The default language uses the existing source content and is always complete by definition after normal field validation.
+- While editing a disabled language, missing translated fields may temporarily display source-language fallback text with a visible editor-only warning.
+- A language cannot be enabled or published while any visitor-visible translatable field is missing. This prevents mixed-language public pages.
+- A stale translation can remain enabled, but publishing requires a clear acknowledgement listing the affected sections.
+- Customer-site system messages must have a complete reviewed catalog for every offered locale; they never fall back to Dutch on a published translated page.
+- Disabled languages and draft-only translations are never publicly routable.
+
 ## Visitor language selector
 
 The editor language selector is for the website owner. Published websites need a separate selector so visitors can choose their language.
@@ -122,11 +165,56 @@ The editor language selector is for the website owner. Published websites need a
 - Show the visitor selector only when at least two languages are enabled and published.
 - On desktop, place it at the right side of the generated website navigation, after the section links. Show a globe, the current language's native name, and a dropdown indicator.
 - On mobile, place a compact globe/current-language button immediately before the hamburger menu. Opening it shows the available languages in a dropdown or bottom sheet.
-- List languages by their native names, for example `Nederlands`, `English`, and `Deutsch`; do not use flags as the only label.
+- List languages by their native names, for example `Nederlands`, `English`, `Deutsch`, and `Français`; do not use flags as the only label.
 - Mark the active language and make the control keyboard- and screen-reader-accessible.
 - Selecting a language navigates to that language's canonical URL and retains the current section anchor where possible.
 - The same selector is visible in owner preview so every language can be checked before publishing.
 - If only one language is published, do not show an inactive or empty language control to visitors.
+
+## Implementation map
+
+### Database and security
+
+- `supabase/migrations/<timestamp>_multilingual_websites.sql`
+- `supabase/init.sql`
+- RLS policies, locale/default constraints, indexes, `updated_at` triggers, and draft-version triggers
+
+### Locale types and translation utilities
+
+- `lib/types.ts`
+- New `lib/i18n/locales.ts` for supported locale definitions and path validation
+- New `lib/i18n/section-translations.ts` for extraction, validation, overlays, hashes, and completeness
+- New `lib/site-i18n/` for visitor-facing system message catalogs and provider
+
+### Editor
+
+- `components/editor/editor-client.tsx` for the existing desktop/mobile selector placeholder
+- `components/editor/section-registry.ts` for translatable-field descriptors
+- `components/editor/section-editor.tsx` and co-located section editors for translated inputs
+- New language-management UI under `/editor`, opened through `Talen beheren`
+- Existing editor save-state context for saving, saved, and error feedback
+
+### Public rendering and routing
+
+- `components/sections/nav-section.tsx` for the visitor language selector
+- `components/page-loader.tsx` for locale resolution and translated section composition
+- `lib/supabase/middleware.ts` for preserving locale paths on subdomains and custom domains
+- `app/site/[slug]/[[...path]]/page.tsx` and `app/preview/[slug]/[[...path]]/page.tsx` as the locale-capable routes replacing the exact-only pages
+
+### Publishing, SEO, and requests
+
+- `lib/website-snapshot.ts` for snapshot version 2
+- `app/api/websites/publish/route.ts` for multilingual preflight and atomic promotion
+- `lib/seo/metadata.ts` and public page metadata for localized canonical and alternate URLs
+- `app/api/requests/route.ts` for validated submission locale recording
+
+### Lifecycle coverage
+
+- `app/api/templates/apply/route.ts`
+- `app/api/templates/restore/route.ts`
+- `app/api/account/export/route.ts`
+- Website/section duplication and account deletion paths
+- `tests/website-snapshot.test.mjs` plus new locale, translation, RLS, routing, and publication tests
 
 ## Tasks
 
@@ -163,7 +251,7 @@ Done when:
 
 - [ ] Add a `Talen` area under website settings.
 - [ ] Let an owner add a supported language, choose its URL segment and display label, enable/disable it, set it as default before the first multilingual publication, and remove it with confirmation.
-- [ ] Add a language selector to the editor header on desktop and mobile.
+- [ ] Replace the existing non-functional desktop/mobile language placeholder with the owner selector defined above.
 - [ ] Keep shared layout/style controls clearly marked as applying to all languages.
 - [ ] Show `Compleet`, `Ontbreekt`, and `Verouderd` status per language and section.
 - [ ] Offer `Kopieer brontekst` and `Maak velden leeg`; do not silently translate content.
@@ -173,7 +261,7 @@ Done when:
 
 - Switching editor language changes only editable translated text, not section order or styling.
 - Mobile users can select a language, translate a section, preview it, and return to the source language without losing changes.
-- Removing or changing the default language has a clear impact summary and cannot orphan content.
+- The default language cannot be removed; changing it after the first multilingual publication is rejected until a redirect/migration workflow exists.
 
 ### 4. Make all content sources locale-aware
 
@@ -186,7 +274,7 @@ Done when:
 Done when:
 
 - A translated page contains no accidental Dutch UI copy for all supported sections and request flows.
-- Missing optional translation text follows the documented fallback rule and is visibly flagged in the editor.
+- Disabled draft languages may show visibly flagged source fallback in the editor, but enabled public languages contain no missing visitor-facing translations.
 - A form submission records which language the visitor used.
 
 ### 5. Add locale-aware preview and public routing

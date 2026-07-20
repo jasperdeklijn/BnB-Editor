@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from './server'
+import { isMissingRelationError } from './errors'
 
 export type WebsiteSection = {
   id: string
@@ -237,7 +238,32 @@ export async function duplicateSection(sectionId: string, supabase?: SupabaseCli
   }
 
   const { data, error } = await client.from('website_sections').insert(payload).select().single()
-  return { data, error }
+  if (error || !data) return { data, error }
+
+  const { data: translations, error: translationReadError } = await client
+    .from('website_section_translations')
+    .select('locale, values, source_hash')
+    .eq('section_id', sectionId)
+  if (translationReadError && !isMissingRelationError(translationReadError)) {
+    await client.from('website_sections').delete().eq('id', data.id)
+    return { data: null, error: translationReadError }
+  }
+  if (translations?.length) {
+    const { error: translationInsertError } = await client.from('website_section_translations').insert(
+      translations.map((translation) => ({
+        website_id: websiteId,
+        section_id: data.id,
+        locale: translation.locale,
+        values: translation.values,
+        source_hash: translation.source_hash,
+      })),
+    )
+    if (translationInsertError) {
+      await client.from('website_sections').delete().eq('id', data.id)
+      return { data: null, error: translationInsertError }
+    }
+  }
+  return { data, error: null }
 }
 
 // Transition management functions

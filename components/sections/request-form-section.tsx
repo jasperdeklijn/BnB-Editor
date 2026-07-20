@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
+import { useWebsiteLocale } from "@/lib/site-i18n/provider"
 
 export type RequestType = "contact" | "appointment" | "quote" | "whatsapp"
 
@@ -59,7 +60,7 @@ interface FormState {
 type FieldKey = keyof FormState
 type VisibleFieldKey = Exclude<FieldKey, "company">
 
-function useRequestForm(recipientEmail?: string, requestType: RequestType = "contact", businessId?: string, websiteId?: string, isPreview = false) {
+function useRequestForm(recipientEmail?: string, requestType: RequestType = "contact", businessId?: string, websiteId?: string, locale?: string, isPreview = false, localizedError = "Er is een fout opgetreden.") {
   const [form, setForm] = useState<FormState>({
     name: "",
     email: "",
@@ -88,18 +89,18 @@ function useRequestForm(recipientEmail?: string, requestType: RequestType = "con
       const res = await fetch("/api/requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, recipientEmail, requestType, businessId, websiteId, source: "request_form_section" }),
+        body: JSON.stringify({ ...form, recipientEmail, requestType, businessId, websiteId, locale, source: "request_form_section" }),
       })
-      const json = await res.json()
+      await res.json()
       if (!res.ok) {
-        setErrorMsg(json.error || "Er is een fout opgetreden.")
+        setErrorMsg(localizedError)
         setStatus("error")
       } else {
         setStatus("success")
         setForm({ name: "", email: "", phone: "", date: "", service: "", budget: "", message: "", company: "" })
       }
     } catch {
-      setErrorMsg("Er is een fout opgetreden. Probeer het opnieuw.")
+      setErrorMsg(localizedError)
       setStatus("error")
     }
   }
@@ -107,31 +108,25 @@ function useRequestForm(recipientEmail?: string, requestType: RequestType = "con
   return { form, update, submit, status, errorMsg }
 }
 
-const FIELD_LABELS: Record<VisibleFieldKey, string> = {
-  name: "Naam",
-  email: "E-mailadres",
-  phone: "Telefoonnummer",
-  date: "Gewenste datum",
-  service: "Gewenste dienst",
-  budget: "Budget",
-  message: "Bericht",
-}
-
 export function RequestFormSection({ data, styles, isPreview, onUpdate }: RequestFormSectionProps) {
+  const { messages } = useWebsiteLocale()
   const title = (data.title as string) || "Stuur een aanvraag"
   const subtitle = data.subtitle as string | undefined
   const requestType = ((data.requestType as RequestType) || "contact") satisfies RequestType
   const recipientEmail = data.recipientEmail as string | undefined
   const businessId = data.businessId as string | undefined
   const websiteId = data.websiteId as string | undefined
+  const locale = data.activeLocale as string | undefined
   const whatsappNumber = data.whatsappNumber as string | undefined
   const fields = (data.fields as VisibleFieldKey[]) || ["name", "email", "phone", "message"]
   const layout = getLayoutClasses(data.layout)
 
   const config = REQUEST_TYPE_CONFIG[requestType] ?? REQUEST_TYPE_CONFIG.contact
+  const localizedLabel = requestType === "appointment" ? messages.planAppointment : requestType === "quote" ? messages.quoteRequest : requestType === "whatsapp" ? messages.whatsappUs : messages.sendMessage
+  const localizedButton = requestType === "appointment" ? messages.requestAppointment : requestType === "quote" ? messages.quoteRequest : requestType === "whatsapp" ? messages.openWhatsApp : messages.submit
   const Icon = config.icon
 
-  const { form, update, submit, status, errorMsg } = useRequestForm(recipientEmail, requestType, businessId, websiteId, isPreview)
+  const { form, update, submit, status, errorMsg } = useRequestForm(recipientEmail, requestType, businessId, websiteId, locale, isPreview, messages.error)
 
   const sectionStyle: React.CSSProperties = {
     backgroundColor: styles?.backgroundColor,
@@ -171,7 +166,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
             <PhoneIcon className="h-5 w-5" />
             App ons op WhatsApp
           </a>
-          {isPreview ? <p className="mt-3 text-xs font-medium text-amber-800">Preview: WhatsApp wordt niet geopend.</p> : null}
+          {isPreview ? <p className="mt-3 text-xs font-medium text-amber-800">{messages.whatsappPreview}</p> : null}
           {number && (
             <p className="mt-4 text-sm text-muted-foreground">
               Nummer: +{number}
@@ -191,7 +186,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
         <div className={`mb-10 ${layout.layout === "split" || layout.layout === "showcase" ? "md:mb-0 md:text-left" : layout.heading}`}>
           <div className="mb-3 inline-flex items-center justify-center gap-2 rounded-full bg-amber-100 px-4 py-2 text-sm font-medium text-amber-800">
             <Icon className="h-4 w-4" />
-            {config.label}
+            {localizedLabel}
           </div>
           <EditableText
             as="h2"
@@ -212,9 +207,9 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
           {status === "success" ? (
             <div className="flex flex-col items-center gap-3 py-10 text-center">
               <CheckCircle className="h-10 w-10 text-green-500" />
-              <p className="font-semibold">{isPreview ? "Preview geslaagd" : "Aanvraag ontvangen!"}</p>
+              <p className="font-semibold">{isPreview ? messages.previewSuccess : messages.requestReceived}</p>
               <p className="text-sm text-muted-foreground">
-                {isPreview ? "Er is geen aanvraag opgeslagen of verzonden." : "We nemen zo snel mogelijk contact met je op."}
+                {isPreview ? messages.previewNoRequest : messages.contactSoon}
               </p>
             </div>
           ) : (
@@ -233,7 +228,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
               <div className="grid gap-4 sm:grid-cols-2">
                 {fields.includes("name") && (
                   <div className="space-y-1.5">
-                    <Label htmlFor="req-name">{FIELD_LABELS.name} *</Label>
+                    <Label htmlFor="req-name">{messages.name} *</Label>
                     <Input
                       id="req-name"
                       placeholder="Jouw naam"
@@ -246,7 +241,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
                 )}
                 {fields.includes("email") && (
                   <div className="space-y-1.5">
-                    <Label htmlFor="req-email">{FIELD_LABELS.email} *</Label>
+                    <Label htmlFor="req-email">{messages.email} *</Label>
                     <Input
                       id="req-email"
                       type="email"
@@ -262,7 +257,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
 
               {fields.includes("phone") && (
                 <div className="space-y-1.5">
-                  <Label htmlFor="req-phone">{FIELD_LABELS.phone}</Label>
+                  <Label htmlFor="req-phone">{messages.phone}</Label>
                   <Input
                     id="req-phone"
                     type="tel"
@@ -276,7 +271,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
 
               {fields.includes("service") && (
                 <div className="space-y-1.5">
-                  <Label htmlFor="req-service">{FIELD_LABELS.service}</Label>
+                  <Label htmlFor="req-service">{messages.service}</Label>
                   <Input
                     id="req-service"
                     placeholder="Welke dienst wil je aanvragen?"
@@ -289,7 +284,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
 
               {fields.includes("date") && (
                 <div className="space-y-1.5">
-                  <Label htmlFor="req-date">{FIELD_LABELS.date}</Label>
+                  <Label htmlFor="req-date">{messages.date}</Label>
                   <Input
                     id="req-date"
                     type="date"
@@ -301,7 +296,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
 
               {fields.includes("budget") && (
                 <div className="space-y-1.5">
-                  <Label htmlFor="req-budget">{FIELD_LABELS.budget}</Label>
+                  <Label htmlFor="req-budget">{messages.budget}</Label>
                   <Input
                     id="req-budget"
                     placeholder="bijv. € 500 – € 1000"
@@ -315,7 +310,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
               {fields.includes("message") && (
                 <div className="space-y-1.5">
                   <Label htmlFor="req-message">
-                    {FIELD_LABELS.message} {requestType === "contact" ? "*" : ""}
+                    {messages.message} {requestType === "contact" ? "*" : ""}
                   </Label>
                   <Textarea
                     id="req-message"
@@ -345,7 +340,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
                 ) : (
                   <span className="flex items-center gap-2">
                     <Send className="h-4 w-4" />
-                    {config.buttonLabel}
+                    {localizedButton}
                   </span>
                 )}
               </Button>

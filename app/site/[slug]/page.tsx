@@ -20,17 +20,24 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const snapshot = website?.published && isWebsiteLiveSnapshot(website.live_snapshot)
     ? website.live_snapshot
     : null
-  const business = snapshot?.business
-  const seo = snapshot?.website.seo as WebsiteSeoFields | null | undefined
+  const defaultLocale = snapshot?.locales?.find((entry) => entry.isDefault)
+  const business = defaultLocale?.business ?? snapshot?.business
+  const seo = (defaultLocale?.seo ?? snapshot?.website.seo) as WebsiteSeoFields | null | undefined
   const title = getSeoTitle(seo, business?.name || snapshot?.website.title || "Website")
   const description = getSeoDescription(seo, business?.description)
   const customDomain = snapshot?.website.customDomain
   const url = customDomain ? `https://${customDomain}` : `/site/${snapshot?.website.slug ?? website?.slug ?? slug}`
+  const languageAlternates = snapshot?.locales
+    ? Object.fromEntries([
+        ...snapshot.locales.map((entry) => [entry.locale, `${url}${entry.isDefault ? "" : `/${entry.pathSegment}`}`]),
+        ["x-default", url],
+      ])
+    : undefined
 
   return {
     title,
     description,
-    alternates: { canonical: seo?.canonicalUrl || url },
+    alternates: { canonical: seo?.canonicalUrl || url, languages: languageAlternates },
     openGraph: {
       title,
       description,

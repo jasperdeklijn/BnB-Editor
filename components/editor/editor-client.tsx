@@ -5,12 +5,38 @@ import { SectionsSelector } from "./sections-selector"
 import { EditorCanvas } from "./editor-canvas"
 import { EditorInspector } from "./editor-inspector"
 import { EditorWorkspaceSkeleton } from "./editor-loading-skeleton"
+import { SectionTranslationPanel } from "./section-translation-panel"
+import { WebsiteLanguageControl } from "./website-language-control"
 import { useEditorLayout } from "./editor-layout-context"
 import type { Section, SectionStyles, SectionType, Transition } from "@/lib/types"
 import { DEFAULT_SITE_TITLE } from "@/lib/business-naming"
 import { getDefaultSectionData as getRegistryDefaultSectionData, getSectionDefinition } from "@/components/editor/section-registry"
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
+import {
+  addWebsiteLocale,
+  listSectionTranslations,
+  listWebsiteLocales,
+  removeWebsiteLocale,
+  saveSectionTranslation,
+  setWebsiteDefaultLocale,
+  updateWebsiteLocale,
+} from "@/lib/supabase/websiteLocales"
+import { isMissingRelationError } from "@/lib/supabase/errors"
+import {
+  DEFAULT_WEBSITE_LOCALE,
+  getSupportedLocale,
+  type SupportedWebsiteLocale,
+  type WebsiteLocale,
+} from "@/lib/i18n/locales"
+import {
+  applySectionTranslation,
+  getSectionSourceHash,
+  getSectionTranslationStatus,
+  getTranslationSourceHash,
+  materializeNavigationTranslationSource,
+} from "@/lib/i18n/section-translations"
+import { isMultilingualWebsitesEnabled } from "@/lib/i18n/feature"
 import { useRouter, useSearchParams } from "next/navigation"
 import { AlertCircle, CheckCircle2, ChevronDown, ExternalLink, Eye, Globe2, Layers, LayoutTemplate, Loader2, Paintbrush, Plus, Sparkles } from "lucide-react"
 import type { ThemeConfig } from "@/lib/themes"
@@ -46,6 +72,43 @@ type WebsiteSummary = {
   created_at?: string
 }
 
+async function loadSharedLocaleStatuses(businessId: string | null, locales: WebsiteLocale[]) {
+  const statuses: Partial<Record<SupportedWebsiteLocale, "complete" | "missing" | "stale">> = {}
+  for (const locale of locales) if (locale.is_default) statuses[locale.locale] = "complete"
+  if (!businessId) return statuses
+  const client = createClient()
+  const [{ data: business }, { data: services }, { data: businessTranslations }] = await Promise.all([
+    client.from("businesses").select("name, description, opening_note").eq("id", businessId).maybeSingle(),
+    client.from("services").select("id, title, description").eq("business_id", businessId),
+    client.from("business_translations").select("locale, name, description, opening_note, source_hash").eq("business_id", businessId),
+  ])
+  const serviceRows = services ?? []
+  const { data: serviceTranslations } = serviceRows.length
+    ? await client.from("service_translations").select("service_id, locale, title, description, source_hash").in("service_id", serviceRows.map((service) => service.id))
+    : { data: [] }
+  for (const locale of locales.filter((entry) => !entry.is_default)) {
+    const businessTranslation = businessTranslations?.find((entry) => entry.locale === locale.locale)
+    const missingBusiness = business && (["name", "description", "opening_note"] as const).some(
+      (field) => Boolean(business[field]?.trim()) && !businessTranslation?.[field]?.trim(),
+    )
+    const missingService = serviceRows.some((service) => {
+      const translation = serviceTranslations?.find((entry) => entry.locale === locale.locale && entry.service_id === service.id)
+      return (Boolean(service.title?.trim()) && !translation?.title?.trim()) || (Boolean(service.description?.trim()) && !translation?.description?.trim())
+    })
+    if (missingBusiness || missingService) {
+      statuses[locale.locale] = "missing"
+      continue
+    }
+    const staleBusiness = Boolean(business && businessTranslation?.source_hash && businessTranslation.source_hash !== getTranslationSourceHash(business))
+    const staleService = serviceRows.some((service) => {
+      const translation = serviceTranslations?.find((entry) => entry.locale === locale.locale && entry.service_id === service.id)
+      return Boolean(translation?.source_hash && translation.source_hash !== getTranslationSourceHash({ title: service.title, description: service.description }))
+    })
+    statuses[locale.locale] = staleBusiness || staleService ? "stale" : "complete"
+  }
+  return statuses
+}
+
 const getDefaultSectionData = (type: SectionType, businessId?: string | null): Record<string, unknown> =>
   getRegistryDefaultSectionData(type, { businessId })
 
@@ -67,6 +130,14 @@ async function logSectionAudit(action: "section.added" | "section.deleted", webs
       sectionId: section.id,
       sectionType: section.type,
     }),
+  }).catch(() => null)
+}
+
+async function logLanguageAudit(action: "language.added" | "language.updated" | "language.removed" | "language.enabled" | "language.disabled", websiteId: string, locale: SupportedWebsiteLocale) {
+  await fetch("/api/audit/language", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action, websiteId, locale }),
   }).catch(() => null)
 }
 
@@ -99,6 +170,12 @@ export function EditorClient({
   enforcementMode,
 }: EditorClientProps) {
   const [sections, setSections] = useState<Section[]>([])
+  const [websiteLocales, setWebsiteLocales] = useState<WebsiteLocale[]>([])
+  const [activeLocale, setActiveLocale] = useState<SupportedWebsiteLocale>(DEFAULT_WEBSITE_LOCALE)
+  const [sectionTranslations, setSectionTranslations] = useState(
+    () => new Map<string, { values: Record<string, unknown>; sourceHash: string }>(),
+  )
+  const [sharedLocaleStatuses, setSharedLocaleStatuses] = useState<Partial<Record<SupportedWebsiteLocale, "complete" | "missing" | "stale">>>({})
   const [transitions, setTransitions] = useState<Transition[]>([])
   const [websites, setWebsites] = useState<WebsiteSummary[]>([])
   const [websiteId, setWebsiteId] = useState<string | null>(null)
@@ -116,12 +193,14 @@ export function EditorClient({
   const [isMobileDraggingImage, setIsMobileDraggingImage] = useState(false)
   const [publishPreflightOpen, setPublishPreflightOpen] = useState(false)
   const [publishConfirmationOpen, setPublishConfirmationOpen] = useState(false)
+  const [staleTranslationWarnings, setStaleTranslationWarnings] = useState<Array<{ locale: string; source: string; label: string }>>([])
   const [serverPublishViolations, setServerPublishViolations] = useState<EntitlementViolation[]>([])
   const [isLoadingWebsite, setIsLoadingWebsite] = useState(true)
   const router = useRouter()
   const searchParams = useSearchParams()
   const { isPreview, isSaving, setIsSaving, saveState, setSaveState, device, setOnPublish, setOnLogout } = useEditorLayout()
   const requestedWebsiteId = searchParams.get("websiteId")
+  const multilingualEnabled = isMultilingualWebsitesEnabled()
   const previousEntitlementViolationKeys = useRef<Set<string>>(new Set())
   const sectionsRef = useRef<Section[]>([])
   const sectionSaveTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
@@ -269,13 +348,40 @@ export function EditorClient({
       setThemeConfig((website.theme_config as ThemeConfig | null) ?? null)
       setSelectedSectionId(null)
 
-      const [sectionResult, transitionResult] = await Promise.all([
+      const [sectionResult, transitionResult, localeResult, translationResult] = await Promise.all([
         websiteSections.listSections(website.id, supabase),
         supabase
           .from("section_transitions")
           .select("from_section_id, to_section_id, transition")
           .eq("website_id", website.id),
+        listWebsiteLocales(supabase, website.id),
+        listSectionTranslations(supabase, website.id),
       ])
+      const fallbackLocale: WebsiteLocale = {
+        website_id: website.id,
+        locale: DEFAULT_WEBSITE_LOCALE,
+        path_segment: "nl",
+        display_name: "Nederlands",
+        is_default: true,
+        is_enabled: true,
+        seo: {},
+      }
+      const loadedLocales = localeResult.data.length > 0 ? localeResult.data : [fallbackLocale]
+      setWebsiteLocales(loadedLocales)
+      setSharedLocaleStatuses(await loadSharedLocaleStatuses(website.business_id ?? initialBusinessId, loadedLocales))
+      setActiveLocale(loadedLocales.find((locale) => locale.is_default)?.locale ?? DEFAULT_WEBSITE_LOCALE)
+      setSectionTranslations(new Map(
+        translationResult.data.map((translation) => [
+          `${translation.section_id}:${translation.locale}`,
+          { values: translation.values, sourceHash: translation.source_hash },
+        ]),
+      ))
+      if (localeResult.error && !isMissingRelationError(localeResult.error)) {
+        console.error("Failed to load website locales:", localeResult.error)
+      }
+      if (translationResult.error && !isMissingRelationError(translationResult.error)) {
+        console.error("Failed to load section translations:", translationResult.error)
+      }
       const { data: rows, error: listErr } = sectionResult
       if (listErr) {
         console.error('Failed to load sections:', listErr)
@@ -317,6 +423,18 @@ export function EditorClient({
       if (newWebsite && !error) {
         await logWebsiteCreated(newWebsite.id)
         setWebsiteId(newWebsite.id)
+        setWebsiteLocales([{
+          website_id: newWebsite.id,
+          locale: DEFAULT_WEBSITE_LOCALE,
+          path_segment: "nl",
+          display_name: "Nederlands",
+          is_default: true,
+          is_enabled: true,
+          seo: {},
+        }])
+        setActiveLocale(DEFAULT_WEBSITE_LOCALE)
+        setSectionTranslations(new Map())
+        setSharedLocaleStatuses({ [DEFAULT_WEBSITE_LOCALE]: "complete" })
         setTitle(newWebsite.title || DEFAULT_SITE_TITLE)
         setThemeConfig(null)
         setWebsites([
@@ -629,20 +747,25 @@ export function EditorClient({
     sectionSaveTimeoutsRef.current.set(id, timeout)
   }, [setIsSaving, setSaveState, updateLocalSections, websiteId])
 
-  const performPublish = useCallback(async () => {
+  const performPublish = useCallback(async (acknowledgeStaleTranslations = false) => {
     if (!websiteId) return
     setIsSaving(true)
     setWebsiteMessage(null)
     const response = await fetch("/api/websites/publish", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ websiteId }),
+      body: JSON.stringify({ websiteId, acknowledgeStaleTranslations }),
     })
     const result = await response.json().catch(() => ({}))
     setIsSaving(false)
-    setPublishConfirmationOpen(false)
 
     if (!response.ok) {
+      if (result?.code === "STALE_TRANSLATIONS" && Array.isArray(result.warnings)) {
+        setStaleTranslationWarnings(result.warnings)
+        setSaveState("saved")
+        return
+      }
+      setPublishConfirmationOpen(false)
       setSaveState("error")
       setWebsiteMessage({
         type: "error",
@@ -652,6 +775,9 @@ export function EditorClient({
       })
       return
     }
+
+    setPublishConfirmationOpen(false)
+    setStaleTranslationWarnings([])
 
     setWebsites((current) =>
       current.map((website) => ({
@@ -669,6 +795,7 @@ export function EditorClient({
       setPublishPreflightOpen(true)
       return
     }
+    setStaleTranslationWarnings([])
     setPublishConfirmationOpen(true)
   }, [canPublishDraft, websiteId])
 
@@ -852,6 +979,202 @@ export function EditorClient({
     }
   }
 
+  const defaultWebsiteLocale = websiteLocales.find((locale) => locale.is_default)
+  const activeWebsiteLocale = websiteLocales.find((locale) => locale.locale === activeLocale) ?? defaultWebsiteLocale
+  const isTranslationMode = Boolean(activeWebsiteLocale && !activeWebsiteLocale.is_default)
+  const translationSourceSections = useMemo(
+    () => sections.map((section) => materializeNavigationTranslationSource(section, sections)),
+    [sections],
+  )
+  const displayedSections = useMemo(
+    () => isTranslationMode
+      ? translationSourceSections.map((section) => applySectionTranslation(
+          section,
+          sectionTranslations.get(`${section.id}:${activeLocale}`)?.values,
+        ))
+      : sections,
+    [activeLocale, isTranslationMode, sectionTranslations, sections, translationSourceSections],
+  )
+  const localeStatuses = useMemo(() => Object.fromEntries(websiteLocales.map((locale) => {
+    if (locale.is_default) return [locale.locale, "complete"]
+    const statuses = translationSourceSections.map((section) => {
+      const translation = sectionTranslations.get(`${section.id}:${locale.locale}`)
+      return getSectionTranslationStatus(section, translation?.values, translation?.sourceHash).status
+    })
+    const sharedStatus = sharedLocaleStatuses[locale.locale]
+    return [locale.locale, statuses.includes("missing") || sharedStatus === "missing" ? "missing" : statuses.includes("stale") || sharedStatus === "stale" ? "stale" : "complete"]
+  })) as Partial<Record<SupportedWebsiteLocale, "complete" | "missing" | "stale">>, [sectionTranslations, sharedLocaleStatuses, translationSourceSections, websiteLocales])
+
+  const handleLocaleChange = (locale: SupportedWebsiteLocale) => {
+    setActiveLocale(locale)
+    setMobilePanel("canvas")
+    if (!selectedSectionId && sections.length > 0) setSelectedSectionId(sections[0].id)
+  }
+
+  const handleAddLocale = async (locale: SupportedWebsiteLocale) => {
+    if (!websiteId) return
+    setSaveState("saving")
+    const result = await addWebsiteLocale(createClient(), websiteId, locale)
+    if (result.error || !result.data) {
+      setSaveState("error")
+      toast.error(result.error?.message || "Taal toevoegen is niet gelukt.")
+      return
+    }
+    setWebsiteLocales((current) => [...current, result.data as WebsiteLocale])
+    setSharedLocaleStatuses((current) => ({ ...current, [locale]: "missing" }))
+    setActiveLocale(locale)
+    setSaveState("saved")
+    void logLanguageAudit("language.added", websiteId, locale)
+    toast.success(`${getSupportedLocale(locale)?.displayName ?? locale} is toegevoegd.`)
+  }
+
+  const handleToggleLocale = async (locale: SupportedWebsiteLocale, enabled: boolean) => {
+    if (!websiteId) return
+    setSaveState("saving")
+    if (enabled) {
+      const incomplete = translationSourceSections.filter((section) => {
+        const translation = sectionTranslations.get(`${section.id}:${locale}`)
+        return getSectionTranslationStatus(section, translation?.values, translation?.sourceHash).status === "missing"
+      })
+      if (incomplete.length > 0) {
+        setSaveState("saved")
+        toast.error(`Vertaal eerst alle ${incomplete.length} ontbrekende ${incomplete.length === 1 ? "sectie" : "secties"}.`)
+        throw new Error("Translations incomplete")
+      }
+      if (businessId) {
+        const client = createClient()
+        const [{ data: business }, { data: services }, { data: businessTranslation }] = await Promise.all([
+          client.from("businesses").select("name, description, opening_note").eq("id", businessId).maybeSingle(),
+          client.from("services").select("id, title, description").eq("business_id", businessId),
+          client.from("business_translations").select("name, description, opening_note").eq("business_id", businessId).eq("locale", locale).maybeSingle(),
+        ])
+        const missingBusiness = business && (["name", "description", "opening_note"] as const).some(
+          (field) => Boolean(business[field]?.trim()) && !businessTranslation?.[field]?.trim(),
+        )
+        const serviceRows = services ?? []
+        const { data: serviceTranslations } = serviceRows.length
+          ? await client.from("service_translations").select("service_id, title, description").in("service_id", serviceRows.map((service) => service.id)).eq("locale", locale)
+          : { data: [] }
+        const byService = new Map((serviceTranslations ?? []).map((translation) => [translation.service_id, translation]))
+        const missingServices = serviceRows.filter((service) => {
+          const translation = byService.get(service.id)
+          return (Boolean(service.title?.trim()) && !translation?.title?.trim()) ||
+            (Boolean(service.description?.trim()) && !translation?.description?.trim())
+        })
+        if (missingBusiness || missingServices.length > 0) {
+          setSaveState("saved")
+          toast.error("Vertaal eerst de bedrijfs- en dienstteksten in het vertaalpaneel.")
+          throw new Error("Shared translations incomplete")
+        }
+      }
+    }
+    const result = await updateWebsiteLocale(createClient(), websiteId, locale, { is_enabled: enabled })
+    if (result.error) {
+      setSaveState("error")
+      toast.error(result.error.message)
+      throw result.error
+    }
+    setWebsiteLocales((current) => current.map((entry) => entry.locale === locale ? { ...entry, is_enabled: enabled } : entry))
+    setSaveState("saved")
+    void logLanguageAudit(enabled ? "language.enabled" : "language.disabled", websiteId, locale)
+    toast.success(enabled ? "Taal wordt bij de volgende publicatie zichtbaar." : "Taal is uitgeschakeld.")
+  }
+
+  const handleRemoveLocale = async (locale: SupportedWebsiteLocale) => {
+    if (!websiteId) return
+    setSaveState("saving")
+    const result = await removeWebsiteLocale(createClient(), websiteId, locale)
+    if (result.error) {
+      setSaveState("error")
+      toast.error(result.error.message)
+      throw result.error
+    }
+    setWebsiteLocales((current) => current.filter((entry) => entry.locale !== locale))
+    setSharedLocaleStatuses((current) => {
+      const next = { ...current }
+      delete next[locale]
+      return next
+    })
+    setSectionTranslations((current) => new Map(
+      [...current.entries()].filter(([key]) => !key.endsWith(`:${locale}`)),
+    ))
+    if (activeLocale === locale) setActiveLocale(defaultWebsiteLocale?.locale ?? DEFAULT_WEBSITE_LOCALE)
+    setSaveState("saved")
+    void logLanguageAudit("language.removed", websiteId, locale)
+    toast.success("Taal en vertalingen zijn verwijderd.")
+  }
+
+  const handleUpdateLocale = async (
+    locale: SupportedWebsiteLocale,
+    updates: { display_name?: string; path_segment?: string; seo?: Record<string, unknown> },
+  ) => {
+    if (!websiteId) return
+    setSaveState("saving")
+    const result = await updateWebsiteLocale(createClient(), websiteId, locale, updates)
+    if (result.error || !result.data) {
+      setSaveState("error")
+      toast.error(result.error?.message || "Taalinstellingen opslaan is mislukt.")
+      throw result.error
+    }
+    setWebsiteLocales((current) => current.map((entry) => entry.locale === locale ? result.data as WebsiteLocale : entry))
+    setSaveState("saved")
+    void logLanguageAudit("language.updated", websiteId, locale)
+    toast.success("Taalinstellingen opgeslagen.")
+  }
+
+  const handleSetDefaultLocale = async (locale: SupportedWebsiteLocale) => {
+    if (!websiteId) return
+    setSaveState("saving")
+    const { error } = await setWebsiteDefaultLocale(createClient(), websiteId, locale)
+    if (error) {
+      setSaveState("error")
+      toast.error(error.message)
+      throw error
+    }
+    setWebsiteLocales((current) => current.map((entry) => ({
+      ...entry,
+      is_default: entry.locale === locale,
+      is_enabled: entry.locale === locale ? true : entry.is_enabled,
+    })))
+    setSharedLocaleStatuses(Object.fromEntries(websiteLocales.map((entry) => [
+      entry.locale,
+      entry.locale === locale ? "complete" : "missing",
+    ])) as Partial<Record<SupportedWebsiteLocale, "complete" | "missing" | "stale">>)
+    setActiveLocale(locale)
+    setSaveState("saved")
+    void logLanguageAudit("language.updated", websiteId, locale)
+    toast.success("Standaardtaal gewijzigd.")
+  }
+
+  const refreshSharedLocaleStatuses = async () => {
+    setSharedLocaleStatuses(await loadSharedLocaleStatuses(businessId, websiteLocales))
+  }
+
+  const handleSaveTranslation = async (section: Section, values: Record<string, unknown>) => {
+    if (!websiteId || !activeWebsiteLocale || activeWebsiteLocale.is_default) return
+    setIsSaving(true)
+    const sourceHash = getSectionSourceHash(section)
+    const result = await saveSectionTranslation(createClient(), {
+      website_id: websiteId,
+      section_id: section.id,
+      locale: activeWebsiteLocale.locale,
+      values,
+      source_hash: sourceHash,
+    })
+    setIsSaving(false)
+    if (result.error) {
+      setSaveState("error")
+      toast.error(result.error.message)
+      throw result.error
+    }
+    setSectionTranslations((current) => {
+      const next = new Map(current)
+      next.set(`${section.id}:${activeWebsiteLocale.locale}`, { values, sourceHash })
+      return next
+    })
+    toast.success("Vertaling opgeslagen.")
+  }
+
   const selectedSection = sections.find((s) => s.id === selectedSectionId) || null
   const pendingMobileSectionLabel = pendingMobileSectionType
     ? getSectionDefinition(pendingMobileSectionType)?.label ?? pendingMobileSectionType
@@ -860,6 +1183,11 @@ export function EditorClient({
     ? sections.findIndex((section) => section.id === selectedSectionId)
     : -1
   const selectedWebsite = websites.find((website) => website.id === websiteId)
+  const getWebsiteOptionLabel = (website: WebsiteSummary, index: number) => {
+    const label = website.title || DEFAULT_SITE_TITLE
+    const duplicateCount = websites.filter((candidate) => (candidate.title || DEFAULT_SITE_TITLE) === label).length
+    return duplicateCount > 1 ? `${label} ${index + 1}` : label
+  }
   const selectedWebsiteLiveUrl = selectedWebsite
     ? selectedWebsite.customDomain || `${selectedWebsite.slug}.${PLATFORM_DOMAIN}`
     : ""
@@ -890,30 +1218,34 @@ export function EditorClient({
           <label htmlFor="website-selector" className="sr-only">
             Website
           </label>
-          <select
-            id="website-selector"
-            value={websiteId ?? ""}
-            onChange={(event) => handleWebsiteChange(event.target.value)}
-            className="h-8 w-36 min-w-0 shrink-0 rounded-md border border-input bg-background px-2 text-xs font-medium text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 lg:w-48 xl:w-56"
-          >
-            {websites.map((website) => (
-              <option key={website.id} value={website.id}>
-                {website.title || DEFAULT_SITE_TITLE} ({website.slug})
-              </option>
-            ))}
-          </select>
-          <div
-            aria-disabled="true"
-            title="Talen bewerken wordt binnenkort beschikbaar"
-            className="flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-input bg-background px-2 text-xs font-medium text-foreground shadow-sm"
-          >
-            <Globe2 className="h-3.5 w-3.5 text-primary" />
-            <span className="hidden lg:inline">Nederlands</span>
-            <ChevronDown className="hidden h-3 w-3 text-muted-foreground lg:block" />
-            <span className="ml-1 hidden rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary 2xl:inline">
-              Binnenkort
-            </span>
+          <div className="group relative w-36 min-w-0 shrink-0 lg:w-48 xl:w-56">
+            <LayoutTemplate className="pointer-events-none absolute left-2.5 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-primary" />
+            <select
+              id="website-selector"
+              value={websiteId ?? ""}
+              onChange={(event) => handleWebsiteChange(event.target.value)}
+              className="h-8 w-full cursor-pointer appearance-none rounded-lg border border-input bg-gradient-to-b from-background to-muted/30 py-0 pl-8 pr-8 text-xs font-semibold text-foreground shadow-sm outline-none transition-all hover:border-primary/40 hover:shadow-md focus:border-primary focus:ring-2 focus:ring-primary/20"
+            >
+              {websites.map((website, index) => (
+                <option key={website.id} value={website.id}>
+                  {getWebsiteOptionLabel(website, index)}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground transition-transform group-focus-within:rotate-180 group-focus-within:text-primary" />
           </div>
+          {multilingualEnabled ? <WebsiteLanguageControl
+            locales={websiteLocales}
+            activeLocale={activeLocale}
+            onLocaleChange={handleLocaleChange}
+            onAdd={handleAddLocale}
+            onToggle={handleToggleLocale}
+            onRemove={handleRemoveLocale}
+            onUpdate={handleUpdateLocale}
+            onSetDefault={handleSetDefaultLocale}
+            canSetDefault={!selectedWebsite?.published && sectionTranslations.size === 0}
+            statuses={localeStatuses}
+          /> : null}
           <label htmlFor="website-name" className="sr-only">
             Websitenaam
           </label>
@@ -996,18 +1328,22 @@ export function EditorClient({
             <label htmlFor="website-selector-mobile" className="sr-only">
               Website
             </label>
-            <select
-              id="website-selector-mobile"
-              value={websiteId ?? ""}
-              onChange={(event) => handleWebsiteChange(event.target.value)}
-              className="h-11 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm font-medium text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-            >
-              {websites.map((website) => (
-                <option key={website.id} value={website.id}>
-                  {website.title || DEFAULT_SITE_TITLE}
-                </option>
-              ))}
-            </select>
+            <div className="group relative min-w-0 flex-1">
+              <LayoutTemplate className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-primary" />
+              <select
+                id="website-selector-mobile"
+                value={websiteId ?? ""}
+                onChange={(event) => handleWebsiteChange(event.target.value)}
+                className="h-11 w-full cursor-pointer appearance-none rounded-xl border border-input bg-gradient-to-b from-background to-muted/30 py-0 pl-10 pr-10 text-sm font-semibold text-foreground shadow-sm outline-none transition-all hover:border-primary/40 focus:border-primary focus:ring-2 focus:ring-primary/20"
+              >
+                {websites.map((website, index) => (
+                  <option key={website.id} value={website.id}>
+                    {getWebsiteOptionLabel(website, index)}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-transform group-focus-within:rotate-180 group-focus-within:text-primary" />
+            </div>
             <div
               className={`flex h-11 max-w-[7.5rem] shrink-0 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium ${
                 saveState === "error"
@@ -1039,23 +1375,19 @@ export function EditorClient({
             ) : null}
           </div>
 
-          <div
-            aria-disabled="true"
-            title="Talen bewerken wordt binnenkort beschikbaar"
-            className="flex min-h-11 items-center justify-between gap-3 rounded-md border border-border bg-background px-3 shadow-sm"
-          >
-            <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-foreground">
-              <Globe2 className="h-4 w-4 shrink-0 text-primary" />
-              <span>Taal van website</span>
-            </span>
-            <span className="flex shrink-0 items-center gap-1.5 text-sm font-medium text-foreground">
-              Nederlands
-              <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                Binnenkort
-              </span>
-            </span>
-          </div>
+          {multilingualEnabled ? <WebsiteLanguageControl
+            locales={websiteLocales}
+            activeLocale={activeLocale}
+            onLocaleChange={handleLocaleChange}
+            onAdd={handleAddLocale}
+            onToggle={handleToggleLocale}
+            onRemove={handleRemoveLocale}
+            onUpdate={handleUpdateLocale}
+            onSetDefault={handleSetDefaultLocale}
+            canSetDefault={!selectedWebsite?.published && sectionTranslations.size === 0}
+            statuses={localeStatuses}
+            mobile
+          /> : null}
 
           <details className="group rounded-md border border-border bg-muted/30">
             <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 text-sm font-medium text-foreground">
@@ -1184,7 +1516,7 @@ export function EditorClient({
       {isLoadingWebsite ? <EditorWorkspaceSkeleton /> : null}
       {/* Desktop layout: side-by-side panels */}
       <div className={`${isLoadingWebsite ? "hidden" : "hidden md:flex"} flex-1 overflow-hidden`}>
-        {!isPreview && (
+        {!isPreview && !isTranslationMode && (
           <SectionsSelector
             userId={userId}
             currentPlan={currentPlan}
@@ -1192,12 +1524,12 @@ export function EditorClient({
           />
         )}
         <EditorCanvas
-          sections={sections}
+          sections={displayedSections}
           persistSections={persistSections}
           onSectionUpdate={handleCanvasSectionUpdate}
           transitions={transitions}
           themeConfig={themeConfig}
-          isPreview={isPreview}
+          isPreview={isPreview || isTranslationMode}
           selectedSectionId={selectedSectionId}
           onSectionSelect={handleSectionSelect}
           device={device}
@@ -1206,7 +1538,19 @@ export function EditorClient({
           isDraggingImageExternal={isMobileDraggingImage}
           onStartTutorial={handleStartTutorial}
         />
-        {!isPreview && (
+        {!isPreview && isTranslationMode && activeWebsiteLocale ? (
+          <SectionTranslationPanel
+            sections={translationSourceSections}
+            selectedSectionId={selectedSectionId}
+            locale={activeWebsiteLocale}
+            businessId={businessId}
+            translations={sectionTranslations}
+            onSectionSelect={setSelectedSectionId}
+            onSave={handleSaveTranslation}
+            onSharedSaved={refreshSharedLocaleStatuses}
+            className="flex h-full w-80 shrink-0 flex-col border-l bg-background xl:w-96"
+          />
+        ) : !isPreview ? (
           <EditorInspector
             selectedSection={selectedSection}
             sections={sections}
@@ -1226,14 +1570,14 @@ export function EditorClient({
             onTemplateApplied={handleTemplateApplied}
             className="flex h-full w-80 shrink-0 flex-col border-l bg-background xl:w-96"
           />
-        )}
+        ) : null}
       </div>
 
       {/* Mobile layout: single panel with bottom tab bar */}
       <div className={`${isLoadingWebsite ? "hidden" : "flex md:hidden"} flex-1 overflow-hidden flex-col`}>
         {/* Panel content */}
         <div className="relative flex min-h-0 flex-1 overflow-hidden pb-[calc(4.5rem+env(safe-area-inset-bottom))]">
-          {mobilePanel === "sections" && !isPreview && (
+          {mobilePanel === "sections" && !isPreview && !isTranslationMode && (
             <SectionsSelector
               userId={userId}
               currentPlan={currentPlan}
@@ -1244,12 +1588,12 @@ export function EditorClient({
           )}
           {(mobilePanel === "canvas" || isPreview) && (
             <EditorCanvas
-              sections={sections}
+              sections={displayedSections}
               persistSections={persistSections}
               onSectionUpdate={handleCanvasSectionUpdate}
               transitions={transitions}
               themeConfig={themeConfig}
-              isPreview={isPreview}
+              isPreview={isPreview || isTranslationMode}
               selectedSectionId={selectedSectionId}
               onSectionSelect={handleSectionSelect}
               device={device}
@@ -1259,7 +1603,19 @@ export function EditorClient({
               onStartTutorial={handleStartTutorial}
             />
           )}
-          {mobilePanel === "style" && !isPreview && (
+          {mobilePanel === "style" && !isPreview && isTranslationMode && activeWebsiteLocale ? (
+            <SectionTranslationPanel
+              sections={translationSourceSections}
+              selectedSectionId={selectedSectionId}
+              locale={activeWebsiteLocale}
+              businessId={businessId}
+              translations={sectionTranslations}
+              onSectionSelect={setSelectedSectionId}
+              onSave={handleSaveTranslation}
+              onSharedSaved={refreshSharedLocaleStatuses}
+              className="flex h-full w-full flex-col bg-background"
+            />
+          ) : mobilePanel === "style" && !isPreview ? (
             <EditorInspector
               selectedSection={selectedSection}
               sections={sections}
@@ -1281,7 +1637,7 @@ export function EditorClient({
               singlePanel="section"
               className="h-full w-full bg-background"
             />
-          )}
+          ) : null}
           {mobilePanel === "site" && !isPreview && (
             <EditorInspector
               selectedSection={selectedSection}
@@ -1358,9 +1714,10 @@ export function EditorClient({
             <button
               type="button"
               onClick={() => setMobilePanel("sections")}
+              disabled={isTranslationMode}
               aria-label="Secties toevoegen"
               title="Secties toevoegen"
-              className={`flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
+              className={`flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
                 mobilePanel === "sections"
                   ? "text-primary border-t-2 border-primary -mt-px"
                   : "text-muted-foreground hover:text-foreground"
@@ -1489,13 +1846,15 @@ export function EditorClient({
               {selectedWebsite?.published ? "Nieuwe versie live zetten?" : "Website live zetten?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              De huidige opgeslagen conceptversie wordt gecontroleerd en daarna als één nieuwe live versie gepubliceerd.
+              {staleTranslationWarnings.length > 0
+                ? `${staleTranslationWarnings.length} vertaling${staleTranslationWarnings.length === 1 ? " is" : "en zijn"} verouderd: ${staleTranslationWarnings.slice(0, 5).map((warning) => `${warning.locale} · ${warning.label}`).join(", ")}. Publiceer alleen als je deze hebt gecontroleerd.`
+                : "De huidige opgeslagen conceptversie wordt gecontroleerd en daarna als één nieuwe live versie gepubliceerd."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isSaving}>Annuleren</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void performPublish()} disabled={isSaving}>
-              {isSaving ? "Live zetten..." : "Bevestigen en live zetten"}
+            <AlertDialogAction onClick={() => void performPublish(staleTranslationWarnings.length > 0)} disabled={isSaving}>
+              {isSaving ? "Live zetten..." : staleTranslationWarnings.length > 0 ? "Gecontroleerd, toch publiceren" : "Bevestigen en live zetten"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

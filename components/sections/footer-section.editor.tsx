@@ -8,11 +8,11 @@ import { Label } from "@/components/ui/label"
 import { SectionLinkSelect } from "@/components/editor/section-link-select"
 import type { SectionEditorProps } from "@/components/editor/section-editor-types"
 
-interface FooterLink { label: string; href: string }
-interface FooterColumn { title: string; links: FooterLink[] }
+interface FooterLink { id?: string; label: string; href: string }
+interface FooterColumn { id?: string; title: string; links: FooterLink[] }
 
 const fallbackColumns: FooterColumn[] = [
-  { title: "Snel naar", links: [{ label: "Over ons", href: "#over-ons" }, { label: "Diensten", href: "#diensten" }, { label: "Contact", href: "#contact" }] },
+  { id: "footer-column-1", title: "Snel naar", links: [{ id: "footer-link-1", label: "Over ons", href: "#over-ons" }, { id: "footer-link-2", label: "Diensten", href: "#diensten" }, { id: "footer-link-3", label: "Contact", href: "#contact" }] },
 ]
 
 function VisibilityButton({ enabled, label, onClick }: { enabled: boolean; label: string; onClick: () => void }) {
@@ -55,15 +55,15 @@ export function FooterSectionEditor({ section, updateField, sectionTargetOptions
         <VisibilityButton enabled={showLinks} label="Navigatielinks" onClick={() => updateField("showLinks", !showLinks)} />
         {showLinks ? <>
           <p className="text-xs text-muted-foreground">Nieuwe footers starten met maximaal drie links. Verwijder wat je niet nodig hebt.</p>
-          {columns.map((column, columnIndex) => <div key={columnIndex} className="space-y-2 rounded-lg border border-border p-3">
+          {columns.map((column, columnIndex) => <div key={column.id ?? columnIndex} className="space-y-2 rounded-lg border border-border p-3">
             <div className="flex gap-2"><Input value={column.title || ""} onChange={(event) => updateColumn(columnIndex, { title: event.target.value })} placeholder="Kolomtitel" /><Button type="button" variant="ghost" size="icon" aria-label={`Linkkolom ${columnIndex + 1} verwijderen`} onClick={() => saveColumns(columns.filter((_, index) => index !== columnIndex))}><Trash2 className="h-4 w-4" /></Button></div>
-            {column.links.map((link, linkIndex) => <div key={linkIndex} className="space-y-2 rounded-md bg-muted/50 p-2">
+            {column.links.map((link, linkIndex) => <div key={link.id ?? linkIndex} className="space-y-2 rounded-md bg-muted/50 p-2">
               <div className="flex gap-2"><Input value={link.label || ""} onChange={(event) => updateLink(columnIndex, linkIndex, { label: event.target.value })} placeholder="Linktekst" /><Button type="button" variant="ghost" size="icon" aria-label={`Link ${linkIndex + 1} verwijderen`} onClick={() => updateColumn(columnIndex, { links: column.links.filter((_, index) => index !== linkIndex) })}><Trash2 className="h-4 w-4" /></Button></div>
               <SectionLinkSelect value={link.href || ""} onChange={(value) => updateLink(columnIndex, linkIndex, { href: value })} options={sectionTargetOptions} ariaLabel={`Doel voor footerlink ${linkIndex + 1}`} />
             </div>)}
-            <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => updateColumn(columnIndex, { links: [...column.links, { label: "Nieuwe link", href: "" }] })}><Plus className="mr-2 h-3.5 w-3.5" />Link toevoegen</Button>
+            <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => updateColumn(columnIndex, { links: [...column.links, { id: `footer-link-${Date.now()}`, label: "Nieuwe link", href: "" }] })}><Plus className="mr-2 h-3.5 w-3.5" />Link toevoegen</Button>
           </div>)}
-          {columns.length === 0 ? <Button type="button" variant="outline" className="w-full" onClick={() => saveColumns([{ title: "Snel naar", links: [] }])}><Plus className="mr-2 h-4 w-4" />Linkgroep toevoegen</Button> : null}
+          {columns.length === 0 ? <Button type="button" variant="outline" className="w-full" onClick={() => saveColumns([{ id: `footer-column-${Date.now()}`, title: "Snel naar", links: [] }])}><Plus className="mr-2 h-4 w-4" />Linkgroep toevoegen</Button> : null}
         </> : null}
       </Card>
 

@@ -29,6 +29,10 @@ type TemplateCheckpoint = {
     position?: number
     is_featured?: boolean
   }>
+  locales?: Array<Record<string, unknown>>
+  sectionTranslations?: Array<Record<string, unknown>>
+  businessTranslations?: Array<Record<string, unknown>>
+  serviceTranslations?: Array<Record<string, unknown>>
 }
 
 export async function POST(request: NextRequest) {
@@ -86,6 +90,10 @@ export async function POST(request: NextRequest) {
     const sections = checkpoint.sections || []
     const transitions = checkpoint.transitions || []
     const services = checkpoint.services || []
+    const locales = checkpoint.locales || []
+    const sectionTranslations = checkpoint.sectionTranslations || []
+    const businessTranslations = checkpoint.businessTranslations || []
+    const serviceTranslations = checkpoint.serviceTranslations || []
 
     const { error: deleteSectionsError } = await supabase
       .from("website_sections")
@@ -174,6 +182,34 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: "Failed to restore services" }, { status: 500 })
         }
       }
+    }
+
+    if (locales.length > 0) {
+      const { error } = await supabase
+        .from("website_locales")
+        .upsert(locales.map(({ id: _id, created_at: _createdAt, updated_at: _updatedAt, ...locale }) => locale), { onConflict: "website_id,locale" })
+      if (error) return NextResponse.json({ error: "Failed to restore website languages" }, { status: 500 })
+    }
+
+    if (sectionTranslations.length > 0) {
+      const { error } = await supabase
+        .from("website_section_translations")
+        .upsert(sectionTranslations.map(({ created_at: _createdAt, updated_at: _updatedAt, ...translation }) => translation), { onConflict: "section_id,locale" })
+      if (error) return NextResponse.json({ error: "Failed to restore section translations" }, { status: 500 })
+    }
+
+    if (businessTranslations.length > 0) {
+      const { error } = await supabase
+        .from("business_translations")
+        .upsert(businessTranslations.map(({ created_at: _createdAt, updated_at: _updatedAt, ...translation }) => translation), { onConflict: "business_id,locale" })
+      if (error) return NextResponse.json({ error: "Failed to restore business translations" }, { status: 500 })
+    }
+
+    if (serviceTranslations.length > 0) {
+      const { error } = await supabase
+        .from("service_translations")
+        .upsert(serviceTranslations.map(({ created_at: _createdAt, updated_at: _updatedAt, ...translation }) => translation), { onConflict: "service_id,locale" })
+      if (error) return NextResponse.json({ error: "Failed to restore service translations" }, { status: 500 })
     }
 
     return NextResponse.json({

@@ -4,6 +4,7 @@ import { UserRound } from "lucide-react"
 import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
+import { useWebsiteLocale } from "@/lib/site-i18n/provider"
 
 export interface TeamMember {
   id?: string
@@ -21,6 +22,7 @@ interface TeamSectionProps {
 }
 
 export function TeamSection({ data, isPreview, styles, onUpdate }: TeamSectionProps) {
+  const { messages } = useWebsiteLocale()
   const title = (data.title as string) || "Maak kennis met ons team"
   const subtitle = data.subtitle as string | undefined
   const members = Array.isArray(data.members) ? (data.members as TeamMember[]) : []
@@ -39,14 +41,14 @@ export function TeamSection({ data, isPreview, styles, onUpdate }: TeamSectionPr
     <section className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`} style={sectionStyle}>
       <div className={`mx-auto ${layout.container}`}>
         <div className={`mb-10 ${layout.heading}`}>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-widest" style={{ color: styles?.accentColor || "#b45309" }}>Ons team</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-widest" style={{ color: styles?.accentColor || "#b45309" }}>{messages.team}</p>
           <EditableText as="h2" data={data} path={["title"]} value={title} isPreview={isPreview} onUpdate={onUpdate} className="text-3xl font-bold md:text-4xl" style={textStyle} />
           {subtitle ? <EditableText as="p" data={data} path={["subtitle"]} value={subtitle} isPreview={isPreview} onUpdate={onUpdate} multiline className="mx-auto mt-3 max-w-2xl text-muted-foreground" style={textStyle} /> : null}
         </div>
 
         {members.length === 0 ? (
           <div className="rounded-2xl border border-dashed p-8 text-center text-sm text-muted-foreground" style={{ backgroundColor: styles?.surfaceColor }}>
-            Voeg teamleden toe in de editor.
+            {messages.addTeam}
           </div>
         ) : (
           <div className={isHorizontal ? "flex snap-x gap-5 overflow-x-auto pb-3" : isList ? "grid gap-5 md:grid-cols-2" : `grid gap-6 ${layout.grid}`}>

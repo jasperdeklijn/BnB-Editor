@@ -164,12 +164,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to create restore point" }, { status: 500 })
     }
 
+    const [{ data: currentLocales }, { data: currentSectionTranslations }, { data: currentBusinessTranslations }, { data: currentServiceTranslations }] = await Promise.all([
+      supabase.from("website_locales").select("*").eq("website_id", resolvedWebsiteId),
+      supabase.from("website_section_translations").select("*").eq("website_id", resolvedWebsiteId),
+      resolvedBusinessId
+        ? supabase.from("business_translations").select("*").eq("business_id", resolvedBusinessId)
+        : Promise.resolve({ data: [] }),
+      (currentServices ?? []).length
+        ? supabase.from("service_translations").select("*").in("service_id", (currentServices ?? []).map((service) => service.id))
+        : Promise.resolve({ data: [] }),
+    ])
+
     const checkpoint = {
       websiteId: resolvedWebsiteId,
       businessId: resolvedBusinessId ?? websiteTheme.business_id ?? null,
       sections: currentSections || [],
       transitions: currentTransitions || [],
       services: currentServices || [],
+      locales: currentLocales || [],
+      sectionTranslations: currentSectionTranslations || [],
+      businessTranslations: currentBusinessTranslations || [],
+      serviceTranslations: currentServiceTranslations || [],
     }
 
     const themeConfig = (websiteTheme.theme_config as ThemeConfig | null) ?? null

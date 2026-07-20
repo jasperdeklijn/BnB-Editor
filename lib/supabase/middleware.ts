@@ -4,6 +4,14 @@ import { PLATFORM_DOMAIN } from "@/lib/platform"
 
 const platformDomain = PLATFORM_DOMAIN.toLowerCase().replace(/^www\./, "")
 const platformHosts = new Set([platformDomain, `www.${platformDomain}`])
+const websiteLocaleByPath = new Map([["en", "en-GB"], ["de", "de-DE"], ["fr", "fr-FR"]])
+
+function rewriteWebsite(request: NextRequest, url: URL) {
+  const firstSegment = request.nextUrl.pathname.split("/").filter(Boolean)[0] ?? ""
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set("x-website-locale", websiteLocaleByPath.get(firstSegment) ?? "nl-NL")
+  return NextResponse.rewrite(url, { request: { headers: requestHeaders } })
+}
 function isAssetOrApiRequest(pathname: string) {
   return (
     pathname.startsWith("/api/") ||
@@ -50,8 +58,9 @@ if (hostname.startsWith("preview-") && hostname.endsWith(`.${platformDomain}`)) 
     .replace(`.${platformDomain}`, "")
 
   const url = request.nextUrl.clone()
-  url.pathname = `/preview/${slug}`
-  return NextResponse.rewrite(url)
+  const visitorPath = request.nextUrl.pathname === "/" ? "" : request.nextUrl.pathname
+  url.pathname = `/preview/${slug}${visitorPath}`
+  return rewriteWebsite(request, url)
 }
 
 // Live
@@ -59,9 +68,11 @@ if (hostname.endsWith(`.${platformDomain}`)) {
   const slug = hostname.replace(`.${platformDomain}`, "")
 
   if (slug !== "www") {
+    if (isAssetOrApiRequest(request.nextUrl.pathname)) return supabaseResponse
     const url = request.nextUrl.clone()
-    url.pathname = `/site/${slug}`
-    return NextResponse.rewrite(url)
+    const visitorPath = request.nextUrl.pathname === "/" ? "" : request.nextUrl.pathname
+    url.pathname = `/site/${slug}${visitorPath}`
+    return rewriteWebsite(request, url)
   }
 }
 
@@ -103,10 +114,17 @@ if (hostname.endsWith(`.${platformDomain}`)) {
     if (website?.slug) {
       const url = request.nextUrl.clone()
       url.pathname = `/site/${website.slug}${request.nextUrl.pathname}`
-      return NextResponse.rewrite(url)
+      return rewriteWebsite(request, url)
     }
 
     return NextResponse.redirect(new URL(request.nextUrl.pathname || "/", `https://${platformDomain}`))
+  }
+
+  const internalWebsiteLocale = request.nextUrl.pathname.match(/^\/(?:site|preview)\/[^/]+\/(en|de|fr)(?:\/|$)/)?.[1]
+  if (internalWebsiteLocale) {
+    const requestHeaders = new Headers(request.headers)
+    requestHeaders.set("x-website-locale", websiteLocaleByPath.get(internalWebsiteLocale) ?? "nl-NL")
+    return NextResponse.next({ request: { headers: requestHeaders } })
   }
 
   // 4. Normal app routing — enforce auth

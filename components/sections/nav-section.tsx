@@ -2,16 +2,11 @@
 
 import type React from "react"
 import { useState } from "react"
-import type { Section, SectionStyles, SectionType } from "@/lib/types"
-import { Menu, X } from "lucide-react"
+import type { Section, SectionStyles } from "@/lib/types"
+import { Globe2, Menu, X } from "lucide-react"
 import { EditableText } from "@/components/editor/inline-editable-text"
 import { normalizeSectionLayout } from "@/lib/section-layouts"
-
-interface NavLink {
-  sectionId: string
-  label: string
-  enabled: boolean
-}
+import { resolveNavigationLinks } from "@/lib/i18n/section-translations"
 
 interface NavSectionProps {
   data: Record<string, unknown>
@@ -22,51 +17,22 @@ interface NavSectionProps {
   device?: "desktop" | "tablet" | "mobile"
 }
 
-// Default display names for section types
-const defaultSectionLabels: Record<SectionType, string> = {
-  hero: "Home",
-  about: "Over",
-  services: "Aanbod",
-  gallery: "Galerij",
-  features: "Kenmerken",
-  contact: "Contact",
-  nav: "Navigatie",
-  footer: "Footer",
-  testimonials: "Recensies",
-  faq: "FAQ",
-  opening_hours: "Openingstijden",
-  pricing: "Prijzen",
-  team: "Team",
-  map: "Locatie",
-  cta: "Actie",
-  request_form: "Aanvraag",
+interface LocaleLink {
+  locale: string
+  label: string
+  href: string
+  isActive: boolean
 }
-
-// Sections that can appear in navigation
-const navigableSectionTypes: SectionType[] = [
-  "hero",
-  "about",
-  "services",
-  "gallery",
-  "features",
-  "testimonials",
-  "faq",
-  "opening_hours",
-  "pricing",
-  "team",
-  "map",
-  "cta",
-  "request_form",
-  "contact",
-]
 
 export function NavSection({ data, isPreview, styles, onUpdate, allSections, device }: NavSectionProps) {
   const brandName = (data.brandName as string) || "Mijn bedrijf"
   const logo = typeof styles?.logo === "string" ? styles.logo.trim() : ""
   const isSticky = (data.isSticky as boolean) ?? true
-  const navLinks = data.navLinks as NavLink[] | undefined
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const layout = normalizeSectionLayout(data.layout)
+  const localeLinks = Array.isArray(data.localeLinks) ? data.localeLinks as LocaleLink[] : []
+  const activeLocaleLink = localeLinks.find((entry) => entry.isActive) ?? localeLinks[0]
+  const languageLabel = ((data.siteMessages as { language?: string } | undefined)?.language) || "Taal"
 
   // Force mobile view when device is mobile or tablet
   const isMobileView = device === "mobile" || device === "tablet"
@@ -74,34 +40,9 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
   // Generate navigation links from sections
   const getNavLinks = (): Array<{ label: string; href: string; sectionId: string }> => {
     if (!allSections) return []
-
-    const navigableSections = allSections.filter((section) =>
-      navigableSectionTypes.includes(section.type)
-    )
-
-    return navigableSections
-      .map((section) => {
-        // Check if this section has a custom config in navLinks
-        const linkConfig = navLinks?.find((nl) => nl.sectionId === section.id)
-
-        // If navLinks exists but this section is disabled, skip it
-        if (navLinks && linkConfig && !linkConfig.enabled) {
-          return null
-        }
-
-        // Use custom label if set, otherwise fall back to section title or default
-        const label =
-          linkConfig?.label ||
-          (section.data?.title as string) ||
-          defaultSectionLabels[section.type]
-
-        return {
-          label,
-          href: `#section-${section.id}`,
-          sectionId: section.id,
-        }
-      })
-      .filter(Boolean) as Array<{ label: string; href: string; sectionId: string }>
+    return resolveNavigationLinks(data, allSections)
+      .filter((link) => link.enabled)
+      .map((link) => ({ ...link, href: `#section-${link.sectionId}` }))
   }
 
   const links = getNavLinks()
@@ -122,6 +63,12 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
       element.scrollIntoView({ behavior: "smooth" })
     }
     setMobileMenuOpen(false)
+  }
+
+  const handleLocaleChange = (href: string) => {
+    const target = localeLinks.find((entry) => entry.href === href)
+    if (target) document.cookie = `website_locale=${encodeURIComponent(target.locale)}; Path=/; Max-Age=31536000; SameSite=Lax`
+    window.location.href = `${href}${window.location.hash}`
   }
 
   const sectionStyle: React.CSSProperties = {
@@ -168,10 +115,42 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
                 <EditableText data={editableData} path={["navLinks", idx, "label"]} value={link.label} isPreview={isPreview} onUpdate={onUpdate} />
               </a>
             ))}
+            {localeLinks.length > 1 ? (
+              <label className="relative flex items-center gap-1.5 rounded-md border border-current/20 px-2 py-1.5 text-sm">
+                <Globe2 className="h-4 w-4" aria-hidden="true" />
+                <span className="sr-only">{languageLabel}</span>
+                <select
+                  aria-label={languageLabel}
+                  value={activeLocaleLink?.href}
+                  onChange={(event) => handleLocaleChange(event.target.value)}
+                  className="cursor-pointer appearance-none bg-transparent pr-4 font-medium outline-none"
+                >
+                  {localeLinks.map((entry) => (
+                    <option key={entry.locale} value={entry.href}>{entry.label}</option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
           </div>
 
           {/* Mobile menu button */}
-          <div className={isMobileView ? "block" : "md:hidden"}>
+          <div className={`${isMobileView ? "flex" : "flex md:hidden"} items-center gap-1`}>
+            {localeLinks.length > 1 ? (
+              <label className="flex items-center gap-1 rounded-md border border-current/20 px-2 py-1.5">
+                <Globe2 className="h-4 w-4" aria-hidden="true" />
+                <span className="sr-only">{languageLabel}</span>
+                <select
+                  aria-label={languageLabel}
+                  value={activeLocaleLink?.href}
+                  onChange={(event) => handleLocaleChange(event.target.value)}
+                  className="max-w-20 cursor-pointer bg-transparent text-xs font-medium outline-none"
+                >
+                  {localeLinks.map((entry) => (
+                    <option key={entry.locale} value={entry.href}>{entry.label}</option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-md hover:bg-black/5 transition"
