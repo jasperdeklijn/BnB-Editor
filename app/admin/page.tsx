@@ -4,13 +4,17 @@ import {
   ArrowRight,
   Bot,
   ClipboardList,
+  CreditCard,
+  Eye,
   FileClock,
   Globe2,
+  LayoutTemplate,
   Mail,
-  Radio,
+  UserMinus,
+  UserPlus,
   Users,
-  WalletCards,
 } from "lucide-react"
+import { getAllTemplatePresets } from "@/components/templates/category-presets"
 import { SharedHeader } from "@/components/layout/shared-header"
 import { isAdmin } from "@/lib/security"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -34,6 +38,14 @@ type AuditLog = {
   created_at: string
 }
 
+type TemplateUsage = {
+  id: string
+  name: string
+  count: number
+}
+
+const templateNames = new Map(getAllTemplatePresets().map((template) => [template.id, template.name]))
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("nl-NL", {
     dateStyle: "medium",
@@ -53,63 +65,84 @@ export default async function AdminPage() {
   if (!isAdmin(user)) notFound()
 
   let stats: Stat[] = [
-    { label: "Gebruikers", value: null, description: "Geregistreerde accounts", icon: Users },
-    { label: "Websites", value: null, description: "Aangemaakte websites", icon: Globe2 },
-    { label: "Live websites", value: null, description: "Momenteel gepubliceerd", icon: Radio },
+    { label: "Bezoekers", value: null, description: "Bezoekerssessies in de laatste 30 dagen", icon: Eye },
+    { label: "Accounts aangemaakt", value: null, description: "Alle geregistreerde accounts", icon: UserPlus },
+    { label: "Websites gepubliceerd", value: null, description: "Websites die momenteel live staan", icon: Globe2 },
+    { label: "Betalende klanten", value: null, description: "Actieve betaalde abonnementen", icon: CreditCard },
+    { label: "Opzeggingen", value: null, description: "Abonnementen met status opgezegd", icon: UserMinus },
     { label: "Aanvragen", value: null, description: "Ontvangen contactaanvragen", icon: ClipboardList },
     { label: "Leads", value: null, description: "Leads in de database", icon: Bot },
-    { label: "Abonnementen", value: null, description: "Actief of in proefperiode", icon: WalletCards },
     { label: "Nieuwe mails", value: null, description: "Ongelezen supportgesprekken", icon: Mail },
   ]
   let recentLogs: AuditLog[] = []
+  let topTemplates: TemplateUsage[] = []
   let loadError = ""
 
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     loadError = "SUPABASE_SERVICE_ROLE_KEY ontbreekt. Statistieken kunnen niet veilig worden geladen."
   } else {
     const admin = await createAdminClient()
+    const visitorCutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
     const [
       usersResult,
-      websitesResult,
+      visitorsResult,
       publishedResult,
+      payingCustomersResult,
+      cancellationsResult,
       requestsResult,
       leadsResult,
-      subscriptionsResult,
       unreadMailResult,
+      templatesResult,
       logsResult,
     ] = await Promise.all([
       admin.auth.admin.listUsers({ page: 1, perPage: 1 }),
-      admin.from("websites").select("*", { count: "exact", head: true }),
+      admin.from("website_visits").select("*", { count: "exact", head: true }).gte("visited_at", visitorCutoff),
       admin.from("websites").select("*", { count: "exact", head: true }).eq("published", true),
+      admin.from("subscriptions").select("*", { count: "exact", head: true }).eq("status", "active"),
+      admin.from("subscriptions").select("*", { count: "exact", head: true }).eq("status", "canceled"),
       admin.from("contact_requests").select("*", { count: "exact", head: true }),
       admin.from("leads").select("*", { count: "exact", head: true }),
-      admin.from("subscriptions").select("*", { count: "exact", head: true }).in("status", ["active", "trial"]),
       admin.from("mail_threads").select("*", { count: "exact", head: true }).gt("unread_count", 0),
+      admin.from("websites").select("applied_template_id").not("applied_template_id", "is", null),
       admin.from("audit_logs").select("id, action, created_at").order("created_at", { ascending: false }).limit(5),
     ])
 
     const countResults = [
-      websitesResult,
+      visitorsResult,
       publishedResult,
+      payingCustomersResult,
+      cancellationsResult,
       requestsResult,
       leadsResult,
-      subscriptionsResult,
       unreadMailResult,
     ]
     const hasCountError = countResults.some((result) => result.error)
 
     stats = [
-      { ...stats[0], value: usersResult.error ? null : usersResult.data.total },
-      { ...stats[1], value: websitesResult.error ? null : websitesResult.count ?? 0 },
+      { ...stats[0], value: visitorsResult.error ? null : visitorsResult.count ?? 0 },
+      { ...stats[1], value: usersResult.error ? null : usersResult.data.total },
       { ...stats[2], value: publishedResult.error ? null : publishedResult.count ?? 0 },
-      { ...stats[3], value: requestsResult.error ? null : requestsResult.count ?? 0 },
-      { ...stats[4], value: leadsResult.error ? null : leadsResult.count ?? 0 },
-      { ...stats[5], value: subscriptionsResult.error ? null : subscriptionsResult.count ?? 0 },
-      { ...stats[6], value: unreadMailResult.error ? null : unreadMailResult.count ?? 0 },
+      { ...stats[3], value: payingCustomersResult.error ? null : payingCustomersResult.count ?? 0 },
+      { ...stats[4], value: cancellationsResult.error ? null : cancellationsResult.count ?? 0 },
+      { ...stats[5], value: requestsResult.error ? null : requestsResult.count ?? 0 },
+      { ...stats[6], value: leadsResult.error ? null : leadsResult.count ?? 0 },
+      { ...stats[7], value: unreadMailResult.error ? null : unreadMailResult.count ?? 0 },
     ]
+    if (!templatesResult.error) {
+      const counts = new Map<string, number>()
+      for (const website of templatesResult.data ?? []) {
+        if (website.applied_template_id) {
+          counts.set(website.applied_template_id, (counts.get(website.applied_template_id) ?? 0) + 1)
+        }
+      }
+      topTemplates = [...counts.entries()]
+        .map(([id, count]) => ({ id, count, name: templateNames.get(id) ?? id }))
+        .sort((left, right) => right.count - left.count || left.name.localeCompare(right.name, "nl"))
+        .slice(0, 5)
+    }
     recentLogs = logsResult.error ? [] : ((logsResult.data ?? []) as AuditLog[])
 
-    if (usersResult.error || hasCountError || logsResult.error) {
+    if (usersResult.error || hasCountError || templatesResult.error || logsResult.error) {
       loadError = "Een deel van de beheerstatistieken kon niet worden geladen. Controleer de database-migraties en serverconfiguratie."
     }
   }
@@ -158,6 +191,34 @@ export default async function AdminPage() {
               )
             })}
           </div>
+        </section>
+
+        <section aria-labelledby="templates-heading" className="mt-10 rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6">
+          <div className="flex items-start gap-3">
+            <span className="rounded-xl bg-[var(--brand-blue)]/10 p-3 text-[var(--brand-blue)]">
+              <LayoutTemplate className="size-5" aria-hidden="true" />
+            </span>
+            <div>
+              <h2 id="templates-heading" className="text-lg font-semibold">Meest gebruikte templates</h2>
+              <p className="mt-1 text-xs text-white/45">Gebaseerd op het laatst toegepaste template per website</p>
+            </div>
+          </div>
+
+          {topTemplates.length ? (
+            <ol className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              {topTemplates.map((template, index) => (
+                <li key={template.id} className="rounded-xl border border-white/10 bg-black/10 p-4">
+                  <span className="text-xs font-semibold text-[var(--brand-blue)]">#{index + 1}</span>
+                  <p className="mt-1 text-sm font-medium">{template.name}</p>
+                  <p className="mt-2 text-xs text-white/45">{template.count.toLocaleString("nl-NL")} {template.count === 1 ? "website" : "websites"}</p>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="mt-5 rounded-xl border border-dashed border-white/15 p-5 text-center text-sm text-white/50">
+              Nog geen templategebruik gemeten.
+            </p>
+          )}
         </section>
 
         <div className="mt-10 grid gap-6 lg:grid-cols-[1.5fr_1fr]">

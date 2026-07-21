@@ -772,13 +772,17 @@ export function EditorClient({
         setSaveState("saved")
         return
       }
+      const publishErrorMessage =
+        result?.error ||
+        "Deze website kan niet live worden gezet. Zet eerst de huidige live website uit of wijzig de live website."
       setPublishConfirmationOpen(false)
       setSaveState("error")
       setWebsiteMessage({
         type: "error",
-        text:
-          result?.error ||
-          "Deze website kan niet live worden gezet. Zet eerst de huidige live website uit of wijzig de live website.",
+        text: publishErrorMessage,
+      })
+      toast.error("Publiceren niet mogelijk", {
+        description: publishErrorMessage,
       })
       return
     }

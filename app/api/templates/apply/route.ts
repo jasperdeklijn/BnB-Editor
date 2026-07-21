@@ -5,6 +5,7 @@ import {
   getDemoServicesFromTemplate,
 } from "@/lib/business/template-factory"
 import type { BusinessCategory } from "@/lib/business/categories"
+import { getTemplatePreset } from "@/components/templates/category-presets"
 import { applyThemeDefaultsToSections } from "@/lib/themes"
 import type { ThemeConfig } from "@/lib/themes"
 import { NextRequest, NextResponse } from "next/server"
@@ -107,9 +108,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (resolvedWebsiteId && resolvedBusinessId) {
+      const appliedTemplate = getTemplatePreset(category)
       const { error: websiteLinkError } = await supabase
         .from("websites")
-        .update({ business_id: resolvedBusinessId, updated_at: new Date().toISOString() })
+        .update({
+          business_id: resolvedBusinessId,
+          applied_template_id: appliedTemplate?.id ?? category,
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", resolvedWebsiteId)
         .eq("user_id", user.id)
 
