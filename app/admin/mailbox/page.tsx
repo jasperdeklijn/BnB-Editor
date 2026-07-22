@@ -26,20 +26,31 @@ export default async function AdminMailboxPage() {
     loadError = "De server-side Supabase-configuratie ontbreekt."
   } else {
     const admin = await createAdminClient()
-    const [threadResult, messageResult, draftResult, knowledgeResult, runResult] = await Promise.all([
+    const [threadResult, knowledgeResult, runResult] = await Promise.all([
       admin.from("mail_threads").select("*").order("last_message_at", { ascending: false }).limit(250),
-      admin.from("mail_messages").select("*").order("created_at", { ascending: true }).limit(1_500),
-      admin.from("mail_drafts").select("*").order("created_at", { ascending: false }).limit(500),
       admin.from("mail_knowledge_answers").select("*").order("priority", { ascending: false }).limit(250),
       admin.from("mail_sync_runs").select("*").order("started_at", { ascending: false }).limit(1).maybeSingle(),
     ])
-    if (threadResult.error || messageResult.error || draftResult.error) loadError = "De mailbox kon niet worden geladen. Voer eerst de mail-agentmigratie uit."
-    else {
+    if (threadResult.error) {
+      loadError = "De mailbox kon niet worden geladen. Voer eerst de mail-agentmigratie uit."
+    } else {
       threads = (threadResult.data ?? []) as MailThreadRecord[]
-      messages = (messageResult.data ?? []) as MailMessageRecord[]
-      drafts = (draftResult.data ?? []) as MailDraftRecord[]
-      knowledge = (knowledgeResult.data ?? []) as MailKnowledgeAnswer[]
-      latestRun = runResult.data
+      const threadIds = threads.map((thread) => thread.id)
+      const [messageResult, draftResult] = threadIds.length > 0
+        ? await Promise.all([
+            admin.from("mail_messages").select("*").in("thread_id", threadIds).order("created_at", { ascending: false }).limit(5_000),
+            admin.from("mail_drafts").select("*").in("thread_id", threadIds).order("created_at", { ascending: false }).limit(1_500),
+          ])
+        : [{ data: [], error: null }, { data: [], error: null }]
+
+      if (messageResult.error || draftResult.error) {
+        loadError = "De mailbox kon niet worden geladen. Voer eerst de mail-agentmigratie uit."
+      } else {
+        messages = ((messageResult.data ?? []) as MailMessageRecord[]).reverse()
+        drafts = (draftResult.data ?? []) as MailDraftRecord[]
+        knowledge = (knowledgeResult.data ?? []) as MailKnowledgeAnswer[]
+        latestRun = runResult.data
+      }
     }
   }
 

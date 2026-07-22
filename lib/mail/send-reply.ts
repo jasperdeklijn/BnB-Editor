@@ -144,11 +144,11 @@ export async function sendReply(supabase: SupabaseClient, input: {
       raw_headers: {},
       sent_at: sentAt,
       is_read: true,
-    }).select("id").single()
+    }).select("*").single()
     if (error || !outbound) throw new Error("Verzonden mail kon niet worden geregistreerd.")
 
     const ratio = editRatio(draft.suggested_body, input.body)
-    await Promise.all([
+    const [draftUpdate, threadUpdate, feedbackUpdate] = await Promise.all([
       supabase.from("mail_drafts").update({ status: "sent", subject: input.subject, final_body: input.body, outbound_message_id: outbound.id, sent_at: sentAt, sent_by: input.userId }).eq("id", draft.id),
       supabase.from("mail_threads").update({ status: "replied", unread_count: 0, last_message_at: sentAt, last_outbound_at: sentAt }).eq("id", draft.thread_id),
       supabase.from("mail_feedback").upsert({
@@ -158,7 +158,10 @@ export async function sendReply(supabase: SupabaseClient, input: {
         created_by: input.userId,
       }, { onConflict: "draft_id" }),
     ])
-    return { messageId: info.messageId, sentAt }
+    if (draftUpdate.error || threadUpdate.error || feedbackUpdate.error) {
+      throw new Error("De mail is verzonden, maar de mailboxstatus kon niet volledig worden bijgewerkt.")
+    }
+    return { messageId: info.messageId, sentAt, outboundMessage: outbound }
   } catch (error) {
     await supabase.from("mail_drafts").update({
       status: smtpCompleted ? "sent" : "failed",

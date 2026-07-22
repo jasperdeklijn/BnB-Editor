@@ -53,3 +53,17 @@ test("schema and cron keep the agent durable and scheduled", () => {
   assert.match(sendReply, /renderFlexPaginaReplyHtml/)
   assert.match(sendReply, /html: renderFlexPaginaReplyHtml\(input\.body\)/)
 })
+
+test("sent replies remain visible after the admin mailbox reloads", () => {
+  const mailboxPage = fs.readFileSync(path.resolve("app/admin/mailbox/page.tsx"), "utf8")
+  const dashboard = fs.readFileSync(path.resolve("components/admin/mailbox-dashboard.tsx"), "utf8")
+  const sendReply = fs.readFileSync(path.resolve("lib/mail/send-reply.ts"), "utf8")
+
+  assert.match(mailboxPage, /order\("created_at", \{ ascending: false \}\)\.limit\(5_000\)/)
+  assert.match(mailboxPage, /messages = \(\(messageResult\.data \?\? \[\]\) as MailMessageRecord\[\]\)\.reverse\(\)/)
+  assert.match(dashboard, /Antwoord verzonden/)
+  assert.match(dashboard, /sentDraftForLatestInbound/)
+  assert.match(dashboard, /setMessages/)
+  assert.match(sendReply, /outboundMessage: outbound/)
+  assert.match(sendReply, /draftUpdate\.error \|\| threadUpdate\.error \|\| feedbackUpdate\.error/)
+})

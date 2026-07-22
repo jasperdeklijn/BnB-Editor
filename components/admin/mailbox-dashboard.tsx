@@ -30,6 +30,7 @@ export function MailboxDashboard({ initialThreads, initialMessages, initialDraft
 }) {
   const router = useRouter()
   const [threads, setThreads] = useState(initialThreads)
+  const [messages, setMessages] = useState(initialMessages)
   const [drafts, setDrafts] = useState(initialDrafts)
   const [selectedId, setSelectedId] = useState(initialThreads[0]?.id ?? "")
   const [filter, setFilter] = useState<"all" | MailThreadStatus>("all")
@@ -40,6 +41,7 @@ export function MailboxDashboard({ initialThreads, initialMessages, initialDraft
   const [pending, startTransition] = useTransition()
 
   useEffect(() => { setThreads(initialThreads) }, [initialThreads])
+  useEffect(() => { setMessages(initialMessages) }, [initialMessages])
   useEffect(() => { setDrafts(initialDrafts) }, [initialDrafts])
 
   const filtered = useMemo(() => threads.filter((thread) => {
@@ -48,9 +50,26 @@ export function MailboxDashboard({ initialThreads, initialMessages, initialDraft
     return matchesFilter && (!term || `${thread.contact_name ?? ""} ${thread.contact_email} ${thread.subject_normalized}`.toLocaleLowerCase("nl-NL").includes(term))
   }), [filter, search, threads])
   const selected = threads.find((thread) => thread.id === selectedId) ?? filtered[0] ?? null
-  const threadMessages = selected ? initialMessages.filter((message) => message.thread_id === selected.id) : []
+  const threadMessages = selected ? messages.filter((message) => message.thread_id === selected.id) : []
   const latestInbound = [...threadMessages].reverse().find((message) => message.direction === "inbound")
+  const latestOutbound = [...threadMessages].reverse().find((message) => message.direction === "outbound")
   const activeDraft = selected ? drafts.find((draft) => draft.thread_id === selected.id && !["discarded", "sent"].includes(draft.status)) ?? null : null
+  const sentDraftForLatestInbound = selected && latestInbound
+    ? drafts.find((draft) => draft.thread_id === selected.id && draft.in_reply_to_message_id === latestInbound.id && draft.status === "sent") ?? null
+    : null
+  const latestOutboundRepliesToLatestInbound = Boolean(latestInbound && latestOutbound && (
+    (latestInbound.internet_message_id && latestOutbound.in_reply_to === latestInbound.internet_message_id)
+    || new Date(latestOutbound.sent_at || latestOutbound.created_at).getTime() >= new Date(latestInbound.received_at || latestInbound.created_at).getTime()
+  ))
+  const sentReply = sentDraftForLatestInbound ? {
+    subject: sentDraftForLatestInbound.subject,
+    body: sentDraftForLatestInbound.final_body || sentDraftForLatestInbound.suggested_body,
+    sentAt: sentDraftForLatestInbound.sent_at,
+  } : latestOutboundRepliesToLatestInbound && latestOutbound ? {
+    subject: latestOutbound.subject,
+    body: latestOutbound.text_body,
+    sentAt: latestOutbound.sent_at || latestOutbound.created_at,
+  } : null
 
   useEffect(() => {
     setSubject(activeDraft?.subject ?? (latestInbound ? (/^re\s*:/i.test(latestInbound.subject) ? latestInbound.subject : `Re: ${latestInbound.subject}`) : ""))
@@ -103,9 +122,12 @@ export function MailboxDashboard({ initialThreads, initialMessages, initialDraft
     const confirmed = window.confirm(`Controleer de verzending:\n\nAan: ${latestInbound.from_address}\nOnderwerp: ${subject}\n\n${body}\n\nDefinitief verzenden via TransIP?`)
     if (!confirmed) return
     apiAction(async () => {
-      await jsonRequest(`/api/admin/mailbox/threads/${selected.id}/send`, { method: "POST", body: JSON.stringify({ draftId: activeDraft.id, subject, body, confirm: true }) })
+      const data = await jsonRequest(`/api/admin/mailbox/threads/${selected.id}/send`, { method: "POST", body: JSON.stringify({ draftId: activeDraft.id, subject, body, confirm: true }) })
       setThreads((items) => items.map((item) => item.id === selected.id ? { ...item, status: "replied", unread_count: 0 } : item))
       setDrafts((items) => items.map((draft) => draft.id === activeDraft.id ? { ...draft, status: "sent", final_body: body, sent_at: new Date().toISOString() } : draft))
+      if (data.outboundMessage) {
+        setMessages((items) => [...items.filter((message) => message.id !== data.outboundMessage.id), data.outboundMessage])
+      }
       setNotice({ type: "success", text: "Antwoord is via TransIP verzonden." })
       router.refresh()
     })
@@ -172,7 +194,20 @@ export function MailboxDashboard({ initialThreads, initialMessages, initialDraft
                 <SourceList draft={activeDraft} knowledge={knowledge} />
                 <div className="rounded-xl border border-yellow-300/20 bg-yellow-300/5 p-3 text-xs text-yellow-100/80"><ShieldAlert className="mb-2 size-4" />Controleer feiten, ontvanger en toezeggingen. De agent verstuurt nooit zonder jouw bevestiging.</div>
                 <div className="flex flex-col gap-2 sm:flex-row"><Button className="flex-1" disabled={pending || !subject.trim() || !body.trim()} onClick={sendDraft}><Send className="mr-2 size-4" />Controleren en verzenden</Button><Button variant="outline" className="border-white/15 bg-white/5 text-white hover:bg-white/10 hover:text-white" disabled={pending} onClick={generateDraft}><Sparkles className="mr-2 size-4" />Opnieuw</Button></div>
-              </> : <div className="rounded-xl border border-dashed border-white/15 p-5 text-center"><Sparkles className="mx-auto size-6 text-[var(--brand-blue)]" /><p className="mt-3 text-sm font-medium">Nog geen antwoordvoorstel</p><p className="mt-1 text-xs text-white/45">Maak een voorstel met vaste kennis en eerder verzonden antwoorden.</p><Button className="mt-4" disabled={pending} onClick={generateDraft}>{pending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Sparkles className="mr-2 size-4" />}Voorstel maken</Button></div>}
+              </> : sentReply ? (
+                <div className="rounded-xl border border-emerald-300/25 bg-emerald-300/5 p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-emerald-300/10 text-emerald-200"><Check className="size-4" /></span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-emerald-100">Antwoord verzonden</p>
+                      {sentReply.sentAt ? <time className="mt-1 block text-xs text-white/45">{formatDate(sentReply.sentAt)}</time> : null}
+                    </div>
+                  </div>
+                  <p className="mt-4 break-words text-sm font-medium text-white/85">{sentReply.subject}</p>
+                  <div className="mt-3 max-h-[360px] overflow-y-auto whitespace-pre-wrap break-words rounded-lg border border-white/10 bg-black/15 p-3 text-sm leading-6 text-white/70">{sentReply.body}</div>
+                  <p className="mt-3 text-xs leading-relaxed text-white/45">Dit verzonden antwoord blijft bij deze conversatie bewaard.</p>
+                </div>
+              ) : <div className="rounded-xl border border-dashed border-white/15 p-5 text-center"><Sparkles className="mx-auto size-6 text-[var(--brand-blue)]" /><p className="mt-3 text-sm font-medium">Nog geen antwoordvoorstel</p><p className="mt-1 text-xs text-white/45">Maak een voorstel met vaste kennis en eerder verzonden antwoorden.</p><Button className="mt-4" disabled={pending} onClick={generateDraft}>{pending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Sparkles className="mr-2 size-4" />}Voorstel maken</Button></div>}
             </div>
           </> : <Empty icon={Mail} text="Voor deze conversatie is geen inkomend bericht beschikbaar." />}
         </aside>
@@ -193,4 +228,16 @@ function Confidence({ value }: { value: MailDraftRecord["confidence"] }) {
 }
 
 function Empty({ icon: Icon, text }: { icon: typeof Inbox; text: string }) { return <div className="flex min-h-52 flex-1 flex-col items-center justify-center p-8 text-center text-white/40"><Icon className="size-8" /><p className="mt-3 text-sm">{text}</p></div> }
-function formatDate(value: string) { return new Intl.DateTimeFormat("nl-NL", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Amsterdam" }).format(new Date(value)) }
+function formatDate(value: string) {
+  const parts = new Intl.DateTimeFormat("nl-NL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: "Europe/Amsterdam",
+  }).formatToParts(new Date(value))
+  const values = Object.fromEntries(parts.filter((part) => part.type !== "literal").map((part) => [part.type, part.value]))
+  return `${values.day}-${values.month}-${values.year}, ${values.hour}:${values.minute}`
+}
