@@ -18,6 +18,7 @@ import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
 import { useWebsiteLocale } from "@/lib/site-i18n/provider"
+import { getSectionColorVars } from "@/lib/section-colors"
 
 export type RequestType = "contact" | "appointment" | "quote" | "whatsapp"
 
@@ -129,6 +130,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
   const { form, update, submit, status, errorMsg } = useRequestForm(recipientEmail, requestType, businessId, websiteId, locale, isPreview, messages.error)
 
   const sectionStyle: React.CSSProperties = {
+    ...getSectionColorVars(styles),
     backgroundColor: styles?.backgroundColor,
     backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
@@ -184,7 +186,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
     >
       <div className={`mx-auto ${layout.layout === "split" || layout.layout === "showcase" ? "grid max-w-6xl gap-8 md:grid-cols-[0.8fr_1.2fr] md:items-start" : layout.container}`}>
         <div className={`mb-10 ${layout.layout === "split" || layout.layout === "showcase" ? "md:mb-0 md:text-left" : layout.heading}`}>
-          <div className="mb-3 inline-flex items-center justify-center gap-2 rounded-full bg-amber-100 px-4 py-2 text-sm font-medium text-amber-800">
+          <div className="mb-3 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--section-accent)] px-4 py-2 text-sm font-medium text-[var(--section-accent-foreground)]">
             <Icon className="h-4 w-4" />
             {localizedLabel}
           </div>
@@ -203,7 +205,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
           )}
         </div>
 
-        <div className={`${layout.card} border border-border bg-white/70 backdrop-blur`}>
+        <div className={`${layout.card} border border-border bg-[var(--section-surface)] text-[var(--section-surface-foreground)] backdrop-blur`}>
           {status === "success" ? (
             <div className="flex flex-col items-center gap-3 py-10 text-center">
               <CheckCircle className="h-10 w-10 text-green-500" />
@@ -331,7 +333,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
                 </div>
               )}
 
-              <Button type="submit" disabled={status === "loading"} className="w-full">
+              <Button type="submit" disabled={status === "loading"} className="w-full bg-[var(--section-accent)] text-[var(--section-accent-foreground)] hover:brightness-90">
                 {status === "loading" ? (
                   <span className="flex items-center gap-2">
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />

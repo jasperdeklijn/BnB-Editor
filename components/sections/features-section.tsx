@@ -6,6 +6,7 @@ import { EditableText } from "@/components/editor/inline-editable-text"
 import { Check } from "lucide-react"
 import type { SectionStyles } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
+import { getSectionColorVars } from "@/lib/section-colors"
 
 interface FeaturesSectionProps {
   data: Record<string, unknown>
@@ -20,6 +21,7 @@ export function FeaturesSection({ data, isPreview, styles, onUpdate }: FeaturesS
   const layout = getLayoutClasses(data.layout)
 
   const sectionStyle: React.CSSProperties = {
+    ...getSectionColorVars(styles),
     backgroundColor: styles?.backgroundColor,
     backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
@@ -45,9 +47,9 @@ export function FeaturesSection({ data, isPreview, styles, onUpdate }: FeaturesS
         />
         <div className={`grid gap-3 sm:gap-4 ${layout.grid}`}>
           {features.map((feature, index) => (
-            <div key={typeof feature === "string" ? `${feature}-${index}` : feature.id ?? index} className={`flex items-center gap-3 ${layout.layout === "card" || layout.layout === "showcase" ? "rounded-2xl border border-border bg-white/70 p-5 shadow-sm backdrop-blur" : ""}`}>
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-amber-700">
-                <Check className="h-5 w-5 text-amber-50" />
+            <div key={typeof feature === "string" ? `${feature}-${index}` : feature.id ?? index} className={`flex items-center gap-3 ${layout.layout === "card" || layout.layout === "showcase" ? "rounded-2xl border border-border bg-[var(--section-surface)] p-5 text-[var(--section-surface-foreground)] shadow-sm backdrop-blur" : ""}`}>
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[var(--section-accent)]">
+                <Check className="h-5 w-5 text-[var(--section-accent-foreground)]" />
               </div>
               <EditableText
                 data={data}

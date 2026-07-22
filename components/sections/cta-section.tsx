@@ -4,6 +4,7 @@ import { ArrowRight, Phone } from "lucide-react"
 import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { normalizeSectionLayout } from "@/lib/section-layouts"
+import { getSectionColorVars } from "@/lib/section-colors"
 
 interface CtaSectionProps {
   data: Record<string, unknown>
@@ -36,6 +37,7 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
   const layout = (ctaLayoutMap[normalizeSectionLayout(data.layout)] ?? "centered") as CtaLayout
 
   const sectionStyle: React.CSSProperties = {
+    ...getSectionColorVars(styles),
     backgroundColor: styles?.backgroundColor,
     backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
@@ -48,6 +50,7 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
       <section
         className={`relative overflow-hidden ${styles?.fontFamily || ""}`}
         style={{
+          ...getSectionColorVars(styles),
           backgroundColor: styles?.backgroundColor || "#78350f",
           backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
           backgroundSize: "cover",
@@ -65,7 +68,7 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
           <div className="flex flex-wrap gap-3 justify-center">
             {primaryEnabled ? <a
               href={primaryHref}
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-amber-700 shadow hover:bg-amber-50 transition-all hover:scale-[1.02]"
+              className="inline-flex items-center gap-2 rounded-xl bg-[var(--section-accent)] px-6 py-3 text-sm font-semibold text-[var(--section-accent-foreground)] shadow transition-all hover:scale-[1.02] hover:brightness-90"
             >
               <EditableText data={data} path={["primaryCtaText"]} value={primaryText} isPreview={isPreview} onUpdate={onUpdate} />
               <ArrowRight className="h-4 w-4" />
@@ -91,7 +94,7 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
         style={sectionStyle}
       >
         <div className="mx-auto max-w-5xl">
-          <div className="flex flex-col items-center gap-8 rounded-2xl border border-border bg-white/70 px-8 py-12 shadow-sm backdrop-blur md:flex-row md:justify-between">
+          <div className="flex flex-col items-center gap-8 rounded-2xl border border-border bg-[var(--section-surface)] px-8 py-12 text-[var(--section-surface-foreground)] shadow-sm backdrop-blur md:flex-row md:justify-between">
             <div className="max-w-lg text-center md:text-left">
               <EditableText
                 as="h2"
@@ -110,7 +113,7 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
             <div className="flex flex-col gap-3">
               {primaryEnabled ? <a
                 href={primaryHref}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-700 px-8 py-3.5 text-sm font-semibold text-white shadow hover:bg-amber-800 transition-all hover:scale-[1.02]"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--section-accent)] px-8 py-3.5 text-sm font-semibold text-[var(--section-accent-foreground)] shadow transition-all hover:scale-[1.02] hover:brightness-90"
               >
                 <EditableText data={data} path={["primaryCtaText"]} value={primaryText} isPreview={isPreview} onUpdate={onUpdate} />
                 <ArrowRight className="h-4 w-4" />
@@ -118,7 +121,7 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
               {phone && (
                 <a
                   href={`tel:${phone}`}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-border px-8 py-3 text-sm text-muted-foreground hover:border-amber-400 hover:text-amber-700 transition-colors"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-border px-8 py-3 text-sm text-muted-foreground transition-colors hover:border-[var(--section-accent)] hover:text-[var(--section-accent)]"
                 >
                   <Phone className="h-4 w-4" />
                   <EditableText data={data} path={["phone"]} value={phone} isPreview={isPreview} onUpdate={onUpdate} />
@@ -154,7 +157,7 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
         <div className="flex flex-wrap items-center justify-center gap-4">
           {primaryEnabled ? <a
             href={primaryHref}
-            className="inline-flex items-center gap-2 rounded-xl bg-amber-700 px-8 py-4 text-base font-semibold text-white shadow-lg hover:bg-amber-800 transition-all hover:scale-[1.02]"
+            className="inline-flex items-center gap-2 rounded-xl bg-[var(--section-accent)] px-8 py-4 text-base font-semibold text-[var(--section-accent-foreground)] shadow-lg transition-all hover:scale-[1.02] hover:brightness-90"
           >
             <EditableText data={data} path={["primaryCtaText"]} value={primaryText} isPreview={isPreview} onUpdate={onUpdate} />
             <ArrowRight className="h-5 w-5" />
@@ -162,7 +165,7 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
           {secondaryEnabled && (
             <a
               href={secondaryHref}
-              className="inline-flex items-center gap-2 rounded-xl border border-border px-8 py-4 text-base font-semibold text-foreground hover:border-amber-400 hover:bg-amber-50 transition-all"
+              className="inline-flex items-center gap-2 rounded-xl border border-border px-8 py-4 text-base font-semibold text-foreground transition-all hover:border-[var(--section-accent)] hover:text-[var(--section-accent)]"
             >
               <EditableText data={data} path={["secondaryCtaText"]} value={secondaryText} isPreview={isPreview} onUpdate={onUpdate} />
             </a>
@@ -171,7 +174,7 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
         {phone && (
           <p className="mt-6 text-sm text-muted-foreground">
             Of bel direct:{" "}
-            <a href={`tel:${phone}`} className="font-medium text-amber-700 hover:underline">
+            <a href={`tel:${phone}`} className="font-medium text-[var(--section-accent)] hover:underline">
               <EditableText data={data} path={["phone"]} value={phone} isPreview={isPreview} onUpdate={onUpdate} />
             </a>
           </p>

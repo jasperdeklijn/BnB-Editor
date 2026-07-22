@@ -4,6 +4,7 @@ import { Star, Quote } from "lucide-react"
 import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
+import { getSectionColorVars } from "@/lib/section-colors"
 
 export interface TestimonialItem {
   id?: string
@@ -51,7 +52,7 @@ function StarRating({ rating }: { rating: number }) {
       {Array.from({ length: 5 }).map((_, i) => (
         <Star
           key={i}
-          className={`h-4 w-4 ${i < rating ? "fill-amber-400 text-amber-400" : "text-gray-200"}`}
+          className={`h-4 w-4 ${i < rating ? "fill-[var(--section-accent)] text-[var(--section-accent)]" : "text-gray-200"}`}
         />
       ))}
     </div>
@@ -74,8 +75,8 @@ function TestimonialCard({
   textStyle?: React.CSSProperties
 }) {
   return (
-    <div className="relative flex flex-col gap-4 rounded-2xl border border-border bg-white/70 p-6 shadow-sm backdrop-blur">
-      <Quote className="h-7 w-7 text-amber-300 flex-shrink-0" />
+    <div className="relative flex flex-col gap-4 rounded-2xl border border-border bg-[var(--section-surface)] p-6 text-[var(--section-surface-foreground)] shadow-sm backdrop-blur">
+      <Quote className="h-7 w-7 flex-shrink-0 text-[var(--section-accent)]" />
       {item.rating !== undefined && <StarRating rating={item.rating} />}
       <EditableText as="p" data={data} path={["items", index, "quote"]} value={item.quote} isPreview={isPreview} onUpdate={onUpdate} className="flex-1 text-sm leading-relaxed text-muted-foreground" style={textStyle} multiline />
       <div className="flex items-center gap-3 pt-2 border-t border-border">
@@ -86,7 +87,7 @@ function TestimonialCard({
             className="h-9 w-9 rounded-full object-cover flex-shrink-0"
           />
         ) : (
-          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 text-sm font-semibold text-amber-700">
+          <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[var(--section-accent)] text-sm font-semibold text-[var(--section-accent-foreground)]">
             {item.name.charAt(0)}
           </div>
         )}
@@ -115,6 +116,7 @@ export function TestimonialsSection({ data, isPreview, styles, onUpdate }: Testi
   const layout = getLayoutClasses(data.layout)
 
   const sectionStyle: React.CSSProperties = {
+    ...getSectionColorVars(styles),
     backgroundColor: styles?.backgroundColor,
     backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
@@ -129,7 +131,7 @@ export function TestimonialsSection({ data, isPreview, styles, onUpdate }: Testi
     >
       <div className={`mx-auto ${layout.container}`}>
         <div className={`mb-12 ${layout.heading}`}>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-amber-600">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[var(--section-accent)]">
             Ervaringen
           </p>
           <EditableText

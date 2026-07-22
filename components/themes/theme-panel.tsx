@@ -155,6 +155,7 @@ export function ThemePanel({
       const preset = THEME_PRESETS.find((p) => p.id === presetId);
       if (preset) {
         handleThemeChange({
+          ...theme,
           paletteId: preset.paletteId,
           fontPairId: preset.fontPairId,
           spacing: preset.spacing,
@@ -162,7 +163,7 @@ export function ThemePanel({
         });
       }
     },
-    [handleThemeChange]
+    [handleThemeChange, theme]
   );
 
   const handlePaletteChange = useCallback(

@@ -5,6 +5,7 @@ import { ChevronDown } from "lucide-react"
 import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
+import { getSectionColorVars } from "@/lib/section-colors"
 
 export interface FaqItem {
   id?: string
@@ -72,7 +73,7 @@ function FaqRow({
       >
         <EditableText data={data} path={["items", index, "question"]} value={item.question} isPreview={isPreview} onUpdate={onUpdate} className="text-sm font-medium md:text-base" style={textStyle} />
         <ChevronDown
-          className={`h-4 w-4 flex-shrink-0 text-amber-600 transition-transform duration-200 ${
+          className={`h-4 w-4 flex-shrink-0 text-[var(--section-accent)] transition-transform duration-200 ${
             open ? "rotate-180" : ""
           }`}
         />
@@ -108,6 +109,7 @@ export function FaqSection({ data, isPreview, styles, onUpdate }: FaqSectionProp
   const layout = getLayoutClasses(data.layout)
 
   const sectionStyle: React.CSSProperties = {
+    ...getSectionColorVars(styles),
     backgroundColor: styles?.backgroundColor,
     backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
@@ -122,7 +124,7 @@ export function FaqSection({ data, isPreview, styles, onUpdate }: FaqSectionProp
     >
       <div className={`mx-auto ${layout.container}`}>
         <div className={`mb-12 ${layout.heading}`}>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-amber-600">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[var(--section-accent)]">
             FAQ
           </p>
           <EditableText
@@ -140,7 +142,7 @@ export function FaqSection({ data, isPreview, styles, onUpdate }: FaqSectionProp
           )}
         </div>
 
-        <div className={`${layout.layout === "split" ? "columns-1 md:columns-2 md:gap-6" : ""} rounded-2xl border border-border bg-white/70 px-6 shadow-sm backdrop-blur`}>
+        <div className={`${layout.layout === "split" ? "columns-1 md:columns-2 md:gap-6" : ""} rounded-2xl border border-border bg-[var(--section-surface)] px-6 text-[var(--section-surface-foreground)] shadow-sm backdrop-blur`}>
           {items.map((item, idx) => (
             <FaqRow key={item.id ?? idx} item={item} data={editableData} index={idx} isPreview={isPreview} onUpdate={onUpdate} textStyle={textStyle} />
           ))}

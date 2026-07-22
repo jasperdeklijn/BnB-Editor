@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   CheckCircle,
   Copy,
@@ -35,6 +35,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import type { EntitlementViolation } from "@/lib/entitlements"
+import { getActiveWebsiteId, setActiveWebsiteId } from "@/lib/active-website"
 import { PLATFORM_DOMAIN } from "@/lib/platform"
 
 type DomainStatus = "provisioning" | "active" | "add_failed" | "removal_pending" | "removal_failed"
@@ -134,6 +135,16 @@ export function DomainDashboard({ websites }: DomainDashboardProps) {
   const [publishViolations, setPublishViolations] = useState<EntitlementViolation[]>([])
   const { setIsSaving, setSaveState } = useEditorLayout()
 
+  useEffect(() => {
+    const rememberedWebsiteId = getActiveWebsiteId()
+    const rememberedWebsite = websites.find((website) => website.id === rememberedWebsiteId)
+    if (rememberedWebsite) {
+      setSelectedWebsiteId(rememberedWebsite.id)
+    } else if (initialWebsite) {
+      setActiveWebsiteId(initialWebsite.id)
+    }
+  }, [initialWebsite, websites])
+
   const selectedWebsite = useMemo(
     () => websiteList.find((website) => website.id === selectedWebsiteId) || websiteList[0],
     [selectedWebsiteId, websiteList],
@@ -159,6 +170,7 @@ export function DomainDashboard({ websites }: DomainDashboardProps) {
   }
 
   const handleWebsiteSelect = (websiteId: string) => {
+    setActiveWebsiteId(websiteId)
     setSelectedWebsiteId(websiteId)
     setNewDomain("")
     setVerifyStates({})

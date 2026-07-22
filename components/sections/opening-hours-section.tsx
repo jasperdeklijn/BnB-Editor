@@ -5,6 +5,7 @@ import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
 import { useWebsiteLocale } from "@/lib/site-i18n/provider"
+import { getSectionColorVars } from "@/lib/section-colors"
 
 export interface OpeningHoursDay {
   label: string
@@ -61,6 +62,7 @@ export function OpeningHoursSection({ data, isPreview, styles, onUpdate }: Openi
   const layout = getLayoutClasses(data.layout)
 
   const sectionStyle: React.CSSProperties = {
+    ...getSectionColorVars(styles),
     backgroundColor: styles?.backgroundColor,
     backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
@@ -115,7 +117,7 @@ export function OpeningHoursSection({ data, isPreview, styles, onUpdate }: Openi
     >
       <div className={`mx-auto ${layout.layout === "split" || layout.layout === "showcase" ? "max-w-4xl" : layout.container}`}>
         <div className={`mb-10 ${layout.heading}`}>
-          <div className="mb-3 inline-flex items-center justify-center gap-2 rounded-full bg-amber-100 px-4 py-2 text-sm font-medium text-amber-800">
+          <div className="mb-3 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--section-accent)] px-4 py-2 text-sm font-medium text-[var(--section-accent-foreground)]">
             <Clock className="h-4 w-4" />
             {messages.openingHours}
           </div>
@@ -134,21 +136,22 @@ export function OpeningHoursSection({ data, isPreview, styles, onUpdate }: Openi
           )}
         </div>
 
-        <div className={`overflow-hidden rounded-2xl border border-border bg-white/70 shadow-sm backdrop-blur ${layout.layout === "split" || layout.layout === "showcase" ? "grid md:grid-cols-2" : ""}`}>
+        <div className={`overflow-hidden rounded-2xl border border-border bg-[var(--section-surface)] text-[var(--section-surface-foreground)] shadow-sm backdrop-blur ${layout.layout === "split" || layout.layout === "showcase" ? "grid md:grid-cols-2" : ""}`}>
           {rows.map((row, idx) => (
             <div
               key={idx}
               className={`flex items-center justify-between px-6 py-3.5 text-sm ${
                 idx < rows.length - 1 ? "border-b border-border" : ""
-              } ${row.isToday ? "bg-amber-50" : ""}`}
+              }`}
+              style={row.isToday ? { backgroundColor: "color-mix(in srgb, var(--section-accent) 12%, transparent)" } : undefined}
             >
               <span
-                className={`font-medium ${row.isToday ? "text-amber-700" : ""}`}
-                style={!row.isToday ? textStyle : undefined}
+                className="font-medium"
+                style={row.isToday ? { color: "var(--section-accent)" } : textStyle}
               >
                 {row.label}
                 {row.isToday && (
-                  <span className="ml-2 rounded-full bg-amber-200 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+                  <span className="ml-2 rounded-full bg-[var(--section-accent)] px-2 py-0.5 text-[10px] font-semibold text-[var(--section-accent-foreground)]">
                     {messages.today}
                   </span>
                 )}

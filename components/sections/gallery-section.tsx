@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { normalizeSectionLayout } from "@/lib/section-layouts"
+import { getSectionColorVars } from "@/lib/section-colors"
 
 export type GalleryLayout = "grid" | "vertical-carousel" | "horizontal-carousel" | "masonry" | "single-with-thumbs" | "full-slider"
 
@@ -59,6 +60,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
   const [currentIndex, setCurrentIndex] = useState(0)
 
   const sectionStyle: React.CSSProperties = {
+    ...getSectionColorVars(styles),
     backgroundColor: styles?.backgroundColor,
     backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
@@ -183,8 +185,8 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
               <div
                 key={index}
                 data-gallery-image-index={index}
-                className={`aspect-square overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 transition-all duration-200 ${
-                  dragOverIndex === index ? "ring-2 ring-amber-600 shadow-lg scale-95" : ""
+                className={`aspect-square overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 ring-1 ring-[var(--section-accent)] transition-all duration-200 ${
+                  dragOverIndex === index ? "scale-95 shadow-lg ring-2 ring-[var(--section-accent)]" : ""
                 } ${draggedIndex === index ? "opacity-50" : ""}`}
                 draggable={!isPreview}
                 onDragStart={(e) => handleDragStart(e, index)}
@@ -246,8 +248,8 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
                     <div
                       key={index}
                       data-gallery-image-index={index}
-                      className={`aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 transition-all duration-200 flex-shrink-0 ${
-                        dragOverIndex === index ? "ring-2 ring-amber-600 shadow-lg scale-95" : ""
+                      className={`aspect-video flex-shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 ring-1 ring-[var(--section-accent)] transition-all duration-200 ${
+                        dragOverIndex === index ? "scale-95 shadow-lg ring-2 ring-[var(--section-accent)]" : ""
                       } ${draggedIndex === index ? "opacity-50" : ""}`}
                       draggable={!isPreview}
                       onDragStart={(e) => handleDragStart(e, index)}
@@ -293,8 +295,8 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
                 <div
                   key={index}
                   data-gallery-image-index={index}
-                  className={`flex-shrink-0 w-80 aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 transition-all duration-200 ${
-                    dragOverIndex === index ? "ring-2 ring-amber-600 shadow-lg scale-95" : ""
+                  className={`aspect-video w-80 flex-shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 ring-1 ring-[var(--section-accent)] transition-all duration-200 ${
+                    dragOverIndex === index ? "scale-95 shadow-lg ring-2 ring-[var(--section-accent)]" : ""
                   } ${draggedIndex === index ? "opacity-50" : ""}`}
                   draggable={!isPreview}
                   onDragStart={(e) => handleDragStart(e, index)}
@@ -337,8 +339,8 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
               <div
                 key={index}
                 data-gallery-image-index={index}
-                className={`mb-3 overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 break-inside-avoid transition-all duration-200 ${
-                  dragOverIndex === index ? "ring-2 ring-amber-600 shadow-lg scale-95" : ""
+                className={`mb-3 break-inside-avoid overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 ring-1 ring-[var(--section-accent)] transition-all duration-200 ${
+                  dragOverIndex === index ? "scale-95 shadow-lg ring-2 ring-[var(--section-accent)]" : ""
                 } ${draggedIndex === index ? "opacity-50" : ""}`}
                 draggable={!isPreview}
                 onDragStart={(e) => handleDragStart(e, index)}
@@ -379,8 +381,8 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
             {/* Main Image */}
             <div
               data-gallery-image-index={activeIndex}
-              className={`aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 transition-all duration-200 ${
-                dragOverIndex === activeIndex ? "ring-2 ring-amber-600 shadow-lg" : ""
+              className={`aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 ring-1 ring-[var(--section-accent)] transition-all duration-200 ${
+                dragOverIndex === activeIndex ? "shadow-lg ring-2 ring-[var(--section-accent)]" : ""
               }`}
               onDragOver={!isPreview ? (e) => handleDragOver(e, activeIndex) : undefined}
               onDragLeave={!isPreview ? handleDragLeave : undefined}
@@ -399,9 +401,9 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
                 <div
                   key={index}
                   data-gallery-image-index={index}
-                  className={`flex-shrink-0 w-20 aspect-video overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 cursor-pointer transition-all duration-200 ${
-                    index === activeIndex ? "ring-2 ring-amber-500" : ""
-                  } ${dragOverIndex === index ? "ring-2 ring-amber-600 shadow-lg scale-95" : ""} ${
+                  className={`aspect-video w-20 flex-shrink-0 cursor-pointer overflow-hidden rounded-lg bg-gradient-to-br from-amber-100 to-orange-200 ring-1 ring-[var(--section-accent)] transition-all duration-200 ${
+                    index === activeIndex ? "ring-2 ring-[var(--section-accent)]" : ""
+                  } ${dragOverIndex === index ? "scale-95 shadow-lg ring-2 ring-[var(--section-accent)]" : ""} ${
                     draggedIndex === index ? "opacity-50" : ""
                   }`}
                   onClick={() => setActiveIndex(index)}
@@ -464,13 +466,13 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
           {/* Navigation */}
           <button
             onClick={() => setCurrentIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1))}
-            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-sm rounded-full p-2 text-white hover:bg-white/30 transition-colors"
+            className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-[var(--section-accent)] p-2 text-[var(--section-accent-foreground)] backdrop-blur-sm transition-all hover:brightness-90"
           >
             ‹
           </button>
           <button
             onClick={() => setCurrentIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0))}
-            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-sm rounded-full p-2 text-white hover:bg-white/30 transition-colors"
+            className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-[var(--section-accent)] p-2 text-[var(--section-accent-foreground)] backdrop-blur-sm transition-all hover:brightness-90"
           >
             ›
           </button>

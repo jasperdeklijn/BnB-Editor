@@ -10,6 +10,8 @@ export function getThemeDefaultSectionStyles(theme: ResolvedTheme): SectionStyle
   return {
     backgroundColor: theme.palette.colors.background,
     textColor: theme.palette.colors.foreground,
+    accentColor: theme.palette.colors.accent,
+    surfaceColor: theme.palette.colors.card,
   }
 }
 

@@ -10,6 +10,7 @@ import Link from "next/link"
 import { AlertCircle, Briefcase, CalendarDays, CheckCircle, ChevronLeft, ChevronRight, DollarSign, Send, Users, X } from "lucide-react"
 import { normalizeSectionLayout } from "@/lib/section-layouts"
 import { useWebsiteLocale } from "@/lib/site-i18n/provider"
+import { getSectionColorVars } from "@/lib/section-colors"
 import type { SiteMessages } from "@/lib/site-i18n/messages"
 
 export type ServicesLayout = "grid" | "list" | "featured" | "magazine" | "minimal" | "carousel"
@@ -206,7 +207,7 @@ function GridLayout({
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
             {service.price && (
-              <div className="absolute bottom-3 right-3 rounded-full bg-white/90 px-3 py-1 text-sm font-bold text-primary shadow backdrop-blur-sm">
+              <div className="absolute bottom-3 right-3 rounded-full bg-[var(--section-surface)] px-3 py-1 text-sm font-bold text-[var(--section-accent)] shadow backdrop-blur-sm">
                 {service.price}
               </div>
             )}
@@ -300,7 +301,7 @@ function ListLayout({
               {buttonLabel ? <Button
                 type="button"
                 size="sm"
-                className="bg-[var(--section-accent)] text-white brightness-100 hover:brightness-90"
+                className="bg-[var(--section-accent)] text-[var(--section-accent-foreground)] brightness-100 hover:brightness-90"
                 onClick={() => {
                   onMoreInfo(service)
                 }}
@@ -370,7 +371,7 @@ function FeaturedLayout({
             </div>
             {buttonLabel ? <Button
               type="button"
-              className="bg-[var(--section-accent)] text-white brightness-100 hover:brightness-90"
+              className="bg-[var(--section-accent)] text-[var(--section-accent-foreground)] brightness-100 hover:brightness-90"
               onClick={() => {
                 onMoreInfo(featured)
               }}
@@ -387,7 +388,7 @@ function FeaturedLayout({
           {rest.map((service) => (
             <div
               key={service.id}
-              className="group overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition-shadow hover:shadow-md"
+              className="group overflow-hidden rounded-2xl border border-border bg-[var(--section-surface)] shadow-sm transition-shadow hover:shadow-md"
             >
               <div className="relative h-44 overflow-hidden">
                 <ServiceImage
@@ -405,7 +406,7 @@ function FeaturedLayout({
                 )}
                 <div className="flex items-center justify-between">
                   {service.price && (
-                    <span className="text-sm font-bold text-primary">{service.price}</span>
+                    <span className="text-sm font-bold text-[var(--section-accent)]">{service.price}</span>
                   )}
                   {buttonLabel ? <Button
                     type="button"
@@ -458,7 +459,7 @@ function MagazineLayout({
               />
             </div>
             <div className="sm:w-1/2 p-8 sm:p-10 flex flex-col justify-center">
-              <span className="mb-3 text-xs font-semibold uppercase tracking-widest text-primary">
+              <span className="mb-3 text-xs font-semibold uppercase tracking-widest text-[var(--section-accent)]">
                 Dienst {i + 1}
               </span>
               <h3
@@ -485,7 +486,7 @@ function MagazineLayout({
               </div>
               {buttonLabel ? <Button
                 type="button"
-                className="mt-6 w-fit bg-[var(--section-accent)] text-white brightness-100 hover:brightness-90"
+                className="mt-6 w-fit bg-[var(--section-accent)] text-[var(--section-accent-foreground)] brightness-100 hover:brightness-90"
                 onClick={() => {
                   onMoreInfo(service)
                 }}
@@ -521,7 +522,7 @@ function MinimalLayout({
             </div>
             <div>
               <h3
-                className="font-bold text-foreground transition-colors group-hover:text-primary"
+                className="font-bold text-foreground transition-colors group-hover:text-[var(--section-accent)]"
                 style={textStyle}
               >
                 {service.name}
@@ -589,10 +590,10 @@ function CarouselLayout({
       <button
         type="button"
         onClick={() => scroll("left")}
-        className="absolute left-0 top-1/2 z-10 flex h-10 w-10 -translate-x-4 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-white shadow-md transition-colors hover:bg-secondary"
+        className="absolute left-0 top-1/2 z-10 flex h-10 w-10 -translate-x-4 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-[var(--section-surface)] shadow-md transition-all hover:brightness-95"
         aria-label="Vorige"
       >
-        <ChevronLeft className="h-5 w-5 text-primary" />
+        <ChevronLeft className="h-5 w-5 text-[var(--section-accent)]" />
       </button>
 
       <div
@@ -613,7 +614,7 @@ function CarouselLayout({
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
               {service.price && (
-                <div className="absolute bottom-3 right-3 rounded-full bg-white/90 px-3 py-1 text-sm font-bold text-primary shadow backdrop-blur-sm">
+                <div className="absolute bottom-3 right-3 rounded-full bg-[var(--section-surface)] px-3 py-1 text-sm font-bold text-[var(--section-accent)] shadow backdrop-blur-sm">
                   {service.price}
                 </div>
               )}
@@ -654,10 +655,10 @@ function CarouselLayout({
       <button
         type="button"
         onClick={() => scroll("right")}
-        className="absolute right-0 top-1/2 z-10 flex h-10 w-10 translate-x-4 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-white shadow-md transition-colors hover:bg-secondary"
+        className="absolute right-0 top-1/2 z-10 flex h-10 w-10 translate-x-4 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-[var(--section-surface)] shadow-md transition-all hover:brightness-95"
         aria-label="Volgende"
       >
-        <ChevronRight className="h-5 w-5 text-primary" />
+        <ChevronRight className="h-5 w-5 text-[var(--section-accent)]" />
       </button>
     </div>
   )
@@ -688,12 +689,12 @@ function ServiceInfoPopup({
       }}
     >
       <div
-        className="max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-2xl border border-border bg-white shadow-2xl"
+        className="max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-2xl border border-border bg-[var(--section-surface)] text-[var(--section-surface-foreground)] shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-5">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--section-accent)]">
               {settings.eyebrow}
             </p>
             <h3 id="service-info-popup-title" className="truncate text-lg font-bold text-foreground">
@@ -753,7 +754,7 @@ function ServiceInfoPopup({
               <a
                 href={settings.ctaHref}
                 onClick={(event) => handleSectionAnchorClick(event, settings.ctaHref, onClose)}
-                className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-[var(--section-accent)] px-5 py-3 text-sm font-semibold text-white transition-all hover:brightness-90 sm:w-auto"
+                className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-[var(--section-accent)] px-5 py-3 text-sm font-semibold text-[var(--section-accent-foreground)] transition-all hover:brightness-90 sm:w-auto"
               >
                 {settings.ctaLabel}
               </a>
@@ -884,7 +885,7 @@ function ServicesBookingSpace({
             <a
               href={settings.targetHref}
               onClick={(event) => handleSectionAnchorClick(event, settings.targetHref)}
-              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--section-accent)] px-5 py-3 text-sm font-semibold text-white transition-all hover:brightness-90"
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--section-accent)] px-5 py-3 text-sm font-semibold text-[var(--section-accent-foreground)] transition-all hover:brightness-90"
             >
               <CalendarDays className="h-4 w-4" />
               {settings.buttonLabel}
@@ -896,7 +897,7 @@ function ServicesBookingSpace({
   }
 
   return (
-    <div className="mt-10 overflow-hidden rounded-2xl border border-border bg-white shadow-sm">
+    <div className="mt-10 overflow-hidden rounded-2xl border border-border bg-[var(--section-surface)] text-[var(--section-surface-foreground)] shadow-sm">
       <div className="grid gap-0 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="bg-secondary p-5 sm:p-6">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-primary">
@@ -1038,7 +1039,7 @@ function ServicesBookingSpace({
               <Button
                 type="submit"
                 disabled={status === "loading"}
-                className="w-full rounded-full bg-[var(--section-accent)] text-white brightness-100 hover:brightness-90"
+                className="w-full rounded-full bg-[var(--section-accent)] text-[var(--section-accent-foreground)] brightness-100 hover:brightness-90"
               >
                 {status === "loading" ? (
                   <span className="flex items-center gap-2">
@@ -1195,12 +1196,11 @@ export function ServicesSection({ data, styles, isPreview, onUpdate }: ServicesS
   }, [businessId, serviceIdsKey])
 
   const sectionStyle: React.CSSProperties = {
+    ...getSectionColorVars(styles, { accent: "hsl(var(--primary))", surface: "#ffffff" }),
     backgroundColor: styles?.backgroundColor,
     backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
     backgroundPosition: "center",
-    ["--section-surface" as string]: styles?.surfaceColor || "#ffffff",
-    ["--section-accent" as string]: styles?.accentColor || "hsl(var(--primary))",
   }
 
   const textStyle: React.CSSProperties = { color: styles?.textColor }
@@ -1242,14 +1242,14 @@ export function ServicesSection({ data, styles, isPreview, onUpdate }: ServicesS
         }}
       />
       <div className="relative mx-auto max-w-4xl text-center">
-        <div className="mb-5 inline-flex items-center rounded-full border border-border bg-white px-4 py-2 text-sm font-medium text-primary shadow-sm">
+        <div className="mb-5 inline-flex items-center rounded-full border border-border bg-[var(--section-surface)] px-4 py-2 text-sm font-medium text-[var(--section-accent)] shadow-sm">
           Aanbod beheren
         </div>
         <EditableText as="h2" data={data} path={["title"]} value={title} isPreview={isPreview} onUpdate={onUpdate} className="mb-6 text-4xl font-extrabold tracking-tight text-foreground" style={textStyle} />
-        <div className="relative overflow-hidden rounded-2xl border border-border bg-white p-12 shadow-sm">
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-[var(--section-surface)] p-12 text-[var(--section-surface-foreground)] shadow-sm">
           <div className="relative flex flex-col items-center">
             <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-[var(--section-accent)] shadow-sm">
-              <Briefcase className="h-10 w-10 text-primary-foreground" />
+              <Briefcase className="h-10 w-10 text-[var(--section-accent-foreground)]" />
             </div>
             <h3 className="mb-3 text-2xl font-bold text-foreground">
               Nog geen aanbod aangemaakt
@@ -1259,7 +1259,7 @@ export function ServicesSection({ data, styles, isPreview, onUpdate }: ServicesS
             </p>
             <Link
               href="/editor/services"
-              className="mt-10 inline-flex items-center gap-3 rounded-full bg-[var(--section-accent)] px-7 py-4 text-sm font-semibold text-white transition-all duration-200 hover:brightness-90"
+              className="mt-10 inline-flex items-center gap-3 rounded-full bg-[var(--section-accent)] px-7 py-4 text-sm font-semibold text-[var(--section-accent-foreground)] transition-all duration-200 hover:brightness-90"
             >
               <Briefcase className="h-4 w-4" />
               Aanbod aanmaken

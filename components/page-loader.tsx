@@ -15,6 +15,7 @@ import { DEFAULT_WEBSITE_LOCALE, type SupportedWebsiteLocale } from "@/lib/i18n/
 import { applySectionTranslation, materializeNavigationTranslationSource } from "@/lib/i18n/section-translations"
 import { getSiteMessages } from "@/lib/site-i18n/messages"
 import { WebsiteLocaleProvider } from "@/lib/site-i18n/provider"
+import { normalizeLanguageSwitcherConfig } from "@/lib/i18n/language-switcher"
 import { isMultilingualWebsitesEnabled } from "@/lib/i18n/feature"
 import { PublicVisitTracker } from "@/components/analytics/public-visit-tracker"
 
@@ -226,7 +227,11 @@ export async function loadPublicWebsitePage({
       },
     }))
   }
-  const themeConfig = liveSnapshot?.website.themeConfig ?? (website.theme_config as ThemeConfig | null) ?? null
+  const currentThemeConfig = (website.theme_config as ThemeConfig | null) ?? null
+  const themeConfig = liveSnapshot?.website.themeConfig ?? currentThemeConfig
+  const languageSwitcher = normalizeLanguageSwitcherConfig(
+    currentThemeConfig?.languageSwitcher ?? themeConfig?.languageSwitcher,
+  )
   sections.splice(0, sections.length, ...applyThemeDefaultsToSections(resolvedSections, themeConfig))
 
   const localeLinks = localeOptions.map((entry) => ({
@@ -243,6 +248,7 @@ export async function loadPublicWebsitePage({
       activeLocale,
       localeLinks,
       siteMessages: messages,
+      languageSwitcher,
     },
   })))
 

@@ -5,6 +5,7 @@ import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
 import { useWebsiteLocale } from "@/lib/site-i18n/provider"
+import { getSectionColorVars } from "@/lib/section-colors"
 
 export function AboutSection({ data, isPreview, styles, onUpdate }: { data: Record<string, unknown>; isPreview: boolean; styles?: SectionStyles; onUpdate?: (newData: Record<string, unknown>) => void }) {
   const { messages } = useWebsiteLocale()
@@ -14,7 +15,7 @@ export function AboutSection({ data, isPreview, styles, onUpdate }: { data: Reco
   const layout = getLayoutClasses(data.layout)
   const isSplit = layout.layout === "split" || layout.layout === "showcase"
   const textStyle: React.CSSProperties = { color: styles?.textColor }
-  const sectionStyle: React.CSSProperties = { backgroundColor: styles?.backgroundColor, backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }
+  const sectionStyle: React.CSSProperties = { ...getSectionColorVars(styles), backgroundColor: styles?.backgroundColor, backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }
 
   const imageGallery = images.length > 0 ? (
     <div className={`grid gap-3 ${images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
@@ -22,19 +23,19 @@ export function AboutSection({ data, isPreview, styles, onUpdate }: { data: Reco
         <div
           key={`${image}-${index}`}
           data-about-image-index={index}
-          className={`${images.length > 2 && index === 0 ? "col-span-2 h-64" : "h-44"} overflow-hidden rounded-2xl shadow-sm`}
+          className={`${images.length > 2 && index === 0 ? "col-span-2 h-64" : "h-44"} overflow-hidden rounded-2xl border border-[var(--section-accent)] shadow-sm`}
         >
           <img src={image} alt={`${title} ${index + 1}`} className="h-full w-full object-cover" />
         </div>
       ))}
     </div>
   ) : isPreview ? null : (
-    <div className="flex min-h-44 items-center justify-center rounded-2xl border border-dashed text-muted-foreground"><ImageIcon className="mr-2 h-5 w-5" />{messages.imagePlaceholder}</div>
+    <div className="flex min-h-44 items-center justify-center rounded-2xl border border-dashed border-[var(--section-accent)] text-muted-foreground"><ImageIcon className="mr-2 h-5 w-5 text-[var(--section-accent)]" />{messages.imagePlaceholder}</div>
   )
 
   return (
     <section className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-      <div className={`mx-auto ${layout.container} ${isSplit ? "grid items-center gap-10 md:grid-cols-2" : ""} ${layout.layout === "card" ? "rounded-2xl border border-border p-8 shadow-sm" : ""}`} style={layout.layout === "card" ? { backgroundColor: styles?.surfaceColor || "rgba(255,255,255,0.85)" } : undefined}>
+      <div className={`mx-auto ${layout.container} ${isSplit ? "grid items-center gap-10 md:grid-cols-2" : ""} ${layout.layout === "card" ? "rounded-2xl border border-border bg-[var(--section-surface)] p-8 text-[var(--section-surface-foreground)] shadow-sm" : ""}`}>
         {isSplit && layout.layout === "showcase" ? imageGallery : null}
         <div className={layout.heading}>
           <EditableText as="h2" data={data} path={["title"]} value={title} isPreview={isPreview} onUpdate={onUpdate} className="mb-5 text-3xl font-bold md:text-4xl" style={textStyle} />

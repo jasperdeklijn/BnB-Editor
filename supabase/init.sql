@@ -667,7 +667,9 @@ returns trigger
 language plpgsql
 as $$
 begin
-  if tg_op = 'DELETE' and old.is_default then
+  if tg_op = 'DELETE'
+     and old.is_default
+     and exists (select 1 from public.websites where id = old.website_id) then
     raise exception 'The default website locale cannot be removed or disabled';
   end if;
   if tg_op = 'UPDATE' and old.is_default and not new.is_enabled then

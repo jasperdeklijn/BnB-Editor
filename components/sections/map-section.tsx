@@ -5,6 +5,7 @@ import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
 import { useWebsiteLocale } from "@/lib/site-i18n/provider"
+import { getSectionColorVars } from "@/lib/section-colors"
 
 interface MapSectionProps {
   data: Record<string, unknown>
@@ -38,6 +39,7 @@ export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProp
     : undefined
 
   const sectionStyle: React.CSSProperties = {
+    ...getSectionColorVars(styles),
     backgroundColor: styles?.backgroundColor,
     backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
@@ -52,7 +54,7 @@ export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProp
     >
       <div className={`mx-auto ${layout.container}`}>
         <div className={`mb-10 ${layout.heading}`}>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-amber-600">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[var(--section-accent)]">
             {messages.location}
           </p>
           <EditableText
@@ -70,23 +72,23 @@ export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProp
           )}
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-border shadow-sm">
+        <div className="overflow-hidden rounded-2xl border border-border bg-[var(--section-surface)] text-[var(--section-surface-foreground)] shadow-sm">
           <div className={`grid ${layout.layout === "compact" ? "" : "md:grid-cols-5"}`}>
             {/* Info panel */}
-            <div className={`flex flex-col justify-center gap-5 px-8 py-10 ${layout.layout === "compact" ? "" : "md:col-span-2"}`} style={{ backgroundColor: styles?.accentColor || "#b45309" }}>
-              <h3 className="text-lg font-semibold text-white">{messages.visitUs}</h3>
+            <div className={`flex flex-col justify-center gap-5 bg-[var(--section-accent)] px-8 py-10 text-[var(--section-accent-foreground)] ${layout.layout === "compact" ? "" : "md:col-span-2"}`}>
+              <h3 className="text-lg font-semibold">{messages.visitUs}</h3>
 
               {address && (
                 <div className="flex items-start gap-3">
-                  <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-300" />
+                  <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 opacity-80" />
                   <div>
-                    <EditableText as="p" data={data} path={["address"]} value={address} isPreview={isPreview} onUpdate={onUpdate} className="text-sm text-amber-100" multiline />
+                    <EditableText as="p" data={data} path={["address"]} value={address} isPreview={isPreview} onUpdate={onUpdate} className="text-sm opacity-90" multiline />
                     {mapsHref && (
                       <a
                         href={mapsHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-1 inline-flex items-center gap-1 text-xs text-amber-300 hover:text-white transition-colors"
+                        className="mt-1 inline-flex items-center gap-1 text-xs opacity-80 transition-opacity hover:opacity-100"
                       >
                         {messages.openMaps}
                         <ExternalLink className="h-3 w-3" />
@@ -98,10 +100,10 @@ export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProp
 
               {phone && (
                 <div className="flex items-center gap-3">
-                  <Phone className="h-4 w-4 flex-shrink-0 text-amber-300" />
+                  <Phone className="h-4 w-4 flex-shrink-0 opacity-80" />
                   <a
                     href={`tel:${phone}`}
-                    className="text-sm text-amber-100 hover:text-white transition-colors"
+                    className="text-sm opacity-90 transition-opacity hover:opacity-100"
                   >
                     <EditableText data={data} path={["phone"]} value={phone} isPreview={isPreview} onUpdate={onUpdate} />
                   </a>
@@ -110,10 +112,10 @@ export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProp
 
               {email && (
                 <div className="flex items-center gap-3">
-                  <Mail className="h-4 w-4 flex-shrink-0 text-amber-300" />
+                  <Mail className="h-4 w-4 flex-shrink-0 opacity-80" />
                   <a
                     href={`mailto:${email}`}
-                    className="text-sm text-amber-100 hover:text-white transition-colors"
+                    className="text-sm opacity-90 transition-opacity hover:opacity-100"
                   >
                     <EditableText data={data} path={["email"]} value={email} isPreview={isPreview} onUpdate={onUpdate} />
                   </a>
@@ -121,7 +123,7 @@ export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProp
               )}
 
               {!address && !phone && !email && (
-                <p className="text-sm text-amber-200">
+                <p className="text-sm opacity-80">
                   Voeg een adres of contactgegevens toe via de editor.
                 </p>
               )}
@@ -142,9 +144,9 @@ export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProp
                   className="block h-full w-full"
                 />
               ) : (
-                <div className="flex h-full min-h-64 items-center justify-center bg-amber-50 md:min-h-80">
+                <div className="flex h-full min-h-64 items-center justify-center bg-[var(--section-surface)] text-[var(--section-surface-foreground)] md:min-h-80">
                   <div className="text-center text-muted-foreground">
-                    <MapPin className="mx-auto mb-2 h-8 w-8 text-amber-300" />
+                    <MapPin className="mx-auto mb-2 h-8 w-8 text-[var(--section-accent)]" />
                     <p className="text-sm">
                       {address ? (
                         <EditableText data={data} path={["address"]} value={address} isPreview={isPreview} onUpdate={onUpdate} />

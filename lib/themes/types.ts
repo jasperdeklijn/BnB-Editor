@@ -42,12 +42,22 @@ export type ThemeSpacing = 'compact' | 'comfortable' | 'spacious';
 // Border radius scale
 export type ThemeRadius = 'none' | 'small' | 'medium' | 'large' | 'full';
 
+export type LanguageSwitcherStyle = 'dropdown' | 'buttons' | 'compact';
+
+export type LanguageSwitcherPosition = 'nav-left' | 'nav-right' | 'bottom-left' | 'bottom-right';
+
+export interface LanguageSwitcherConfig {
+  style: LanguageSwitcherStyle;
+  position: LanguageSwitcherPosition;
+}
+
 // Complete theme configuration
 export interface ThemeConfig {
   paletteId: string;
   fontPairId: string;
   spacing: ThemeSpacing;
   radius: ThemeRadius;
+  languageSwitcher?: LanguageSwitcherConfig;
 }
 
 // Full theme with resolved values

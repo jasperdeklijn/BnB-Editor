@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { normalizeSectionLayout } from "@/lib/section-layouts"
+import { getSectionColorVars } from "@/lib/section-colors"
 
 export type HeroLayout = "centered" | "split" | "fullwidth" | "minimal" | "card" | "split-reverse"
 
@@ -32,6 +33,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
   const ctaEnabled = data.ctaEnabled !== false && Boolean(ctaText)
   const ctaHref = (data.ctaHref as string) || "#contact"
   const layout = (heroLayoutMap[normalizeSectionLayout(data.layout)] ?? "centered") as HeroLayout
+  const colorVars = getSectionColorVars(styles)
 
   const textStyle: React.CSSProperties = {
     color: styles?.textColor,
@@ -43,6 +45,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
       <section
         className={`relative flex min-h-[400px] items-center justify-center overflow-hidden px-4 py-12 sm:min-h-[500px] sm:px-6 sm:py-16 md:min-h-[600px] md:py-24 ${styles?.fontFamily || ""}`}
         style={{
+          ...colorVars,
           backgroundColor: styles?.backgroundColor || "#fffbeb",
           backgroundImage: styles?.backgroundImage ? `linear-gradient(to bottom right, rgba(255,251,235,0.9), rgba(254,243,199,0.9)), url(${styles.backgroundImage})` : undefined,
           backgroundSize: "cover",
@@ -73,7 +76,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             className="mb-6 text-pretty text-base text-amber-900 sm:mb-8 sm:text-lg md:text-xl"
             style={textStyle}
           />
-          {ctaEnabled ? <Button asChild size="lg" className="bg-amber-700 text-amber-50 hover:bg-amber-800">
+          {ctaEnabled ? <Button asChild size="lg" className="bg-[var(--section-accent)] text-[var(--section-accent-foreground)] hover:brightness-90">
             <a href={ctaHref}><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a>
           </Button> : null}
         </div>
@@ -86,6 +89,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
     return (
       <section
         className={`relative min-h-[400px] overflow-hidden sm:min-h-[500px] lg:min-h-[600px] ${styles?.fontFamily || ""}`}
+        style={colorVars}
       >
         <div className="flex min-h-[inherit] flex-col md:flex-row">
           {/* Image Side - Full left half */}
@@ -129,7 +133,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
               className="mb-6 text-pretty text-base text-amber-800 sm:text-lg md:text-xl"
               style={textStyle}
             />
-            {ctaEnabled ? <div><Button asChild size="lg" className="bg-amber-700 text-amber-50 hover:bg-amber-800"><a href={ctaHref}><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button></div> : null}
+            {ctaEnabled ? <div><Button asChild size="lg" className="bg-[var(--section-accent)] text-[var(--section-accent-foreground)] hover:brightness-90"><a href={ctaHref}><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button></div> : null}
           </div>
         </div>
       </section>
@@ -142,6 +146,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
       <section
         className={`relative flex min-h-[500px] items-center justify-center overflow-hidden sm:min-h-[600px] md:min-h-[700px] ${styles?.fontFamily || ""}`}
         style={{
+          ...colorVars,
           backgroundImage: styles?.backgroundImage
             ? `url(${styles.backgroundImage})`
             : "url('/placeholder.svg?height=900&width=1600')",
@@ -175,7 +180,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             className="mb-8 text-pretty text-lg text-white/90 drop-shadow-md sm:text-xl md:text-2xl"
             style={styles?.textColor ? textStyle : undefined}
           />
-          {ctaEnabled ? <Button asChild size="lg" className="bg-white text-amber-900 shadow-lg transition-all hover:bg-white/95 hover:shadow-xl"><a href={ctaHref}><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button> : null}
+          {ctaEnabled ? <Button asChild size="lg" className="bg-[var(--section-accent)] text-[var(--section-accent-foreground)] shadow-lg transition-all hover:brightness-90 hover:shadow-xl"><a href={ctaHref}><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button> : null}
         </div>
       </section>
     )
@@ -187,6 +192,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
       <section
         className={`relative flex min-h-[400px] items-center justify-center px-4 py-12 sm:px-6 sm:py-16 md:py-24 ${styles?.fontFamily || ""}`}
         style={{
+          ...colorVars,
           backgroundColor: styles?.backgroundColor || "#ffffff",
         }}
       >
@@ -212,7 +218,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             className="mb-6 text-pretty text-base sm:mb-8 sm:text-lg md:text-xl"
             style={textStyle}
           />
-          {ctaEnabled ? <Button asChild size="lg" className="bg-amber-700 text-amber-50 hover:bg-amber-800"><a href={ctaHref}><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button> : null}
+          {ctaEnabled ? <Button asChild size="lg" className="bg-[var(--section-accent)] text-[var(--section-accent-foreground)] hover:brightness-90"><a href={ctaHref}><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button> : null}
         </div>
       </section>
     )
@@ -224,6 +230,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
       <section
         className={`relative flex min-h-[500px] items-center justify-center overflow-hidden sm:min-h-[600px] md:min-h-[700px] ${styles?.fontFamily || ""}`}
         style={{
+          ...colorVars,
           backgroundImage: styles?.backgroundImage
             ? `url(${styles.backgroundImage})`
             : "url('/placeholder.svg?height=900&width=1600')",
@@ -235,7 +242,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
         <div className="absolute inset-0 bg-black/30" />
 
         {/* Content Card */}
-        <div className="relative z-10 mx-auto max-w-lg bg-white/95 backdrop-blur-sm rounded-lg p-8 shadow-xl">
+        <div className="relative z-10 mx-auto max-w-lg rounded-lg bg-[var(--section-surface)] p-8 text-[var(--section-surface-foreground)] shadow-xl backdrop-blur-sm">
           <EditableText
             as="h1"
             data={data}
@@ -257,7 +264,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             className="mb-6 text-pretty text-sm text-amber-800 sm:text-base"
             style={textStyle}
           />
-          {ctaEnabled ? <Button asChild size="lg" className="w-full bg-amber-700 text-amber-50 hover:bg-amber-800"><a href={ctaHref}><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button> : null}
+          {ctaEnabled ? <Button asChild size="lg" className="w-full bg-[var(--section-accent)] text-[var(--section-accent-foreground)] hover:brightness-90"><a href={ctaHref}><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button> : null}
         </div>
       </section>
     )
@@ -268,6 +275,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
     return (
       <section
         className={`relative min-h-[400px] overflow-hidden sm:min-h-[500px] lg:min-h-[600px] ${styles?.fontFamily || ""}`}
+        style={colorVars}
       >
         <div className="flex min-h-[inherit] flex-col md:flex-row">
           {/* Text Side - Clean background */}
@@ -296,7 +304,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
               className="mb-6 text-pretty text-base text-amber-800 sm:text-lg md:text-xl"
               style={textStyle}
             />
-            {ctaEnabled ? <div><Button asChild size="lg" className="bg-amber-700 text-amber-50 hover:bg-amber-800"><a href={ctaHref}><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button></div> : null}
+            {ctaEnabled ? <div><Button asChild size="lg" className="bg-[var(--section-accent)] text-[var(--section-accent-foreground)] hover:brightness-90"><a href={ctaHref}><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button></div> : null}
           </div>
 
           {/* Image Side - Full right half */}

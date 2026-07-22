@@ -9,6 +9,8 @@ import {
   type SupportedWebsiteLocale,
   type WebsiteLocale,
 } from "@/lib/i18n/locales"
+import { normalizeLanguageSwitcherConfig } from "@/lib/i18n/language-switcher"
+import type { LanguageSwitcherConfig, LanguageSwitcherPosition, LanguageSwitcherStyle } from "@/lib/themes"
 
 interface WebsiteLanguageControlProps {
   locales: WebsiteLocale[]
@@ -19,6 +21,8 @@ interface WebsiteLanguageControlProps {
   onRemove: (locale: SupportedWebsiteLocale) => Promise<void>
   onUpdate: (locale: SupportedWebsiteLocale, updates: { display_name?: string; path_segment?: string; seo?: Record<string, unknown> }) => Promise<void>
   onSetDefault: (locale: SupportedWebsiteLocale) => Promise<void>
+  languageSwitcher?: LanguageSwitcherConfig
+  onLanguageSwitcherChange: (config: LanguageSwitcherConfig) => Promise<void>
   canSetDefault?: boolean
   statuses?: Partial<Record<SupportedWebsiteLocale, "complete" | "missing" | "stale">>
   mobile?: boolean
@@ -33,12 +37,16 @@ export function WebsiteLanguageControl({
   onRemove,
   onUpdate,
   onSetDefault,
+  languageSwitcher,
+  onLanguageSwitcherChange,
   canSetDefault = false,
   statuses = {},
   mobile = false,
 }: WebsiteLanguageControlProps) {
   const [managerOpen, setManagerOpen] = useState(false)
   const [busyLocale, setBusyLocale] = useState<SupportedWebsiteLocale | null>(null)
+  const [isSavingSwitcher, setIsSavingSwitcher] = useState(false)
+  const switcher = normalizeLanguageSwitcherConfig(languageSwitcher)
   const available = useMemo(
     () => SUPPORTED_WEBSITE_LOCALES.filter((supported) => !locales.some((locale) => locale.locale === supported.locale)),
     [locales],
@@ -54,6 +62,29 @@ export function WebsiteLanguageControl({
       setBusyLocale(null)
     }
   }
+
+  const updateSwitcher = async (updates: Partial<LanguageSwitcherConfig>) => {
+    setIsSavingSwitcher(true)
+    try {
+      await onLanguageSwitcherChange({ ...switcher, ...updates })
+    } catch {
+      // The parent action owns user-facing error feedback.
+    } finally {
+      setIsSavingSwitcher(false)
+    }
+  }
+
+  const styleOptions: Array<{ value: LanguageSwitcherStyle; label: string }> = [
+    { value: "dropdown", label: "Keuzelijst" },
+    { value: "buttons", label: "Taalbuttons" },
+    { value: "compact", label: "Compact" },
+  ]
+  const positionOptions: Array<{ value: LanguageSwitcherPosition; label: string }> = [
+    { value: "nav-left", label: "Navigatie links" },
+    { value: "nav-right", label: "Navigatie rechts" },
+    { value: "bottom-left", label: "Linksonder zwevend" },
+    { value: "bottom-right", label: "Rechtsonder zwevend" },
+  ]
 
   return (
     <>
@@ -94,7 +125,7 @@ export function WebsiteLanguageControl({
 
       {managerOpen ? (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-labelledby="language-manager-title">
-          <div className="w-full max-w-lg rounded-2xl border border-border bg-background p-5 shadow-2xl">
+          <div className="max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-background p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 id="language-manager-title" className="text-lg font-semibold">Talen beheren</h2>
@@ -104,6 +135,64 @@ export function WebsiteLanguageControl({
                 <X className="h-4 w-4" />
               </Button>
             </div>
+
+            <section className="mt-5 rounded-xl border border-border bg-muted/30 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Taalkeuze op de website</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Kies hoe en waar bezoekers van taal wisselen.</p>
+                </div>
+                {isSavingSwitcher ? <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-primary" /> : null}
+              </div>
+
+              <div className="mt-4">
+                <p className="mb-2 text-xs font-semibold text-foreground">Weergave</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {styleOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      disabled={isSavingSwitcher}
+                      onClick={() => void updateSwitcher({ style: option.value })}
+                      className={`min-h-16 rounded-lg border px-2 py-2 text-xs font-medium transition ${
+                        switcher.style === option.value
+                          ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30"
+                          : "border-border bg-background text-foreground hover:border-primary/50"
+                      }`}
+                    >
+                      <span className="mb-1.5 flex min-h-6 items-center justify-center gap-1" aria-hidden="true">
+                        <Globe2 className="h-3.5 w-3.5" />
+                        {option.value === "dropdown" ? <span className="rounded border border-current/30 px-1">NL⌄</span> : null}
+                        {option.value === "buttons" ? <><span className="rounded bg-primary px-1 text-primary-foreground">NL</span><span>EN</span></> : null}
+                        {option.value === "compact" ? <span>NL</span> : null}
+                      </span>
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <p className="mb-2 text-xs font-semibold text-foreground">Locatie</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {positionOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      disabled={isSavingSwitcher}
+                      onClick={() => void updateSwitcher({ position: option.value })}
+                      className={`rounded-lg border px-3 py-2 text-left text-xs font-medium transition ${
+                        switcher.position === option.value
+                          ? "border-primary bg-primary/10 text-primary ring-1 ring-primary/30"
+                          : "border-border bg-background text-foreground hover:border-primary/50"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </section>
 
             <div className="mt-5 space-y-2">
               {locales.map((locale) => (

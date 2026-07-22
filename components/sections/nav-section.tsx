@@ -7,6 +7,8 @@ import { Globe2, Menu, X } from "lucide-react"
 import { EditableText } from "@/components/editor/inline-editable-text"
 import { normalizeSectionLayout } from "@/lib/section-layouts"
 import { resolveNavigationLinks } from "@/lib/i18n/section-translations"
+import { getSectionColorVars } from "@/lib/section-colors"
+import { normalizeLanguageSwitcherConfig } from "@/lib/i18n/language-switcher"
 
 interface NavSectionProps {
   data: Record<string, unknown>
@@ -33,6 +35,8 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
   const localeLinks = Array.isArray(data.localeLinks) ? data.localeLinks as LocaleLink[] : []
   const activeLocaleLink = localeLinks.find((entry) => entry.isActive) ?? localeLinks[0]
   const languageLabel = ((data.siteMessages as { language?: string } | undefined)?.language) || "Taal"
+  const languageSwitcher = normalizeLanguageSwitcherConfig(data.languageSwitcher)
+  const isEditorLanguagePreview = data.languageSwitcherEditorPreview === true
 
   // Force mobile view when device is mobile or tablet
   const isMobileView = device === "mobile" || device === "tablet"
@@ -66,12 +70,93 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
   }
 
   const handleLocaleChange = (href: string) => {
+    if (isEditorLanguagePreview) return
     const target = localeLinks.find((entry) => entry.href === href)
     if (target) document.cookie = `website_locale=${encodeURIComponent(target.locale)}; Path=/; Max-Age=31536000; SameSite=Lax`
     window.location.href = `${href}${window.location.hash}`
   }
 
+  const rememberLocale = (locale: string) => {
+    document.cookie = `website_locale=${encodeURIComponent(locale)}; Path=/; Max-Age=31536000; SameSite=Lax`
+  }
+
+  const renderLanguageSwitcher = (floating = false) => {
+    if (!(localeLinks.length > 1)) return null
+
+    const shellClass = floating
+      ? "border border-current/15 bg-[var(--section-surface)] text-[var(--section-surface-foreground)] shadow-xl backdrop-blur"
+      : "border border-current/20 bg-transparent"
+
+    if (languageSwitcher.style === "buttons") {
+      return (
+        <div className={`flex items-center gap-1 rounded-lg p-1 ${shellClass}`} role="group" aria-label={languageLabel}>
+          <Globe2 className="mx-1 h-4 w-4 shrink-0 text-[var(--section-accent)]" aria-hidden="true" />
+          {localeLinks.map((entry) => (
+            <a
+              key={entry.locale}
+              href={entry.href}
+              onClick={(event) => {
+                if (isEditorLanguagePreview) {
+                  event.preventDefault()
+                  return
+                }
+                rememberLocale(entry.locale)
+              }}
+              aria-current={entry.isActive ? "page" : undefined}
+              title={entry.label}
+              className={`rounded-md px-2 py-1 text-xs font-semibold uppercase transition ${
+                entry.isActive
+                  ? "bg-[var(--section-accent)] text-[var(--section-accent-foreground)]"
+                  : "hover:bg-black/5 hover:text-[var(--section-accent)]"
+              }`}
+            >
+              {entry.locale.split("-")[0]}
+            </a>
+          ))}
+        </div>
+      )
+    }
+
+    if (languageSwitcher.style === "compact") {
+      return (
+        <label className={`relative flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-2 ${shellClass}`}>
+          <Globe2 className="h-4 w-4 text-[var(--section-accent)]" aria-hidden="true" />
+          <span className="text-xs font-bold uppercase">{activeLocaleLink?.locale.split("-")[0]}</span>
+          <span className="sr-only">{languageLabel}</span>
+          <select
+            aria-label={languageLabel}
+            value={activeLocaleLink?.href}
+            onChange={(event) => handleLocaleChange(event.target.value)}
+            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          >
+            {localeLinks.map((entry) => (
+              <option key={entry.locale} value={entry.href}>{entry.label}</option>
+            ))}
+          </select>
+        </label>
+      )
+    }
+
+    return (
+      <label className={`relative flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm ${shellClass}`}>
+        <Globe2 className="h-4 w-4 text-[var(--section-accent)]" aria-hidden="true" />
+        <span className="sr-only">{languageLabel}</span>
+        <select
+          aria-label={languageLabel}
+          value={activeLocaleLink?.href}
+          onChange={(event) => handleLocaleChange(event.target.value)}
+          className="cursor-pointer appearance-none bg-transparent pr-4 font-medium outline-none"
+        >
+          {localeLinks.map((entry) => (
+            <option key={entry.locale} value={entry.href}>{entry.label}</option>
+          ))}
+        </select>
+      </label>
+    )
+  }
+
   const sectionStyle: React.CSSProperties = {
+    ...getSectionColorVars(styles),
     backgroundColor: styles?.backgroundColor || "#ffffff",
     color: styles?.textColor,
   }
@@ -90,7 +175,7 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
                 e.preventDefault()
                 window.scrollTo({ top: 0, behavior: "smooth" })
               }}
-              className="flex cursor-pointer items-center gap-3 text-2xl font-bold"
+              className="flex cursor-pointer items-center gap-3 text-2xl font-bold text-[var(--section-accent)]"
             >
               {logo ? (
                 <img
@@ -105,52 +190,23 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
 
           {/* Desktop navigation */}
           <div className={`${isMobileView ? "hidden" : "hidden md:flex"} md:items-center ${layout === "compact" ? "md:space-x-4 text-sm" : "md:space-x-8"}`}>
+            {languageSwitcher.position === "nav-left" ? renderLanguageSwitcher() : null}
             {links.map((link, idx) => (
               <a
                 key={idx}
                 href={link.href}
                 onClick={(e) => handleNavClick(e, link.href)}
-                className="hover:opacity-75 transition font-medium"
+                className="font-medium transition hover:text-[var(--section-accent)]"
               >
                 <EditableText data={editableData} path={["navLinks", idx, "label"]} value={link.label} isPreview={isPreview} onUpdate={onUpdate} />
               </a>
             ))}
-            {localeLinks.length > 1 ? (
-              <label className="relative flex items-center gap-1.5 rounded-md border border-current/20 px-2 py-1.5 text-sm">
-                <Globe2 className="h-4 w-4" aria-hidden="true" />
-                <span className="sr-only">{languageLabel}</span>
-                <select
-                  aria-label={languageLabel}
-                  value={activeLocaleLink?.href}
-                  onChange={(event) => handleLocaleChange(event.target.value)}
-                  className="cursor-pointer appearance-none bg-transparent pr-4 font-medium outline-none"
-                >
-                  {localeLinks.map((entry) => (
-                    <option key={entry.locale} value={entry.href}>{entry.label}</option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
+            {languageSwitcher.position === "nav-right" ? renderLanguageSwitcher() : null}
           </div>
 
           {/* Mobile menu button */}
           <div className={`${isMobileView ? "flex" : "flex md:hidden"} items-center gap-1`}>
-            {localeLinks.length > 1 ? (
-              <label className="flex items-center gap-1 rounded-md border border-current/20 px-2 py-1.5">
-                <Globe2 className="h-4 w-4" aria-hidden="true" />
-                <span className="sr-only">{languageLabel}</span>
-                <select
-                  aria-label={languageLabel}
-                  value={activeLocaleLink?.href}
-                  onChange={(event) => handleLocaleChange(event.target.value)}
-                  className="max-w-20 cursor-pointer bg-transparent text-xs font-medium outline-none"
-                >
-                  {localeLinks.map((entry) => (
-                    <option key={entry.locale} value={entry.href}>{entry.label}</option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
+            {languageSwitcher.position === "nav-left" ? renderLanguageSwitcher() : null}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-md hover:bg-black/5 transition"
@@ -158,6 +214,7 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
             >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
+            {languageSwitcher.position === "nav-right" ? renderLanguageSwitcher() : null}
           </div>
         </div>
 
@@ -173,7 +230,7 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
                 key={idx}
                 href={link.href}
                 onClick={(e) => handleNavClick(e, link.href)}
-                className="px-3 py-3 rounded-md hover:bg-black/5 active:bg-black/10 transition font-medium text-base"
+                className="rounded-md px-3 py-3 text-base font-medium transition hover:text-[var(--section-accent)] active:bg-black/10"
               >
                 <EditableText data={editableData} path={["navLinks", idx, "label"]} value={link.label} isPreview={isPreview} onUpdate={onUpdate} />
               </a>
@@ -181,6 +238,11 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
           </div>
         </div>
       </div>
+      {languageSwitcher.position === "bottom-left" || languageSwitcher.position === "bottom-right" ? (
+        <div className={`fixed bottom-4 z-[60] ${languageSwitcher.position === "bottom-left" ? "left-4" : "right-4"}`}>
+          {renderLanguageSwitcher(true)}
+        </div>
+      ) : null}
     </nav>
   )
 }

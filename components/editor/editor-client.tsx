@@ -39,8 +39,8 @@ import {
 import { isMultilingualWebsitesEnabled } from "@/lib/i18n/feature"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { AlertCircle, CheckCircle2, ChevronDown, ExternalLink, Eye, Globe2, Layers, LayoutTemplate, Loader2, Paintbrush, Plus, Sparkles } from "lucide-react"
-import type { ThemeConfig } from "@/lib/themes"
+import { AlertCircle, CheckCircle2, ChevronDown, ExternalLink, Eye, Globe2, Layers, LayoutTemplate, Loader2, Paintbrush, Plus, Save, Sparkles, Trash2 } from "lucide-react"
+import { getDefaultThemeConfig, type LanguageSwitcherConfig, type ThemeConfig } from "@/lib/themes"
 import type { BusinessCategory } from "@/lib/business/categories"
 import { Button } from "@/components/ui/button"
 import { StatusMessage } from "@/components/ui/status-message"
@@ -49,6 +49,7 @@ import type { PlanId } from "@/lib/types/pricing"
 import { TierBadge } from "@/components/editor/tier-badge"
 import { highestRequiredPlan, inspectWebsiteEntitlements, type EntitlementViolation } from "@/lib/entitlements"
 import { getPlanDisplayName } from "@/lib/pricing"
+import { clearActiveWebsiteId, getActiveWebsiteId, setActiveWebsiteId } from "@/lib/active-website"
 import { toast } from "sonner"
 import type { PlanEnforcementMode } from "@/lib/plan-enforcement"
 import {
@@ -188,6 +189,8 @@ export function EditorClient({
   const [themeConfig, setThemeConfig] = useState<ThemeConfig | null>(null)
   const [isCreatingWebsite, setIsCreatingWebsite] = useState(false)
   const [isRenamingWebsite, setIsRenamingWebsite] = useState(false)
+  const [isDeletingWebsite, setIsDeletingWebsite] = useState(false)
+  const [deleteWebsiteConfirmationOpen, setDeleteWebsiteConfirmationOpen] = useState(false)
   const [websiteMessage, setWebsiteMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null)
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("canvas")
@@ -349,6 +352,7 @@ export function EditorClient({
         websiteRows.find((row: any) => row.id === preferredWebsiteId) ||
         websiteRows.find((row: any) => row.published) ||
         websiteRows[0]
+      setActiveWebsiteId(website.id)
       setWebsiteId(website.id)
       setTitle(website.title)
       setBusinessId(website.business_id ?? initialBusinessId)
@@ -429,6 +433,7 @@ export function EditorClient({
 
       if (newWebsite && !error) {
         await logWebsiteCreated(newWebsite.id)
+        setActiveWebsiteId(newWebsite.id)
         setWebsiteId(newWebsite.id)
         setWebsiteLocales([{
           website_id: newWebsite.id,
@@ -475,11 +480,12 @@ export function EditorClient({
 
   // Load or create website on mount and when a selected website is requested.
   useEffect(() => {
-    loadWebsite(requestedWebsiteId)
+    loadWebsite(requestedWebsiteId ?? getActiveWebsiteId())
   }, [loadWebsite, requestedWebsiteId])
 
   const handleWebsiteChange = (nextWebsiteId: string) => {
     setWebsiteMessage(null)
+    setActiveWebsiteId(nextWebsiteId)
     router.replace(`/editor?websiteId=${nextWebsiteId}`)
   }
 
@@ -527,6 +533,7 @@ export function EditorClient({
       ...current,
     ])
     setWebsiteMessage({ type: "success", text: "Nieuwe website aangemaakt. U bewerkt nu deze website." })
+    setActiveWebsiteId(newWebsite.id)
     router.replace(`/editor?websiteId=${newWebsite.id}`)
   }
 
@@ -592,6 +599,58 @@ export function EditorClient({
         ? `Websitenaam opgeslagen. De live link is bijgewerkt naar ${updatedWebsite.slug}.${PLATFORM_DOMAIN}.`
         : "Websitenaam opgeslagen. Deze website staat nog offline tot u hem live zet.",
     })
+  }
+
+  const handleDeleteWebsite = async () => {
+    if (!websiteId) return
+
+    setIsDeletingWebsite(true)
+    setIsSaving(true)
+    setWebsiteMessage(null)
+
+    try {
+      const response = await fetch("/api/websites/delete", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ websiteId }),
+      })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(result.error || "Website kon niet worden verwijderd.")
+
+      const remainingWebsites = websites.filter((website) => website.id !== websiteId)
+      setWebsites(remainingWebsites)
+      setDeleteWebsiteConfirmationOpen(false)
+      setSaveState("saved")
+
+      const nextWebsite = remainingWebsites.find((website) => website.published) || remainingWebsites[0]
+      if (nextWebsite) {
+        setActiveWebsiteId(nextWebsite.id)
+        setWebsiteMessage({ type: "success", text: "Website verwijderd. U bewerkt nu de volgende website." })
+        router.replace(`/editor?websiteId=${nextWebsite.id}`)
+      } else {
+        clearActiveWebsiteId()
+        setWebsiteId(null)
+        setSections([])
+        setTransitions([])
+        setWebsiteLocales([])
+        setSectionTranslations(new Map())
+        setSharedLocaleStatuses({})
+        setSelectedSectionId(null)
+        setTitle(DEFAULT_SITE_TITLE)
+        setThemeConfig(null)
+        window.history.replaceState(window.history.state, "", "/editor")
+        setWebsiteMessage({ type: "success", text: "Website verwijderd. Maak een nieuwe website om verder te gaan." })
+      }
+    } catch (error) {
+      setSaveState("error")
+      setWebsiteMessage({
+        type: "error",
+        text: error instanceof Error ? error.message : "Website kon niet worden verwijderd.",
+      })
+    } finally {
+      setIsDeletingWebsite(false)
+      setIsSaving(false)
+    }
   }
 
   const updateLocalSections = useCallback((newSections: Section[]) => {
@@ -998,13 +1057,33 @@ export function EditorClient({
     [sections],
   )
   const displayedSections = useMemo(
-    () => isTranslationMode
+    () => {
+      const localizedSections = isTranslationMode
       ? translationSourceSections.map((section) => applySectionTranslation(
           section,
           sectionTranslations.get(`${section.id}:${activeLocale}`)?.values,
         ))
-      : sections,
-    [activeLocale, isTranslationMode, sectionTranslations, sections, translationSourceSections],
+        : sections
+      const localeLinks = websiteLocales
+        .filter((locale) => locale.is_default || locale.is_enabled)
+        .map((locale) => ({
+          locale: locale.locale,
+          label: locale.display_name,
+          href: locale.is_default ? "/" : `/${locale.path_segment}`,
+          isActive: locale.locale === activeLocale,
+        }))
+
+      return localizedSections.map((section) => section.type !== "nav" ? section : ({
+        ...section,
+        data: {
+          ...section.data,
+          localeLinks,
+          languageSwitcher: themeConfig?.languageSwitcher,
+          languageSwitcherEditorPreview: true,
+        },
+      }))
+    },
+    [activeLocale, isTranslationMode, sectionTranslations, sections, themeConfig?.languageSwitcher, translationSourceSections, websiteLocales],
   )
   const localeStatuses = useMemo(() => Object.fromEntries(websiteLocales.map((locale) => {
     if (locale.is_default) return [locale.locale, "complete"]
@@ -1181,6 +1260,38 @@ export function EditorClient({
     toast.success("Standaardtaal gewijzigd.")
   }
 
+  const handleLanguageSwitcherChange = async (languageSwitcher: LanguageSwitcherConfig) => {
+    if (!websiteId) return
+
+    const nextTheme: ThemeConfig = {
+      ...(themeConfig ?? getDefaultThemeConfig()),
+      languageSwitcher,
+    }
+    setThemeConfig(nextTheme)
+    setIsSaving(true)
+    setSaveState("saving")
+
+    try {
+      const response = await fetch("/api/themes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ websiteId, themeConfig: nextTheme }),
+      })
+      const result = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(result?.error || "Taalkeuze kon niet worden opgeslagen.")
+
+      setThemeConfig((result?.themeConfig as ThemeConfig | undefined) ?? nextTheme)
+      setSaveState("saved")
+      toast.success("Weergave van de taalkeuze opgeslagen.")
+    } catch (error) {
+      setSaveState("error")
+      toast.error(error instanceof Error ? error.message : "Taalkeuze kon niet worden opgeslagen.")
+      throw error
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   const refreshSharedLocaleStatuses = async () => {
     setSharedLocaleStatuses(await loadSharedLocaleStatuses(businessId, websiteLocales))
   }
@@ -1282,6 +1393,8 @@ export function EditorClient({
             onRemove={handleRemoveLocale}
             onUpdate={handleUpdateLocale}
             onSetDefault={handleSetDefaultLocale}
+            languageSwitcher={themeConfig?.languageSwitcher}
+            onLanguageSwitcherChange={handleLanguageSwitcherChange}
             canSetDefault={!selectedWebsite?.published && sectionTranslations.size === 0}
             statuses={localeStatuses}
           /> : multilingualEnabled ? (
@@ -1304,13 +1417,37 @@ export function EditorClient({
             className="h-8 w-32 min-w-0 shrink rounded-md border border-input bg-background px-2 text-xs text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 lg:w-44 xl:w-56"
             placeholder="Websitenaam"
           />
-          <Button type="button" size="xs" onClick={handleSave} disabled={!websiteId || isRenamingWebsite}>
-            {isRenamingWebsite ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-            Naam opslaan
+          <Button
+            type="button"
+            size="icon-sm"
+            onClick={handleSave}
+            disabled={!websiteId || isRenamingWebsite || isDeletingWebsite}
+            aria-label="Websitenaam opslaan"
+            title="Websitenaam opslaan"
+          >
+            {isRenamingWebsite ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
           </Button>
-          <Button type="button" variant="outline" size="xs" onClick={handleCreateWebsite} disabled={isCreatingWebsite}>
-            {isCreatingWebsite ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
-            <span className="hidden xl:inline">Nieuw</span>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            onClick={handleCreateWebsite}
+            disabled={isCreatingWebsite || isDeletingWebsite}
+            aria-label="Nieuwe website"
+            title="Nieuwe website"
+          >
+            {isCreatingWebsite ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            size="icon-sm"
+            onClick={() => setDeleteWebsiteConfirmationOpen(true)}
+            disabled={!websiteId || isDeletingWebsite || isCreatingWebsite || isRenamingWebsite}
+            aria-label="Website verwijderen"
+            title="Website verwijderen"
+          >
+            {isDeletingWebsite ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
           </Button>
           <TierBadge plan={currentPlan} prefix="Actief" className="hidden border-primary/30 bg-primary/10 text-primary 2xl:inline-flex" />
           {selectedWebsite ? (
@@ -1432,6 +1569,8 @@ export function EditorClient({
             onRemove={handleRemoveLocale}
             onUpdate={handleUpdateLocale}
             onSetDefault={handleSetDefaultLocale}
+            languageSwitcher={themeConfig?.languageSwitcher}
+            onLanguageSwitcherChange={handleLanguageSwitcherChange}
             canSetDefault={!selectedWebsite?.published && sectionTranslations.size === 0}
             statuses={localeStatuses}
             mobile
@@ -1449,7 +1588,7 @@ export function EditorClient({
           <details className="group rounded-md border border-border bg-muted/30">
             <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 text-sm font-medium text-foreground">
               <span>Website beheren</span>
-              <span className="text-xs font-normal text-muted-foreground group-open:hidden">Naam, links en nieuwe website</span>
+              <span className="text-xs font-normal text-muted-foreground group-open:hidden">Naam, links en websiteacties</span>
               <span className="hidden text-xs font-normal text-muted-foreground group-open:inline">Sluiten</span>
             </summary>
             <div className="space-y-2 border-t border-border p-2">
@@ -1466,32 +1605,47 @@ export function EditorClient({
                 />
                 <Button
                   type="button"
-                  size="default"
-                  className="h-11 shrink-0 px-3 text-xs"
+                  size="icon-lg"
+                  className="h-11 w-11 shrink-0"
                   onClick={handleSave}
-                  disabled={!websiteId || isRenamingWebsite}
+                  disabled={!websiteId || isRenamingWebsite || isDeletingWebsite}
+                  aria-label="Websitenaam opslaan"
+                  title="Websitenaam opslaan"
                 >
-                  {isRenamingWebsite ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                  Naam opslaan
+                  {isRenamingWebsite ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 </Button>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-11"
+                  size="icon-lg"
+                  className="h-11 w-11 shrink-0"
                   onClick={handleCreateWebsite}
-                  disabled={isCreatingWebsite}
+                  disabled={isCreatingWebsite || isDeletingWebsite}
+                  aria-label="Nieuwe website"
+                  title="Nieuwe website"
                 >
                   {isCreatingWebsite ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                  Nieuwe website
                 </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon-lg"
+                  className="h-11 w-11 shrink-0"
+                  onClick={() => setDeleteWebsiteConfirmationOpen(true)}
+                  disabled={!websiteId || isDeletingWebsite || isCreatingWebsite || isRenamingWebsite}
+                  aria-label="Website verwijderen"
+                  title="Website verwijderen"
+                >
+                  {isDeletingWebsite ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                </Button>
+              </div>
+              <div>
                 {selectedWebsite ? (
                   <a
                     href={selectedWebsitePreviewHref}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-border bg-background px-3 text-sm font-medium text-primary shadow-sm"
+                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md border border-border bg-background px-3 text-sm font-medium text-primary shadow-sm"
                     title={`Preview openen: ${selectedWebsitePreviewUrl}`}
                   >
                     <Eye className="h-4 w-4" />
@@ -1828,6 +1982,36 @@ export function EditorClient({
           </nav>
         )}
       </div>
+
+      <AlertDialog
+        open={deleteWebsiteConfirmationOpen}
+        onOpenChange={(open) => {
+          if (!isDeletingWebsite) setDeleteWebsiteConfirmationOpen(open)
+        }}
+      >
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Website definitief verwijderen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              &quot;{selectedWebsite?.title || title}&quot; en alle bijbehorende secties, vertalingen en domeinkoppelingen worden verwijderd. Deze actie kan niet ongedaan worden gemaakt.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingWebsite}>Annuleren</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={isDeletingWebsite}
+              onClick={(event) => {
+                event.preventDefault()
+                void handleDeleteWebsite()
+              }}
+            >
+              {isDeletingWebsite ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              {isDeletingWebsite ? "Verwijderen..." : "Website verwijderen"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={publishPreflightOpen} onOpenChange={setPublishPreflightOpen}>
         <AlertDialogContent className="max-h-[85vh] overflow-hidden sm:max-w-2xl">

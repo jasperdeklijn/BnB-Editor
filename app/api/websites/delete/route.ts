@@ -40,6 +40,11 @@ export async function DELETE(request: Request) {
     .eq("website_id", website.id)
 
   if (domainsError) {
+    console.error("[WebsiteDelete] Failed to read website domains", {
+      websiteId: website.id,
+      code: domainsError.code,
+      message: domainsError.message,
+    })
     return NextResponse.json({ error: "Domeinen konden niet worden gecontroleerd." }, { status: 500 })
   }
 
@@ -61,6 +66,13 @@ export async function DELETE(request: Request) {
     .eq("user_id", user.id)
 
   if (deleteError) {
+    console.error("[WebsiteDelete] Database deletion failed", {
+      websiteId: website.id,
+      code: deleteError.code,
+      message: deleteError.message,
+      details: deleteError.details,
+      hint: deleteError.hint,
+    })
     return NextResponse.json({ error: "Website kon niet worden verwijderd." }, { status: 500 })
   }
 

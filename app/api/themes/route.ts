@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import type { ThemeConfig } from '@/lib/themes';
+import { normalizeLanguageSwitcherConfig } from '@/lib/i18n/language-switcher';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,6 +17,11 @@ export async function POST(request: NextRequest) {
     if (!themeConfig || !themeConfig.paletteId || !themeConfig.fontPairId) {
       return NextResponse.json({ error: 'Invalid theme configuration' }, { status: 400 });
     }
+
+    const normalizedThemeConfig: ThemeConfig = {
+      ...themeConfig,
+      languageSwitcher: normalizeLanguageSwitcherConfig(themeConfig.languageSwitcher),
+    };
 
     const supabase = await createClient();
 
@@ -49,7 +55,7 @@ export async function POST(request: NextRequest) {
     const { error: updateError } = await supabase
       .from('websites')
       .update({
-        theme_config: themeConfig,
+        theme_config: normalizedThemeConfig,
         updated_at: new Date().toISOString(),
       })
       .eq('id', websiteId);
@@ -62,7 +68,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Theme configuration saved successfully',
-      themeConfig,
+      themeConfig: normalizedThemeConfig,
     });
   } catch (error) {
     console.error('Theme API error:', error);
