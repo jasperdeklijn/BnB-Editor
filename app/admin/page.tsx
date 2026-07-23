@@ -229,6 +229,12 @@ export default async function AdminPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <AdminLink
+                href="/admin/websites"
+                icon={Globe2}
+                title="Gepubliceerde websites"
+                description="Bekijk live websites, eigenaren en gekoppelde domeinnamen."
+              />
+              <AdminLink
                 href="/admin/mailbox"
                 icon={Mail}
                 title="AI mailbox"
