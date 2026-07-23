@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from "react"
 import type { Section } from "@/lib/types"
 import { getSectionDefinition } from "@/components/editor/section-registry"
+import { normalizeSectionStyleType } from "@/lib/section-style-types"
 
 interface SectionRendererProps {
   section: Section
@@ -176,12 +177,19 @@ function SectionRendererComponent({ section, isPreview, onUpdate, wrapTransition
   const inner = Renderer ? (
     <Renderer {...commonProps} allSections={allSections} device={device} />
   ) : null
+  const styleType = normalizeSectionStyleType(section.data.styleType)
+  const rendererHandlesStyleType = section.type === "hero" || section.type === "nav"
+  const styledInner = inner && !rendererHandlesStyleType ? (
+    <div className="section-style-shell" data-section-style-type={styleType}>
+      {inner}
+    </div>
+  ) : inner
 
   // If wrapTransition is explicitly false, don't wrap
-  if (wrapTransition === false) return inner
+  if (wrapTransition === false) return styledInner
 
   // Otherwise just render the inner component
-  return inner
+  return styledInner
 }
 
 export const SectionRenderer = React.memo(

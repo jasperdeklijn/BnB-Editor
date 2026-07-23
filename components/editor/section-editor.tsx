@@ -33,6 +33,7 @@ import { useEditorLayout } from "@/components/editor/editor-layout-context"
 import type { BusinessCategory } from "@/lib/business/categories"
 import type { Section, SectionStyles, SectionType, Transition } from "@/lib/types"
 import { getSectionLayoutOptions, normalizeSectionLayout, type SectionLayout } from "@/lib/section-layouts"
+import { normalizeSectionStyleType, SECTION_STYLE_TYPE_OPTIONS } from "@/lib/section-style-types"
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
 import type { PlanId } from "@/lib/types/pricing"
@@ -163,6 +164,7 @@ export function SelectionEditor({
 }: SelectionEditorProps) {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [layoutDialogOpen, setLayoutDialogOpen] = useState(false)
+  const [styleTypeDialogOpen, setStyleTypeDialogOpen] = useState(false)
   const { setIsSaving, setSaveState } = useEditorLayout()
 
   useEffect(() => {
@@ -341,6 +343,7 @@ export function SelectionEditor({
   }
 
   const selectedLayout = normalizeSectionLayout((selectedSection.data as any).layout)
+  const selectedStyleType = normalizeSectionStyleType((selectedSection.data as any).styleType)
   const selectedSectionLabel = getSectionDefinition(selectedSection.type)?.label ?? selectedSection.type.replace("_", " ")
   const selectedSectionBasePlan = getMinimumPlanForSection(selectedSection.type)
   const selectedSectionPlan = highestRequiredPlan([
@@ -351,6 +354,9 @@ export function SelectionEditor({
   const selectedSectionExceedsPlan = !planMeetsRequirement(currentPlan, selectedSectionPlan)
   const layoutOptions = getSectionLayoutOptions(selectedSection.type)
   const selectedLayoutOption = layoutOptions.find((option) => option.value === selectedLayout) ?? layoutOptions[0]
+  const selectedStyleTypeOption =
+    SECTION_STYLE_TYPE_OPTIONS.find((option) => option.value === selectedStyleType) ?? SECTION_STYLE_TYPE_OPTIONS[0]
+  const supportsStyleTypes = true
   const LayoutIcon = getLayoutIcon(selectedLayout)
   const supportedStyleControls = getSectionStyleControls(selectedSection.type)
   const supportsStyleControl = (control: StyleControl) => supportedStyleControls.includes(control)
@@ -432,7 +438,7 @@ export function SelectionEditor({
         <Card className="p-4 space-y-3">
           <Label className="flex items-center gap-2">
             <Type className="h-3.5 w-3.5" />
-            Indeling
+            Layout
           </Label>
           <button
             type="button"
@@ -445,7 +451,7 @@ export function SelectionEditor({
               </span>
               <span className="min-w-0">
                 <span className="block truncate font-medium">{selectedLayoutOption.label}</span>
-                <span className="block text-xs text-muted-foreground">Bekijk voorbeelden</span>
+                <span className="block text-xs text-muted-foreground">Kies een andere layout · 6 opties</span>
               </span>
             </span>
             <Eye className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
@@ -465,9 +471,11 @@ export function SelectionEditor({
                   <div className="flex items-center justify-between border-b border-border px-4 py-3">
                     <div>
                       <h3 id="layout-dialog-title" className="text-sm font-semibold">
-                        Indeling kiezen
+                        Layout kiezen
                       </h3>
-                      <p className="text-xs text-muted-foreground">{selectedSectionLabel}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedSectionLabel} · kies uit 6 verschillende layouts
+                      </p>
                     </div>
                     <Button type="button" variant="ghost" size="icon-sm" onClick={() => setLayoutDialogOpen(false)} aria-label="Sluiten">
                       <X className="h-4 w-4" />
@@ -499,7 +507,10 @@ export function SelectionEditor({
                                 <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
                                   <OptionIcon className="h-4 w-4" />
                                 </span>
-                                <span className="truncate text-sm font-semibold">{option.label}</span>
+                                <span className="min-w-0">
+                                  <span className="block truncate text-sm font-semibold">{option.label}</span>
+                                  <span className="block truncate text-xs text-muted-foreground">{option.description}</span>
+                                </span>
                               </span>
                               <Button
                                 type="button"
@@ -519,6 +530,117 @@ export function SelectionEditor({
                                 ) : (
                                   "Kies"
                                 )}
+                              </Button>
+                            </div>
+                            <div className="h-56 overflow-hidden bg-muted/40">
+                              <div className="pointer-events-none w-[285%] origin-top-left scale-[0.35]">
+                                <SectionRenderer
+                                  section={previewSection}
+                                  isPreview
+                                  wrapTransition={false}
+                                  allSections={sections}
+                                  device="desktop"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </div>,
+              document.body,
+            )
+          : null}
+
+        {supportsStyleTypes ? (
+          <Card className="space-y-3 p-4">
+            <Label className="flex items-center gap-2">
+              <Palette className="h-3.5 w-3.5" />
+              Stijltype
+            </Label>
+            <button
+              type="button"
+              onClick={() => setStyleTypeDialogOpen(true)}
+              className="flex w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-2 text-left text-sm transition-colors hover:border-primary/60 hover:bg-accent"
+            >
+              <span className="flex min-w-0 items-center gap-2">
+                <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <Palette className="h-4 w-4" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate font-medium">{selectedStyleTypeOption.label}</span>
+                  <span className="block text-xs text-muted-foreground">Kies een visuele stijl · 6 opties</span>
+                </span>
+              </span>
+              <Eye className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+            </button>
+          </Card>
+        ) : null}
+
+        {styleTypeDialogOpen && supportsStyleTypes && typeof document !== "undefined"
+          ? createPortal(
+              <div className="fixed inset-0 z-[1000] bg-black/50 p-3 md:p-6" onClick={() => setStyleTypeDialogOpen(false)}>
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="style-type-dialog-title"
+                  className="mx-auto flex h-full max-w-6xl flex-col overflow-hidden rounded-lg border border-border bg-background shadow-2xl"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                    <div>
+                      <h3 id="style-type-dialog-title" className="text-sm font-semibold">Stijltype kiezen</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedSectionLabel} · de gekozen layout blijft behouden
+                      </p>
+                    </div>
+                    <Button type="button" variant="ghost" size="icon-sm" onClick={() => setStyleTypeDialogOpen(false)} aria-label="Sluiten">
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <ScrollArea className="min-h-0 flex-1">
+                    <div className="grid gap-4 p-4 md:grid-cols-2">
+                      {SECTION_STYLE_TYPE_OPTIONS.map((option) => {
+                        const isActive = selectedStyleType === option.value
+                        const previewSection = {
+                          ...selectedSection,
+                          data: {
+                            ...selectedSection.data,
+                            styleType: option.value,
+                          },
+                        }
+
+                        return (
+                          <div
+                            key={option.value}
+                            className={`overflow-hidden rounded-lg border bg-white text-left transition-all hover:border-primary/70 hover:shadow-md ${
+                              isActive ? "border-primary ring-2 ring-ring/30" : "border-border"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
+                              <span className="flex min-w-0 items-center gap-2">
+                                <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                                  <Palette className="h-4 w-4" />
+                                </span>
+                                <span className="min-w-0">
+                                  <span className="block truncate text-sm font-semibold">{option.label}</span>
+                                  <span className="block truncate text-xs text-muted-foreground">{option.description}</span>
+                                </span>
+                              </span>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant={isActive ? "default" : "outline"}
+                                className="h-8 flex-shrink-0"
+                                onClick={() => {
+                                  updateField("styleType", option.value)
+                                  setStyleTypeDialogOpen(false)
+                                }}
+                              >
+                                {isActive ? <><Check className="h-3.5 w-3.5" />Actief</> : "Kies"}
                               </Button>
                             </div>
                             <div className="h-56 overflow-hidden bg-muted/40">

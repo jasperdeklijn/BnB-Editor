@@ -9,6 +9,7 @@ import { normalizeSectionLayout } from "@/lib/section-layouts"
 import { resolveNavigationLinks } from "@/lib/i18n/section-translations"
 import { getSectionColorVars } from "@/lib/section-colors"
 import { normalizeLanguageSwitcherConfig } from "@/lib/i18n/language-switcher"
+import { normalizeSectionStyleType } from "@/lib/section-style-types"
 
 interface NavSectionProps {
   data: Record<string, unknown>
@@ -32,6 +33,7 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
   const isSticky = (data.isSticky as boolean) ?? true
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const layout = normalizeSectionLayout(data.layout)
+  const styleType = normalizeSectionStyleType(data.styleType)
   const localeLinks = Array.isArray(data.localeLinks) ? data.localeLinks as LocaleLink[] : []
   const activeLocaleLink = localeLinks.find((entry) => entry.isActive) ?? localeLinks[0]
   const languageLabel = ((data.siteMessages as { language?: string } | undefined)?.language) || "Taal"
@@ -157,17 +159,115 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
 
   const sectionStyle: React.CSSProperties = {
     ...getSectionColorVars(styles),
-    backgroundColor: styles?.backgroundColor || "#ffffff",
-    color: styles?.textColor,
+    backgroundColor:
+      styleType === "dark"
+        ? "#111827"
+        : styleType === "soft"
+          ? "#f8fafc"
+          : styles?.backgroundColor || "#ffffff",
+    color: styleType === "dark" ? "#ffffff" : styles?.textColor,
   }
+
+  const styleTypeClass =
+    styleType === "bold"
+      ? "border-b-8 border-[var(--section-accent)] font-sans uppercase tracking-wide"
+      : styleType === "elegant"
+        ? "border-b border-current/20 font-serif"
+        : styleType === "soft"
+          ? "border-b border-current/5"
+          : styleType === "dark"
+            ? "border-b border-white/15 shadow-xl"
+            : styleType === "outline"
+              ? "border-y-2 border-current/60 shadow-none"
+              : ""
+
+  const styleTypeBrandClass =
+    styleType === "bold"
+      ? "font-black uppercase tracking-tight"
+      : styleType === "elegant"
+        ? "font-serif font-medium italic tracking-wide"
+        : styleType === "soft"
+          ? "rounded-full bg-[var(--section-accent)]/10 px-4 py-2"
+          : styleType === "outline"
+            ? "border-2 border-current px-3 py-1"
+            : ""
+
+  const styleTypeLinkClass =
+    styleType === "bold"
+      ? "font-black uppercase tracking-wider"
+      : styleType === "elegant"
+        ? "font-serif tracking-wide"
+        : styleType === "soft"
+          ? "rounded-full px-4 py-2 hover:bg-[var(--section-accent)]/10"
+          : styleType === "dark"
+            ? "rounded-md px-3 py-2 hover:bg-white/10"
+            : styleType === "outline"
+              ? "border-b border-current/50 pb-1 hover:border-[var(--section-accent)]"
+              : ""
+
+  const navClass =
+    layout === "card"
+      ? ""
+      : layout === "banner"
+        ? "border-y-4 border-[var(--section-accent)] shadow-sm"
+        : layout === "showcase"
+          ? "border-b border-current/10 shadow-sm"
+          : "shadow-md"
+
+  const containerClass =
+    layout === "card"
+      ? "mx-auto max-w-7xl px-3 py-3 sm:px-6"
+      : layout === "showcase"
+        ? "mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 md:py-2"
+        : "mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
+
+  const barClass =
+    layout === "split"
+      ? "flex h-16 items-center justify-between md:justify-start md:gap-12"
+      : layout === "showcase"
+        ? "flex min-h-16 items-center justify-between md:flex-col md:justify-center md:gap-4 md:py-4"
+        : layout === "compact"
+          ? "flex h-12 items-center justify-between"
+          : layout === "card"
+            ? "flex h-16 items-center justify-between rounded-2xl border border-current/10 bg-[var(--section-surface)] px-4 text-[var(--section-surface-foreground)] shadow-xl sm:px-6"
+            : layout === "banner"
+              ? "flex h-20 items-center justify-between md:justify-center md:gap-12"
+              : "flex h-16 items-center justify-between"
+
+  const brandClass =
+    layout === "compact"
+      ? "text-lg"
+      : layout === "showcase"
+        ? "text-2xl md:text-3xl"
+        : layout === "banner"
+          ? "text-2xl"
+          : "text-2xl"
+
+  const desktopNavClass =
+    layout === "showcase"
+      ? "w-full justify-center gap-7 border-t border-current/10 pt-4"
+      : layout === "compact"
+        ? "gap-4 text-sm"
+        : layout === "split"
+          ? "gap-7"
+          : layout === "banner"
+            ? "gap-2"
+            : "gap-8"
+
+  const linkClass =
+    layout === "banner"
+      ? "rounded-full px-4 py-2 font-semibold transition hover:bg-[var(--section-accent)] hover:text-[var(--section-accent-foreground)]"
+      : layout === "showcase"
+        ? "border-b-2 border-transparent pb-1 font-medium transition hover:border-[var(--section-accent)] hover:text-[var(--section-accent)]"
+        : "font-medium transition hover:text-[var(--section-accent)]"
 
   return (
     <nav
-      className={`shadow-md ${isSticky ? "sticky top-0 z-50" : ""}`}
+      className={`${navClass} ${styleTypeClass} ${isSticky ? "sticky top-0 z-50" : ""}`}
       style={sectionStyle}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className={`flex h-16 items-center ${layout === "split" ? "justify-start gap-10" : layout === "compact" ? "justify-between h-12" : layout === "banner" ? "justify-center gap-8" : "justify-between"}`}>
+      <div className={containerClass}>
+        <div className={barClass}>
           <div className="flex-shrink-0">
             <a
               href="#"
@@ -175,13 +275,13 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
                 e.preventDefault()
                 window.scrollTo({ top: 0, behavior: "smooth" })
               }}
-              className="flex cursor-pointer items-center gap-3 text-2xl font-bold text-[var(--section-accent)]"
+              className={`flex cursor-pointer items-center gap-3 font-bold text-[var(--section-accent)] ${brandClass} ${styleTypeBrandClass}`}
             >
               {logo ? (
                 <img
                   src={logo}
                   alt=""
-                  className={`${layout === "compact" ? "h-7" : "h-9"} w-auto max-w-[9rem] flex-shrink-0 object-contain`}
+                  className={`${layout === "compact" ? "h-6" : layout === "showcase" ? "h-10" : "h-9"} w-auto max-w-[9rem] flex-shrink-0 object-contain`}
                 />
               ) : null}
               <EditableText data={data} path={["brandName"]} value={brandName} isPreview={isPreview} onUpdate={onUpdate} />
@@ -189,14 +289,14 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
           </div>
 
           {/* Desktop navigation */}
-          <div className={`${isMobileView ? "hidden" : "hidden md:flex"} md:items-center ${layout === "compact" ? "md:space-x-4 text-sm" : "md:space-x-8"}`}>
+          <div className={`${isMobileView ? "hidden" : "hidden md:flex"} items-center ${desktopNavClass}`}>
             {languageSwitcher.position === "nav-left" ? renderLanguageSwitcher() : null}
             {links.map((link, idx) => (
               <a
                 key={idx}
                 href={link.href}
                 onClick={(e) => handleNavClick(e, link.href)}
-                className="font-medium transition hover:text-[var(--section-accent)]"
+                className={`${linkClass} ${styleTypeLinkClass}`}
               >
                 <EditableText data={editableData} path={["navLinks", idx, "label"]} value={link.label} isPreview={isPreview} onUpdate={onUpdate} />
               </a>
@@ -209,8 +309,9 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
             {languageSwitcher.position === "nav-left" ? renderLanguageSwitcher() : null}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-md hover:bg-black/5 transition"
-              aria-label="Toggle menu"
+              className="rounded-md p-2 transition hover:bg-black/5"
+              aria-label={mobileMenuOpen ? "Menu sluiten" : "Menu openen"}
+              aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -230,7 +331,7 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
                 key={idx}
                 href={link.href}
                 onClick={(e) => handleNavClick(e, link.href)}
-                className="rounded-md px-3 py-3 text-base font-medium transition hover:text-[var(--section-accent)] active:bg-black/10"
+                className={`rounded-md px-3 py-3 text-base font-medium transition hover:text-[var(--section-accent)] active:bg-black/10 ${styleTypeLinkClass}`}
               >
                 <EditableText data={editableData} path={["navLinks", idx, "label"]} value={link.label} isPreview={isPreview} onUpdate={onUpdate} />
               </a>

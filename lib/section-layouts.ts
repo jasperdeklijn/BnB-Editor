@@ -19,12 +19,12 @@ export const SECTION_LAYOUT_OPTIONS: SectionLayoutOption[] = [
 
 const sectionLayoutLabels: Partial<Record<SectionType, Record<SectionLayout, string>>> = {
   hero: {
-    classic: "Centered hero",
-    split: "Image left",
-    showcase: "Full image",
-    compact: "Minimal hero",
-    card: "Text card",
-    banner: "Image right",
+    classic: "Gecentreerd",
+    split: "Afbeelding links",
+    showcase: "Volledige afbeelding",
+    compact: "Minimalistisch",
+    card: "Tekstkaart",
+    banner: "Afbeelding rechts",
   },
   services: {
     classic: "Service grid",
@@ -131,12 +131,12 @@ const sectionLayoutLabels: Partial<Record<SectionType, Record<SectionLayout, str
     banner: "Request band",
   },
   nav: {
-    classic: "Standard nav",
-    split: "Left nav",
-    showcase: "Spacious nav",
-    compact: "Compact nav",
-    card: "Contained nav",
-    banner: "Centered nav",
+    classic: "Standaard",
+    split: "Links uitgelijnd",
+    showcase: "Twee rijen",
+    compact: "Compact",
+    card: "Zwevende kaart",
+    banner: "Gecentreerde banner",
   },
   footer: {
     classic: "Footer columns",
@@ -148,12 +148,33 @@ const sectionLayoutLabels: Partial<Record<SectionType, Record<SectionLayout, str
   },
 }
 
+const sectionLayoutDescriptions: Partial<Record<SectionType, Record<SectionLayout, string>>> = {
+  hero: {
+    classic: "Tekst en actieknop centraal in beeld",
+    split: "Grote afbeelding links, tekst rechts",
+    showcase: "Beeldvullende foto met tekstoverlay",
+    compact: "Rustige, compacte hero zonder afbeelding",
+    card: "Foto als achtergrond met een losse tekstkaart",
+    banner: "Tekst links en een grote afbeelding rechts",
+  },
+  nav: {
+    classic: "Merk links en navigatie rechts",
+    split: "Merk en links als één groep aan de linkerkant",
+    showcase: "Merk bovenaan met de navigatie op een tweede rij",
+    compact: "Een lage navigatiebalk met kleinere elementen",
+    card: "Navigatie in een afgeronde, zwevende kaart",
+    banner: "Een ruime, gecentreerde navigatie met accentlijn",
+  },
+}
+
 export function getSectionLayoutOptions(type: SectionType): SectionLayoutOption[] {
   const labels = sectionLayoutLabels[type]
+  const descriptions = sectionLayoutDescriptions[type]
 
   return SECTION_LAYOUT_OPTIONS.map((option) => ({
     ...option,
     label: labels?.[option.value] ?? option.label,
+    description: descriptions?.[option.value] ?? option.description,
   }))
 }
 
