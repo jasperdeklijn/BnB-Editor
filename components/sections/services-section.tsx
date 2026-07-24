@@ -676,6 +676,20 @@ function ServiceInfoPopup({
   const { messages } = useWebsiteLocale()
   const title = settings.title || service.name
   const intro = settings.intro || service.description
+  const [activeImageIndex, setActiveImageIndex] = useState(0)
+  const activeImage = service.images[activeImageIndex]
+
+  const selectPreviousImage = () => {
+    setActiveImageIndex((current) =>
+      current === 0 ? service.images.length - 1 : current - 1,
+    )
+  }
+
+  const selectNextImage = () => {
+    setActiveImageIndex((current) =>
+      current === service.images.length - 1 ? 0 : current + 1,
+    )
+  }
 
   return (
     <div
@@ -713,8 +727,73 @@ function ServiceInfoPopup({
 
         <div className="grid max-h-[calc(92vh-4rem)] overflow-y-auto md:grid-cols-[0.9fr_1.1fr]">
           {settings.showImage ? (
-            <div className="min-h-64 bg-muted md:min-h-full">
-              <ServiceImage images={service.images} name={service.name} className="h-full min-h-64 w-full object-cover" />
+            <div className="bg-muted p-3 sm:p-4">
+              {activeImage ? (
+                <div className="space-y-3">
+                  <div className="group relative overflow-hidden rounded-xl bg-secondary">
+                    <img
+                      src={activeImage}
+                      alt={`${service.name} ${activeImageIndex + 1}`}
+                      className="h-64 w-full object-cover md:h-80"
+                    />
+                    {service.images.length > 1 ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={selectPreviousImage}
+                          className="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white shadow-sm transition-colors hover:bg-black/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                          aria-label="Vorige afbeelding"
+                        >
+                          <ChevronLeft className="h-5 w-5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={selectNextImage}
+                          className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-black/55 text-white shadow-sm transition-colors hover:bg-black/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                          aria-label="Volgende afbeelding"
+                        >
+                          <ChevronRight className="h-5 w-5" />
+                        </button>
+                        <span
+                          className="absolute bottom-2 right-2 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white"
+                          aria-live="polite"
+                        >
+                          {activeImageIndex + 1} / {service.images.length}
+                        </span>
+                      </>
+                    ) : null}
+                  </div>
+
+                  {service.images.length > 1 ? (
+                    <div className="grid grid-cols-4 gap-2" aria-label={`Afbeeldingen van ${service.name}`}>
+                      {service.images.map((image, index) => (
+                        <button
+                          key={`${image}-${index}`}
+                          type="button"
+                          onClick={() => setActiveImageIndex(index)}
+                          className={`overflow-hidden rounded-lg border-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--section-accent)] ${
+                            index === activeImageIndex
+                              ? "border-[var(--section-accent)] opacity-100"
+                              : "border-transparent opacity-70 hover:opacity-100"
+                          }`}
+                          aria-label={`Bekijk afbeelding ${index + 1} van ${service.images.length}`}
+                          aria-current={index === activeImageIndex ? "true" : undefined}
+                        >
+                          <img
+                            src={image}
+                            alt=""
+                            className="aspect-square w-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="flex h-64 items-center justify-center rounded-xl bg-secondary md:h-80">
+                  <Briefcase className="h-10 w-10 text-primary/45" />
+                </div>
+              )}
             </div>
           ) : null}
           <div className={`p-5 sm:p-6 ${settings.showImage ? "" : "md:col-span-2"}`}>

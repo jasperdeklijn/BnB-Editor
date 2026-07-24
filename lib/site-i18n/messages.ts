@@ -65,6 +65,12 @@ export interface SiteMessages {
   openWhatsApp: string
   contactSoon: string
   previewNoRequest: string
+  cookieTitle: string
+  cookieDescription: string
+  cookiePolicy: string
+  cookieNecessary: string
+  cookieAccept: string
+  cookieSettings: string
 }
 
 export const SITE_MESSAGES: Record<SupportedWebsiteLocale, SiteMessages> = {
@@ -79,6 +85,7 @@ export const SITE_MESSAGES: Record<SupportedWebsiteLocale, SiteMessages> = {
     address: "Adres", companyDetails: "Bedrijfsgegevens", registrationNumber: "KvK", vatNumber: "BTW", contact: "Contact", sendMessage: "Stuur een bericht", visitUs: "Kom langs", price: "Prijs", capacity: "Capaciteit", team: "Ons team", imagePlaceholder: "Sleep hier een afbeelding uit de beeldbank", whatsappPreview: "Preview: WhatsApp wordt niet geopend.",
     location: "Locatie", openMaps: "Open in Google Maps", rightsReserved: "Alle rechten voorbehouden.", addTeam: "Voeg teamleden toe in de editor.",
     quoteRequest: "Offerte aanvragen", whatsappUs: "WhatsApp ons", openWhatsApp: "Open WhatsApp",
+    cookieTitle: "Jouw privacyvoorkeuren", cookieDescription: "We gebruiken noodzakelijke cookies om deze website goed te laten werken. Met jouw toestemming gebruiken we ook privacyvriendelijke statistieken om de website te verbeteren.", cookiePolicy: "Lees het cookiebeleid", cookieNecessary: "Alleen noodzakelijk", cookieAccept: "Alles accepteren", cookieSettings: "Cookie-instellingen",
     contactSoon: "We nemen zo snel mogelijk contact met je op.", previewNoRequest: "Er is geen aanvraag opgeslagen of verzonden.",
   },
   "en-GB": {
@@ -92,6 +99,7 @@ export const SITE_MESSAGES: Record<SupportedWebsiteLocale, SiteMessages> = {
     address: "Address", companyDetails: "Company details", registrationNumber: "Registration", vatNumber: "VAT", contact: "Contact", sendMessage: "Send a message", visitUs: "Visit us", price: "Price", capacity: "Capacity", team: "Our team", imagePlaceholder: "Drag an image here from the image library", whatsappPreview: "Preview: WhatsApp will not open.",
     location: "Location", openMaps: "Open in Google Maps", rightsReserved: "All rights reserved.", addTeam: "Add team members in the editor.",
     quoteRequest: "Request a quote", whatsappUs: "Message us on WhatsApp", openWhatsApp: "Open WhatsApp",
+    cookieTitle: "Your privacy preferences", cookieDescription: "We use necessary cookies to make this website work. With your permission, we also use privacy-friendly statistics to improve the website.", cookiePolicy: "Read the cookie policy", cookieNecessary: "Necessary only", cookieAccept: "Accept all", cookieSettings: "Cookie settings",
     contactSoon: "We will contact you as soon as possible.", previewNoRequest: "No request was stored or sent.",
   },
   "fr-FR": {
@@ -105,6 +113,7 @@ export const SITE_MESSAGES: Record<SupportedWebsiteLocale, SiteMessages> = {
     address: "Adresse", companyDetails: "Informations sur l’entreprise", registrationNumber: "Immatriculation", vatNumber: "TVA", contact: "Contact", sendMessage: "Envoyer un message", visitUs: "Nous rendre visite", price: "Prix", capacity: "Capacité", team: "Notre équipe", imagePlaceholder: "Faites glisser ici une image de la bibliothèque", whatsappPreview: "Aperçu : WhatsApp ne sera pas ouvert.",
     location: "Localisation", openMaps: "Ouvrir dans Google Maps", rightsReserved: "Tous droits réservés.", addTeam: "Ajoutez des membres de l’équipe dans l’éditeur.",
     quoteRequest: "Demander un devis", whatsappUs: "Nous contacter sur WhatsApp", openWhatsApp: "Ouvrir WhatsApp",
+    cookieTitle: "Vos préférences de confidentialité", cookieDescription: "Nous utilisons des cookies nécessaires au fonctionnement de ce site. Avec votre accord, nous utilisons aussi des statistiques respectueuses de la vie privée pour améliorer le site.", cookiePolicy: "Lire la politique relative aux cookies", cookieNecessary: "Nécessaires uniquement", cookieAccept: "Tout accepter", cookieSettings: "Paramètres des cookies",
     contactSoon: "Nous vous contacterons dès que possible.", previewNoRequest: "Aucune demande n’a été enregistrée ni envoyée.",
   },
   "de-DE": {
@@ -118,6 +127,7 @@ export const SITE_MESSAGES: Record<SupportedWebsiteLocale, SiteMessages> = {
     address: "Adresse", companyDetails: "Unternehmensdaten", registrationNumber: "Handelsregister", vatNumber: "USt-IdNr.", contact: "Kontakt", sendMessage: "Nachricht senden", visitUs: "Besuchen Sie uns", price: "Preis", capacity: "Kapazität", team: "Unser Team", imagePlaceholder: "Ziehen Sie hier ein Bild aus der Bildbibliothek hinein", whatsappPreview: "Vorschau: WhatsApp wird nicht geöffnet.",
     location: "Standort", openMaps: "In Google Maps öffnen", rightsReserved: "Alle Rechte vorbehalten.", addTeam: "Fügen Sie Teammitglieder im Editor hinzu.",
     quoteRequest: "Angebot anfragen", whatsappUs: "WhatsApp-Nachricht", openWhatsApp: "WhatsApp öffnen",
+    cookieTitle: "Ihre Datenschutzeinstellungen", cookieDescription: "Wir verwenden notwendige Cookies, damit diese Website funktioniert. Mit Ihrer Zustimmung nutzen wir außerdem datenschutzfreundliche Statistiken, um die Website zu verbessern.", cookiePolicy: "Cookie-Richtlinie lesen", cookieNecessary: "Nur notwendige", cookieAccept: "Alle akzeptieren", cookieSettings: "Cookie-Einstellungen",
     contactSoon: "Wir melden uns so schnell wie möglich.", previewNoRequest: "Es wurde keine Anfrage gespeichert oder gesendet.",
   },
 }

@@ -17,7 +17,8 @@ import { getSiteMessages } from "@/lib/site-i18n/messages"
 import { WebsiteLocaleProvider } from "@/lib/site-i18n/provider"
 import { normalizeLanguageSwitcherConfig } from "@/lib/i18n/language-switcher"
 import { isMultilingualWebsitesEnabled } from "@/lib/i18n/feature"
-import { PublicVisitTracker } from "@/components/analytics/public-visit-tracker"
+import { SiteCookieConsent } from "@/components/privacy/site-cookie-consent"
+import { PLATFORM_BASE_URL } from "@/lib/platform"
 
 interface PageLoaderOptions {
   slug: string
@@ -400,8 +401,12 @@ export async function loadPublicWebsitePage({
   return (
     <WebsiteLocaleProvider locale={activeLocale}>
       <WebsiteThemeProvider initialConfig={themeConfig ?? undefined}>
-        {!isPreview ? <PublicVisitTracker websiteId={website.id} /> : null}
         <div lang={activeLocale} className="website-theme-scope min-h-screen bg-background">{nodes}</div>
+        <SiteCookieConsent
+          websiteId={website.id}
+          policyUrl={`${PLATFORM_BASE_URL}/cookies`}
+          enableTracking={!isPreview}
+        />
         {jsonLd && (
           <script
             type="application/ld+json"
