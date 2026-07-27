@@ -29,7 +29,12 @@ export default function LoginPage() {
       })
       const result = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(result.error || "Inloggen is niet gelukt.")
-      router.push("/editor")
+      const requestedPath = new URLSearchParams(window.location.search).get("next")
+      const nextPath =
+        requestedPath && requestedPath.startsWith("/") && !requestedPath.startsWith("//")
+          ? requestedPath
+          : "/editor"
+      router.push(nextPath)
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "Er is een fout opgetreden")
     } finally {

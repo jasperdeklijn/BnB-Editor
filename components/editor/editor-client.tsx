@@ -887,7 +887,7 @@ export function EditorClient({
 
     setSections((prev) =>
       prev.map((section) =>
-        section.id === selectedSectionId ? { ...section, styles: { ...section.styles, ...styles } } : section,
+        section.id === selectedSectionId ? { ...section, styles } : section,
       ),
     )
   }
@@ -1347,7 +1347,7 @@ export function EditorClient({
       : `https://${selectedWebsiteLiveUrl}`
     : ""
   const selectedWebsitePreviewUrl = selectedWebsite
-    ? `preview-${selectedWebsite.slug}.${PLATFORM_DOMAIN}`
+    ? `${PLATFORM_DOMAIN}/preview/${selectedWebsite.slug}`
     : ""
   const selectedWebsitePreviewHref = selectedWebsitePreviewUrl
     ? `https://${selectedWebsitePreviewUrl}`

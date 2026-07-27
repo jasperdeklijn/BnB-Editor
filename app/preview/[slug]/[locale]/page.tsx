@@ -16,7 +16,9 @@ export default async function LocalizedPreviewSitePage({ params }: PageProps) {
   const { slug, locale } = await params
   const supabase = await createClient()
   const { data: { user }, error } = await supabase.auth.getUser()
-  if (error || !user) redirect("/auth/login")
+  if (error || !user) {
+    redirect(`/auth/login?next=${encodeURIComponent(`/preview/${slug}/${locale}`)}`)
+  }
 
   const { data: website } = await supabase
     .from("websites")

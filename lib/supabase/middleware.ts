@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
-import { PLATFORM_DOMAIN } from "@/lib/platform"
+import { PLATFORM_BASE_URL, PLATFORM_DOMAIN } from "@/lib/platform"
 
 const platformDomain = PLATFORM_DOMAIN.toLowerCase().replace(/^www\./, "")
 const platformHosts = new Set([platformDomain, `www.${platformDomain}`])
@@ -49,16 +49,28 @@ const hostname = host.split(":")[0].toLowerCase()
 
 // Preview
 if (hostname.startsWith("preview-") && hostname.endsWith(`.${platformDomain}`)) {
-  if (isAssetOrApiRequest(request.nextUrl.pathname) || request.nextUrl.pathname.startsWith("/auth")) {
+  if (isAssetOrApiRequest(request.nextUrl.pathname)) {
     return supabaseResponse
   }
 
   const slug = hostname
     .replace("preview-", "")
     .replace(`.${platformDomain}`, "")
+  const visitorPath = request.nextUrl.pathname === "/" ? "" : request.nextUrl.pathname
+
+  // Authentication cookies created on the platform host are not guaranteed to
+  // be available on a preview subdomain. Route signed-out visitors through the
+  // canonical platform login and return them to the same private preview path.
+  const {
+    data: { user: previewUser },
+  } = await supabase.auth.getUser()
+  if (!previewUser) {
+    const loginUrl = new URL("/auth/login", PLATFORM_BASE_URL)
+    loginUrl.searchParams.set("next", `/preview/${slug}${visitorPath}`)
+    return NextResponse.redirect(loginUrl)
+  }
 
   const url = request.nextUrl.clone()
-  const visitorPath = request.nextUrl.pathname === "/" ? "" : request.nextUrl.pathname
   url.pathname = `/preview/${slug}${visitorPath}`
   return rewriteWebsite(request, url)
 }

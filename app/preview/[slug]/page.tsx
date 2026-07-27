@@ -66,7 +66,7 @@ export default async function PreviewSitePage({ params }: PageProps) {
   } = await supabase.auth.getUser()
 
   if (error || !user) {
-    redirect("/auth/login")
+    redirect(`/auth/login?next=${encodeURIComponent(`/preview/${slug}`)}`)
   }
 
   const { data: website } = await supabase

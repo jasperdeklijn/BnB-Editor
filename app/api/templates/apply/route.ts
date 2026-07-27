@@ -6,8 +6,6 @@ import {
 } from "@/lib/business/template-factory"
 import type { BusinessCategory } from "@/lib/business/categories"
 import { getTemplatePreset } from "@/components/templates/category-presets"
-import { applyThemeDefaultsToSections } from "@/lib/themes"
-import type { ThemeConfig } from "@/lib/themes"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function POST(request: NextRequest) {
@@ -193,11 +191,10 @@ export async function POST(request: NextRequest) {
       serviceTranslations: currentServiceTranslations || [],
     }
 
-    const themeConfig = (websiteTheme.theme_config as ThemeConfig | null) ?? null
-    const sections = applyThemeDefaultsToSections(
-      generateSectionsFromTemplate(category, resolvedBusinessId),
-      themeConfig
-    )
+    // Keep theme-derived colors implicit. Persisting the resolved palette here
+    // would turn it into section overrides and prevent later theme changes from
+    // updating the generated sections.
+    const sections = generateSectionsFromTemplate(category, resolvedBusinessId)
 
     await supabase.from("website_sections").delete().eq("website_id", resolvedWebsiteId)
 

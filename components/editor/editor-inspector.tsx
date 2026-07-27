@@ -68,6 +68,7 @@ export function EditorInspector({
       businessId={businessId}
       businessCategory={businessCategory}
       currentPlan={currentPlan}
+      currentTheme={currentTheme}
     />
   )
 

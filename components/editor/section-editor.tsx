@@ -37,6 +37,7 @@ import { normalizeSectionStyleType, SECTION_STYLE_TYPE_OPTIONS } from "@/lib/sec
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
 import type { PlanId } from "@/lib/types/pricing"
+import { resolveWebsiteTheme, type ThemeConfig } from "@/lib/themes"
 import {
   getMinimumPlanForCapability,
   getMinimumPlanForSection,
@@ -60,9 +61,11 @@ interface SelectionEditorProps {
   businessId?: string | null
   businessCategory?: BusinessCategory | null
   currentPlan: PlanId
+  currentTheme?: ThemeConfig | null
 }
 
 type StyleControl = keyof Pick<SectionStyles, "fontFamily" | "backgroundColor" | "textColor" | "backgroundImage" | "logo" | "accentColor" | "surfaceColor">
+type ColorStyleControl = Extract<StyleControl, "backgroundColor" | "textColor" | "accentColor" | "surfaceColor">
 
 const DEFAULT_STYLE_CONTROLS: StyleControl[] = ["fontFamily", "backgroundColor", "textColor", "accentColor", "surfaceColor", "backgroundImage"]
 
@@ -147,6 +150,59 @@ function getSectionTargetLabel(section: Section) {
   return `${title} (${defaultLabel})`
 }
 
+function SectionColorControl({
+  label,
+  styleKey,
+  customValue,
+  themeValue,
+  onChange,
+}: {
+  label: string
+  styleKey: ColorStyleControl
+  customValue?: string
+  themeValue: string
+  onChange: (key: ColorStyleControl, value: string) => void
+}) {
+  const usesCustomColor = Boolean(customValue)
+  const displayedValue = customValue || themeValue
+
+  return (
+    <div className="min-w-0 rounded-lg border border-border bg-background p-3">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <Label className="truncate text-xs">{label}</Label>
+        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
+          usesCustomColor ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+        }`}>
+          {usesCustomColor ? "Eigen kleur" : "Website-thema"}
+        </span>
+      </div>
+      <input
+        type="color"
+        aria-label={label}
+        value={displayedValue}
+        onChange={(event) => onChange(styleKey, event.target.value)}
+        className="h-10 w-full cursor-pointer rounded border border-input bg-background"
+      />
+      <div className="mt-2 flex min-w-0 items-center justify-between gap-2">
+        <span className="truncate font-mono text-[10px] uppercase text-muted-foreground">{displayedValue}</span>
+        {usesCustomColor ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            className="h-7 shrink-0 px-2 text-[10px]"
+            onClick={() => onChange(styleKey, "")}
+          >
+            Gebruik thema
+          </Button>
+        ) : (
+          <span className="shrink-0 text-[10px] text-muted-foreground">Volgt automatisch</span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export function SelectionEditor({
   selectedSection,
   sections,
@@ -161,6 +217,7 @@ export function SelectionEditor({
   businessId,
   businessCategory,
   currentPlan,
+  currentTheme,
 }: SelectionEditorProps) {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [layoutDialogOpen, setLayoutDialogOpen] = useState(false)
@@ -360,6 +417,7 @@ export function SelectionEditor({
   const LayoutIcon = getLayoutIcon(selectedLayout)
   const supportedStyleControls = getSectionStyleControls(selectedSection.type)
   const supportsStyleControl = (control: StyleControl) => supportedStyleControls.includes(control)
+  const themeColors = resolveWebsiteTheme(currentTheme).palette.colors
   const SectionSpecificEditor = getSectionEditor(selectedSection.type)
   const sectionTargetOptions: SectionTargetOption[] = sections
     .filter((section) => section.id !== selectedSection.id && SECTION_TARGET_TYPES.includes(section.type))
@@ -704,67 +762,55 @@ export function SelectionEditor({
               </div>
             ) : null}
 
-            {supportsStyleControl("backgroundColor") || supportsStyleControl("textColor") ? (
-              <div className="flex gap-3">
-                {supportsStyleControl("backgroundColor") ? (
-                  <div className="flex-1">
-                    <Label className="mb-2 flex items-center gap-1 text-xs">
-                      <div className="h-3 w-3 rounded border bg-muted" />
-                      Achtergrondkleur
-                    </Label>
-                    <input
-                      type="color"
-                      aria-label="Achtergrondkleur"
-                      value={selectedSection.styles?.backgroundColor || "#ffffff"}
-                      onChange={(event) => updateStyleValue("backgroundColor", event.target.value)}
-                      className="h-9 w-full cursor-pointer rounded border"
+            {supportsStyleControl("backgroundColor") ||
+            supportsStyleControl("textColor") ||
+            supportsStyleControl("accentColor") ||
+            supportsStyleControl("surfaceColor") ? (
+              <div className="space-y-2">
+                <div>
+                  <p className="text-xs font-medium text-foreground">Kleuren van deze sectie</p>
+                  <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                    Standaard volgt deze sectie het website-thema. Kies alleen een eigen kleur als deze sectie daarvan moet afwijken.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
+                  {supportsStyleControl("backgroundColor") ? (
+                    <SectionColorControl
+                      label="Achtergrond"
+                      styleKey="backgroundColor"
+                      customValue={selectedSection.styles?.backgroundColor}
+                      themeValue={themeColors.background}
+                      onChange={updateStyleValue}
                     />
-                  </div>
-                ) : null}
-                {supportsStyleControl("textColor") ? (
-                  <div className="flex-1">
-                    <Label className="mb-2 flex items-center gap-1 text-xs">
-                      <Type className="h-3 w-3" />
-                      Tekstkleur
-                    </Label>
-                    <input
-                      type="color"
-                      aria-label="Tekstkleur"
-                      value={selectedSection.styles?.textColor || "#000000"}
-                      onChange={(event) => updateStyleValue("textColor", event.target.value)}
-                      className="h-9 w-full cursor-pointer rounded border"
+                  ) : null}
+                  {supportsStyleControl("textColor") ? (
+                    <SectionColorControl
+                      label="Tekst"
+                      styleKey="textColor"
+                      customValue={selectedSection.styles?.textColor}
+                      themeValue={themeColors.foreground}
+                      onChange={updateStyleValue}
                     />
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-
-            {supportsStyleControl("accentColor") || supportsStyleControl("surfaceColor") ? (
-              <div className="flex gap-3">
-                {supportsStyleControl("accentColor") ? (
-                  <div className="flex-1">
-                    <Label className="mb-2 block text-xs">Accentkleur</Label>
-                    <input
-                      type="color"
-                      aria-label="Accentkleur"
-                      value={selectedSection.styles?.accentColor || "#b45309"}
-                      onChange={(event) => updateStyleValue("accentColor", event.target.value)}
-                      className="h-9 w-full cursor-pointer rounded border"
+                  ) : null}
+                  {supportsStyleControl("accentColor") ? (
+                    <SectionColorControl
+                      label="Accent en knoppen"
+                      styleKey="accentColor"
+                      customValue={selectedSection.styles?.accentColor}
+                      themeValue={themeColors.accent}
+                      onChange={updateStyleValue}
                     />
-                  </div>
-                ) : null}
-                {supportsStyleControl("surfaceColor") ? (
-                  <div className="flex-1">
-                    <Label className="mb-2 block text-xs">Kaartkleur</Label>
-                    <input
-                      type="color"
-                      aria-label="Kaartkleur"
-                      value={selectedSection.styles?.surfaceColor || "#ffffff"}
-                      onChange={(event) => updateStyleValue("surfaceColor", event.target.value)}
-                      className="h-9 w-full cursor-pointer rounded border"
+                  ) : null}
+                  {supportsStyleControl("surfaceColor") ? (
+                    <SectionColorControl
+                      label="Kaarten en vlakken"
+                      styleKey="surfaceColor"
+                      customValue={selectedSection.styles?.surfaceColor}
+                      themeValue={themeColors.card}
+                      onChange={updateStyleValue}
                     />
-                  </div>
-                ) : null}
+                  ) : null}
+                </div>
               </div>
             ) : null}
 

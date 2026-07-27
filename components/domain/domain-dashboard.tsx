@@ -149,7 +149,7 @@ export function DomainDashboard({ websites }: DomainDashboardProps) {
     () => websiteList.find((website) => website.id === selectedWebsiteId) || websiteList[0],
     [selectedWebsiteId, websiteList],
   )
-  const previewUrl = selectedWebsite ? `preview-${selectedWebsite.slug}.${PLATFORM_DOMAIN}` : ""
+  const previewUrl = selectedWebsite ? `${PLATFORM_DOMAIN}/preview/${selectedWebsite.slug}` : ""
   const liveUrl = selectedWebsite ? `${selectedWebsite.slug}.${PLATFORM_DOMAIN}` : ""
 
   const replaceDomains = (websiteId: string, domains: WebsiteDomain[]) => {
