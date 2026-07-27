@@ -1,18 +1,20 @@
 "use client"
 
 import { useMemo, useState, type ReactNode } from "react"
-import { AlertTriangle, CheckCircle2, ChevronDown, Eye, LayoutTemplate, Loader2, Palette, RotateCcw, Sparkles } from "lucide-react"
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, Eye, Languages, LayoutTemplate, Loader2, Palette, RotateCcw, Type } from "lucide-react"
 import { ThemePanel } from "@/components/themes/theme-panel"
 import { TemplatePreviewCard } from "@/components/templates/template-preview-card"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { StatusMessage } from "@/components/ui/status-message"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { BUSINESS_CATEGORIES, type BusinessCategory } from "@/lib/business/categories"
 import { getAllTemplatePresets, type TemplatePreset } from "@/components/templates/category-presets"
-import type { ThemeConfig } from "@/lib/themes"
+import { getFontPairById, getPaletteById, type ThemeConfig } from "@/lib/themes"
+import type { SiteDesignDetail } from "@/lib/editor-inspector-navigation"
+
+export type SiteDesignView = "menu" | SiteDesignDetail
 
 type TemplateCheckpoint = {
   websiteId: string
@@ -51,6 +53,8 @@ interface SiteDesignPanelProps {
   currentTheme?: ThemeConfig | null
   onThemeChange: (config: ThemeConfig) => void
   onTemplateApplied: (websiteId?: string | null) => Promise<void> | void
+  view?: SiteDesignView
+  onViewChange?: (view: SiteDesignDetail) => void
   className?: string
 }
 
@@ -61,9 +65,10 @@ export function SiteDesignPanel({
   currentTheme,
   onThemeChange,
   onTemplateApplied,
+  view = "menu",
+  onViewChange,
   className,
 }: SiteDesignPanelProps) {
-  const [activeTab, setActiveTab] = useState("themes")
   const [previewTemplate, setPreviewTemplate] = useState<TemplatePreset | null>(null)
   const [confirmTemplate, setConfirmTemplate] = useState<TemplatePreset | null>(null)
   const [lastCheckpoint, setLastCheckpoint] = useState<TemplateCheckpoint | null>(null)
@@ -73,10 +78,13 @@ export function SiteDesignPanel({
   const [isApplying, setIsApplying] = useState(false)
   const [isRestoring, setIsRestoring] = useState(false)
   const [status, setStatus] = useState<{ tone: "success" | "error"; content: ReactNode } | null>(null)
-  const sitePanelOptions = [
-    { value: "themes", label: "Thema aanpassen" },
-    { value: "templates", label: "Sjabloon kiezen" },
-  ]
+  const paletteLabel = getPaletteById(currentTheme?.paletteId || "")?.name ?? "Standaardkleuren"
+  const fontLabel = getFontPairById(currentTheme?.fontPairId || "")?.name ?? "Standaardletters"
+  const spacingLabel = currentTheme?.spacing === "compact"
+    ? "Compact"
+    : currentTheme?.spacing === "spacious"
+      ? "Ruim"
+      : "Comfortabel"
 
   const templateGroups = useMemo(() => {
     const presets = getAllTemplatePresets()
@@ -193,60 +201,121 @@ export function SiteDesignPanel({
     }
   }
 
+  const menuItems: Array<{
+    value: SiteDesignDetail
+    label: string
+    description: string
+    summary: string
+    icon: typeof Palette
+  }> = [
+    {
+      value: "theme",
+      label: "Thema en kleuren",
+      description: "Kies een thema of pas alleen het kleurenpalet aan.",
+      summary: paletteLabel,
+      icon: Palette,
+    },
+    {
+      value: "typography",
+      label: "Letters en ruimte",
+      description: "Beheer lettercombinatie, afstand en ronde hoeken.",
+      summary: `${fontLabel} · ${spacingLabel}`,
+      icon: Type,
+    },
+    {
+      value: "templates",
+      label: "Sjablonen",
+      description: "Bekijk een complete startopzet voordat u die toepast.",
+      summary: "Voorbeeld en herstelpunt",
+      icon: LayoutTemplate,
+    },
+    {
+      value: "language",
+      label: "Taalweergave",
+      description: "Open talenbeheer en stel de taalkeuze van de website in.",
+      summary: "Talen en taalkeuze",
+      icon: Languages,
+    },
+  ]
+
+  const openLanguageManager = () => {
+    const languageButton = document.querySelector<HTMLButtonElement>('button[aria-label="Talen beheren"]')
+    if (languageButton) {
+      languageButton.click()
+      return
+    }
+    setStatus({
+      tone: "error",
+      content: "Talenbeheer is niet beschikbaar voor deze website of dit abonnement.",
+    })
+  }
+
   return (
     <div className={cn("flex h-full min-h-0 flex-col overflow-hidden", className)}>
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex h-full min-h-0 flex-col overflow-hidden">
-        <div className="border-b border-border bg-background px-3 py-3 sm:px-4">
-          <div className="mb-3 flex min-w-0 items-center gap-2 md:mb-3">
-            <Sparkles className="h-4 w-4 shrink-0 text-primary" />
-            <span className="truncate text-sm font-medium">Site ontwerp</span>
+      {status ? (
+        <StatusMessage tone={status.tone} className="m-3 mb-0 shrink-0 sm:mx-4">
+          {status.content}
+        </StatusMessage>
+      ) : null}
+
+      {view === "menu" ? (
+        <ScrollArea className="min-h-0 flex-1 overflow-x-hidden">
+          <div className="p-3 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-4">
+            <div className="overflow-hidden rounded-lg border border-border bg-background">
+              {menuItems.map((item) => {
+                const Icon = item.icon
+                return (
+                  <button
+                    key={item.value}
+                    type="button"
+                    onClick={() => onViewChange?.(item.value)}
+                    className="flex w-full items-center gap-3 border-b border-border px-3 py-3 text-left transition-colors last:border-b-0 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold text-foreground">{item.label}</span>
+                      <span className="sr-only">{item.description}</span>
+                      <span className="mt-0.5 block truncate text-[11px] text-muted-foreground">{item.summary}</span>
+                    </span>
+                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </button>
+                )
+              })}
+            </div>
           </div>
-          <label htmlFor="site-design-mobile-mode" className="sr-only">
-            Site ontwerp onderdeel
-          </label>
-          <select
-            id="site-design-mobile-mode"
-            value={activeTab}
-            onChange={(event) => setActiveTab(event.target.value)}
-            className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm font-medium text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 md:hidden"
-          >
-            {sitePanelOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <TabsList className="hidden w-full grid-cols-2 md:grid">
-            <TabsTrigger value="themes" className="gap-1 text-xs">
-              <Palette className="h-3.5 w-3.5" />
-              Thema
-            </TabsTrigger>
-            <TabsTrigger value="templates" className="gap-1 text-xs">
-              <LayoutTemplate className="h-3.5 w-3.5" />
-              Sjablonen
-            </TabsTrigger>
-          </TabsList>
-        </div>
-
-        {status ? (
-          <StatusMessage tone={status.tone} className="m-3 mb-0 sm:mx-4">
-            {status.content}
-          </StatusMessage>
-        ) : null}
-
-        <TabsContent value="themes" className="min-h-0 flex-1 overflow-hidden">
-          <ThemePanel
-            websiteId={websiteId}
-            businessCategory={businessCategory ?? undefined}
-            currentTheme={currentTheme}
-            onThemeChange={onThemeChange}
-            className="h-full min-h-0"
-          />
-        </TabsContent>
-
-        <TabsContent value="templates" className="min-h-0 flex-1 overflow-hidden">
-          <ScrollArea className="h-full min-h-0 overflow-x-hidden">
-            <div className="w-full max-w-full space-y-3 p-3 pb-[calc(5rem+env(safe-area-inset-bottom))] sm:p-4 md:pb-4">
+        </ScrollArea>
+      ) : view === "theme" || view === "typography" ? (
+        <ThemePanel
+          websiteId={websiteId}
+          businessCategory={businessCategory ?? undefined}
+          currentTheme={currentTheme}
+          onThemeChange={onThemeChange}
+          mode={view === "theme" ? "theme-colors" : "typography"}
+          className="h-full min-h-0"
+        />
+      ) : view === "language" ? (
+        <ScrollArea className="min-h-0 flex-1 overflow-x-hidden">
+          <div className="space-y-4 p-3 pb-[calc(5rem+env(safe-area-inset-bottom))] sm:p-4 md:pb-4">
+            <div className="rounded-lg border border-border bg-background p-4">
+              <span className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <Languages className="h-5 w-5" />
+              </span>
+              <h3 className="mt-3 text-sm font-semibold text-foreground">Talen en taalkeuze</h3>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                Beheer beschikbare talen, vertaalstatus en hoe bezoekers tussen talen wisselen.
+              </p>
+              <Button type="button" className="mt-4 w-full" onClick={openLanguageManager}>
+                <Languages className="h-4 w-4" />
+                Talenbeheer openen
+              </Button>
+            </div>
+          </div>
+        </ScrollArea>
+      ) : (
+        <ScrollArea className="h-full min-h-0 overflow-x-hidden">
+          <div className="w-full max-w-full space-y-3 p-3 pb-[calc(5rem+env(safe-area-inset-bottom))] sm:p-4 md:pb-4">
               <div className="w-full rounded-md border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-950">
                 <div className="mb-1 flex items-center gap-2 font-medium">
                   <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
@@ -299,10 +368,9 @@ export function SiteDesignPanel({
                   </div>
                 )
               })}
-            </div>
-          </ScrollArea>
-        </TabsContent>
-      </Tabs>
+          </div>
+        </ScrollArea>
+      )}
 
       <AlertDialog open={Boolean(previewTemplate)} onOpenChange={(open) => !open && setPreviewTemplate(null)}>
         <AlertDialogContent>

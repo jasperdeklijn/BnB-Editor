@@ -8,7 +8,7 @@ Maak de rechterzijbalk taakgericht en rustig. Een gebruiker moet steeds zien:
 2. welke hoofdactie nu beschikbaar is;
 3. hoe die met maximaal één stap naar website-instellingen of een andere sectie gaat.
 
-De huidige geneste tabstructuur wordt niet uitgebreid. Dit document is alleen een plan; de zijbalkwijzigingen zijn nog niet geïmplementeerd.
+De huidige geneste tabstructuur is vervangen door een contextgestuurde inspector met één zichtbaar navigatieniveau.
 
 ## Voorgestelde structuur
 
@@ -54,14 +54,14 @@ De huidige geneste tabstructuur wordt niet uitgebreid. Dit document is alleen ee
 
 ## Implementatievolgorde
 
-- [ ] Inventariseer alle huidige controls uit `EditorInspector`, `SelectionEditor`, `SiteDesignPanel` en `ThemePanel` en wijs elk control aan precies één nieuwe groep toe.
-- [ ] Voeg een kleine inspector-router/state-machine toe met `section`, `site-menu` en `site-detail` als toestanden.
-- [ ] Bouw de vaste contextkop met terugnavigatie en toegankelijke labels.
-- [ ] Verplaats sectiecontrols naar uitklapbare groepen zonder save- of entitlementlogica te wijzigen.
-- [ ] Zet het sitepaneel om naar menu plus detailpanelen en verwijder de geneste tabs.
-- [ ] Synchroniseer desktop- en mobiele labels, scrollgedrag en terugnavigatie.
-- [ ] Voeg regressietests toe voor selectiebehoud, terugnavigatie en automatisch opslaan.
-- [ ] Voer TypeScript, ESLint en browsercontroles uit op desktop en de genoemde mobiele breedtes.
+- [x] Inventariseer alle huidige controls uit `EditorInspector`, `SelectionEditor`, `SiteDesignPanel` en `ThemePanel` en wijs elk control aan precies één nieuwe groep toe.
+- [x] Voeg een kleine inspector-router/state-machine toe met `section`, `site-menu` en `site-detail` als toestanden.
+- [x] Bouw de vaste contextkop met terugnavigatie en toegankelijke labels.
+- [x] Verplaats sectiecontrols naar uitklapbare groepen zonder save- of entitlementlogica te wijzigen.
+- [x] Zet het sitepaneel om naar menu plus detailpanelen en verwijder de geneste tabs.
+- [x] Synchroniseer desktop- en mobiele labels, scrollgedrag en terugnavigatie.
+- [x] Voeg regressietests toe voor selectiebehoud, terugnavigatie en automatisch opslaan.
+- [x] Voer TypeScript, ESLint en browsercontroles uit op desktop en de genoemde mobiele breedtes.
 
 ## Acceptatiecriteria
 

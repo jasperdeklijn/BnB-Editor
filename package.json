@@ -13,6 +13,7 @@
     "test:plan-enforcement": "node --test tests/plan-enforcement.test.mjs",
     "test:domains": "node --test tests/vercel-domains.test.mjs",
     "test:mail": "node --test tests/mail-agent.test.mjs",
+    "test:editor-inspector": "node --test tests/editor-inspector-navigation.test.mjs",
     "start": "next start"
   },
   "dependencies": {

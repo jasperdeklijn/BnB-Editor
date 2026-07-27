@@ -25,6 +25,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { getSectionDefinition } from "@/components/editor/section-registry"
 import { getSectionEditor } from "@/components/editor/section-editor-registry"
 import { SectionRenderer } from "@/components/editor/section-renderer"
@@ -62,6 +63,7 @@ interface SelectionEditorProps {
   businessCategory?: BusinessCategory | null
   currentPlan: PlanId
   currentTheme?: ThemeConfig | null
+  showHeader?: boolean
 }
 
 type StyleControl = keyof Pick<SectionStyles, "fontFamily" | "backgroundColor" | "textColor" | "backgroundImage" | "logo" | "accentColor" | "surfaceColor">
@@ -218,10 +220,15 @@ export function SelectionEditor({
   businessCategory,
   currentPlan,
   currentTheme,
+  showHeader = true,
 }: SelectionEditorProps) {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [layoutDialogOpen, setLayoutDialogOpen] = useState(false)
   const [styleTypeDialogOpen, setStyleTypeDialogOpen] = useState(false)
+  const [activeGroup, setActiveGroup] = useState(() => {
+    if (typeof window === "undefined") return "content"
+    return window.sessionStorage.getItem("editor:section-inspector-group") || "content"
+  })
   const { setIsSaving, setSaveState } = useEditorLayout()
 
   useEffect(() => {
@@ -246,7 +253,7 @@ export function SelectionEditor({
 
           {sections.length > 0 ? (
             <div className="mt-5 min-h-0 flex-1 overflow-y-auto pr-1">
-              <div className="space-y-2">
+              <div className="overflow-hidden rounded-lg border border-border bg-background">
                 {sections.map((section, index) => {
                   const label = getSectionTargetLabel(section)
 
@@ -255,7 +262,7 @@ export function SelectionEditor({
                       key={section.id}
                       type="button"
                       onClick={() => onSectionSelect?.(section.id)}
-                      className="flex w-full items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-3 text-left text-sm shadow-sm transition-colors hover:border-primary/60 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      className="flex w-full items-center justify-between gap-3 border-b border-border px-3 py-2.5 text-left text-sm transition-colors last:border-b-0 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                     >
                       <span className="min-w-0">
                         <span className="block truncate font-medium text-foreground">
@@ -443,9 +450,16 @@ export function SelectionEditor({
     saveTimeoutRef.current = timeout
   }
 
+  const handleGroupChange = (value: string) => {
+    setActiveGroup(value)
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem("editor:section-inspector-group", value)
+    }
+  }
+
   return (
-    <div className="h-full min-h-0 w-full overflow-y-auto overscroll-contain border-border bg-[var(--editor-panel)] p-4 md:border-l md:p-6 animate-in slide-in-from-right duration-300">
-      <div className="mb-6">
+    <div className="h-full min-h-0 w-full overflow-y-auto overscroll-contain border-border bg-[var(--editor-panel)] p-3 md:border-l md:p-4 animate-in slide-in-from-right duration-300">
+      {showHeader ? <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <div className="rounded-md bg-primary/15 p-1.5 text-primary">
@@ -490,10 +504,60 @@ export function SelectionEditor({
               : `Deze sectie hoort bij ${selectedSectionPlan}. Je kunt haar volledig instellen en bekijken, maar deze versie kan pas live na een upgrade of wanneer je de sectie verwijdert.`}
           </div>
         ) : null}
-      </div>
+      </div> : selectedSectionExceedsPlan ? (
+        <div className="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-900">
+          {selectedSectionUsesHigherTierFeature
+            ? `Een ingeschakelde functie in deze sectie vereist ${selectedSectionPlan}. Je kunt haar volledig instellen en bekijken, maar deze versie kan pas live na een upgrade of wanneer je de functie uitschakelt.`
+            : `Deze sectie hoort bij ${selectedSectionPlan}. Je kunt haar volledig instellen en bekijken, maar deze versie kan pas live na een upgrade of wanneer je de sectie verwijdert.`}
+        </div>
+      ) : null}
 
-      <div className="space-y-4">
-        <Card className="p-4 space-y-3">
+      <Accordion
+        type="single"
+        collapsible
+        value={activeGroup}
+        onValueChange={handleGroupChange}
+        className="overflow-hidden rounded-lg border border-border bg-background"
+      >
+        <AccordionItem value="content" className="px-3">
+          <AccordionTrigger className="py-3 hover:no-underline">
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold">Inhoud</span>
+              <span className="mt-0.5 block truncate text-[11px] font-normal text-muted-foreground">
+                Tekst, knoppen en sectie-inhoud
+              </span>
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="pb-3">
+            <SectionSpecificEditor
+              section={selectedSection}
+              sections={sections}
+              transitions={transitions}
+              websiteId={websiteId}
+              businessId={businessId}
+              businessCategory={businessCategory}
+              currentPlan={currentPlan}
+              sectionTargetOptions={sectionTargetOptions}
+              updateField={updateField}
+              updateFields={updateFields}
+              updateListItemField={updateListItemField}
+              updateNestedListItemField={updateNestedListItemField}
+              updateStringListItem={updateStringListItem}
+            />
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="layout" className="px-3">
+          <AccordionTrigger className="py-3 hover:no-underline">
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold">Indeling</span>
+              <span className="mt-0.5 block truncate text-[11px] font-normal text-muted-foreground">
+                {selectedLayoutOption.label} · {selectedStyleTypeOption.label}
+              </span>
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="space-y-3 pb-3">
+        <Card className="space-y-3 border-0 bg-transparent p-0 shadow-none">
           <Label className="flex items-center gap-2">
             <Type className="h-3.5 w-3.5" />
             Layout
@@ -613,7 +677,7 @@ export function SelectionEditor({
           : null}
 
         {supportsStyleTypes ? (
-          <Card className="space-y-3 p-4">
+          <Card className="space-y-3 border-0 bg-transparent p-0 shadow-none">
             <Label className="flex items-center gap-2">
               <Palette className="h-3.5 w-3.5" />
               Stijltype
@@ -722,24 +786,22 @@ export function SelectionEditor({
               document.body,
             )
           : null}
+          </AccordionContent>
+        </AccordionItem>
 
-        <SectionSpecificEditor
-          section={selectedSection}
-          sections={sections}
-          transitions={transitions}
-          websiteId={websiteId}
-          businessId={businessId}
-          businessCategory={businessCategory}
-          currentPlan={currentPlan}
-          sectionTargetOptions={sectionTargetOptions}
-          updateField={updateField}
-          updateFields={updateFields}
-          updateListItemField={updateListItemField}
-          updateNestedListItemField={updateNestedListItemField}
-          updateStringListItem={updateStringListItem}
-        />
-
-        <Card className="p-4 space-y-3">
+        <AccordionItem value="appearance" className="px-3">
+          <AccordionTrigger className="py-3 hover:no-underline">
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold">Kleuren en uiterlijk</span>
+              <span className="mt-0.5 block truncate text-[11px] font-normal text-muted-foreground">
+                {selectedSection.styles?.accentColor || selectedSection.styles?.backgroundColor
+                  ? "Eigen sectiekleuren"
+                  : "Volgt website-thema"}
+              </span>
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="pb-3">
+        <Card className="space-y-3 border-0 bg-transparent p-0 shadow-none">
           <Label className="flex items-center gap-2">
             <Palette className="h-3.5 w-3.5" />
             Uiterlijk
@@ -875,9 +937,21 @@ export function SelectionEditor({
             </p>
           </div>
         </Card>
+          </AccordionContent>
+        </AccordionItem>
 
         {sections.length > 1 && sections.findIndex((section) => section.id === selectedSection.id) < sections.length - 1 ? (
-          <Card className="p-4 space-y-3">
+          <AccordionItem value="advanced" className="px-3">
+            <AccordionTrigger className="py-3 hover:no-underline">
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold">Overgang en geavanceerd</span>
+                <span className="mt-0.5 block truncate text-[11px] font-normal text-muted-foreground">
+                  Overgang naar de volgende sectie
+                </span>
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="pb-3">
+          <Card className="space-y-3 border-0 bg-transparent p-0 shadow-none">
             <Label className="flex items-center gap-2">
               <Wand2 className="h-3.5 w-3.5" />
               Overgang naar volgende sectie
@@ -925,8 +999,10 @@ export function SelectionEditor({
               )
             })()}
           </Card>
+            </AccordionContent>
+          </AccordionItem>
         ) : null}
-      </div>
+      </Accordion>
     </div>
   )
 }

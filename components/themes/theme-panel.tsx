@@ -4,7 +4,6 @@ import { useState, useCallback, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Check, Palette, Loader2, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEditorLayout } from '@/components/editor/editor-layout-context';
@@ -27,6 +26,8 @@ interface ThemePanelProps {
   currentTheme?: ThemeConfig | null;
   onThemeChange?: (config: ThemeConfig) => void;
   className?: string;
+  mode?: "theme-colors" | "typography";
+  showHeader?: boolean;
 }
 
 const DEFAULT_THEME: ThemeConfig = {
@@ -100,11 +101,12 @@ export function ThemePanel({
   currentTheme,
   onThemeChange,
   className,
+  mode = "theme-colors",
+  showHeader = false,
 }: ThemePanelProps) {
   const [theme, setTheme] = useState<ThemeConfig>(currentTheme || DEFAULT_THEME);
   const [isSaving, setIsSaving] = useState(false);
   const [status, setStatus] = useState<{ tone: "success" | "error"; text: string } | null>(null);
-  const [activeTab, setActiveTab] = useState('presets');
   const { setIsSaving: setHeaderSaving, setSaveState } = useEditorLayout();
 
   // Sync with external theme changes
@@ -203,11 +205,6 @@ export function ThemePanel({
   const otherPresets = businessCategory
     ? THEME_PRESETS.filter((preset) => !visibleRecommendedPresetIds.has(preset.id))
     : THEME_PRESETS;
-  const themePanelOptions = [
-    { value: 'presets', label: 'Thema kiezen' },
-    { value: 'colors', label: 'Kleuren kiezen' },
-    { value: 'fonts', label: 'Letters kiezen' },
-  ];
   const renderLayoutControls = (className?: string) => (
     <div className={cn("space-y-4", className)}>
       <div>
@@ -251,49 +248,32 @@ export function ThemePanel({
 
   return (
     <div className={cn('flex h-full min-h-0 flex-col overflow-hidden', className)}>
-      <div className="flex min-w-0 items-center justify-between gap-2 px-3 py-3 border-b sm:px-4">
-        <div className="flex min-w-0 items-center gap-2">
-          <Palette className="h-4 w-4 text-primary" />
-          <span className="truncate font-medium text-sm">Website thema</span>
+      {showHeader ? (
+        <div className="flex min-w-0 items-center justify-between gap-2 border-b px-3 py-3 sm:px-4">
+          <div className="flex min-w-0 items-center gap-2">
+            <Palette className="h-4 w-4 text-primary" />
+            <span className="truncate text-sm font-medium">
+              {mode === "theme-colors" ? "Thema en kleuren" : "Letters en ruimte"}
+            </span>
+          </div>
+          {isSaving && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
         </div>
-        {isSaving && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-      </div>
+      ) : isSaving ? (
+        <div className="flex shrink-0 justify-end px-3 pt-3 sm:px-4">
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        </div>
+      ) : null}
       {status ? <StatusMessage tone={status.tone} className="m-3 mb-0 sm:mx-4">{status.text}</StatusMessage> : null}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="mx-3 mt-3 sm:mx-4 md:hidden">
-          <label htmlFor="theme-panel-mobile-mode" className="sr-only">
-            Website thema onderdeel
-          </label>
-          <select
-            id="theme-panel-mobile-mode"
-            value={activeTab}
-            onChange={(event) => setActiveTab(event.target.value)}
-            className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm font-medium text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-          >
-            {themePanelOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <TabsList className="mx-3 mt-3 hidden grid-cols-3 sm:mx-4 md:grid">
-          <TabsTrigger value="presets" className="text-xs">
-            Thema&apos;s
-          </TabsTrigger>
-          <TabsTrigger value="colors" className="text-xs">
-            Kleuren
-          </TabsTrigger>
-          <TabsTrigger value="fonts" className="text-xs">
-            Letters
-          </TabsTrigger>
-        </TabsList>
-
-        <div className="flex-1 min-h-0 p-3 sm:p-4">
-          <TabsContent value="presets" className="h-full min-h-0 mt-0 overflow-hidden">
-            <ScrollArea className="h-full min-h-0">
-              <div className="pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
+      <ScrollArea className="min-h-0 flex-1 overflow-x-hidden">
+        <div className="space-y-6 p-3 pb-[calc(5rem+env(safe-area-inset-bottom))] sm:p-4 md:pb-4">
+          {mode === "theme-colors" ? (
+            <>
+              <section aria-labelledby="theme-presets-title">
+                <div className="mb-3">
+                  <h3 id="theme-presets-title" className="text-sm font-semibold text-foreground">Thema kiezen</h3>
+                  <p className="mt-1 text-xs text-muted-foreground">Een thema combineert kleuren, letters en ruimte.</p>
+                </div>
                 {businessCategory && recommendedPresets.length > 0 && (
                   <div className="mb-4">
                     <div className="flex items-center gap-2 mb-3">
@@ -327,14 +307,12 @@ export function ThemePanel({
                     />
                   ))}
                 </div>
-                <div className="mt-4 border-t pt-4 md:hidden">{renderLayoutControls()}</div>
-              </div>
-            </ScrollArea>
-          </TabsContent>
-
-          <TabsContent value="colors" className="h-full min-h-0 mt-0 overflow-hidden">
-            <ScrollArea className="h-full min-h-0">
-              <div className="pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
+              </section>
+              <section aria-labelledby="theme-colors-title" className="border-t border-border pt-5">
+                <div className="mb-3">
+                  <h3 id="theme-colors-title" className="text-sm font-semibold text-foreground">Kleurenpalet</h3>
+                  <p className="mt-1 text-xs text-muted-foreground">Pas alleen het kleurenpalet van het huidige thema aan.</p>
+                </div>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {COLOR_PALETTES.map((palette) => (
                     <PaletteCard
@@ -345,14 +323,15 @@ export function ThemePanel({
                     />
                   ))}
                 </div>
-                <div className="mt-4 border-t pt-4 md:hidden">{renderLayoutControls()}</div>
-              </div>
-            </ScrollArea>
-          </TabsContent>
-
-          <TabsContent value="fonts" className="h-full min-h-0 mt-0 overflow-hidden">
-            <ScrollArea className="h-full min-h-0">
-              <div className="pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
+              </section>
+            </>
+          ) : (
+            <>
+              <section aria-labelledby="theme-fonts-title">
+                <div className="mb-3">
+                  <h3 id="theme-fonts-title" className="text-sm font-semibold text-foreground">Lettercombinatie</h3>
+                  <p className="mt-1 text-xs text-muted-foreground">Kies één combinatie voor koppen en gewone tekst.</p>
+                </div>
                 <div className="space-y-2">
                   {FONT_PAIRS.map((fontPair) => (
                     <FontCard
@@ -363,14 +342,15 @@ export function ThemePanel({
                     />
                   ))}
                 </div>
-                <div className="mt-4 border-t pt-4 md:hidden">{renderLayoutControls()}</div>
-              </div>
-            </ScrollArea>
-          </TabsContent>
+              </section>
+              <section aria-labelledby="theme-spacing-title" className="border-t border-border pt-5">
+                <h3 id="theme-spacing-title" className="mb-3 text-sm font-semibold text-foreground">Ruimte en hoeken</h3>
+                {renderLayoutControls()}
+              </section>
+            </>
+          )}
         </div>
-      </Tabs>
-
-      {renderLayoutControls("hidden border-t p-3 sm:p-4 md:block")}
+      </ScrollArea>
     </div>
   );
 }
