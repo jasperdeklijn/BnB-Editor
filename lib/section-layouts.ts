@@ -178,26 +178,10 @@ export function getSectionLayoutOptions(type: SectionType): SectionLayoutOption[
   }))
 }
 
-const legacyLayoutMap: Record<string, SectionLayout> = {
-  centered: "classic",
-  grid: "classic",
-  fullwidth: "showcase",
-  featured: "showcase",
-  "full-slider": "showcase",
-  minimal: "compact",
-  list: "split",
-  "vertical-carousel": "split",
-  "split-reverse": "banner",
-  carousel: "banner",
-  masonry: "banner",
-  magazine: "card",
-  "single-with-thumbs": "card",
-}
-
 export function normalizeSectionLayout(value: unknown, fallback: SectionLayout = "classic"): SectionLayout {
   if (typeof value !== "string") return fallback
   if (SECTION_LAYOUT_OPTIONS.some((option) => option.value === value)) return value as SectionLayout
-  return legacyLayoutMap[value] ?? fallback
+  return fallback
 }
 
 export function getDefaultLayoutForSection(type: SectionType): SectionLayout {

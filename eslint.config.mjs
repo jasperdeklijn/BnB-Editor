@@ -9,6 +9,7 @@ export default tseslint.config(
       ".next/**",
       "node_modules/**",
       "out/**",
+      "artifacts/**",
       "public/**",
       "next-env.d.ts",
     ],
@@ -16,7 +17,7 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ["**/*.{js,jsx,ts,tsx}"],
+    files: ["**/*.{js,mjs,cjs,jsx,ts,tsx}"],
     languageOptions: {
       globals: {
         ...globals.browser,

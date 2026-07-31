@@ -31,7 +31,7 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
   const primaryHref = (data.primaryCtaHref as string) || "#contact"
   const primaryEnabled = data.primaryCtaEnabled !== false && Boolean(primaryText)
   const secondaryText = data.secondaryCtaText as string | undefined
-  const secondaryHref = (data.secondaryCtaHref as string) || "#diensten"
+  const secondaryHref = (data.secondaryCtaHref as string) || "#services"
   const secondaryEnabled = data.secondaryCtaEnabled !== false && Boolean(secondaryText)
   const phone = data.phone as string | undefined
   const layout = (ctaLayoutMap[normalizeSectionLayout(data.layout)] ?? "centered") as CtaLayout

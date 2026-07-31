@@ -150,14 +150,12 @@ export function ImagesClient({ userId }: ImagesClientProps) {
       setSaveState("error")
       toast.error("Mislukt om afbeelding te verwijderen")
     } else {
-      if (image.id) {
-        const { error: metadataError } = await supabase.from("user_images").delete().eq("id", image.id).eq("user_id", userId)
-        if (metadataError) {
-          setSaveState("error")
-          toast.error("Afbeeldingsgegevens konden niet worden verwijderd")
-          setIsSaving(false)
-          return
-        }
+      const { error: metadataError } = await supabase.from("user_images").delete().eq("id", image.id).eq("user_id", userId)
+      if (metadataError) {
+        setSaveState("error")
+        toast.error("Afbeeldingsgegevens konden niet worden verwijderd")
+        setIsSaving(false)
+        return
       }
       toast.success("Afbeelding verwijderd")
       await fetchImages()
@@ -179,16 +177,7 @@ export function ImagesClient({ userId }: ImagesClientProps) {
 
     const supabase = createClient()
     setIsSaving(true)
-    const operation = image.id
-      ? supabase.from("user_images").update({ display_name: trimmedName }).eq("id", image.id).eq("user_id", userId)
-      : supabase.from("user_images").insert({
-          user_id: userId,
-          display_name: trimmedName,
-          original_path: image.originalPath,
-          thumbnail_path: null,
-          original_size: image.size,
-          thumbnail_size: 0,
-        })
+    const operation = supabase.from("user_images").update({ display_name: trimmedName }).eq("id", image.id).eq("user_id", userId)
     const { error } = await operation
     setIsSaving(false)
 

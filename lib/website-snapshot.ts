@@ -8,7 +8,6 @@ import { isMultilingualWebsitesEnabled } from "@/lib/i18n/feature"
 import { isMissingRelationError } from "@/lib/supabase/errors"
 
 export const WEBSITE_SNAPSHOT_VERSION = 2 as const
-export const LEGACY_WEBSITE_SNAPSHOT_VERSION = 1 as const
 
 export interface SnapshotBusiness {
   id: string
@@ -56,7 +55,7 @@ export interface SnapshotAvailabilityWindow {
 }
 
 export interface WebsiteLiveSnapshot {
-  version: typeof WEBSITE_SNAPSHOT_VERSION | typeof LEGACY_WEBSITE_SNAPSHOT_VERSION
+  version: typeof WEBSITE_SNAPSHOT_VERSION
   publishedAt: string
   draftVersion: string
   website: {
@@ -75,7 +74,7 @@ export interface WebsiteLiveSnapshot {
   availabilityWindows: SnapshotAvailabilityWindow[]
   sections: Section[]
   transitions: Transition[]
-  locales?: WebsiteSnapshotLocale[]
+  locales: WebsiteSnapshotLocale[]
   translationWarnings?: Array<{ locale: SupportedWebsiteLocale; source: "section" | "business" | "service"; id: string; label: string }>
 }
 
@@ -101,14 +100,14 @@ export function isWebsiteLiveSnapshot(value: unknown): value is WebsiteLiveSnaps
   if (!value || typeof value !== "object") return false
   const snapshot = value as Partial<WebsiteLiveSnapshot>
   return (
-    (snapshot.version === WEBSITE_SNAPSHOT_VERSION || snapshot.version === LEGACY_WEBSITE_SNAPSHOT_VERSION) &&
+    snapshot.version === WEBSITE_SNAPSHOT_VERSION &&
     typeof snapshot.draftVersion === "string" &&
     Boolean(snapshot.website?.id) &&
     Array.isArray(snapshot.sections) &&
     Array.isArray(snapshot.transitions) &&
     Array.isArray(snapshot.services) &&
     Array.isArray(snapshot.availabilityWindows) &&
-    (snapshot.version === LEGACY_WEBSITE_SNAPSHOT_VERSION || Array.isArray(snapshot.locales))
+    Array.isArray(snapshot.locales)
   )
 }
 

@@ -119,12 +119,11 @@ Repeating visitor content carries stable item ids. Translation overlays are matc
 
 - Component: `components/sections/gallery-section.tsx`
 - Purpose: renders a visual gallery or portfolio.
-- Editable in the inspector: `title`, `subtitle`, `image_count`, `layout`.
+- Editable in the inspector: `title`, `subtitle`, `layout`.
 - Supported content JSON:
   - `title`: section heading.
   - `subtitle`: supporting copy.
-  - `images`: array of image URLs, object map of image URLs, or a number fallback.
-  - `image_count`: numeric fallback count used when explicit images are not provided.
+  - `images`: array of image URLs.
   - `layout`: image grid, side gallery, full slider, image rail, main image, or masonry.
 
 ### `features`

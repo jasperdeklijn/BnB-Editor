@@ -228,8 +228,8 @@ export const sectionDefinitions = {
           id: "footer-column-1",
           title: "Snel naar",
           links: [
-            { id: "footer-link-1", label: "Over ons", href: "#over-ons" },
-            { id: "footer-link-2", label: "Diensten", href: "#diensten" },
+            { id: "footer-link-1", label: "Over ons", href: "#about" },
+            { id: "footer-link-2", label: "Diensten", href: "#services" },
             { id: "footer-link-3", label: "Contact", href: "#contact" },
           ],
         },

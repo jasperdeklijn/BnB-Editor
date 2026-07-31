@@ -244,15 +244,9 @@ export function EditorCanvas({
 
   const getGalleryImages = (section: Section) => {
     const images = section.data?.images
-    if (Array.isArray(images)) return [...images] as string[]
-    if (images && typeof images === "object") {
-      const imageObject = images as Record<string, string>
-      const count = (section.data.image_count as number) || Object.keys(imageObject).length
-      return Array.from({ length: count }, (_, index) => imageObject[index.toString()] || "")
-    }
-
-    const count = (section.data?.image_count as number) || 6
-    return DEFAULT_GALLERY_IMAGES.slice(0, count)
+    return Array.isArray(images)
+      ? images.filter((image): image is string => typeof image === "string")
+      : [...DEFAULT_GALLERY_IMAGES]
   }
 
   const updateGalleryImage = (section: Section, imageUrl: string, targetIndex?: number) => {
@@ -271,7 +265,6 @@ export function EditorCanvas({
       data: {
         ...section.data,
         images: nextImages,
-        image_count: nextImages.length,
       },
     })
   }

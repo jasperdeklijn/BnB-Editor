@@ -59,22 +59,6 @@ const SUBSCRIPTION_COLUMNS = [
   "updated_at",
 ].join(", ")
 
-const LEGACY_SUBSCRIPTION_COLUMNS = [
-  "id",
-  "user_id",
-  "plan_id",
-  "status",
-  "current_price",
-  "currency",
-  "current_period_start",
-  "current_period_end",
-  "stripe_customer_id",
-  "stripe_subscription_id",
-  "stripe_price_id",
-  "created_at",
-  "updated_at",
-].join(", ")
-
 export function isPlanId(value: unknown): value is PlanId {
   return value === "bronze" || value === "silver" || value === "gold"
 }
@@ -121,21 +105,11 @@ export async function getUserSubscription(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<ResolvedSubscription> {
-  let { data, error } = await supabase
+  const { data, error } = await supabase
     .from("subscriptions")
     .select(SUBSCRIPTION_COLUMNS)
     .eq("user_id", userId)
     .maybeSingle()
-
-  if (error?.code === "42703" && error.message.includes("multilingual_addon")) {
-    const legacyResult = await supabase
-      .from("subscriptions")
-      .select(LEGACY_SUBSCRIPTION_COLUMNS)
-      .eq("user_id", userId)
-      .maybeSingle()
-    data = legacyResult.data
-    error = legacyResult.error
-  }
 
   if (error) {
     throw new Error(`Could not resolve subscription: ${error.message}`)

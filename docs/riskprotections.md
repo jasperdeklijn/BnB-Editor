@@ -359,9 +359,9 @@ Als er nog geen Redis/Upstash is, maak dan een duidelijke TODO en documenteer we
 
 # 8. Contactformulier veiliger maken
 
-Status: uitgevoerd op 2026-07-08. `/api/contact` loopt via `/api/requests`; die handler valideert nu naam/e-mail/bericht, max-lengtes, honeypotvelden, simpele spamkenmerken en een MVP in-memory rate limit. Publieke formulieren sturen een verborgen honeypot mee, mislukte pogingen worden server-side gelogd en gebruikers krijgen alleen niet-technische foutmeldingen.
+Status: uitgevoerd op 2026-07-08. `/api/requests` valideert naam/e-mail/bericht, max-lengtes, honeypotvelden, simpele spamkenmerken en een MVP in-memory rate limit. Publieke formulieren sturen een verborgen honeypot mee, mislukte pogingen worden server-side gelogd en gebruikers krijgen alleen niet-technische foutmeldingen.
 
-Controleer `/api/contact`.
+Controleer `/api/requests`.
 
 Voeg toe:
 

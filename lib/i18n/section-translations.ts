@@ -157,14 +157,14 @@ type TranslationItem = Record<string, unknown>
 
 function itemId(item: TranslationItem, fallback: unknown) {
   const explicit = item.id ?? item.sectionId
-  return typeof explicit === "string" && explicit ? explicit : `legacy-${getTranslationSourceHash(fallback)}`
+  return typeof explicit === "string" && explicit ? explicit : `generated-${getTranslationSourceHash(fallback)}`
 }
 
 function extractRepeaterValue(type: SectionType, key: string, value: unknown): unknown {
   if (!Array.isArray(value)) return value
   if (type === "features" && key === "features") {
     return value.map((item) => typeof item === "string"
-      ? { id: `legacy-${getTranslationSourceHash(item)}`, text: item }
+      ? { id: `generated-${getTranslationSourceHash(item)}`, text: item }
       : { id: itemId(item as TranslationItem, item), text: (item as TranslationItem).text ?? "" })
   }
   if (type === "nav" && key === "navLinks") {
@@ -203,7 +203,7 @@ function extractRepeaterValue(type: SectionType, key: string, value: unknown): u
       return Object.fromEntries([["id", itemId(source, source)], ...allowed.map((field) => [field,
         field === "features" && Array.isArray(source.features)
           ? source.features.map((feature) => typeof feature === "string"
-              ? { id: `legacy-${getTranslationSourceHash(feature)}`, text: feature }
+              ? { id: `generated-${getTranslationSourceHash(feature)}`, text: feature }
               : { id: itemId(feature as TranslationItem, feature), text: (feature as TranslationItem).text ?? "" })
           : source[field] ?? (field === "features" ? [] : ""),
       ])])

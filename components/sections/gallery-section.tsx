@@ -8,6 +8,7 @@ import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { normalizeSectionLayout } from "@/lib/section-layouts"
 import { getSectionColorVars } from "@/lib/section-colors"
+import { DEFAULT_GALLERY_IMAGES } from "@/lib/business-naming"
 
 export type GalleryLayout = "grid" | "vertical-carousel" | "horizontal-carousel" | "masonry" | "single-with-thumbs" | "full-slider"
 
@@ -32,27 +33,9 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
   const subtitle = data.subtitle as string
   const layout = (galleryLayoutMap[normalizeSectionLayout(data.layout)] ?? "grid") as GalleryLayout
 
-  // Handle different image data formats - ensure consistent rendering
-  const getImagesArray = () => {
-    if (!data) return []
-    
-    if (Array.isArray(data.images)) {
-      return data.images as string[]
-    }
-    if (typeof data.images === 'object' && data.images !== null) {
-      // Handle object format: { 0: "url1", 1: "url2", ... }
-      const imageObj = data.images as Record<string, string>
-      const count = (data.image_count as number) || Object.keys(imageObj).length
-      return Array.from({ length: count }, (_, index) => imageObj[index.toString()] || '')
-    }
-    // Handle legacy number format
-    const count = (data.images as number) || (data.image_count as number) || 6
-    return Array.from({ length: count }, (_, index) =>
-      `/placeholder.svg?height=400&width=400&query=bed+and+breakfast+interior+${index + 1}`
-    )
-  }
-
-  const images = getImagesArray()
+  const images = Array.isArray(data.images)
+    ? data.images.filter((image): image is string => typeof image === "string")
+    : DEFAULT_GALLERY_IMAGES
 
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
@@ -117,15 +100,9 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
       const newImages = [...images]
       newImages[toIndex] = draggedImageUrl
 
-      const imagesObject: Record<string, string> = {}
-      newImages.forEach((url, index) => {
-        imagesObject[index.toString()] = url
-      })
-
       onUpdate?.({
         ...data,
-        images: imagesObject,
-        image_count: newImages.length,
+        images: newImages,
       })
 
       toast.success("Image updated", {
@@ -147,16 +124,9 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
     const [movedImage] = newImages.splice(draggedFromIndex, 1)
     newImages.splice(toIndex, 0, movedImage)
 
-    // Convert array back to object format for database
-    const imagesObject: Record<string, string> = {}
-    newImages.forEach((url, index) => {
-      imagesObject[index.toString()] = url
-    })
-
     onUpdate({
       ...data,
-      images: imagesObject,
-      image_count: newImages.length
+      images: newImages,
     })
 
     toast.success("Images reordered", {

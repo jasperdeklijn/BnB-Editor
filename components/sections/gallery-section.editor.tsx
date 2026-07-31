@@ -29,16 +29,6 @@ export function GallerySectionEditor({ section, updateField }: SectionEditorProp
           onChange={(e) => updateField("subtitle", e.target.value)}
         />
       </div>
-      <div>
-        <Label className="text-xs mb-1.5 block">Aantal afbeeldingen</Label>
-        <Input
-          type="number"
-          min="1"
-          max="12"
-          value={(section.data as any).image_count || 6}
-          onChange={(e) => updateField("image_count", Number(e.target.value))}
-        />
-      </div>
     </Card>
   )
 }

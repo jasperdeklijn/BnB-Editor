@@ -23,7 +23,7 @@ Function("module", "exports", "require", compiled.outputText)(module, module.exp
 const { isWebsiteLiveSnapshot, WEBSITE_SNAPSHOT_VERSION } = module.exports
 
 const validSnapshot = {
-  version: 1,
+  version: 2,
   publishedAt: "2026-07-12T12:00:00.000Z",
   draftVersion: "00000000-0000-0000-0000-000000000001",
   website: { id: "website-1" },
@@ -33,18 +33,19 @@ const validSnapshot = {
   availabilityWindows: [],
   sections: [],
   transitions: [],
+  locales: [],
 }
 
 test("accepts complete versioned live snapshots", () => {
   assert.equal(WEBSITE_SNAPSHOT_VERSION, 2)
   assert.equal(isWebsiteLiveSnapshot(validSnapshot), true)
-  assert.equal(isWebsiteLiveSnapshot({ ...validSnapshot, version: 2, locales: [] }), true)
 })
 
 test("rejects missing, partial, and future snapshots", () => {
   assert.equal(isWebsiteLiveSnapshot(null), false)
   assert.equal(isWebsiteLiveSnapshot({ ...validSnapshot, sections: undefined }), false)
-  assert.equal(isWebsiteLiveSnapshot({ ...validSnapshot, version: 2 }), false)
+  assert.equal(isWebsiteLiveSnapshot({ ...validSnapshot, version: 1 }), false)
+  assert.equal(isWebsiteLiveSnapshot({ ...validSnapshot, locales: undefined }), false)
   assert.equal(isWebsiteLiveSnapshot({ ...validSnapshot, version: 3, locales: [] }), false)
 })
 

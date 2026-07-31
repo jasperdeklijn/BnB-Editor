@@ -13,7 +13,7 @@ interface FooterLink { label: string; href: string }
 interface FooterColumn { title: string; links: FooterLink[] }
 
 const fallbackColumns: FooterColumn[] = [
-  { title: "Snel naar", links: [{ label: "Over ons", href: "#over-ons" }, { label: "Diensten", href: "#diensten" }, { label: "Contact", href: "#contact" }] },
+  { title: "Snel naar", links: [{ label: "Over ons", href: "#about" }, { label: "Diensten", href: "#services" }, { label: "Contact", href: "#contact" }] },
 ]
 
 export function FooterSection({ data, isPreview, styles, onUpdate, allSections }: { data: Record<string, unknown>; isPreview: boolean; styles?: SectionStyles; onUpdate?: (newData: Record<string, unknown>) => void; allSections?: Section[] }) {
@@ -37,8 +37,8 @@ export function FooterSection({ data, isPreview, styles, onUpdate, allSections }
   const sectionStyle: React.CSSProperties = { ...getSectionColorVars(styles), backgroundColor: styles?.backgroundColor || "#111827", color: styles?.textColor || "#f3f4f6" }
   const resolveHref = (href: string) => {
     if (href.startsWith("#section-")) return href
-    const legacyTargets: Record<string, SectionType> = { "#over-ons": "about", "#about": "about", "#diensten": "services", "#services": "services", "#contact": "contact" }
-    const targetType = legacyTargets[href]
+    const sectionTargets: Record<string, SectionType> = { "#about": "about", "#services": "services", "#contact": "contact" }
+    const targetType = sectionTargets[href]
     const target = targetType ? allSections?.find((section) => section.type === targetType) : undefined
     return target ? `#section-${target.id}` : href || "#"
   }

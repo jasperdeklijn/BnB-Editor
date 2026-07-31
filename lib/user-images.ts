@@ -5,7 +5,7 @@ export const IMAGE_PREVIEW_WIDTH = 480
 export const IMAGE_PREVIEW_HEIGHT = 320
 
 export interface UserImageAsset {
-  id: string | null
+  id: string
   name: string
   originalPath: string
   thumbnailPath: string | null
@@ -26,32 +26,19 @@ interface UserImageRow {
   created_at: string
 }
 
-const isLegacyLibraryFile = (file: { id?: string | null; name: string; metadata?: Record<string, unknown> | null }) =>
-  Boolean(file.id && file.metadata) &&
-  file.name !== ".emptyFolderPlaceholder" &&
-  !/^avatar(?:\.|$)/i.test(file.name)
-
 const publicUrl = (supabase: SupabaseClient, path: string) =>
   supabase.storage.from(USER_IMAGES_BUCKET).getPublicUrl(path).data.publicUrl
 
-/** Load managed image records plus legacy flat-folder uploads during migration. */
 export async function loadUserImages(supabase: SupabaseClient, userId: string): Promise<UserImageAsset[]> {
-  const [{ data: rows, error: metadataError }, { data: legacyFiles, error: storageError }] = await Promise.all([
-    supabase
-      .from("user_images")
-      .select("id, display_name, original_path, thumbnail_path, original_size, thumbnail_size, created_at")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false }),
-    supabase.storage.from(USER_IMAGES_BUCKET).list(userId, {
-      limit: 100,
-      sortBy: { column: "created_at", order: "desc" },
-    }),
-  ])
+  const { data: rows, error } = await supabase
+    .from("user_images")
+    .select("id, display_name, original_path, thumbnail_path, original_size, thumbnail_size, created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
 
-  if (metadataError) throw metadataError
-  if (storageError && (rows?.length ?? 0) === 0) throw storageError
+  if (error) throw error
 
-  const managed = ((rows ?? []) as UserImageRow[]).map((row) => {
+  return ((rows ?? []) as UserImageRow[]).map((row) => {
     const url = publicUrl(supabase, row.original_path)
     return {
       id: row.id,
@@ -65,29 +52,6 @@ export async function loadUserImages(supabase: SupabaseClient, userId: string): 
       createdAt: row.created_at,
     }
   })
-
-  const managedPaths = new Set(managed.map((image) => image.originalPath))
-  const legacy = (legacyFiles ?? [])
-    .filter(isLegacyLibraryFile)
-    .map((file) => {
-      const originalPath = `${userId}/${file.name}`
-      const size = typeof file.metadata?.size === "number" ? file.metadata.size : 0
-      const url = publicUrl(supabase, originalPath)
-      return {
-        id: null,
-        name: file.name,
-        originalPath,
-        thumbnailPath: null,
-        url,
-        previewUrl: url,
-        size,
-        storageSize: size,
-        createdAt: file.created_at ?? "",
-      }
-    })
-    .filter((image) => !managedPaths.has(image.originalPath))
-
-  return [...managed, ...legacy]
 }
 
 export async function createCroppedImagePreview(file: File): Promise<Blob> {
