@@ -25,7 +25,7 @@ export function FeaturesSection({ data, isPreview, styles, onUpdate }: FeaturesS
     backgroundColor: styles?.backgroundColor,
     backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
-    backgroundPosition: "center",
+    backgroundPosition: styles?.backgroundPosition || "center",
   }
 
   const textStyle: React.CSSProperties = {

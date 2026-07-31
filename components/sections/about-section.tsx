@@ -15,7 +15,7 @@ export function AboutSection({ data, isPreview, styles, onUpdate }: { data: Reco
   const layout = getLayoutClasses(data.layout)
   const isSplit = layout.layout === "split" || layout.layout === "showcase"
   const textStyle: React.CSSProperties = { color: styles?.textColor }
-  const sectionStyle: React.CSSProperties = { ...getSectionColorVars(styles), backgroundColor: styles?.backgroundColor, backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }
+  const sectionStyle: React.CSSProperties = { ...getSectionColorVars(styles), backgroundColor: styles?.backgroundColor, backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined, backgroundSize: "cover", backgroundPosition: styles?.backgroundPosition || "center" }
 
   const imageGallery = images.length > 0 ? (
     <div className={`grid gap-3 ${images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>

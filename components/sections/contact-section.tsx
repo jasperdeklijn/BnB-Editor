@@ -260,7 +260,7 @@ function ClassicLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps
     backgroundColor: styles?.backgroundColor,
     backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
-    backgroundPosition: "center",
+    backgroundPosition: styles?.backgroundPosition || "center",
   }
   const textStyle: React.CSSProperties = { color: styles?.textColor }
 
@@ -334,7 +334,7 @@ function MinimalLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps
     backgroundColor: styles?.backgroundColor,
     backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
-    backgroundPosition: "center",
+    backgroundPosition: styles?.backgroundPosition || "center",
   }
   const textStyle: React.CSSProperties = { color: styles?.textColor }
   return (
@@ -381,7 +381,7 @@ function CardLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps) {
     backgroundColor: styles?.backgroundColor || "#fef9f0",
     backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
-    backgroundPosition: "center",
+    backgroundPosition: styles?.backgroundPosition || "center",
   }
   return (
     <section className={`px-4 py-16 sm:px-6 md:py-24 ${styles?.fontFamily || ""}`} style={sectionStyle}>
@@ -445,7 +445,7 @@ function FullwidthLayout({ data, isPreview, styles, onUpdate }: ContactLayoutPro
           backgroundColor: styles?.accentColor || styles?.backgroundColor || "var(--section-accent)",
           backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
           backgroundSize: "cover",
-          backgroundPosition: "center",
+          backgroundPosition: styles?.backgroundPosition || "center",
         }}
       >
         {styles?.backgroundImage && (
@@ -487,7 +487,7 @@ function CenteredLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProp
     backgroundColor: styles?.backgroundColor,
     backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
-    backgroundPosition: "center",
+    backgroundPosition: styles?.backgroundPosition || "center",
   }
   const textStyle: React.CSSProperties = { color: styles?.textColor }
 

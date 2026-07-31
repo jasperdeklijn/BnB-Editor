@@ -1,8 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
 import { createPortal } from "react-dom"
-import Link from "next/link"
 import {
   AlignCenter,
   Check,
@@ -29,14 +28,12 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { getSectionDefinition } from "@/components/editor/section-registry"
 import { getSectionEditor } from "@/components/editor/section-editor-registry"
 import { SectionRenderer } from "@/components/editor/section-renderer"
+import { SectionImagePicker } from "@/components/editor/section-image-picker"
 import type { SectionTargetOption } from "@/components/editor/section-editor-types"
-import { useEditorLayout } from "@/components/editor/editor-layout-context"
 import type { BusinessCategory } from "@/lib/business/categories"
 import type { Section, SectionStyles, SectionType, Transition } from "@/lib/types"
 import { getSectionLayoutOptions, normalizeSectionLayout, type SectionLayout } from "@/lib/section-layouts"
 import { normalizeSectionStyleType, SECTION_STYLE_TYPE_OPTIONS } from "@/lib/section-style-types"
-import { createClient } from "@/lib/supabase/client"
-import websiteSections from "@/lib/supabase/websiteSections"
 import type { PlanId } from "@/lib/types/pricing"
 import { resolveWebsiteTheme, type ThemeConfig } from "@/lib/themes"
 import {
@@ -49,6 +46,7 @@ import {
 import { TierBadge } from "@/components/editor/tier-badge"
 
 interface SelectionEditorProps {
+  userId: string
   selectedSection: Section | null
   sections: Section[]
   transitions: Transition[]
@@ -66,7 +64,7 @@ interface SelectionEditorProps {
   showHeader?: boolean
 }
 
-type StyleControl = keyof Pick<SectionStyles, "fontFamily" | "backgroundColor" | "textColor" | "backgroundImage" | "logo" | "accentColor" | "surfaceColor">
+type StyleControl = keyof Pick<SectionStyles, "fontFamily" | "backgroundColor" | "textColor" | "backgroundImage" | "backgroundPosition" | "backgroundImageAlt" | "logo" | "logoAlt" | "accentColor" | "surfaceColor">
 type ColorStyleControl = Extract<StyleControl, "backgroundColor" | "textColor" | "accentColor" | "surfaceColor">
 
 const DEFAULT_STYLE_CONTROLS: StyleControl[] = ["fontFamily", "backgroundColor", "textColor", "accentColor", "surfaceColor", "backgroundImage"]
@@ -206,6 +204,7 @@ function SectionColorControl({
 }
 
 export function SelectionEditor({
+  userId,
   selectedSection,
   sections,
   transitions,
@@ -222,20 +221,12 @@ export function SelectionEditor({
   currentTheme,
   showHeader = true,
 }: SelectionEditorProps) {
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [layoutDialogOpen, setLayoutDialogOpen] = useState(false)
   const [styleTypeDialogOpen, setStyleTypeDialogOpen] = useState(false)
   const [activeGroup, setActiveGroup] = useState(() => {
     if (typeof window === "undefined") return "content"
     return window.sessionStorage.getItem("editor:section-inspector-group") || "content"
   })
-  const { setIsSaving, setSaveState } = useEditorLayout()
-
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-    }
-  }, [])
 
   if (!selectedSection) {
     return (
@@ -294,66 +285,12 @@ export function SelectionEditor({
     )
   }
 
-  const saveToDatabase = async (updatedData: Record<string, unknown>) => {
-    if (!websiteId || selectedSection.id.startsWith("section-")) return
-
-    setIsSaving(true)
-    try {
-      const supabase = createClient()
-      const payload = {
-        type: selectedSection.type,
-        content: updatedData,
-        styles: selectedSection.styles ?? {},
-        position: sections.findIndex((section) => section.id === selectedSection.id) + 1,
-      }
-
-      await websiteSections.updateSection(selectedSection.id, payload as any, supabase)
-    } catch (err) {
-      console.error("Error saving to database:", err)
-      setSaveState("error")
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  const saveStylesToDatabase = async (styles: SectionStyles) => {
-    if (!websiteId || selectedSection.id.startsWith("section-")) return
-
-    setIsSaving(true)
-    try {
-      const supabase = createClient()
-      const payload = {
-        type: selectedSection.type,
-        content: selectedSection.data ?? {},
-        styles,
-        position: sections.findIndex((section) => section.id === selectedSection.id) + 1,
-      }
-
-      await websiteSections.updateSection(selectedSection.id, payload as any, supabase)
-    } catch (err) {
-      console.error("Error saving styles to database:", err)
-      setSaveState("error")
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  const queueSave = (updatedData: Record<string, unknown>) => {
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-    const timeout = setTimeout(async () => {
-      await saveToDatabase(updatedData)
-    }, 800)
-    saveTimeoutRef.current = timeout
-  }
-
   const updateField = (field: string, value: any) => {
     onUpdate(selectedSection.id, { [field]: value })
-    queueSave({ ...selectedSection.data, [field]: value })
   }
 
   const updateFields = (values: Record<string, unknown>) => {
     onUpdate(selectedSection.id, values)
-    queueSave({ ...selectedSection.data, ...values })
   }
 
   const updateListItemField = (field: string, index: number, key: string, value: unknown, fallback: any[] = []) => {
@@ -398,11 +335,6 @@ export function SelectionEditor({
       const nextSection = sections[nextSectionIdx]
       onTransitionUpdate(selectedSection.id, nextSection.id, newType)
 
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-      const timeout = setTimeout(() => {
-        setIsSaving(false)
-      }, 800)
-      saveTimeoutRef.current = timeout
     }
   }
 
@@ -443,11 +375,6 @@ export function SelectionEditor({
     }
 
     onStyleUpdate(newStyles)
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-    const timeout = setTimeout(async () => {
-      await saveStylesToDatabase(newStyles)
-    }, 800)
-    saveTimeoutRef.current = timeout
   }
 
   const handleGroupChange = (value: string) => {
@@ -484,7 +411,7 @@ export function SelectionEditor({
               <AlertDialogHeader>
                 <AlertDialogTitle>Sectie verwijderen?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Weet je zeker dat je deze sectie wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.
+                  Weet je zeker dat je deze sectie wilt verwijderen? Direct daarna kun je de sectie nog terugzetten.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -882,25 +809,34 @@ export function SelectionEditor({
                   <ImageIcon className="h-3 w-3" />
                   Afbeelding als achtergrond
                 </Label>
-                <div className="flex gap-2">
-                  <Input
-                    aria-label="Link naar achtergrondafbeelding"
-                    placeholder="Plak een afbeeldingslink"
-                    value={selectedSection.styles?.backgroundImage || ""}
-                    onChange={(event) => updateStyleValue("backgroundImage", event.target.value)}
-                  />
+                {selectedSection.styles?.backgroundImage ? (
+                  <div className="mb-2 aspect-[16/7] overflow-hidden rounded-lg border border-border bg-muted">
+                    <img src={selectedSection.styles.backgroundImage} alt="Gekozen achtergrond" className="h-full w-full object-cover" style={{ objectPosition: selectedSection.styles.backgroundPosition || "center" }} />
+                  </div>
+                ) : null}
+                <div className="flex flex-wrap gap-2">
+                  <SectionImagePicker userId={userId} label="Achtergrond kiezen" value={selectedSection.styles?.backgroundImage} onSelect={(url) => updateStyleValue("backgroundImage", url)} />
                   {selectedSection.styles?.backgroundImage ? (
                     <Button type="button" variant="outline" size="sm" className="h-10 shrink-0" onClick={() => updateStyleValue("backgroundImage", "")}>
                       Wis
                     </Button>
                   ) : null}
                 </div>
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  <span>Gebruik een afbeeldingslink of kies eerst een afbeelding uit de beeldbank.</span>
-                  <Button variant="outline" size="xs" asChild>
-                    <Link href="/editor/images">Afbeeldingen openen</Link>
-                  </Button>
-                </div>
+                <details className="mt-2 text-xs text-muted-foreground">
+                  <summary className="cursor-pointer font-medium hover:text-foreground">Of gebruik een afbeeldingslink</summary>
+                  <Input aria-label="Link naar achtergrondafbeelding" placeholder="https://..." value={selectedSection.styles?.backgroundImage || ""} onChange={(event) => updateStyleValue("backgroundImage", event.target.value)} className="mt-2" />
+                </details>
+                {selectedSection.styles?.backgroundImage ? (
+                  <div className="mt-3">
+                    <Label htmlFor={`background-position-${selectedSection.id}`} className="mb-1.5 block text-xs">Focuspunt</Label>
+                    <select id={`background-position-${selectedSection.id}`} value={selectedSection.styles?.backgroundPosition || "center"} onChange={(event) => updateStyleValue("backgroundPosition", event.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+                      <option value="left top">Linksboven</option><option value="center top">Midden boven</option><option value="right top">Rechtsboven</option>
+                      <option value="left center">Links</option><option value="center">Midden</option><option value="right center">Rechts</option>
+                      <option value="left bottom">Linksonder</option><option value="center bottom">Midden onder</option><option value="right bottom">Rechtsonder</option>
+                    </select>
+                    <p className="mt-1 text-[11px] text-muted-foreground">Achtergronden zijn decoratief; tekstalternatieven zijn daarom niet nodig.</p>
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
@@ -910,25 +846,25 @@ export function SelectionEditor({
                   <ImageIcon className="h-3 w-3" />
                   Logo (optioneel)
                 </Label>
-                <div className="flex gap-2">
-                  <Input
-                    aria-label="Link naar logo"
-                    placeholder="Plak een logolink"
-                    value={selectedSection.styles?.logo || ""}
-                    onChange={(event) => updateStyleValue("logo", event.target.value)}
-                  />
+                {selectedSection.styles?.logo ? <div className="mb-2 flex h-20 items-center justify-center rounded-lg border border-border bg-muted p-3"><img src={selectedSection.styles.logo} alt={selectedSection.styles.logoAlt || "Gekozen logo"} className="max-h-full max-w-full object-contain" /></div> : null}
+                <div className="flex flex-wrap gap-2">
+                  <SectionImagePicker userId={userId} label="Logo kiezen" value={selectedSection.styles?.logo} onSelect={(url) => updateStyleValue("logo", url)} />
                   {selectedSection.styles?.logo ? (
                     <Button type="button" variant="outline" size="sm" className="h-10 shrink-0" onClick={() => updateStyleValue("logo", "")}>
                       Wis
                     </Button>
                   ) : null}
                 </div>
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  <span>Gebruik een afbeeldingslink of kies eerst een logo uit de beeldbank.</span>
-                  <Button variant="outline" size="xs" asChild>
-                    <Link href="/editor/images">Afbeeldingen openen</Link>
-                  </Button>
-                </div>
+                <details className="mt-2 text-xs text-muted-foreground">
+                  <summary className="cursor-pointer font-medium hover:text-foreground">Of gebruik een logolink</summary>
+                  <Input aria-label="Link naar logo" placeholder="https://..." value={selectedSection.styles?.logo || ""} onChange={(event) => updateStyleValue("logo", event.target.value)} className="mt-2" />
+                </details>
+                {selectedSection.styles?.logo ? (
+                  <div className="mt-3">
+                    <Label htmlFor={`logo-alt-${selectedSection.id}`} className="mb-1.5 block text-xs">Beschrijving van het logo</Label>
+                    <Input id={`logo-alt-${selectedSection.id}`} value={selectedSection.styles?.logoAlt || ""} onChange={(event) => updateStyleValue("logoAlt", event.target.value)} placeholder="Bijvoorbeeld: Bedrijfsnaam" />
+                  </div>
+                ) : null}
               </div>
             ) : null}
 

@@ -30,7 +30,7 @@ export function PricingSection({ data, isPreview, styles, onUpdate }: { data: Re
   const editableData = { ...data, plans, tariffs }
   const layout = getLayoutClasses(data.layout)
   const textStyle: React.CSSProperties = { color: styles?.textColor }
-  const sectionStyle: React.CSSProperties = { ...getSectionColorVars(styles), backgroundColor: styles?.backgroundColor, backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined, backgroundSize: "cover", backgroundPosition: "center" }
+  const sectionStyle: React.CSSProperties = { ...getSectionColorVars(styles), backgroundColor: styles?.backgroundColor, backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined, backgroundSize: "cover", backgroundPosition: styles?.backgroundPosition || "center" }
   const accent = "var(--section-accent)"
   const accentForeground = "var(--section-accent-foreground)"
   const surface = "var(--section-surface)"

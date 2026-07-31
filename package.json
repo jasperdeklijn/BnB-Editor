@@ -14,6 +14,8 @@
     "test:domains": "node --test tests/vercel-domains.test.mjs",
     "test:mail": "node --test tests/mail-agent.test.mjs",
     "test:editor-inspector": "node --test tests/editor-inspector-navigation.test.mjs",
+    "test:editor-save": "node --test tests/editor-save-queue.test.mjs",
+    "test:editor-reliability": "node --test tests/editor-reliability.test.mjs",
     "start": "next start"
   },
   "dependencies": {

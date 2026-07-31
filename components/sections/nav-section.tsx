@@ -280,7 +280,7 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
               {logo ? (
                 <img
                   src={logo}
-                  alt=""
+                  alt={styles?.logoAlt?.trim() || `${brandName} logo`}
                   className={`${layout === "compact" ? "h-6" : layout === "showcase" ? "h-10" : "h-9"} w-auto max-w-[9rem] flex-shrink-0 object-contain`}
                 />
               ) : null}

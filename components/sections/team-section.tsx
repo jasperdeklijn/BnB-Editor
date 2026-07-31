@@ -36,7 +36,7 @@ export function TeamSection({ data, isPreview, styles, onUpdate }: TeamSectionPr
     backgroundColor: styles?.backgroundColor,
     backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
-    backgroundPosition: "center",
+    backgroundPosition: styles?.backgroundPosition || "center",
   }
 
   return (

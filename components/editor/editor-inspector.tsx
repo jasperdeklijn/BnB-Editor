@@ -35,6 +35,7 @@ import {
 } from "@/lib/entitlements"
 
 interface EditorInspectorProps {
+  userId: string
   selectedSection: Section | null
   sections: Section[]
   transitions: Transition[]
@@ -57,6 +58,7 @@ interface EditorInspectorProps {
 }
 
 export function EditorInspector({
+  userId,
   selectedSection,
   sections,
   transitions,
@@ -115,6 +117,7 @@ export function EditorInspector({
       currentPlan={currentPlan}
       currentTheme={currentTheme}
       showHeader={false}
+      userId={userId}
     />
   )
 
@@ -171,7 +174,7 @@ export function EditorInspector({
                   <AlertDialogHeader>
                     <AlertDialogTitle>Sectie verwijderen?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Weet je zeker dat je deze sectie wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.
+                      Weet je zeker dat je deze sectie wilt verwijderen? Direct na verwijderen kun je de sectie nog terugzetten.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

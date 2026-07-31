@@ -15,6 +15,7 @@ interface EditorCanvasProps {
   sections: Section[]
   persistSections: (sections: Section[]) => void
   onSectionUpdate: (id: string, updates: Partial<Section>) => void
+  onSectionDelete?: (id: string) => void
   transitions: Transition[]
   themeConfig?: ThemeConfig | null
   isPreview: boolean
@@ -31,6 +32,7 @@ export function EditorCanvas({
   sections,
   persistSections,
   onSectionUpdate,
+  onSectionDelete,
   transitions,
   themeConfig,
   isPreview,
@@ -432,6 +434,10 @@ export function EditorCanvas({
   }
 
   const handleDelete = (id: string) => {
+    if (onSectionDelete) {
+      onSectionDelete(id)
+      return
+    }
     persistSections(sections.filter((s) => s.id !== id))
     if (selectedSectionId === id) {
       onSectionSelect(null)
@@ -571,7 +577,7 @@ export function EditorCanvas({
                 >
                   {!isPreview && (
                     <div
-                      className={`absolute section-actions left-1/2 top-0 z-10 flex -translate-x-1/2 gap-1 rounded-lg border bg-background p-1 shadow-lg transition-all ${
+                      className={`absolute section-actions left-1/2 top-0 z-10 flex -translate-x-1/2 gap-1 rounded-lg border bg-background p-1 shadow-lg transition-all touch-manipulation ${
                         selectedSectionId === section.id
                           ? "-translate-y-full opacity-100"
                           : "-translate-y-2 opacity-0 pointer-events-none"
@@ -580,7 +586,7 @@ export function EditorCanvas({
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-7 w-7 cursor-grab active:cursor-grabbing popup-btn"
+                        className="h-11 w-11 cursor-grab active:cursor-grabbing popup-btn md:h-7 md:w-7"
                         aria-label={`${sectionLabel} verslepen`}
                         title={`${sectionLabel} verslepen`}
                       >
@@ -592,7 +598,7 @@ export function EditorCanvas({
                         variant="ghost"
                         onClick={() => moveSectionAnimated(i, i - 1)}
                         disabled={i === 0}
-                        className="h-7 w-7 popup-btn"
+                        className="h-11 w-11 popup-btn md:h-7 md:w-7"
                         aria-label={`${sectionLabel} omhoog verplaatsen`}
                         title={`${sectionLabel} omhoog verplaatsen`}
                       >
@@ -603,7 +609,7 @@ export function EditorCanvas({
                         variant="ghost"
                         onClick={() => moveSectionAnimated(i, i + 1)}
                         disabled={i === sections.length - 1}
-                        className="h-7 w-7 popup-btn"
+                        className="h-11 w-11 popup-btn md:h-7 md:w-7"
                         aria-label={`${sectionLabel} omlaag verplaatsen`}
                         title={`${sectionLabel} omlaag verplaatsen`}
                       >
@@ -613,7 +619,7 @@ export function EditorCanvas({
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-7 w-7 text-destructive hover:bg-destructive/10 popup-btn"
+                        className="h-11 w-11 text-destructive hover:bg-destructive/10 popup-btn md:h-7 md:w-7"
                         onClick={() => handleDelete(section.id)}
                         aria-label={`${sectionLabel} verwijderen`}
                         title={`${sectionLabel} verwijderen`}

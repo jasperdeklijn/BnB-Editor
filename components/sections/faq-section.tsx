@@ -113,7 +113,7 @@ export function FaqSection({ data, isPreview, styles, onUpdate }: FaqSectionProp
     backgroundColor: styles?.backgroundColor,
     backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
-    backgroundPosition: "center",
+    backgroundPosition: styles?.backgroundPosition || "center",
   }
   const textStyle: React.CSSProperties = { color: styles?.textColor }
 

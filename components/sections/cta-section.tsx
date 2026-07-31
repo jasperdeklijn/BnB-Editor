@@ -41,7 +41,7 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
     backgroundColor: styles?.backgroundColor,
     backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
-    backgroundPosition: "center",
+    backgroundPosition: styles?.backgroundPosition || "center",
   }
   const textStyle: React.CSSProperties = { color: styles?.textColor }
 
@@ -54,7 +54,7 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
           backgroundColor: styles?.backgroundColor || "#78350f",
           backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
           backgroundSize: "cover",
-          backgroundPosition: "center",
+          backgroundPosition: styles?.backgroundPosition || "center",
         }}
       >
         {styles?.backgroundImage && <div className="absolute inset-0 bg-black/50" />}

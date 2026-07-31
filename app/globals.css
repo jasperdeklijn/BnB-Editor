@@ -310,3 +310,15 @@
 .website-theme-scope .rounded-3xl {
   border-radius: var(--radius);
 }
+/* Direct editor text editing: a visible, non-layout-shifting affordance. */
+[data-inline-editable="true"]:not([contenteditable="true"]) {
+  outline: 1px dashed transparent;
+  outline-offset: 3px;
+  transition: outline-color 150ms ease, background-color 150ms ease;
+}
+
+[data-inline-editable="true"]:not([contenteditable="true"]):hover,
+[data-inline-editable="true"]:not([contenteditable="true"]):focus-visible {
+  background-color: color-mix(in srgb, var(--primary) 8%, transparent);
+  outline-color: color-mix(in srgb, var(--primary) 60%, transparent);
+}

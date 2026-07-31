@@ -47,7 +47,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
     backgroundColor: styles?.backgroundColor,
     backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
-    backgroundPosition: "center",
+    backgroundPosition: styles?.backgroundPosition || "center",
   }
 
   const textStyle: React.CSSProperties = {

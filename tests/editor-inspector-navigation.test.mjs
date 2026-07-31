@@ -50,9 +50,11 @@ test("site detail returns through the menu without losing section context", () =
 test("refactored detail panels retain the existing automatic save paths", () => {
   const themePanel = fs.readFileSync(path.resolve("components/themes/theme-panel.tsx"), "utf8")
   const sectionEditor = fs.readFileSync(path.resolve("components/editor/section-editor.tsx"), "utf8")
+  const editorClient = fs.readFileSync(path.resolve("components/editor/editor-client.tsx"), "utf8")
 
   assert.match(themePanel, /fetch\('\/api\/themes'/)
   assert.match(themePanel, /setHeaderSaving\(true\)/)
-  assert.match(sectionEditor, /saveStylesToDatabase\(newStyles\)/)
-  assert.match(sectionEditor, /websiteSections\.updateSection/)
+  assert.doesNotMatch(sectionEditor, /websiteSections\.updateSection/)
+  assert.match(editorClient, /scheduleSectionSave\(selectedSectionId\)/)
+  assert.match(editorClient, /await saveQueueRef\.current\?\.flush\(\)/)
 })

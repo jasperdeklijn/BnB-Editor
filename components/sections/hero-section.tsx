@@ -121,7 +121,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
           backgroundColor: styleBackgroundColor || "#fffbeb",
           backgroundImage: styles?.backgroundImage ? `linear-gradient(to bottom right, rgba(255,251,235,0.9), rgba(254,243,199,0.9)), url(${styles.backgroundImage})` : undefined,
           backgroundSize: "cover",
-          backgroundPosition: "center",
+          backgroundPosition: styles?.backgroundPosition || "center",
         }}
       >
         {/* Subtle decorative element */}
@@ -172,7 +172,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
                 ? `url(${styles.backgroundImage})`
                 : "url('/placeholder.svg?height=800&width=800')",
               backgroundSize: "cover",
-              backgroundPosition: "center",
+              backgroundPosition: styles?.backgroundPosition || "center",
             }}
           >
             {/* Subtle overlay for depth */}
@@ -223,7 +223,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             ? `url(${styles.backgroundImage})`
             : "url('/placeholder.svg?height=900&width=1600')",
           backgroundSize: "cover",
-          backgroundPosition: "center",
+          backgroundPosition: styles?.backgroundPosition || "center",
         }}
       >
         {/* Gradient Overlay for readability */}
@@ -307,7 +307,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             ? `url(${styles.backgroundImage})`
             : "url('/placeholder.svg?height=900&width=1600')",
           backgroundSize: "cover",
-          backgroundPosition: "center",
+          backgroundPosition: styles?.backgroundPosition || "center",
         }}
       >
         {/* Overlay for readability */}
@@ -387,7 +387,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
                 ? `url(${styles.backgroundImage})`
                 : "url('/placeholder.svg?height=800&width=800')",
               backgroundSize: "cover",
-              backgroundPosition: "center",
+              backgroundPosition: styles?.backgroundPosition || "center",
             }}
           >
             {/* Subtle overlay for depth */}

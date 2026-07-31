@@ -32,7 +32,10 @@ export interface SectionStyles {
   textColor?: string
   backgroundColor?: string
   backgroundImage?: string
+  backgroundPosition?: string
+  backgroundImageAlt?: string
   logo?: string
+  logoAlt?: string
   accentColor?: string
   surfaceColor?: string
 }

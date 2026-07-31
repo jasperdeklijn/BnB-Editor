@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react"
+import { useState, useEffect, useCallback, useMemo, useRef, type MouseEvent as ReactMouseEvent } from "react"
 import { SectionsSelector } from "./sections-selector"
 import { EditorCanvas } from "./editor-canvas"
 import { EditorInspector } from "./editor-inspector"
@@ -39,7 +39,7 @@ import {
 import { isMultilingualWebsitesEnabled } from "@/lib/i18n/feature"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { AlertCircle, CheckCircle2, ChevronDown, ExternalLink, Eye, Globe2, Layers, LayoutTemplate, Loader2, Paintbrush, Plus, Save, Sparkles, Trash2 } from "lucide-react"
+import { AlertCircle, CheckCircle2, ChevronDown, ExternalLink, Eye, Globe2, Layers, LayoutTemplate, Loader2, Paintbrush, Plus, Redo2, Save, Sparkles, Trash2, Undo2 } from "lucide-react"
 import { getDefaultThemeConfig, type LanguageSwitcherConfig, type ThemeConfig } from "@/lib/themes"
 import type { BusinessCategory } from "@/lib/business/categories"
 import { Button } from "@/components/ui/button"
@@ -62,8 +62,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { EditorSaveQueue } from "@/lib/editor-save-queue"
 
 type MobilePanel = "canvas" | "sections" | "style" | "site"
+
+type SectionHistoryEntry = {
+  before: Section[]
+  after: Section[]
+  key: string
+  label: string
+  recordedAt: number
+}
 
 type WebsiteSummary = {
   id: string
@@ -210,17 +219,44 @@ export function EditorClient({
   const multilingualAvailable = multilingualEnabled && hasMultilingualAccess
   const previousEntitlementViolationKeys = useRef<Set<string>>(new Set())
   const sectionsRef = useRef<Section[]>([])
-  const sectionSaveTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
-  const sectionSaveChainsRef = useRef<Map<string, Promise<void>>>(new Map())
-  const activeSectionSavesRef = useRef(0)
+  const mountedRef = useRef(true)
+  const historyRef = useRef<{ undo: SectionHistoryEntry[]; redo: SectionHistoryEntry[] }>({ undo: [], redo: [] })
+  const [historyVersion, setHistoryVersion] = useState(0)
+  const saveQueueRef = useRef<EditorSaveQueue | null>(null)
+
+  if (!saveQueueRef.current) {
+    saveQueueRef.current = new EditorSaveQueue({
+      delay: 800,
+      onPendingChange: (pending) => {
+        if (!mountedRef.current) return
+        setIsSaving(pending)
+        if (pending) setSaveState("saving")
+      },
+      onError: (error) => {
+        if (!mountedRef.current) return
+        console.error("Error saving section:", error)
+        setSaveState("error")
+        toast.error("Wijzigingen konden niet worden opgeslagen", {
+          description: error instanceof Error ? error.message : "Probeer het opnieuw.",
+          action: {
+            label: "Opnieuw proberen",
+            onClick: () => {
+              void saveQueueRef.current?.flush()
+                .then(() => toast.success("Wijzigingen alsnog opgeslagen"))
+                .catch(() => undefined)
+            },
+          },
+        })
+      },
+    })
+  }
 
   useEffect(() => {
     sectionsRef.current = sections
   }, [sections])
 
   useEffect(() => () => {
-    sectionSaveTimeoutsRef.current.forEach((timeout) => clearTimeout(timeout))
-    sectionSaveTimeoutsRef.current.clear()
+    mountedRef.current = false
   }, [])
 
   const entitlementResult = useMemo(() => inspectWebsiteEntitlements(currentPlan, {
@@ -468,6 +504,12 @@ export function EditorClient({
 
   const handleTemplateApplied = useCallback(
     async (nextWebsiteId?: string | null) => {
+      try {
+        await saveQueueRef.current?.flush()
+      } catch {
+        toast.error("Openstaande wijzigingen konden niet worden opgeslagen.")
+        return
+      }
       const resolvedWebsiteId = nextWebsiteId ?? websiteId
       if (resolvedWebsiteId && resolvedWebsiteId !== websiteId) {
         router.replace(`/editor?websiteId=${resolvedWebsiteId}`)
@@ -483,13 +525,25 @@ export function EditorClient({
     loadWebsite(requestedWebsiteId ?? getActiveWebsiteId())
   }, [loadWebsite, requestedWebsiteId])
 
-  const handleWebsiteChange = (nextWebsiteId: string) => {
+  const handleWebsiteChange = async (nextWebsiteId: string) => {
+    try {
+      await saveQueueRef.current?.flush()
+    } catch {
+      toast.error("Sla de huidige wijzigingen eerst opnieuw op.")
+      return
+    }
     setWebsiteMessage(null)
     setActiveWebsiteId(nextWebsiteId)
     router.replace(`/editor?websiteId=${nextWebsiteId}`)
   }
 
   const handleCreateWebsite = async () => {
+    try {
+      await saveQueueRef.current?.flush()
+    } catch {
+      toast.error("De nieuwe website is niet aangemaakt omdat wijzigingen nog niet zijn opgeslagen.")
+      return
+    }
     setIsCreatingWebsite(true)
     setIsSaving(true)
     setWebsiteMessage(null)
@@ -658,9 +712,111 @@ export function EditorClient({
     setSections(newSections)
   }, [])
 
+  const saveSectionNow = useCallback(async (id: string) => {
+    if (!websiteId || id.startsWith("section-")) return
+    const latestSections = sectionsRef.current
+    const latestIndex = latestSections.findIndex((section) => section.id === id)
+    const latestSection = latestSections[latestIndex]
+    if (!latestSection) return
+
+    const { error } = await websiteSections.updateSection(
+      id,
+      {
+        type: latestSection.type,
+        content: latestSection.data ?? {},
+        styles: latestSection.styles ?? {},
+        position: latestIndex + 1,
+      },
+      createClient(),
+    )
+    if (error) throw error
+  }, [websiteId])
+
+  const scheduleSectionSave = useCallback((id: string) => {
+    if (!websiteId || id.startsWith("section-")) return
+    saveQueueRef.current?.schedule(id, () => saveSectionNow(id))
+  }, [saveSectionNow, websiteId])
+
+  const flushPendingSectionSaves = useCallback(async () => {
+    try {
+      await saveQueueRef.current?.flush()
+      return true
+    } catch {
+      return false
+    }
+  }, [])
+
+  useEffect(() => {
+    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!saveQueueRef.current?.pending) return
+      event.preventDefault()
+      event.returnValue = ""
+    }
+    window.addEventListener("beforeunload", warnBeforeUnload)
+    return () => window.removeEventListener("beforeunload", warnBeforeUnload)
+  }, [])
+
+  const recordSectionHistory = useCallback((before: Section[], after: Section[], key: string, label: string) => {
+    const history = historyRef.current
+    const previous = history.undo[history.undo.length - 1]
+    const now = Date.now()
+    if (previous && previous.key === key && now - previous.recordedAt < 1200) {
+      previous.after = after
+      previous.recordedAt = now
+    } else {
+      history.undo.push({ before, after, key, label, recordedAt: now })
+      if (history.undo.length > 50) history.undo.shift()
+    }
+    history.redo = []
+    setHistoryVersion((version) => version + 1)
+  }, [])
+
+  const applyHistorySections = useCallback((nextSections: Section[]) => {
+    updateLocalSections(nextSections)
+    nextSections.forEach((section) => scheduleSectionSave(section.id))
+  }, [scheduleSectionSave, updateLocalSections])
+
+  const handleUndo = useCallback(() => {
+    const entry = historyRef.current.undo.pop()
+    if (!entry) return
+    historyRef.current.redo.push(entry)
+    applyHistorySections(entry.before)
+    setHistoryVersion((version) => version + 1)
+    toast.success(`${entry.label} ongedaan gemaakt`)
+  }, [applyHistorySections])
+
+  const handleRedo = useCallback(() => {
+    const entry = historyRef.current.redo.pop()
+    if (!entry) return
+    historyRef.current.undo.push(entry)
+    applyHistorySections(entry.after)
+    setHistoryVersion((version) => version + 1)
+    toast.success(`${entry.label} opnieuw toegepast`)
+  }, [applyHistorySections])
+
+  useEffect(() => {
+    const handleHistoryShortcut = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "z") return
+      const target = event.target as HTMLElement | null
+      if (target?.isContentEditable) return
+      event.preventDefault()
+      if (event.shiftKey) handleRedo()
+      else handleUndo()
+    }
+    window.addEventListener("keydown", handleHistoryShortcut)
+    return () => window.removeEventListener("keydown", handleHistoryShortcut)
+  }, [handleRedo, handleUndo])
+
   // Structural changes only create/delete rows and persist the final order.
   const persistSections = useCallback(async (newSections: Section[]) => {
     const previousSections = sectionsRef.current
+    const structureChanged = previousSections.length !== newSections.length || previousSections.some(
+      (section, index) => section.id !== newSections[index]?.id,
+    )
+    if (structureChanged) {
+      historyRef.current = { undo: [], redo: [] }
+      setHistoryVersion((version) => version + 1)
+    }
     updateLocalSections(newSections)
 
     if (!websiteId) return
@@ -769,52 +925,17 @@ export function EditorClient({
     const updatedSection = { ...currentSections[sectionIndex], ...updates }
     const nextSections = [...currentSections]
     nextSections[sectionIndex] = updatedSection
+    recordSectionHistory(currentSections, nextSections, `${id}:canvas`, "Tekstwijziging")
     updateLocalSections(nextSections)
-
-    const previousTimeout = sectionSaveTimeoutsRef.current.get(id)
-    if (previousTimeout) clearTimeout(previousTimeout)
-    if (!websiteId || id.startsWith("section-")) return
-
-    const timeout = setTimeout(() => {
-      sectionSaveTimeoutsRef.current.delete(id)
-      const previousSave = sectionSaveChainsRef.current.get(id) ?? Promise.resolve()
-      const nextSave = previousSave
-        .catch(() => undefined)
-        .then(async () => {
-          activeSectionSavesRef.current += 1
-          setIsSaving(true)
-          try {
-            const latestSections = sectionsRef.current
-            const latestIndex = latestSections.findIndex((section) => section.id === id)
-            const latestSection = latestSections[latestIndex]
-            if (!latestSection) return
-            const { error } = await websiteSections.updateSection(
-              id,
-              {
-                type: latestSection.type,
-                content: latestSection.data ?? {},
-                styles: latestSection.styles ?? {},
-                position: latestIndex + 1,
-              },
-              createClient(),
-            )
-            if (error) throw error
-          } catch (error) {
-            console.error("Error saving section:", error)
-            setSaveState("error")
-          } finally {
-            activeSectionSavesRef.current -= 1
-            if (activeSectionSavesRef.current === 0) setIsSaving(false)
-          }
-        })
-      sectionSaveChainsRef.current.set(id, nextSave)
-    }, 800)
-
-    sectionSaveTimeoutsRef.current.set(id, timeout)
-  }, [setIsSaving, setSaveState, updateLocalSections, websiteId])
+    scheduleSectionSave(id)
+  }, [recordSectionHistory, scheduleSectionSave, updateLocalSections])
 
   const performPublish = useCallback(async (acknowledgeStaleTranslations = false) => {
     if (!websiteId) return
+    if (!(await flushPendingSectionSaves())) {
+      toast.error("Publiceren gestopt", { description: "Niet alle wijzigingen konden worden opgeslagen." })
+      return
+    }
     setIsSaving(true)
     setWebsiteMessage(null)
     const response = await fetch("/api/websites/publish", {
@@ -857,7 +978,7 @@ export function EditorClient({
     )
     setWebsiteMessage({ type: "success", text: "Deze website is live gezet. Opgeslagen wijzigingen zijn nu zichtbaar via de live link." })
     router.push("/editor")
-  }, [router, setIsSaving, setSaveState, websiteId])
+  }, [flushPendingSectionSaves, router, setIsSaving, setSaveState, websiteId])
 
   const handlePublish = useCallback(() => {
     if (!websiteId) return
@@ -870,12 +991,16 @@ export function EditorClient({
   }, [canPublishDraft, websiteId])
 
   const handleLogout = useCallback(async () => {
+    if (!(await flushPendingSectionSaves())) {
+      toast.error("Uitloggen gestopt", { description: "Niet alle wijzigingen konden worden opgeslagen." })
+      return
+    }
     await fetch("/api/auth/logout", { method: "POST" }).catch(async () => {
       const supabase = createClient()
       await supabase.auth.signOut()
     })
     router.push("/auth/login")
-  }, [router])
+  }, [flushPendingSectionSaves, router])
 
   useEffect(() => {
     setOnPublish(() => handlePublish)
@@ -884,22 +1009,25 @@ export function EditorClient({
 
   const handleStyleUpdate = (styles: SectionStyles) => {
     if (!selectedSectionId) return
-
-    setSections((prev) =>
-      prev.map((section) =>
-        section.id === selectedSectionId ? { ...section, styles } : section,
-      ),
+    const currentSections = sectionsRef.current
+    const nextSections = currentSections.map((section) =>
+      section.id === selectedSectionId ? { ...section, styles } : section,
     )
+    recordSectionHistory(currentSections, nextSections, `${selectedSectionId}:styles`, "Stijlwijziging")
+    updateLocalSections(nextSections)
+    scheduleSectionSave(selectedSectionId)
   }
 
   // Update section content fields (merged into `data`) or top-level metadata like transitions.
   const handleSectionUpdate = (id: string, data: Record<string, unknown>) => {
-    setSections((prev) =>
-      prev.map((s) => {
-        if (s.id !== id) return s
-        return { ...s, data: { ...s.data, ...data } }
-      }),
-    )
+    const currentSections = sectionsRef.current
+    const nextSections = currentSections.map((section) => {
+      if (section.id !== id) return section
+      return { ...section, data: { ...section.data, ...data } }
+    })
+    recordSectionHistory(currentSections, nextSections, `${id}:content`, "Inhoudswijziging")
+    updateLocalSections(nextSections)
+    scheduleSectionSave(id)
   }
 
   const handleTransitionUpdate = async (fromSectionId: string, toSectionId: string, transitionType: string) => {
@@ -956,13 +1084,30 @@ export function EditorClient({
   }
 
   const handleDelete = (id: string) => {
-    const nextSections = sections.filter((s) => s.id !== id)
-    persistSections(nextSections)
+    const currentSections = sectionsRef.current
+    const removedIndex = currentSections.findIndex((section) => section.id === id)
+    const removedSection = currentSections[removedIndex]
+    if (!removedSection) return
+    const nextSections = currentSections.filter((section) => section.id !== id)
+    void persistSections(nextSections)
     setTransitions((prev) =>
       prev.filter((t) => t.fromSectionId !== id && t.toSectionId !== id),
     )
     if (selectedSectionId === id) setSelectedSectionId(null)
     setMobilePanel("canvas")
+    toast.success("Sectie verwijderd", {
+      action: {
+        label: "Ongedaan maken",
+        onClick: () => {
+          const restoredSection = { ...removedSection, id: `section-${Date.now()}-restore` }
+          const restoredSections = [...sectionsRef.current]
+          restoredSections.splice(Math.min(removedIndex, restoredSections.length), 0, restoredSection)
+          void persistSections(restoredSections)
+          setSelectedSectionId(restoredSection.id)
+          toast.success("Sectie teruggezet")
+        },
+      },
+    })
   }
 
   const handleStartTutorial = () => {
@@ -1360,9 +1505,22 @@ export function EditorClient({
   const mobileSaveStatusLabel =
     isSaving || saveState === "saving" ? "Opslaan..." : saveState === "error" ? "Niet opgeslagen" : "Opgeslagen"
   const SaveStatusIcon = isSaving || saveState === "saving" ? Loader2 : saveState === "error" ? AlertCircle : CheckCircle2
+  const canUndo = historyVersion >= 0 && historyRef.current.undo.length > 0
+  const canRedo = historyVersion >= 0 && historyRef.current.redo.length > 0
+  const handleEditorNavigationCapture = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!saveQueueRef.current?.pending || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+    const anchor = (event.target as HTMLElement).closest("a")
+    const href = anchor?.getAttribute("href")
+    if (!href?.startsWith("/editor") || anchor?.getAttribute("target") === "_blank") return
+    event.preventDefault()
+    void flushPendingSectionSaves().then((saved) => {
+      if (saved) router.push(href)
+      else toast.error("Navigeren gestopt", { description: "Niet alle wijzigingen konden worden opgeslagen." })
+    })
+  }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-muted">
+    <div className="flex h-full min-h-0 flex-col bg-muted" onClickCapture={handleEditorNavigationCapture}>
       <div className="border-b border-border bg-background px-2 py-2 md:px-4">
         <div className="hidden w-full flex-nowrap items-center gap-2 overflow-hidden md:flex">
           <label htmlFor="website-selector" className="sr-only">
@@ -1427,6 +1585,14 @@ export function EditorClient({
           >
             {isRenamingWebsite ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
           </Button>
+          <div className="flex items-center rounded-md border border-border bg-background p-0.5">
+            <Button type="button" variant="ghost" size="icon-xs" onClick={handleUndo} disabled={!canUndo} aria-label="Wijziging ongedaan maken" title="Ongedaan maken (Ctrl+Z)">
+              <Undo2 className="h-3.5 w-3.5" />
+            </Button>
+            <Button type="button" variant="ghost" size="icon-xs" onClick={handleRedo} disabled={!canRedo} aria-label="Wijziging opnieuw toepassen" title="Opnieuw toepassen (Ctrl+Shift+Z)">
+              <Redo2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
           <Button
             type="button"
             variant="outline"
@@ -1559,6 +1725,17 @@ export function EditorClient({
               </Button>
             ) : null}
           </div>
+
+          {(canUndo || canRedo) ? (
+            <div className="grid grid-cols-2 gap-2">
+              <Button type="button" variant="outline" className="h-11" onClick={handleUndo} disabled={!canUndo}>
+                <Undo2 className="h-4 w-4" /> Ongedaan maken
+              </Button>
+              <Button type="button" variant="outline" className="h-11" onClick={handleRedo} disabled={!canRedo}>
+                <Redo2 className="h-4 w-4" /> Opnieuw
+              </Button>
+            </div>
+          ) : null}
 
           {multilingualAvailable ? <WebsiteLanguageControl
             locales={websiteLocales}
@@ -1738,6 +1915,7 @@ export function EditorClient({
           sections={displayedSections}
           persistSections={persistSections}
           onSectionUpdate={handleCanvasSectionUpdate}
+          onSectionDelete={handleDelete}
           transitions={transitions}
           themeConfig={themeConfig}
           isPreview={isPreview || isTranslationMode}
@@ -1763,6 +1941,7 @@ export function EditorClient({
           />
         ) : !isPreview ? (
           <EditorInspector
+            userId={userId}
             selectedSection={selectedSection}
             sections={sections}
             transitions={transitions}
@@ -1802,6 +1981,7 @@ export function EditorClient({
               sections={displayedSections}
               persistSections={persistSections}
               onSectionUpdate={handleCanvasSectionUpdate}
+              onSectionDelete={handleDelete}
               transitions={transitions}
               themeConfig={themeConfig}
               isPreview={isPreview || isTranslationMode}
@@ -1828,6 +2008,7 @@ export function EditorClient({
             />
           ) : mobilePanel === "style" && !isPreview ? (
             <EditorInspector
+              userId={userId}
               selectedSection={selectedSection}
               sections={sections}
               transitions={transitions}
@@ -1851,6 +2032,7 @@ export function EditorClient({
           ) : null}
           {mobilePanel === "site" && !isPreview && (
             <EditorInspector
+              userId={userId}
               selectedSection={selectedSection}
               sections={sections}
               transitions={transitions}

@@ -99,10 +99,13 @@ export function EditableText({
       className: `${className ?? ""} ${editable ? "cursor-text" : ""} ${
         isEditing ? "rounded outline outline-2 outline-primary/60 outline-offset-2" : ""
       }`,
+      "data-inline-editable": editable ? "true" : undefined,
       style,
       contentEditable: isEditing,
       suppressContentEditableWarning: true,
-      title: editable ? "Dubbelklik om tekst te bewerken" : undefined,
+      tabIndex: editable ? 0 : undefined,
+      "aria-label": editable ? `Tekst bewerken: ${displayValue}` : undefined,
+      title: editable ? "Klik om tekst te bewerken" : undefined,
       onDoubleClick: editable
         ? (event: React.MouseEvent<HTMLElement>) => {
             event.preventDefault()
@@ -114,17 +117,23 @@ export function EditableText({
         ? (event: React.MouseEvent<HTMLElement>) => {
             event.preventDefault()
             event.stopPropagation()
+            if (window.matchMedia("(pointer: fine)").matches) setIsEditing(true)
           }
         : undefined,
       onBlur: commit,
-      onKeyDown: isEditing
+      onKeyDown: editable
         ? (event: React.KeyboardEvent<HTMLElement>) => {
             event.stopPropagation()
-            if (event.key === "Escape") {
+            if (!isEditing && (event.key === "Enter" || event.key === " ")) {
+              event.preventDefault()
+              setIsEditing(true)
+              return
+            }
+            if (isEditing && event.key === "Escape") {
               event.preventDefault()
               cancel()
             }
-            if (event.key === "Enter" && !multiline) {
+            if (isEditing && event.key === "Enter" && !multiline) {
               event.preventDefault()
               commit()
             }
