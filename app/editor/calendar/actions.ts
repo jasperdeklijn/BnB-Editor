@@ -13,6 +13,13 @@ import {
   type CalendarEntryInput,
   type CalendarEntryUpdate,
 } from "@/lib/supabase/calendar"
+import {
+  acceptCustomerRescheduleRequest,
+  proposeOwnerAlternative,
+  rejectCustomerRescheduleRequest,
+  transitionOwnerBooking,
+} from "@/lib/booking/lifecycle"
+import { deliverBookingNotifications } from "@/lib/booking/notifications"
 
 type CalendarActionResult =
   | { success: true; entry: CalendarEntry }
@@ -53,6 +60,13 @@ export async function updateCalendarEntryAction(
 ): Promise<CalendarActionResult> {
   try {
     const entry = await updateCalendarEntry(entryId, updates)
+    if (entry.metadata?.source === "booking_engine") {
+      try {
+        await deliverBookingNotifications(entry.id)
+      } catch (notificationError) {
+        console.error("[calendar] Entry saved but booking notification failed", notificationError)
+      }
+    }
     revalidatePath("/editor/calendar")
     return { success: true, entry }
   } catch (error) {
@@ -94,5 +108,52 @@ export async function deleteAvailabilityWindowAction(
     return { success: true, id: windowId }
   } catch (error) {
     return { success: false, error: getErrorMessage(error) }
+  }
+}
+
+export async function transitionBookingAction(
+  entryId: string,
+  status: "confirmed" | "cancelled",
+  privateNote = "",
+): Promise<CalendarActionResult> {
+  try {
+    const result = await transitionOwnerBooking(entryId, status, privateNote)
+    revalidatePath("/editor/calendar")
+    return { success: true, entry: result.entry }
+  } catch (error) {
+    return { success: false, error: getErrorMessage(error) }
+  }
+}
+
+export async function proposeAlternativeAction(
+  entryId: string,
+  input: { startAt: string; endAt: string; customerMessage: string; privateNote: string },
+) {
+  try {
+    const result = await proposeOwnerAlternative(entryId, input)
+    revalidatePath("/editor/calendar")
+    return { success: true as const, request: result.request }
+  } catch (error) {
+    return { success: false as const, error: getErrorMessage(error) }
+  }
+}
+
+export async function acceptRescheduleRequestAction(requestId: string): Promise<CalendarActionResult> {
+  try {
+    const result = await acceptCustomerRescheduleRequest(requestId)
+    revalidatePath("/editor/calendar")
+    return { success: true, entry: result.entry }
+  } catch (error) {
+    return { success: false, error: getErrorMessage(error) }
+  }
+}
+
+export async function rejectRescheduleRequestAction(requestId: string, privateNote = "") {
+  try {
+    await rejectCustomerRescheduleRequest(requestId, privateNote)
+    revalidatePath("/editor/calendar")
+    return { success: true as const, requestId }
+  } catch (error) {
+    return { success: false as const, error: getErrorMessage(error) }
   }
 }

@@ -18,6 +18,11 @@ create extension if not exists "pgcrypto";
 -- Reset application schema objects
 -- ------------------------------------------------------------
 
+drop table if exists public.booking_holds cascade;
+drop table if exists public.booking_notifications cascade;
+drop table if exists public.booking_change_requests cascade;
+drop table if exists public.booking_status_history cascade;
+drop table if exists public.booking_customer_access cascade;
 drop table if exists public.contact_requests cascade;
 drop table if exists public.audit_logs cascade;
 drop table if exists public.website_section_translations cascade;
@@ -27,6 +32,7 @@ drop table if exists public.service_translations cascade;
 drop table if exists public.business_translations cascade;
 drop table if exists public.user_images cascade;
 drop table if exists public.subscriptions cascade;
+drop table if exists public.service_booking_settings cascade;
 drop table if exists public.calendar_availability_windows cascade;
 drop table if exists public.calendar_entries cascade;
 drop table if exists public.lead_agent_runs cascade;
@@ -118,7 +124,38 @@ create table public.services (
   position integer not null default 0,
   is_featured boolean not null default false,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  constraint services_id_business_id_key unique (id, business_id)
+);
+
+create table public.service_booking_settings (
+  service_id uuid primary key,
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  booking_enabled boolean not null default false,
+  booking_mode text not null default 'appointment'
+    check (booking_mode in ('appointment', 'stay')),
+  confirmation_mode text not null default 'request'
+    check (confirmation_mode in ('request', 'instant')),
+  timezone text not null default 'Europe/Amsterdam',
+  duration_minutes integer not null default 60 check (duration_minutes between 5 and 1440),
+  slot_interval_minutes integer not null default 30 check (slot_interval_minutes between 5 and 1440),
+  buffer_before_minutes integer not null default 0 check (buffer_before_minutes between 0 and 1440),
+  buffer_after_minutes integer not null default 0 check (buffer_after_minutes between 0 and 1440),
+  minimum_notice_minutes integer not null default 1440 check (minimum_notice_minutes between 0 and 525600),
+  booking_horizon_days integer not null default 90 check (booking_horizon_days between 1 and 730),
+  capacity integer not null default 1 check (capacity between 1 and 10000),
+  minimum_nights integer not null default 1 check (minimum_nights between 1 and 365),
+  maximum_nights integer not null default 30 check (maximum_nights between 1 and 730),
+  check_in_time time not null default '15:00',
+  check_out_time time not null default '11:00',
+  cancellation_cutoff_minutes integer not null default 1440 check (cancellation_cutoff_minutes between 0 and 525600),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint service_booking_settings_nights_check check (maximum_nights >= minimum_nights),
+  constraint service_booking_settings_service_business_unique unique (service_id, business_id),
+  constraint service_booking_settings_service_business_fkey
+    foreign key (service_id, business_id)
+    references public.services(id, business_id) on delete cascade
 );
 
 create table public.business_translations (
@@ -329,6 +366,90 @@ create table public.calendar_availability_windows (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint calendar_availability_windows_time_range_check check (end_time > start_time)
+);
+
+create table public.booking_holds (
+  id uuid primary key default gen_random_uuid(),
+  website_id uuid not null references public.websites(id) on delete cascade,
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  service_id uuid not null,
+  booking_mode text not null check (booking_mode in ('appointment', 'stay')),
+  start_at timestamptz not null,
+  end_at timestamptz not null,
+  timezone text not null default 'Europe/Amsterdam',
+  token_hash text not null unique,
+  status text not null default 'active'
+    check (status in ('active', 'consumed', 'expired', 'cancelled')),
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint booking_holds_time_range_check check (end_at > start_at),
+  constraint booking_holds_service_business_fkey
+    foreign key (service_id, business_id)
+    references public.services(id, business_id) on delete cascade
+);
+
+create table public.booking_customer_access (
+  calendar_entry_id uuid primary key references public.calendar_entries(id) on delete cascade,
+  token_version integer not null default 1 check (token_version > 0),
+  expires_at timestamptz not null,
+  revoked_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table public.booking_status_history (
+  id uuid primary key default gen_random_uuid(),
+  calendar_entry_id uuid not null references public.calendar_entries(id) on delete cascade,
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  event_type text not null check (event_type in ('created', 'confirmed', 'declined', 'cancelled', 'completed', 'rescheduled', 'reschedule_requested', 'alternative_proposed', 'reschedule_declined')),
+  from_status text check (from_status is null or from_status in ('pending', 'confirmed', 'cancelled', 'completed', 'blocked')),
+  to_status text check (to_status is null or to_status in ('pending', 'confirmed', 'cancelled', 'completed', 'blocked')),
+  actor_type text not null default 'system' check (actor_type in ('customer', 'owner', 'system')),
+  public_message text not null default '',
+  private_note text not null default '',
+  proposed_start_at timestamptz,
+  proposed_end_at timestamptz,
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  constraint booking_status_history_proposed_range_check check (proposed_start_at is null or proposed_end_at is null or proposed_end_at > proposed_start_at)
+);
+
+create table public.booking_change_requests (
+  id uuid primary key default gen_random_uuid(),
+  calendar_entry_id uuid not null references public.calendar_entries(id) on delete cascade,
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  request_kind text not null check (request_kind in ('reschedule_request', 'alternative_proposal')),
+  requested_by text not null check (requested_by in ('customer', 'owner')),
+  proposed_start_at timestamptz not null,
+  proposed_end_at timestamptz not null,
+  customer_message text not null default '',
+  private_note text not null default '',
+  status text not null default 'pending' check (status in ('pending', 'accepted', 'rejected', 'cancelled')),
+  resolved_by uuid references auth.users(id) on delete set null,
+  resolved_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint booking_change_requests_time_range_check check (proposed_end_at > proposed_start_at)
+);
+
+create table public.booking_notifications (
+  id uuid primary key default gen_random_uuid(),
+  calendar_entry_id uuid not null references public.calendar_entries(id) on delete cascade,
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  notification_type text not null check (notification_type in ('request_received', 'confirmed', 'declined', 'rescheduled', 'cancelled', 'new_request', 'new_booking', 'customer_cancelled', 'customer_reschedule_requested', 'alternative_proposed', 'reschedule_declined')),
+  recipient_type text not null check (recipient_type in ('customer', 'owner')),
+  recipient_email text not null,
+  locale text not null default 'nl-NL',
+  idempotency_key text not null unique,
+  status text not null default 'pending' check (status in ('pending', 'sending', 'sent', 'failed', 'skipped')),
+  attempts integer not null default 0,
+  payload jsonb not null default '{}'::jsonb,
+  message_id text,
+  last_error text,
+  sent_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create table public.leads (
@@ -1036,12 +1157,492 @@ grant execute on function public.set_website_primary_domain(uuid, uuid) to authe
 revoke all on function public.finalize_website_domain_removal(uuid, uuid) from public;
 grant execute on function public.finalize_website_domain_removal(uuid, uuid) to authenticated;
 
+create or replace function public.create_public_booking_hold(
+  p_website_id uuid,
+  p_business_id uuid,
+  p_service_id uuid,
+  p_booking_mode text,
+  p_start_at timestamptz,
+  p_end_at timestamptz,
+  p_timezone text,
+  p_token_hash text
+)
+returns table (hold_id uuid, hold_expires_at timestamptz)
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  booking_settings public.service_booking_settings%rowtype;
+  occupied_count bigint;
+  created_hold public.booking_holds%rowtype;
+  buffered_start timestamptz;
+  buffered_end timestamptz;
+begin
+  if p_end_at <= p_start_at or p_start_at <= now() then
+    raise exception using errcode = 'P0001', message = 'BOOKING_SLOT_UNAVAILABLE';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtextextended(p_service_id::text, 0));
+
+  select * into booking_settings
+  from public.service_booking_settings s
+  where s.service_id = p_service_id
+    and s.business_id = p_business_id
+    and s.booking_enabled = true
+    and s.booking_mode = p_booking_mode;
+
+  if not found or not exists (
+    select 1 from public.websites w
+    where w.id = p_website_id and w.published = true
+  ) then
+    raise exception using errcode = 'P0001', message = 'BOOKING_CONTEXT_UNAVAILABLE';
+  end if;
+
+  update public.booking_holds
+  set status = 'expired'
+  where service_id = p_service_id and status = 'active' and expires_at <= now();
+
+  buffered_start := p_start_at - make_interval(mins => booking_settings.buffer_before_minutes);
+  buffered_end := p_end_at + make_interval(mins => booking_settings.buffer_after_minutes);
+
+  if exists (
+    select 1 from public.calendar_entries e
+    where e.business_id = p_business_id
+      and (e.service_id is null or e.service_id = p_service_id)
+      and (e.entry_type = 'blocked' or e.status = 'blocked')
+      and e.start_at < buffered_end and e.end_at > buffered_start
+  ) then
+    raise exception using errcode = 'P0001', message = 'BOOKING_SLOT_UNAVAILABLE';
+  end if;
+
+  select
+    (select count(*) from public.calendar_entries e
+      where e.business_id = p_business_id
+        and e.service_id = p_service_id
+        and e.status in ('pending', 'confirmed')
+        and e.start_at - make_interval(mins => booking_settings.buffer_before_minutes) < p_end_at
+        and e.end_at + make_interval(mins => booking_settings.buffer_after_minutes) > p_start_at)
+    +
+    (select count(*) from public.booking_holds h
+      where h.service_id = p_service_id
+        and h.status = 'active' and h.expires_at > now()
+        and h.start_at - make_interval(mins => booking_settings.buffer_before_minutes) < p_end_at
+        and h.end_at + make_interval(mins => booking_settings.buffer_after_minutes) > p_start_at)
+  into occupied_count;
+
+  if occupied_count >= booking_settings.capacity then
+    raise exception using errcode = 'P0001', message = 'BOOKING_SLOT_UNAVAILABLE';
+  end if;
+
+  insert into public.booking_holds (
+    website_id, business_id, service_id, booking_mode, start_at, end_at,
+    timezone, token_hash, expires_at
+  ) values (
+    p_website_id, p_business_id, p_service_id, p_booking_mode, p_start_at, p_end_at,
+    p_timezone, p_token_hash, now() + interval '10 minutes'
+  ) returning * into created_hold;
+
+  return query select created_hold.id, created_hold.expires_at;
+end;
+$$;
+
+create or replace function public.finalize_public_booking(
+  p_hold_id uuid,
+  p_token_hash text,
+  p_name text,
+  p_email text,
+  p_phone text,
+  p_message text,
+  p_locale text,
+  p_recipient_email text
+)
+returns table (contact_request_id uuid, calendar_entry_id uuid, booking_status text)
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  selected_hold public.booking_holds%rowtype;
+  booking_settings public.service_booking_settings%rowtype;
+  selected_service public.services%rowtype;
+  website_owner_id uuid;
+  created_request_id uuid;
+  created_entry_id uuid;
+  final_status text;
+  occupied_count bigint;
+  buffered_start timestamptz;
+  buffered_end timestamptz;
+  locked_service_id uuid;
+begin
+  select service_id into locked_service_id
+  from public.booking_holds
+  where id = p_hold_id;
+
+  if locked_service_id is null then
+    raise exception using errcode = 'P0001', message = 'BOOKING_HOLD_INVALID';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtextextended(locked_service_id::text, 0));
+
+  select * into selected_hold
+  from public.booking_holds h
+  where h.id = p_hold_id
+    and h.token_hash = p_token_hash
+    and h.status = 'active'
+    and h.expires_at > now()
+  for update;
+
+  if not found then
+    raise exception using errcode = 'P0001', message = 'BOOKING_HOLD_INVALID';
+  end if;
+
+  select * into booking_settings
+  from public.service_booking_settings s
+  where s.service_id = selected_hold.service_id
+    and s.business_id = selected_hold.business_id
+    and s.booking_enabled = true
+    and s.booking_mode = selected_hold.booking_mode;
+
+  select * into selected_service
+  from public.services s
+  where s.id = selected_hold.service_id
+    and s.business_id = selected_hold.business_id;
+
+  select w.user_id into website_owner_id
+  from public.websites w
+  where w.id = selected_hold.website_id and w.published = true;
+
+  if booking_settings.service_id is null or selected_service.id is null or website_owner_id is null then
+    raise exception using errcode = 'P0001', message = 'BOOKING_CONTEXT_UNAVAILABLE';
+  end if;
+
+  buffered_start := selected_hold.start_at - make_interval(mins => booking_settings.buffer_before_minutes);
+  buffered_end := selected_hold.end_at + make_interval(mins => booking_settings.buffer_after_minutes);
+
+  if exists (
+    select 1 from public.calendar_entries e
+    where e.business_id = selected_hold.business_id
+      and (e.service_id is null or e.service_id = selected_hold.service_id)
+      and (e.entry_type = 'blocked' or e.status = 'blocked')
+      and e.start_at < buffered_end and e.end_at > buffered_start
+  ) then
+    raise exception using errcode = 'P0001', message = 'BOOKING_SLOT_UNAVAILABLE';
+  end if;
+
+  select
+    (select count(*) from public.calendar_entries e
+      where e.business_id = selected_hold.business_id
+        and e.service_id = selected_hold.service_id
+        and e.status in ('pending', 'confirmed')
+        and e.start_at - make_interval(mins => booking_settings.buffer_before_minutes) < selected_hold.end_at
+        and e.end_at + make_interval(mins => booking_settings.buffer_after_minutes) > selected_hold.start_at)
+    +
+    (select count(*) from public.booking_holds h
+      where h.service_id = selected_hold.service_id
+        and h.id <> selected_hold.id
+        and h.status = 'active' and h.expires_at > now()
+        and h.start_at - make_interval(mins => booking_settings.buffer_before_minutes) < selected_hold.end_at
+        and h.end_at + make_interval(mins => booking_settings.buffer_after_minutes) > selected_hold.start_at)
+  into occupied_count;
+
+  if occupied_count >= booking_settings.capacity then
+    raise exception using errcode = 'P0001', message = 'BOOKING_SLOT_UNAVAILABLE';
+  end if;
+
+  final_status := case when booking_settings.confirmation_mode = 'instant' then 'confirmed' else 'pending' end;
+
+  insert into public.contact_requests (
+    website_id, business_id, user_id, request_type, name, email, phone, service,
+    preferred_date, message, locale, payload, recipient_email, source
+  ) values (
+    selected_hold.website_id, selected_hold.business_id, website_owner_id,
+    case when selected_hold.booking_mode = 'stay' then 'booking_request' else 'appointment' end,
+    left(p_name, 120), left(lower(p_email), 254), left(p_phone, 40),
+    left(selected_service.title, 160), selected_hold.start_at::text, left(p_message, 3000),
+    left(p_locale, 20),
+    jsonb_build_object(
+      'source', 'booking_engine', 'serviceId', selected_hold.service_id,
+      'holdId', selected_hold.id, 'bookingMode', selected_hold.booking_mode,
+      'startAt', selected_hold.start_at, 'endAt', selected_hold.end_at,
+      'timezone', selected_hold.timezone, 'confirmationMode', booking_settings.confirmation_mode
+    ),
+    left(p_recipient_email, 254), 'website_form'
+  ) returning id into created_request_id;
+
+  insert into public.calendar_entries (
+    business_id, service_id, contact_request_id, entry_type, status, source, title,
+    customer_name, customer_email, customer_phone, start_at, end_at, all_day,
+    timezone, metadata
+  ) values (
+    selected_hold.business_id, selected_hold.service_id, created_request_id,
+    case when selected_hold.booking_mode = 'stay' then 'booking' else 'appointment' end,
+    final_status, 'website_form', left(selected_service.title || ' - ' || p_name, 240),
+    left(p_name, 120), left(lower(p_email), 254), left(p_phone, 40),
+    selected_hold.start_at, selected_hold.end_at, selected_hold.booking_mode = 'stay',
+    selected_hold.timezone,
+    jsonb_build_object('source', 'booking_engine', 'holdId', selected_hold.id,
+      'confirmationMode', booking_settings.confirmation_mode)
+  ) returning id into created_entry_id;
+
+  update public.booking_holds set status = 'consumed' where id = selected_hold.id;
+
+  return query select created_request_id, created_entry_id, final_status;
+end;
+$$;
+
+revoke all on function public.create_public_booking_hold(uuid, uuid, uuid, text, timestamptz, timestamptz, text, text) from public;
+revoke all on function public.create_public_booking_hold(uuid, uuid, uuid, text, timestamptz, timestamptz, text, text) from anon, authenticated;
+grant execute on function public.create_public_booking_hold(uuid, uuid, uuid, text, timestamptz, timestamptz, text, text) to service_role;
+revoke all on function public.finalize_public_booking(uuid, text, text, text, text, text, text, text) from public;
+revoke all on function public.finalize_public_booking(uuid, text, text, text, text, text, text, text) from anon, authenticated;
+grant execute on function public.finalize_public_booking(uuid, text, text, text, text, text, text, text) to service_role;
+
+create or replace function public.sanitize_booking_lifecycle_metadata()
+returns trigger language plpgsql security definer set search_path = public, pg_temp
+as $$
+declare actor text;
+begin
+  actor := coalesce(nullif(new.metadata->>'lifecycle_actor', ''), case when auth.uid() is null then 'system' else 'owner' end);
+  if actor not in ('customer', 'owner', 'system') then actor := 'system'; end if;
+  perform set_config('app.booking_actor', actor, true);
+  perform set_config('app.booking_public_message', left(coalesce(new.metadata->>'lifecycle_public_message', ''), 1000), true);
+  perform set_config('app.booking_private_note', left(coalesce(new.metadata->>'lifecycle_private_note', ''), 2000), true);
+  new.metadata := new.metadata - 'lifecycle_actor' - 'lifecycle_public_message' - 'lifecycle_private_note';
+  return new;
+end;
+$$;
+
+create or replace function public.record_booking_lifecycle()
+returns trigger language plpgsql security definer set search_path = public, pg_temp
+as $$
+declare
+  actor text; public_message_value text; private_note_value text; owner_email text;
+  booking_locale text; lifecycle_event text; customer_notification text;
+  payload_value jsonb; lifecycle_event_id uuid;
+begin
+  if not (new.source = 'website_form' and (coalesce(new.metadata->>'source', '') = 'booking_engine'
+    or exists (select 1 from public.booking_customer_access a where a.calendar_entry_id = new.id))) then return new; end if;
+  actor := coalesce(nullif(current_setting('app.booking_actor', true), ''), case when auth.uid() is null then 'system' else 'owner' end);
+  if actor not in ('customer', 'owner', 'system') then actor := 'system'; end if;
+  public_message_value := left(coalesce(current_setting('app.booking_public_message', true), ''), 1000);
+  private_note_value := left(coalesce(current_setting('app.booking_private_note', true), ''), 2000);
+  select coalesce(cr.recipient_email, ''), coalesce(cr.locale, 'nl-NL') into owner_email, booking_locale
+  from public.contact_requests cr where cr.id = new.contact_request_id;
+  payload_value := jsonb_build_object('title', new.title, 'customerName', new.customer_name,
+    'startAt', new.start_at, 'endAt', new.end_at, 'timezone', new.timezone,
+    'status', new.status, 'entryType', new.entry_type);
+
+  if tg_op = 'INSERT' then
+    insert into public.booking_customer_access (calendar_entry_id, expires_at)
+    values (new.id, greatest(new.end_at + interval '90 days', now() + interval '730 days'))
+    on conflict (calendar_entry_id) do nothing;
+    insert into public.booking_status_history (calendar_entry_id, business_id, event_type, to_status, actor_type, public_message)
+    values (new.id, new.business_id, 'created', new.status, 'system', case when new.status = 'confirmed' then 'De boeking is bevestigd.' else 'De aanvraag is ontvangen.' end);
+    customer_notification := case when new.status = 'confirmed' then 'confirmed' else 'request_received' end;
+    insert into public.booking_notifications (calendar_entry_id, business_id, notification_type, recipient_type, recipient_email, locale, idempotency_key, payload)
+    values (new.id, new.business_id, customer_notification, 'customer', new.customer_email, booking_locale,
+      new.id::text || ':created:customer:' || customer_notification, payload_value)
+    on conflict (idempotency_key) do nothing;
+    if owner_email <> '' then
+      insert into public.booking_notifications (calendar_entry_id, business_id, notification_type, recipient_type, recipient_email, locale, idempotency_key, payload)
+      values (new.id, new.business_id, case when new.status = 'confirmed' then 'new_booking' else 'new_request' end,
+        'owner', owner_email, booking_locale, new.id::text || ':created:owner:' || new.status, payload_value)
+      on conflict (idempotency_key) do nothing;
+    end if;
+    return new;
+  end if;
+
+  if old.status is distinct from new.status then
+    lifecycle_event := case when new.status = 'confirmed' then 'confirmed'
+      when new.status = 'cancelled' and actor = 'owner' and old.status = 'pending' then 'declined'
+      when new.status = 'cancelled' then 'cancelled' when new.status = 'completed' then 'completed' else null end;
+    if lifecycle_event is not null then
+      lifecycle_event_id := gen_random_uuid();
+      insert into public.booking_status_history (id, calendar_entry_id, business_id, event_type, from_status, to_status, actor_type, public_message, private_note, created_by)
+      values (lifecycle_event_id, new.id, new.business_id, lifecycle_event, old.status, new.status, actor,
+        public_message_value, private_note_value, case when actor = 'owner' then auth.uid() else null end);
+      customer_notification := case lifecycle_event when 'confirmed' then 'confirmed' when 'declined' then 'declined' when 'cancelled' then 'cancelled' else null end;
+      if customer_notification is not null then
+        insert into public.booking_notifications (calendar_entry_id, business_id, notification_type, recipient_type, recipient_email, locale, idempotency_key, payload)
+        values (new.id, new.business_id, customer_notification, 'customer', new.customer_email, booking_locale,
+          lifecycle_event_id::text || ':customer:' || customer_notification, payload_value)
+        on conflict (idempotency_key) do nothing;
+      end if;
+      if lifecycle_event = 'cancelled' and actor = 'customer' and owner_email <> '' then
+        insert into public.booking_notifications (calendar_entry_id, business_id, notification_type, recipient_type, recipient_email, locale, idempotency_key, payload)
+        values (new.id, new.business_id, 'customer_cancelled', 'owner', owner_email, booking_locale,
+          lifecycle_event_id::text || ':owner:customer_cancelled', payload_value)
+        on conflict (idempotency_key) do nothing;
+      end if;
+    end if;
+  end if;
+
+  if old.start_at is distinct from new.start_at or old.end_at is distinct from new.end_at then
+    lifecycle_event_id := gen_random_uuid();
+    insert into public.booking_status_history (id, calendar_entry_id, business_id, event_type, from_status, to_status, actor_type,
+      public_message, private_note, proposed_start_at, proposed_end_at, created_by)
+    values (lifecycle_event_id, new.id, new.business_id, 'rescheduled', old.status, new.status, actor,
+      public_message_value, private_note_value, new.start_at, new.end_at, case when actor = 'owner' then auth.uid() else null end);
+    insert into public.booking_notifications (calendar_entry_id, business_id, notification_type, recipient_type, recipient_email, locale, idempotency_key, payload)
+    values (new.id, new.business_id, 'rescheduled', 'customer', new.customer_email, booking_locale,
+      lifecycle_event_id::text || ':customer:rescheduled', payload_value)
+    on conflict (idempotency_key) do nothing;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger booking_lifecycle_metadata_trigger
+  before insert or update of status, start_at, end_at, metadata on public.calendar_entries
+  for each row execute procedure public.sanitize_booking_lifecycle_metadata();
+create trigger booking_lifecycle_trigger
+  after insert or update of status, start_at, end_at, metadata on public.calendar_entries
+  for each row execute procedure public.record_booking_lifecycle();
+
+create or replace function public.record_booking_change_request()
+returns trigger language plpgsql security definer set search_path = public, pg_temp
+as $$
+declare selected_entry public.calendar_entries%rowtype; owner_email text; booking_locale text;
+  notification_name text; recipient_kind text; recipient_address text;
+begin
+  select * into selected_entry from public.calendar_entries where id = new.calendar_entry_id;
+  if selected_entry.id is null or selected_entry.business_id <> new.business_id then raise exception using errcode = 'P0001', message = 'BOOKING_CHANGE_CONTEXT_INVALID'; end if;
+  select coalesce(cr.recipient_email, ''), coalesce(cr.locale, 'nl-NL') into owner_email, booking_locale
+  from public.contact_requests cr where cr.id = selected_entry.contact_request_id;
+  insert into public.booking_status_history (calendar_entry_id, business_id, event_type, from_status, to_status, actor_type,
+    public_message, private_note, proposed_start_at, proposed_end_at)
+  values (new.calendar_entry_id, new.business_id,
+    case when new.request_kind = 'alternative_proposal' then 'alternative_proposed' else 'reschedule_requested' end,
+    selected_entry.status, selected_entry.status, new.requested_by, left(new.customer_message, 1000), left(new.private_note, 2000),
+    new.proposed_start_at, new.proposed_end_at);
+  if new.requested_by = 'owner' then notification_name := 'alternative_proposed'; recipient_kind := 'customer'; recipient_address := selected_entry.customer_email;
+  else notification_name := 'customer_reschedule_requested'; recipient_kind := 'owner'; recipient_address := owner_email; end if;
+  if recipient_address <> '' then
+    insert into public.booking_notifications (calendar_entry_id, business_id, notification_type, recipient_type, recipient_email, locale, idempotency_key, payload)
+    values (selected_entry.id, selected_entry.business_id, notification_name, recipient_kind, recipient_address, booking_locale,
+      new.id::text || ':' || notification_name, jsonb_build_object('title', selected_entry.title,
+      'customerName', selected_entry.customer_name, 'startAt', selected_entry.start_at, 'endAt', selected_entry.end_at,
+      'proposedStartAt', new.proposed_start_at, 'proposedEndAt', new.proposed_end_at,
+      'timezone', selected_entry.timezone, 'message', left(new.customer_message, 1000)))
+    on conflict (idempotency_key) do nothing;
+  end if;
+  return new;
+end;
+$$;
+create trigger booking_change_request_trigger after insert on public.booking_change_requests
+  for each row execute procedure public.record_booking_change_request();
+
+create or replace function public.apply_booking_change_request(p_request_id uuid, p_actor text, p_resolved_by uuid default null)
+returns uuid language plpgsql security definer set search_path = public, pg_temp
+as $$
+declare change_request public.booking_change_requests%rowtype; selected_entry public.calendar_entries%rowtype;
+  booking_settings public.service_booking_settings%rowtype; occupied_count bigint;
+begin
+  select * into change_request from public.booking_change_requests r where r.id = p_request_id and r.status = 'pending' for update;
+  if not found then raise exception using errcode = 'P0001', message = 'BOOKING_CHANGE_INVALID'; end if;
+  if (p_actor = 'customer' and not (change_request.requested_by = 'owner' and change_request.request_kind = 'alternative_proposal'))
+    or (p_actor = 'owner' and not (change_request.requested_by = 'customer' and change_request.request_kind = 'reschedule_request')) then
+    raise exception using errcode = 'P0001', message = 'BOOKING_CHANGE_FORBIDDEN'; end if;
+  select * into selected_entry from public.calendar_entries e where e.id = change_request.calendar_entry_id for update;
+  if selected_entry.id is null or selected_entry.status not in ('pending', 'confirmed') then raise exception using errcode = 'P0001', message = 'BOOKING_CHANGE_INVALID'; end if;
+  perform pg_advisory_xact_lock(hashtextextended(selected_entry.service_id::text, 0));
+  select * into booking_settings from public.service_booking_settings s
+  where s.service_id = selected_entry.service_id and s.business_id = selected_entry.business_id and s.booking_enabled = true;
+  if booking_settings.service_id is null then raise exception using errcode = 'P0001', message = 'BOOKING_CONTEXT_UNAVAILABLE'; end if;
+  if exists (select 1 from public.calendar_entries e where e.business_id = selected_entry.business_id and e.id <> selected_entry.id
+    and (e.service_id is null or e.service_id = selected_entry.service_id) and (e.entry_type = 'blocked' or e.status = 'blocked')
+    and e.start_at < change_request.proposed_end_at + make_interval(mins => booking_settings.buffer_after_minutes)
+    and e.end_at > change_request.proposed_start_at - make_interval(mins => booking_settings.buffer_before_minutes))
+  then raise exception using errcode = 'P0001', message = 'BOOKING_SLOT_UNAVAILABLE'; end if;
+  select (select count(*) from public.calendar_entries e where e.business_id = selected_entry.business_id
+      and e.service_id = selected_entry.service_id and e.id <> selected_entry.id and e.status in ('pending', 'confirmed')
+      and e.start_at - make_interval(mins => booking_settings.buffer_before_minutes) < change_request.proposed_end_at
+      and e.end_at + make_interval(mins => booking_settings.buffer_after_minutes) > change_request.proposed_start_at)
+    + (select count(*) from public.booking_holds h where h.service_id = selected_entry.service_id
+      and h.status = 'active' and h.expires_at > now()
+      and h.start_at - make_interval(mins => booking_settings.buffer_before_minutes) < change_request.proposed_end_at
+      and h.end_at + make_interval(mins => booking_settings.buffer_after_minutes) > change_request.proposed_start_at)
+  into occupied_count;
+  if occupied_count >= booking_settings.capacity then raise exception using errcode = 'P0001', message = 'BOOKING_SLOT_UNAVAILABLE'; end if;
+  update public.calendar_entries set start_at = change_request.proposed_start_at, end_at = change_request.proposed_end_at,
+    metadata = selected_entry.metadata || jsonb_build_object('lifecycle_actor', p_actor,
+      'lifecycle_public_message', change_request.customer_message, 'lifecycle_private_note', change_request.private_note)
+  where id = selected_entry.id;
+  update public.booking_change_requests set status = 'accepted', resolved_by = p_resolved_by, resolved_at = now() where id = change_request.id;
+  return selected_entry.id;
+end;
+$$;
+
+create or replace function public.cancel_customer_booking(p_entry_id uuid)
+returns uuid language plpgsql security definer set search_path = public, pg_temp
+as $$
+declare selected_entry public.calendar_entries%rowtype; booking_settings public.service_booking_settings%rowtype;
+begin
+  select * into selected_entry from public.calendar_entries e where e.id = p_entry_id for update;
+  if selected_entry.id is null or selected_entry.status not in ('pending', 'confirmed') then raise exception using errcode = 'P0001', message = 'BOOKING_CANNOT_CANCEL'; end if;
+  select * into booking_settings from public.service_booking_settings s where s.service_id = selected_entry.service_id;
+  if booking_settings.service_id is null or now() > selected_entry.start_at - make_interval(mins => booking_settings.cancellation_cutoff_minutes)
+  then raise exception using errcode = 'P0001', message = 'BOOKING_CANCELLATION_CUTOFF'; end if;
+  update public.calendar_entries set status = 'cancelled',
+    metadata = selected_entry.metadata || jsonb_build_object('lifecycle_actor', 'customer') where id = selected_entry.id;
+  return selected_entry.id;
+end;
+$$;
+
+create or replace function public.reject_booking_change_request(p_request_id uuid, p_resolved_by uuid, p_private_note text default '')
+returns uuid language plpgsql security definer set search_path = public, pg_temp
+as $$
+declare change_request public.booking_change_requests%rowtype; selected_entry public.calendar_entries%rowtype; booking_locale text;
+begin
+  select * into change_request from public.booking_change_requests r where r.id = p_request_id and r.status = 'pending'
+    and r.requested_by = 'customer' and r.request_kind = 'reschedule_request' for update;
+  if not found then raise exception using errcode = 'P0001', message = 'BOOKING_CHANGE_INVALID'; end if;
+  select * into selected_entry from public.calendar_entries e where e.id = change_request.calendar_entry_id;
+  select coalesce(cr.locale, 'nl-NL') into booking_locale from public.contact_requests cr where cr.id = selected_entry.contact_request_id;
+  update public.booking_change_requests set status = 'rejected', resolved_by = p_resolved_by, resolved_at = now() where id = change_request.id;
+  insert into public.booking_status_history (calendar_entry_id, business_id, event_type, from_status, to_status, actor_type, private_note, created_by)
+  values (selected_entry.id, selected_entry.business_id, 'reschedule_declined', selected_entry.status, selected_entry.status, 'owner', left(p_private_note, 2000), p_resolved_by);
+  insert into public.booking_notifications (calendar_entry_id, business_id, notification_type, recipient_type, recipient_email, locale, idempotency_key, payload)
+  values (selected_entry.id, selected_entry.business_id, 'reschedule_declined', 'customer', selected_entry.customer_email,
+    booking_locale, change_request.id::text || ':reschedule_declined', jsonb_build_object('title', selected_entry.title,
+      'customerName', selected_entry.customer_name, 'startAt', selected_entry.start_at,
+      'endAt', selected_entry.end_at, 'timezone', selected_entry.timezone))
+  on conflict (idempotency_key) do nothing;
+  return selected_entry.id;
+end;
+$$;
+revoke all on function public.apply_booking_change_request(uuid, text, uuid) from public, anon, authenticated;
+grant execute on function public.apply_booking_change_request(uuid, text, uuid) to service_role;
+revoke all on function public.cancel_customer_booking(uuid) from public, anon, authenticated;
+grant execute on function public.cancel_customer_booking(uuid) to service_role;
+revoke all on function public.reject_booking_change_request(uuid, uuid, text) from public, anon, authenticated;
+grant execute on function public.reject_booking_change_request(uuid, uuid, text) to service_role;
+
 create trigger set_calendar_entries_updated_at
   before update on public.calendar_entries
   for each row execute procedure public.set_updated_at();
 
 create trigger set_calendar_availability_windows_updated_at
   before update on public.calendar_availability_windows
+  for each row execute procedure public.set_updated_at();
+
+create trigger set_booking_holds_updated_at
+  before update on public.booking_holds
+  for each row execute procedure public.set_updated_at();
+
+create trigger set_booking_customer_access_updated_at
+  before update on public.booking_customer_access
+  for each row execute procedure public.set_updated_at();
+create trigger set_booking_change_requests_updated_at
+  before update on public.booking_change_requests
+  for each row execute procedure public.set_updated_at();
+create trigger set_booking_notifications_updated_at
+  before update on public.booking_notifications
+  for each row execute procedure public.set_updated_at();
+
+create trigger set_service_booking_settings_updated_at
+  before update on public.service_booking_settings
   for each row execute procedure public.set_updated_at();
 
 create trigger set_leads_updated_at
@@ -1094,6 +1695,9 @@ create index idx_businesses_category on public.businesses (category);
 
 create index idx_services_business_id on public.services (business_id);
 create index idx_services_business_position on public.services (business_id, position);
+create index idx_service_booking_settings_business on public.service_booking_settings (business_id);
+create index idx_service_booking_settings_enabled on public.service_booking_settings (business_id, booking_enabled)
+  where booking_enabled = true;
 create index idx_subscriptions_status on public.subscriptions (status);
 
 create index idx_website_sections_website_id on public.website_sections (website_id);
@@ -1117,6 +1721,22 @@ create index idx_calendar_availability_business_weekday
 create index idx_calendar_availability_service_weekday
   on public.calendar_availability_windows (service_id, weekday, start_time)
   where service_id is not null;
+
+create index idx_booking_holds_active_service_time
+  on public.booking_holds (service_id, start_at, end_at, expires_at)
+  where status = 'active';
+create index idx_booking_holds_business_created
+  on public.booking_holds (business_id, created_at desc);
+create unique index booking_change_requests_one_pending_idx
+  on public.booking_change_requests (calendar_entry_id, request_kind, requested_by)
+  where status = 'pending';
+create index idx_booking_history_entry_created
+  on public.booking_status_history (calendar_entry_id, created_at);
+create index idx_booking_changes_entry_created
+  on public.booking_change_requests (calendar_entry_id, created_at desc);
+create index idx_booking_notifications_delivery
+  on public.booking_notifications (status, created_at)
+  where status in ('pending', 'failed');
 
 create index idx_leads_city on public.leads (city);
 create index idx_leads_category on public.leads (category);
@@ -1150,6 +1770,7 @@ alter table public.businesses enable row level security;
 alter table public.user_images enable row level security;
 alter table public.subscriptions enable row level security;
 alter table public.services enable row level security;
+alter table public.service_booking_settings enable row level security;
 alter table public.business_translations enable row level security;
 alter table public.service_translations enable row level security;
 alter table public.websites enable row level security;
@@ -1162,6 +1783,11 @@ alter table public.section_transitions enable row level security;
 alter table public.contact_requests enable row level security;
 alter table public.calendar_entries enable row level security;
 alter table public.calendar_availability_windows enable row level security;
+alter table public.booking_holds enable row level security;
+alter table public.booking_customer_access enable row level security;
+alter table public.booking_status_history enable row level security;
+alter table public.booking_change_requests enable row level security;
+alter table public.booking_notifications enable row level security;
 alter table public.leads enable row level security;
 alter table public.lead_agent_settings enable row level security;
 alter table public.lead_agent_runs enable row level security;
@@ -1280,6 +1906,64 @@ create policy "Users can delete own services"
     exists (
       select 1 from public.businesses b
       where b.id = services.business_id
+        and b.user_id = auth.uid()
+    )
+  );
+
+-- Service booking settings
+create policy "Users can view own service booking settings"
+  on public.service_booking_settings for select
+  using (
+    exists (
+      select 1 from public.businesses b
+      where b.id = service_booking_settings.business_id
+        and b.user_id = auth.uid()
+    )
+  );
+
+create policy "Users can insert own service booking settings"
+  on public.service_booking_settings for insert
+  with check (
+    exists (
+      select 1 from public.businesses b
+      where b.id = service_booking_settings.business_id
+        and b.user_id = auth.uid()
+    )
+    and exists (
+      select 1 from public.services s
+      where s.id = service_booking_settings.service_id
+        and s.business_id = service_booking_settings.business_id
+    )
+  );
+
+create policy "Users can update own service booking settings"
+  on public.service_booking_settings for update
+  using (
+    exists (
+      select 1 from public.businesses b
+      where b.id = service_booking_settings.business_id
+        and b.user_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.businesses b
+      where b.id = service_booking_settings.business_id
+        and b.user_id = auth.uid()
+    )
+    and exists (
+      select 1 from public.services s
+      where s.id = service_booking_settings.service_id
+        and s.business_id = service_booking_settings.business_id
+    )
+  );
+
+create policy "Users can delete own service booking settings"
+  on public.service_booking_settings for delete
+  using (
+    exists (
+      select 1 from public.businesses b
+      where b.id = service_booking_settings.business_id
         and b.user_id = auth.uid()
     )
   );
@@ -1562,6 +2246,64 @@ create policy "Users can delete own calendar entries"
         and b.user_id = auth.uid()
     )
   );
+
+-- Public booking holds are written only through service-role RPCs.
+create policy "Users can view own booking holds"
+  on public.booking_holds for select
+  to authenticated
+  using (
+    exists (
+      select 1 from public.businesses b
+      where b.id = booking_holds.business_id
+        and b.user_id = auth.uid()
+    )
+  );
+
+create policy "Users can delete own booking holds"
+  on public.booking_holds for delete
+  to authenticated
+  using (
+    exists (
+      select 1 from public.businesses b
+      where b.id = booking_holds.business_id
+        and b.user_id = auth.uid()
+    )
+  );
+
+create policy "Users can view own booking customer access"
+  on public.booking_customer_access for select to authenticated
+  using (exists (
+    select 1 from public.calendar_entries e join public.businesses b on b.id = e.business_id
+    where e.id = booking_customer_access.calendar_entry_id and b.user_id = auth.uid()
+  ));
+create policy "Users can view own booking history"
+  on public.booking_status_history for select to authenticated
+  using (exists (
+    select 1 from public.businesses b
+    where b.id = booking_status_history.business_id and b.user_id = auth.uid()
+  ));
+create policy "Users can view own booking change requests"
+  on public.booking_change_requests for select to authenticated
+  using (exists (
+    select 1 from public.businesses b
+    where b.id = booking_change_requests.business_id and b.user_id = auth.uid()
+  ));
+create policy "Users can manage own booking change requests"
+  on public.booking_change_requests for all to authenticated
+  using (exists (
+    select 1 from public.businesses b
+    where b.id = booking_change_requests.business_id and b.user_id = auth.uid()
+  ))
+  with check (exists (
+    select 1 from public.businesses b
+    where b.id = booking_change_requests.business_id and b.user_id = auth.uid()
+  ));
+create policy "Users can view own booking notifications"
+  on public.booking_notifications for select to authenticated
+  using (exists (
+    select 1 from public.businesses b
+    where b.id = booking_notifications.business_id and b.user_id = auth.uid()
+  ));
 
 create policy "Users can view own calendar availability windows"
   on public.calendar_availability_windows for select

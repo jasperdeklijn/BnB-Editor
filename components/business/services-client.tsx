@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { loadUserImages } from "@/lib/user-images"
 import {
@@ -11,6 +12,13 @@ import {
   type ServiceInput,
 } from "@/lib/supabase/services"
 import type { CalendarEntry, CalendarEntryStatus } from "@/lib/supabase/calendar"
+import { upsertServiceBookingSettings } from "@/lib/supabase/booking-settings"
+import {
+  createDefaultServiceBookingSettings,
+  type ServiceBookingSettings,
+  type ServiceBookingSettingsInput,
+} from "@/lib/booking/types"
+import type { ServiceAvailabilityPreview } from "@/lib/booking/availability"
 import { Button } from "@/components/ui/button"
 import { EditorPageShell } from "@/components/editor/editor-page-shell"
 import { Input } from "@/components/ui/input"
@@ -34,6 +42,7 @@ import {
   DollarSign,
   CalendarDays,
   ArrowRight,
+  Settings2,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -44,6 +53,9 @@ interface ServicesClientProps {
   initialServices: Service[]
   initialCalendarEntries: CalendarEntry[]
   calendarUnavailable: boolean
+  initialBookingSettings: ServiceBookingSettings[]
+  initialAvailabilityPreviews: Record<string, ServiceAvailabilityPreview>
+  bookingSettingsUnavailable: boolean
 }
 
 interface OfferingPlanningCopy {
@@ -144,6 +156,149 @@ interface ServiceCardProps {
   upcomingEntries: CalendarEntry[]
   calendarUnavailable: boolean
   isAccommodation: boolean
+  bookingSettings: ServiceBookingSettings
+  availabilityPreview?: ServiceAvailabilityPreview
+  bookingSettingsUnavailable: boolean
+  onUpdateBookingSettings: (serviceId: string, settings: ServiceBookingSettingsInput) => Promise<void>
+}
+
+function formatAppointmentSlot(startAt: string, timezone: string) {
+  return new Intl.DateTimeFormat("nl-NL", {
+    timeZone: timezone,
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(startAt))
+}
+
+function formatStayDate(dateId: string) {
+  return new Intl.DateTimeFormat("nl-NL", { day: "2-digit", month: "short", timeZone: "UTC" })
+    .format(new Date(`${dateId}T12:00:00.000Z`))
+}
+
+function BookingSettingsPanel({
+  settings,
+  preview,
+  unavailable,
+  onSave,
+}: {
+  settings: ServiceBookingSettings
+  preview?: ServiceAvailabilityPreview
+  unavailable: boolean
+  onSave: (settings: ServiceBookingSettingsInput) => Promise<void>
+}) {
+  const [draft, setDraft] = useState<ServiceBookingSettingsInput>(() => ({
+    booking_enabled: settings.booking_enabled,
+    booking_mode: settings.booking_mode,
+    confirmation_mode: settings.confirmation_mode,
+    timezone: settings.timezone,
+    duration_minutes: settings.duration_minutes,
+    slot_interval_minutes: settings.slot_interval_minutes,
+    buffer_before_minutes: settings.buffer_before_minutes,
+    buffer_after_minutes: settings.buffer_after_minutes,
+    minimum_notice_minutes: settings.minimum_notice_minutes,
+    booking_horizon_days: settings.booking_horizon_days,
+    capacity: settings.capacity,
+    minimum_nights: settings.minimum_nights,
+    maximum_nights: settings.maximum_nights,
+    check_in_time: settings.check_in_time,
+    check_out_time: settings.check_out_time,
+    cancellation_cutoff_minutes: settings.cancellation_cutoff_minutes,
+  }))
+
+  useEffect(() => {
+    setDraft({
+      booking_enabled: settings.booking_enabled,
+      booking_mode: settings.booking_mode,
+      confirmation_mode: settings.confirmation_mode,
+      timezone: settings.timezone,
+      duration_minutes: settings.duration_minutes,
+      slot_interval_minutes: settings.slot_interval_minutes,
+      buffer_before_minutes: settings.buffer_before_minutes,
+      buffer_after_minutes: settings.buffer_after_minutes,
+      minimum_notice_minutes: settings.minimum_notice_minutes,
+      booking_horizon_days: settings.booking_horizon_days,
+      capacity: settings.capacity,
+      minimum_nights: settings.minimum_nights,
+      maximum_nights: settings.maximum_nights,
+      check_in_time: settings.check_in_time,
+      check_out_time: settings.check_out_time,
+      cancellation_cutoff_minutes: settings.cancellation_cutoff_minutes,
+    })
+  }, [settings])
+
+  const commit = (updates: Partial<ServiceBookingSettingsInput>) => {
+    const next = { ...draft, ...updates }
+    setDraft(next)
+    void onSave(next)
+  }
+
+  const previewItems = preview?.mode === "stay" ? preview.stay_options : preview?.appointment_slots
+
+  return (
+    <details className="rounded-lg border border-border bg-background">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm font-semibold marker:content-none">
+        <span className="flex items-center gap-2"><Settings2 className="h-4 w-4 text-primary" />Boekingsinstellingen</span>
+        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${draft.booking_enabled ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+          {draft.booking_enabled ? "Actief concept" : "Uit"}
+        </span>
+      </summary>
+      <div className="space-y-4 border-t border-border p-3">
+        {unavailable ? (
+          <p className="rounded-md border border-dashed p-2 text-xs text-muted-foreground">Voer eerst de Booking Engine 2.0-migratie uit om instellingen op te slaan.</p>
+        ) : null}
+
+        <label className="flex items-center justify-between gap-3 text-xs font-medium">
+          Beschikbaarheid voorbereiden
+          <input type="checkbox" checked={draft.booking_enabled} disabled={unavailable} onChange={(event) => commit({ booking_enabled: event.target.checked })} />
+        </label>
+
+        <div className="grid grid-cols-2 gap-2">
+          <div><Label className="mb-1 block text-xs">Type</Label><select value={draft.booking_mode} disabled={unavailable} onChange={(event) => commit({ booking_mode: event.target.value as ServiceBookingSettingsInput["booking_mode"] })} className="h-9 w-full rounded-md border border-input bg-background px-2 text-xs"><option value="appointment">Afspraak</option><option value="stay">Verblijf</option></select></div>
+          <div><Label className="mb-1 block text-xs">Bevestiging</Label><select value={draft.confirmation_mode} disabled={unavailable} onChange={(event) => commit({ confirmation_mode: event.target.value as ServiceBookingSettingsInput["confirmation_mode"] })} className="h-9 w-full rounded-md border border-input bg-background px-2 text-xs"><option value="request">Na goedkeuring</option><option value="instant">Direct</option></select></div>
+        </div>
+
+        <div><Label className="mb-1 block text-xs">Tijdzone</Label><Input value={draft.timezone} disabled={unavailable} placeholder="Europe/Amsterdam" onChange={(event) => setDraft((current) => ({ ...current, timezone: event.target.value }))} onBlur={() => void onSave(draft)} /></div>
+
+        {draft.booking_mode === "appointment" ? (
+          <div className="grid grid-cols-2 gap-2">
+            <div><Label className="mb-1 block text-xs">Duur (min.)</Label><Input type="number" min={5} max={1440} value={draft.duration_minutes} disabled={unavailable} onChange={(event) => setDraft((current) => ({ ...current, duration_minutes: Number(event.target.value) }))} onBlur={() => void onSave(draft)} /></div>
+            <div><Label className="mb-1 block text-xs">Interval (min.)</Label><Input type="number" min={5} max={1440} value={draft.slot_interval_minutes} disabled={unavailable} onChange={(event) => setDraft((current) => ({ ...current, slot_interval_minutes: Number(event.target.value) }))} onBlur={() => void onSave(draft)} /></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            <div><Label className="mb-1 block text-xs">Min. nachten</Label><Input type="number" min={1} max={365} value={draft.minimum_nights} disabled={unavailable} onChange={(event) => setDraft((current) => ({ ...current, minimum_nights: Number(event.target.value) }))} onBlur={() => void onSave(draft)} /></div>
+            <div><Label className="mb-1 block text-xs">Max. nachten</Label><Input type="number" min={1} max={730} value={draft.maximum_nights} disabled={unavailable} onChange={(event) => setDraft((current) => ({ ...current, maximum_nights: Number(event.target.value) }))} onBlur={() => void onSave(draft)} /></div>
+            <div><Label className="mb-1 block text-xs">Check-in</Label><Input type="time" value={draft.check_in_time} disabled={unavailable} onChange={(event) => setDraft((current) => ({ ...current, check_in_time: event.target.value }))} onBlur={() => void onSave(draft)} /></div>
+            <div><Label className="mb-1 block text-xs">Check-out</Label><Input type="time" value={draft.check_out_time} disabled={unavailable} onChange={(event) => setDraft((current) => ({ ...current, check_out_time: event.target.value }))} onBlur={() => void onSave(draft)} /></div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-2">
+          <div><Label className="mb-1 block text-xs">Buffer voor (min.)</Label><Input type="number" min={0} max={1440} value={draft.buffer_before_minutes} disabled={unavailable} onChange={(event) => setDraft((current) => ({ ...current, buffer_before_minutes: Number(event.target.value) }))} onBlur={() => void onSave(draft)} /></div>
+          <div><Label className="mb-1 block text-xs">Buffer na (min.)</Label><Input type="number" min={0} max={1440} value={draft.buffer_after_minutes} disabled={unavailable} onChange={(event) => setDraft((current) => ({ ...current, buffer_after_minutes: Number(event.target.value) }))} onBlur={() => void onSave(draft)} /></div>
+          <div><Label className="mb-1 block text-xs">Vooraf boeken (uur)</Label><Input type="number" min={0} max={8760} value={draft.minimum_notice_minutes / 60} disabled={unavailable} onChange={(event) => setDraft((current) => ({ ...current, minimum_notice_minutes: Math.round(Number(event.target.value) * 60) }))} onBlur={() => void onSave(draft)} /></div>
+          <div><Label className="mb-1 block text-xs">Boekhorizon (dagen)</Label><Input type="number" min={1} max={730} value={draft.booking_horizon_days} disabled={unavailable} onChange={(event) => setDraft((current) => ({ ...current, booking_horizon_days: Number(event.target.value) }))} onBlur={() => void onSave(draft)} /></div>
+          <div><Label className="mb-1 block text-xs">Capaciteit</Label><Input type="number" min={1} max={10000} value={draft.capacity} disabled={unavailable} onChange={(event) => setDraft((current) => ({ ...current, capacity: Number(event.target.value) }))} onBlur={() => void onSave(draft)} /></div>
+          <div><Label className="mb-1 block text-xs">Annuleren tot (uur)</Label><Input type="number" min={0} max={8760} value={draft.cancellation_cutoff_minutes / 60} disabled={unavailable} onChange={(event) => setDraft((current) => ({ ...current, cancellation_cutoff_minutes: Math.round(Number(event.target.value) * 60) }))} onBlur={() => void onSave(draft)} /></div>
+        </div>
+
+        <div className="rounded-md bg-primary/5 p-2.5">
+          <p className="text-xs font-semibold">Beschikbaarheidsvoorbeeld</p>
+          {!draft.booking_enabled ? <p className="mt-1 text-xs text-muted-foreground">Schakel beschikbaarheid in om tijden of verblijven te berekenen.</p> : previewItems?.length ? (
+            <ul className="mt-1.5 space-y-1 text-xs text-muted-foreground">
+              {preview?.mode === "stay"
+                ? preview.stay_options.map((option) => <li key={`${option.arrival_date}-${option.departure_date}`}>{formatStayDate(option.arrival_date)} – {formatStayDate(option.departure_date)} · {option.nights} {option.nights === 1 ? "nacht" : "nachten"}</li>)
+                : preview?.appointment_slots.map((slot) => <li key={slot.start_at}>{formatAppointmentSlot(slot.start_at, slot.timezone)}</li>)}
+            </ul>
+          ) : <p className="mt-1 text-xs text-muted-foreground">Geen vrije momenten in de komende 14 dagen. Controleer beschikbaarheidsvensters, blokkades en boekregels.</p>}
+          <p className="mt-2 text-[10px] text-muted-foreground">Alleen-lezen voorbeeld. De live kalender gebruikt deze regels; publiek boeken blijft Gold.</p>
+        </div>
+      </div>
+    </details>
+  )
 }
 
 function ServiceCard({
@@ -156,6 +311,10 @@ function ServiceCard({
   upcomingEntries,
   calendarUnavailable,
   isAccommodation,
+  bookingSettings,
+  availabilityPreview,
+  bookingSettingsUnavailable,
+  onUpdateBookingSettings,
 }: ServiceCardProps) {
   const [isDragOver, setIsDragOver] = useState(false)
   const [localTitle, setLocalTitle] = useState(service.title)
@@ -383,6 +542,13 @@ function ServiceCard({
           )}
         </div>
 
+        <BookingSettingsPanel
+          settings={bookingSettings}
+          preview={availabilityPreview}
+          unavailable={bookingSettingsUnavailable}
+          onSave={(settings) => onUpdateBookingSettings(service.id, settings)}
+        />
+
         {/* Images drop zone */}
         <div className="space-y-2">
           <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
@@ -446,8 +612,13 @@ export function ServicesClient({
   initialServices,
   initialCalendarEntries,
   calendarUnavailable,
+  initialBookingSettings,
+  initialAvailabilityPreviews,
+  bookingSettingsUnavailable,
 }: ServicesClientProps) {
+  const router = useRouter()
   const [services, setServices] = useState<Service[]>(initialServices)
+  const [bookingSettings, setBookingSettings] = useState<ServiceBookingSettings[]>(initialBookingSettings)
   const offeringCopy = getOfferingCopy(businessCategory)
   const planningCopy = getOfferingPlanningCopy(businessCategory)
   const isAccommodation = businessCategory === "bnb"
@@ -458,6 +629,8 @@ export function ServicesClient({
   const [draggingImage, setDraggingImage] = useState<string | null>(null)
   const { setIsSaving: setHeaderSaving, setSaveState, setActionLabel, setOnAction, setActionIcon, setActionLoading, setInfoText } =
     useEditorLayout()
+
+  useEffect(() => setBookingSettings(initialBookingSettings), [initialBookingSettings])
 
   const upcomingEntriesByService = useMemo(() => {
     const now = Date.now()
@@ -566,6 +739,24 @@ export function ServicesClient({
     }
   }
 
+  const handleUpdateBookingSettings = async (serviceId: string, settings: ServiceBookingSettingsInput) => {
+    setIsSaving(true)
+    try {
+      const updated = await upsertServiceBookingSettings(serviceId, settings)
+      setBookingSettings((current) => current.map((item) => item.service_id === serviceId ? updated : item))
+      setSaveState("saved")
+      router.refresh()
+    } catch (error) {
+      console.error(error)
+      setSaveState("error")
+      toast.error("Boekingsinstellingen konden niet worden opgeslagen", {
+        description: error instanceof Error ? error.message : "Controleer de invoer en probeer opnieuw.",
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   const handleImageDragStart = (e: React.DragEvent, url: string) => {
     e.dataTransfer.setData("imageUrl", url)
     e.dataTransfer.effectAllowed = "copy"
@@ -669,6 +860,11 @@ export function ServicesClient({
                   upcomingEntries={upcomingEntriesByService.get(service.id) ?? []}
                   calendarUnavailable={calendarUnavailable}
                   isAccommodation={isAccommodation}
+                  bookingSettings={bookingSettings.find((settings) => settings.service_id === service.id)
+                    ?? createDefaultServiceBookingSettings(service.id, businessId, isAccommodation ? "stay" : "appointment")}
+                  availabilityPreview={initialAvailabilityPreviews[service.id]}
+                  bookingSettingsUnavailable={bookingSettingsUnavailable}
+                  onUpdateBookingSettings={handleUpdateBookingSettings}
                 />
               ))}
 

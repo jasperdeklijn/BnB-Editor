@@ -17,6 +17,9 @@
     "test:editor-save": "node --test tests/editor-save-queue.test.mjs",
     "test:editor-reliability": "node --test tests/editor-reliability.test.mjs",
     "test:section-editors": "node --test tests/repeating-section-editors.test.mjs",
+    "test:booking-availability": "node --test tests/booking-availability.test.mjs",
+    "test:booking-public-flow": "node --test tests/booking-public-flow.test.mjs",
+    "test:booking-lifecycle": "node --test tests/booking-lifecycle.test.mjs",
     "start": "next start"
   },
   "dependencies": {

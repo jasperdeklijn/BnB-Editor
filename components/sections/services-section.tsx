@@ -86,6 +86,97 @@ interface BookingFormState {
   company: string
 }
 
+interface PublicAppointmentSlot {
+  local_date: string
+  start_at: string
+  end_at: string
+  timezone: string
+}
+
+interface PublicBookingAvailability {
+  settings: {
+    booking_mode: "appointment" | "stay"
+    confirmation_mode: "request" | "instant"
+    timezone: string
+    minimum_nights: number
+    maximum_nights: number
+    check_in_time: string
+    check_out_time: string
+  }
+  date_bounds: { minimum: string; maximum: string }
+  appointment_slots: PublicAppointmentSlot[]
+  stay_check: {
+    available: boolean
+    reason: string
+    nights: number
+    start_at?: string
+    end_at?: string
+  } | null
+}
+
+const BOOKING_FLOW_COPY = {
+  "nl-NL": {
+    arrival: "Aankomst",
+    departure: "Vertrek",
+    chooseTime: "Kies een beschikbaar tijdstip",
+    loading: "Beschikbaarheid laden...",
+    noTimes: "Geen beschikbare tijden op deze dag.",
+    stayAvailable: (nights: number) => `${nights} ${nights === 1 ? "nacht" : "nachten"} beschikbaar.`,
+    stayUnavailable: "Deze verblijfsperiode is niet beschikbaar.",
+    confirmed: "Je boeking is direct bevestigd en staat in de planning.",
+    pending: "Je aanvraag staat als voorlopig in de planning.",
+  },
+  "en-GB": {
+    arrival: "Arrival",
+    departure: "Departure",
+    chooseTime: "Choose an available time",
+    loading: "Loading availability...",
+    noTimes: "No times are available on this day.",
+    stayAvailable: (nights: number) => `${nights} ${nights === 1 ? "night" : "nights"} available.`,
+    stayUnavailable: "This stay is not available.",
+    confirmed: "Your booking is confirmed and has been added to the calendar.",
+    pending: "Your request has been added to the calendar provisionally.",
+  },
+  "de-DE": {
+    arrival: "Anreise",
+    departure: "Abreise",
+    chooseTime: "Verfügbare Uhrzeit wählen",
+    loading: "Verfügbarkeit wird geladen...",
+    noTimes: "An diesem Tag sind keine Zeiten verfügbar.",
+    stayAvailable: (nights: number) => `${nights} ${nights === 1 ? "Nacht" : "Nächte"} verfügbar.`,
+    stayUnavailable: "Dieser Aufenthalt ist nicht verfügbar.",
+    confirmed: "Ihre Buchung ist bestätigt und im Kalender eingetragen.",
+    pending: "Ihre Anfrage wurde vorläufig in den Kalender eingetragen.",
+  },
+  "fr-FR": {
+    arrival: "Arrivée",
+    departure: "Départ",
+    chooseTime: "Choisissez une heure disponible",
+    loading: "Chargement des disponibilités...",
+    noTimes: "Aucun horaire n’est disponible ce jour-là.",
+    stayAvailable: (nights: number) => `${nights} ${nights === 1 ? "nuit disponible" : "nuits disponibles"}.`,
+    stayUnavailable: "Ce séjour n’est pas disponible.",
+    confirmed: "Votre réservation est confirmée et ajoutée au calendrier.",
+    pending: "Votre demande a été ajoutée provisoirement au calendrier.",
+  },
+} as const
+
+function getBookingFlowCopy(locale?: string) {
+  return BOOKING_FLOW_COPY[locale as keyof typeof BOOKING_FLOW_COPY] ?? BOOKING_FLOW_COPY["nl-NL"]
+}
+
+function dateInputValue(daysFromToday: number) {
+  const date = new Date()
+  date.setUTCDate(date.getUTCDate() + daysFromToday)
+  return date.toISOString().slice(0, 10)
+}
+
+function addDateInputDays(value: string, days: number) {
+  const date = new Date(`${value}T00:00:00.000Z`)
+  date.setUTCDate(date.getUTCDate() + days)
+  return date.toISOString().slice(0, 10)
+}
+
 // ---- Shared helpers ----
 
 function getBookingDefaults(isAccommodation: boolean, messages: SiteMessages) {
@@ -874,7 +965,16 @@ function ServicesBookingSpace({
   })
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [errorMsg, setErrorMsg] = useState("")
+  const [availability, setAvailability] = useState<PublicBookingAvailability | null>(null)
+  const [availabilityLoading, setAvailabilityLoading] = useState(false)
+  const [availabilityError, setAvailabilityError] = useState("")
+  const [appointmentDate, setAppointmentDate] = useState(() => dateInputValue(1))
+  const [selectedSlotStart, setSelectedSlotStart] = useState("")
+  const [arrivalDate, setArrivalDate] = useState(() => dateInputValue(1))
+  const [departureDate, setDepartureDate] = useState(() => dateInputValue(2))
+  const [bookingResultStatus, setBookingResultStatus] = useState<"pending" | "confirmed" | null>(null)
   const isAccommodation = settings.requestType === "booking_request"
+  const flowCopy = getBookingFlowCopy(locale)
 
   useEffect(() => {
     if (!form.serviceId && services[0]?.id) {
@@ -888,6 +988,111 @@ function ServicesBookingSpace({
 
   const selectedService = services.find((service) => service.id === form.serviceId) ?? null
 
+  useEffect(() => {
+    if (settings.mode !== "calendar" || !form.serviceId) return
+
+    setSelectedSlotStart("")
+    setAvailabilityError("")
+
+    if (isPreview) {
+      const previewStart = new Date()
+      previewStart.setUTCDate(previewStart.getUTCDate() + 1)
+      previewStart.setUTCHours(9, 0, 0, 0)
+      const previewEnd = new Date(previewStart.getTime() + 60 * 60 * 1000)
+      const previewMode = isAccommodation ? "stay" : "appointment"
+      const previewAvailability: PublicBookingAvailability = {
+        settings: {
+          booking_mode: previewMode,
+          confirmation_mode: "request",
+          timezone: "Europe/Amsterdam",
+          minimum_nights: 1,
+          maximum_nights: 30,
+          check_in_time: "15:00",
+          check_out_time: "11:00",
+        },
+        date_bounds: { minimum: dateInputValue(0), maximum: dateInputValue(90) },
+        appointment_slots: previewMode === "appointment" ? [{
+          local_date: appointmentDate,
+          start_at: previewStart.toISOString(),
+          end_at: previewEnd.toISOString(),
+          timezone: "Europe/Amsterdam",
+        }] : [],
+        stay_check: previewMode === "stay" ? {
+          available: true,
+          reason: "available",
+          nights: Math.max(1, Math.round((new Date(`${departureDate}T00:00:00Z`).getTime() - new Date(`${arrivalDate}T00:00:00Z`).getTime()) / 86_400_000)),
+        } : null,
+      }
+      setAvailability(previewAvailability)
+      setSelectedSlotStart(previewAvailability.appointment_slots[0]?.start_at ?? "")
+      setAvailabilityLoading(false)
+      return
+    }
+
+    if (!websiteId) {
+      setAvailability(null)
+      setAvailabilityError(messages.error)
+      return
+    }
+
+    const controller = new AbortController()
+    const loadAvailability = async () => {
+      setAvailabilityLoading(true)
+      try {
+        const query = new URLSearchParams({
+          websiteId,
+          serviceId: form.serviceId,
+          dateFrom: appointmentDate,
+          dateTo: appointmentDate,
+          arrivalDate,
+          departureDate,
+          ...(locale ? { locale } : {}),
+        })
+        const response = await fetch(`/api/booking/availability?${query}`, {
+          signal: controller.signal,
+          cache: "no-store",
+        })
+        const body = await response.json().catch(() => null)
+        if (!response.ok) throw new Error(body?.error || messages.error)
+        const nextAvailability = body as PublicBookingAvailability
+        setAvailability(nextAvailability)
+        setAvailabilityError("")
+        setSelectedSlotStart((current) => (
+          nextAvailability.appointment_slots.some((slot) => slot.start_at === current)
+            ? current
+            : nextAvailability.appointment_slots[0]?.start_at ?? ""
+        ))
+
+        if (
+          nextAvailability.settings.booking_mode === "stay"
+          && nextAvailability.stay_check?.reason === "minimum_nights"
+        ) {
+          setDepartureDate(addDateInputDays(arrivalDate, nextAvailability.settings.minimum_nights))
+        }
+      } catch (error) {
+        if (controller.signal.aborted) return
+        setAvailability(null)
+        setAvailabilityError(error instanceof Error ? error.message : messages.error)
+      } finally {
+        if (!controller.signal.aborted) setAvailabilityLoading(false)
+      }
+    }
+
+    void loadAvailability()
+    return () => controller.abort()
+  }, [
+    appointmentDate,
+    arrivalDate,
+    departureDate,
+    form.serviceId,
+    isAccommodation,
+    isPreview,
+    locale,
+    messages.error,
+    settings.mode,
+    websiteId,
+  ])
+
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setStatus("loading")
@@ -899,6 +1104,58 @@ function ServicesBookingSpace({
     }
 
     try {
+      if (settings.mode === "calendar") {
+        if (!websiteId || !selectedService || !availability) {
+          throw new Error(availabilityError || messages.error)
+        }
+
+        const selectedSlot = availability.appointment_slots.find((slot) => slot.start_at === selectedSlotStart)
+        if (availability.settings.booking_mode === "appointment" && !selectedSlot) {
+          throw new Error(flowCopy.noTimes)
+        }
+        if (availability.settings.booking_mode === "stay" && !availability.stay_check?.available) {
+          throw new Error(flowCopy.stayUnavailable)
+        }
+
+        const holdResponse = await fetch("/api/booking/holds", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            websiteId,
+            serviceId: selectedService.id,
+            locale,
+            ...(availability.settings.booking_mode === "appointment"
+              ? { startAt: selectedSlot?.start_at, endAt: selectedSlot?.end_at }
+              : { arrivalDate, departureDate }),
+          }),
+        })
+        const hold = await holdResponse.json().catch(() => null)
+        if (!holdResponse.ok) throw new Error(hold?.error || messages.error)
+
+        const confirmResponse = await fetch("/api/booking/confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            websiteId,
+            serviceId: selectedService.id,
+            holdId: hold.holdId,
+            token: hold.token,
+            name: form.name,
+            email: form.email,
+            phone: form.phone,
+            message: form.message,
+            company: form.company,
+            locale,
+          }),
+        })
+        const confirmed = await confirmResponse.json().catch(() => null)
+        if (!confirmResponse.ok) throw new Error(confirmed?.error || messages.error)
+
+        setBookingResultStatus(confirmed.status === "confirmed" ? "confirmed" : "pending")
+        setStatus("success")
+        return
+      }
+
       const res = await fetch("/api/requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -937,8 +1194,8 @@ function ServicesBookingSpace({
         serviceId: services[0]?.id ?? "",
         company: "",
       })
-    } catch {
-      setErrorMsg(messages.error)
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : messages.error)
       setStatus("error")
     }
   }
@@ -997,7 +1254,13 @@ function ServicesBookingSpace({
             <div className="flex min-h-64 flex-col items-center justify-center gap-3 text-center">
               <CheckCircle className="h-10 w-10 text-primary" />
               <p className="font-semibold text-foreground">
-                {isPreview ? messages.previewNoSubmission : settings.successText}
+                {isPreview
+                  ? messages.previewNoSubmission
+                  : bookingResultStatus === "confirmed"
+                    ? flowCopy.confirmed
+                    : bookingResultStatus === "pending"
+                      ? flowCopy.pending
+                      : settings.successText}
               </p>
             </div>
           ) : (
@@ -1031,6 +1294,118 @@ function ServicesBookingSpace({
                       </option>
                     ))}
                   </select>
+                </div>
+              ) : null}
+
+              {settings.mode === "calendar" ? (
+                <div className="rounded-xl border border-border bg-secondary/50 p-4">
+                  {availability?.settings.booking_mode === "stay" ? (
+                    <div className="space-y-3">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <label htmlFor="services-booking-arrival" className="text-sm font-medium text-foreground">
+                            {flowCopy.arrival} *
+                          </label>
+                          <input
+                            id="services-booking-arrival"
+                            type="date"
+                            min={availability.date_bounds.minimum}
+                            max={availability.date_bounds.maximum}
+                            value={arrivalDate}
+                            onChange={(event) => {
+                              const nextArrival = event.target.value
+                              setArrivalDate(nextArrival)
+                              if (departureDate <= nextArrival) setDepartureDate(addDateInputDays(nextArrival, 1))
+                            }}
+                            className="h-11 w-full rounded-lg border border-border bg-white px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label htmlFor="services-booking-departure" className="text-sm font-medium text-foreground">
+                            {flowCopy.departure} *
+                          </label>
+                          <input
+                            id="services-booking-departure"
+                            type="date"
+                            min={addDateInputDays(arrivalDate, 1)}
+                            max={availability.date_bounds.maximum}
+                            value={departureDate}
+                            onChange={(event) => setDepartureDate(event.target.value)}
+                            className="h-11 w-full rounded-lg border border-border bg-white px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <p className={`text-sm ${availability.stay_check?.available ? "text-emerald-700" : "text-muted-foreground"}`} aria-live="polite">
+                        {availabilityLoading
+                          ? flowCopy.loading
+                          : availability.stay_check?.available
+                            ? flowCopy.stayAvailable(availability.stay_check.nights)
+                            : flowCopy.stayUnavailable}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="space-y-1.5">
+                        <label htmlFor="services-booking-appointment-date" className="text-sm font-medium text-foreground">
+                          {messages.date} *
+                        </label>
+                        <input
+                          id="services-booking-appointment-date"
+                          type="date"
+                          min={availability?.date_bounds.minimum ?? dateInputValue(0)}
+                          max={availability?.date_bounds.maximum}
+                          value={appointmentDate}
+                          onChange={(event) => setAppointmentDate(event.target.value)}
+                          className="h-11 w-full rounded-lg border border-border bg-white px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                          required
+                        />
+                      </div>
+                      <fieldset>
+                        <legend className="mb-2 text-sm font-medium text-foreground">{flowCopy.chooseTime} *</legend>
+                        {availabilityLoading ? (
+                          <p className="text-sm text-muted-foreground" aria-live="polite">{flowCopy.loading}</p>
+                        ) : availability?.appointment_slots.length ? (
+                          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                            {availability.appointment_slots.map((slot) => {
+                              const label = new Intl.DateTimeFormat(locale || "nl-NL", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                timeZone: availability.settings.timezone,
+                              }).format(new Date(slot.start_at))
+                              return (
+                                <label
+                                  key={slot.start_at}
+                                  className={`flex min-h-11 cursor-pointer items-center justify-center rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${selectedSlotStart === slot.start_at ? "border-primary bg-primary text-primary-foreground" : "border-border bg-white text-foreground hover:border-primary/60"}`}
+                                >
+                                  <input
+                                    type="radio"
+                                    name="services-booking-slot"
+                                    value={slot.start_at}
+                                    checked={selectedSlotStart === slot.start_at}
+                                    onChange={() => setSelectedSlotStart(slot.start_at)}
+                                    className="sr-only"
+                                    required
+                                  />
+                                  {label}
+                                </label>
+                              )
+                            })}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground" aria-live="polite">{flowCopy.noTimes}</p>
+                        )}
+                      </fieldset>
+                    </div>
+                  )}
+
+                  {availabilityError ? (
+                    <div className="mt-3 flex items-start gap-2 text-sm text-red-700" role="alert">
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                      {availabilityError}
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
 
@@ -1078,19 +1453,21 @@ function ServicesBookingSpace({
                     className="h-11 w-full rounded-lg border border-border bg-white px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label htmlFor="services-booking-date" className="text-sm font-medium text-foreground">
-                    {isAccommodation ? messages.checkInDate : messages.date} *
-                  </label>
-                  <input
-                    id="services-booking-date"
-                    type="date"
-                    value={form.date}
-                    onChange={(event) => update("date", event.target.value)}
-                    className="h-11 w-full rounded-lg border border-border bg-white px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
-                    required
-                  />
-                </div>
+                {settings.mode !== "calendar" ? (
+                  <div className="space-y-1.5">
+                    <label htmlFor="services-booking-date" className="text-sm font-medium text-foreground">
+                      {isAccommodation ? messages.checkInDate : messages.date} *
+                    </label>
+                    <input
+                      id="services-booking-date"
+                      type="date"
+                      value={form.date}
+                      onChange={(event) => update("date", event.target.value)}
+                      className="h-11 w-full rounded-lg border border-border bg-white px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                      required
+                    />
+                  </div>
+                ) : null}
               </div>
 
               <div className="space-y-1.5">
@@ -1117,7 +1494,15 @@ function ServicesBookingSpace({
 
               <Button
                 type="submit"
-                disabled={status === "loading"}
+                disabled={
+                  status === "loading"
+                  || availabilityLoading
+                  || (settings.mode === "calendar" && (
+                    !availability
+                    || (availability.settings.booking_mode === "appointment" && !selectedSlotStart)
+                    || (availability.settings.booking_mode === "stay" && !availability.stay_check?.available)
+                  ))
+                }
                 className="w-full rounded-full bg-[var(--section-accent)] text-[var(--section-accent-foreground)] brightness-100 hover:brightness-90"
               >
                 {status === "loading" ? (

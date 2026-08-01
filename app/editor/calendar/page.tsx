@@ -11,6 +11,7 @@ import {
 } from "@/lib/supabase/calendar"
 import { getServices } from "@/lib/supabase/services"
 import { getOfferingCopy } from "@/lib/business/categories"
+import { getBookingLifecycleData, type BookingLifecycleData } from "@/lib/booking/lifecycle"
 
 export const metadata = {
   title: "Kalender | Website Maker",
@@ -44,7 +45,7 @@ function getCalendarCopy(category: string | null | undefined) {
 export default async function CalendarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ service?: string }>
+  searchParams: Promise<{ service?: string; booking?: string }>
 }) {
   const params = await searchParams
   const supabase = await createClient()
@@ -61,6 +62,8 @@ export default async function CalendarPage({
   let entries: CalendarEntry[] = []
   let availabilityWindows: CalendarAvailabilityWindow[] = []
   let calendarError: string | null = null
+  let lifecycleData: BookingLifecycleData = { history: [], changeRequests: [] }
+  let lifecycleUnavailable = false
   const services = await getServices(business.id)
 
   try {
@@ -73,9 +76,17 @@ export default async function CalendarPage({
     calendarError = "Kalendertabellen zijn nog niet beschikbaar. Voer de calendar_entries migratie uit voordat u boekingen, afspraken of beschikbaarheid beheert."
   }
 
+  try {
+    lifecycleData = await getBookingLifecycleData(business.id)
+  } catch (error) {
+    console.error("[calendar] Failed to load booking lifecycle:", error)
+    lifecycleUnavailable = true
+  }
+
   const initialOfferingId = services.some((service) => service.id === params?.service)
     ? params.service!
     : null
+  const initialEntryId = entries.some((entry) => entry.id === params?.booking) ? params.booking! : null
 
   return (
     <EditorPageShell
@@ -88,8 +99,11 @@ export default async function CalendarPage({
         businessCategory={business.category ?? ""}
         initialEntries={entries}
         initialAvailabilityWindows={availabilityWindows}
+        initialLifecycle={lifecycleData}
+        lifecycleUnavailable={lifecycleUnavailable}
         offerings={services}
         initialOfferingId={initialOfferingId}
+        initialEntryId={initialEntryId}
         schemaError={calendarError}
         copy={calendarCopy}
         offeringCopy={offeringCopy}

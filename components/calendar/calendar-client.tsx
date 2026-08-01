@@ -3,10 +3,14 @@
 import { Fragment, useEffect, useMemo, useState, useTransition } from "react"
 import { AlertTriangle, Ban, CalendarDays, ChevronLeft, ChevronRight, Clock, Filter, Plus, Save, Trash2, X } from "lucide-react"
 import {
+  acceptRescheduleRequestAction,
   createAvailabilityWindowAction,
   createCalendarEntryAction,
   deleteAvailabilityWindowAction,
   deleteCalendarEntryAction,
+  proposeAlternativeAction,
+  rejectRescheduleRequestAction,
+  transitionBookingAction,
   updateCalendarEntryAction,
 } from "@/app/editor/calendar/actions"
 import { Button } from "@/components/ui/button"
@@ -25,6 +29,7 @@ import type {
 } from "@/lib/supabase/calendar"
 import type { Service } from "@/lib/supabase/services"
 import type { BusinessCategory } from "@/lib/business/categories"
+import type { BookingChangeRequest, BookingHistoryItem, BookingLifecycleData } from "@/lib/booking/lifecycle"
 
 type CalendarView = "month" | "week" | "day"
 
@@ -33,8 +38,11 @@ interface CalendarClientProps {
   businessCategory: BusinessCategory | string
   initialEntries: CalendarEntry[]
   initialAvailabilityWindows: CalendarAvailabilityWindow[]
+  initialLifecycle: BookingLifecycleData
+  lifecycleUnavailable: boolean
   offerings: Service[]
   initialOfferingId?: string | null
+  initialEntryId?: string | null
   schemaError?: string | null
   copy: {
     title: string
@@ -65,6 +73,9 @@ type EntryFormState = {
   end_at: string
   all_day: boolean
   internal_notes: string
+  contact_request_id: string | null
+  source: CalendarEntrySource
+  metadata: Record<string, unknown>
 }
 
 type AvailabilityFormState = {
@@ -297,6 +308,9 @@ function getDefaultFormState(category: BusinessCategory | string, startDate: Dat
     end_at: toDateTimeLocal(end),
     all_day: false,
     internal_notes: "",
+    contact_request_id: null,
+    source: "manual",
+    metadata: {},
   }
 }
 
@@ -316,6 +330,9 @@ function getBlockedFormState(startDate: Date): EntryFormState {
     end_at: toDateTimeLocal(end),
     all_day: true,
     internal_notes: "",
+    contact_request_id: null,
+    source: "manual",
+    metadata: {},
   }
 }
 
@@ -333,6 +350,9 @@ function formStateFromEntry(entry: CalendarEntry): EntryFormState {
     end_at: toDateTimeLocal(entry.end_at),
     all_day: entry.all_day,
     internal_notes: entry.internal_notes,
+    contact_request_id: entry.contact_request_id,
+    source: entry.source,
+    metadata: entry.metadata,
   }
 }
 
@@ -342,8 +362,8 @@ function normalizeFormPayload(form: EntryFormState) {
     entry_type: form.entry_type,
     status: form.status,
     service_id: form.service_id || null,
-    contact_request_id: null,
-    source: "manual" as const,
+    contact_request_id: form.contact_request_id,
+    source: form.source,
     customer_name: form.customer_name,
     customer_email: form.customer_email,
     customer_phone: form.customer_phone,
@@ -352,7 +372,7 @@ function normalizeFormPayload(form: EntryFormState) {
     all_day: form.all_day,
     timezone: "Europe/Amsterdam",
     internal_notes: form.internal_notes,
-    metadata: {},
+    metadata: form.metadata,
   }
 }
 
@@ -361,14 +381,19 @@ export function CalendarClient({
   businessCategory,
   initialEntries,
   initialAvailabilityWindows,
+  initialLifecycle,
+  lifecycleUnavailable,
   offerings,
   initialOfferingId,
+  initialEntryId,
   schemaError,
   copy,
   offeringCopy,
 }: CalendarClientProps) {
   const [entries, setEntries] = useState(initialEntries)
   const [availabilityWindows, setAvailabilityWindows] = useState(initialAvailabilityWindows)
+  const [lifecycleHistory, setLifecycleHistory] = useState(initialLifecycle.history)
+  const [changeRequests, setChangeRequests] = useState(initialLifecycle.changeRequests)
   const [activeView, setActiveView] = useState<CalendarView>("month")
   const [cursorDate, setCursorDate] = useState(() => new Date())
   const [filters, setFilters] = useState<CalendarFilterState>({
@@ -378,7 +403,10 @@ export function CalendarClient({
     dateFrom: "",
     dateTo: "",
   })
-  const [form, setForm] = useState<EntryFormState | null>(null)
+  const [form, setForm] = useState<EntryFormState | null>(() => {
+    const initialEntry = initialEntries.find((entry) => entry.id === initialEntryId)
+    return initialEntry ? formStateFromEntry(initialEntry) : null
+  })
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   const [availabilityForm, setAvailabilityForm] = useState<AvailabilityFormState>({
     service_id: initialOfferingId ?? "",
@@ -465,6 +493,13 @@ export function CalendarClient({
     : `Er zijn ${filteredCountLabel}, maar geen actieve items in de komende 30 dagen. Kies een andere periode in de kalender${hasActiveFilters ? " of pas de filters aan" : ""}.`
   const formConflicts = form ? getEntryConflicts(form, entries) : []
   const availabilityWarning = form ? getAvailabilityWarning(form, availabilityWindows) : null
+  const formLifecycleHistory = form?.id ? lifecycleHistory.filter((item) => item.calendar_entry_id === form.id) : []
+  const formChangeRequests = form?.id ? changeRequests.filter((request) => request.calendar_entry_id === form.id) : []
+
+  useEffect(() => {
+    setLifecycleHistory(initialLifecycle.history)
+    setChangeRequests(initialLifecycle.changeRequests)
+  }, [initialLifecycle])
 
   useEffect(() => {
     setHeaderSaving(isPending)
@@ -576,10 +611,14 @@ export function CalendarClient({
     })
   }
 
-  const changeEntryStatus = (entryId: string, status: CalendarEntryStatus) => {
+  const changeEntryStatus = (entryId: string, status: CalendarEntryStatus, privateNote = "") => {
     startTransition(async () => {
       try {
-        const result = await updateCalendarEntryAction(entryId, { status })
+        const currentEntry = entries.find((entry) => entry.id === entryId)
+        const isOnlineBooking = currentEntry?.metadata?.source === "booking_engine"
+        const result = isOnlineBooking && (status === "confirmed" || status === "cancelled")
+          ? await transitionBookingAction(entryId, status, privateNote)
+          : await updateCalendarEntryAction(entryId, { status })
 
         if (!result.success) {
           setSaveState("error")
@@ -596,6 +635,40 @@ export function CalendarClient({
         setSaveState("error")
         setStatusMessage({ tone: "error", text: "Status kon niet worden bijgewerkt." })
       }
+    })
+  }
+
+  const proposeAlternative = (entryId: string, input: { startAt: string; endAt: string; customerMessage: string; privateNote: string }) => {
+    startTransition(async () => {
+      const result = await proposeAlternativeAction(entryId, input)
+      if (!result.success) {
+        setSaveState("error")
+        setStatusMessage({ tone: "error", text: result.error })
+        return
+      }
+      setChangeRequests((current) => [result.request, ...current.filter((request) => request.id !== result.request.id)])
+      setSaveState("saved")
+      setStatusMessage({ tone: "success", text: "Alternatief tijdstip is voorgesteld." })
+    })
+  }
+
+  const resolveRescheduleRequest = (requestId: string, accept: boolean, privateNote = "") => {
+    startTransition(async () => {
+      const result = accept
+        ? await acceptRescheduleRequestAction(requestId)
+        : await rejectRescheduleRequestAction(requestId, privateNote)
+      if (!result.success) {
+        setSaveState("error")
+        setStatusMessage({ tone: "error", text: result.error })
+        return
+      }
+      setChangeRequests((current) => current.map((request) => request.id === requestId ? { ...request, status: accept ? "accepted" : "rejected" } : request))
+      if (accept && "entry" in result) {
+        setEntries((current) => current.map((entry) => entry.id === result.entry.id ? result.entry : entry))
+        setForm((current) => current?.id === result.entry.id ? formStateFromEntry(result.entry) : current)
+      }
+      setSaveState("saved")
+      setStatusMessage({ tone: "success", text: accept ? "Verplaatsingsverzoek toegepast." : "Verplaatsingsverzoek afgewezen." })
     })
   }
 
@@ -850,12 +923,17 @@ export function CalendarClient({
               offerings={offerings}
               conflicts={formConflicts}
               availabilityWarning={availabilityWarning}
+              lifecycleHistory={formLifecycleHistory}
+              changeRequests={formChangeRequests}
+              lifecycleUnavailable={lifecycleUnavailable}
               isSaving={isPending}
               disabled={Boolean(schemaError)}
               onChange={setForm}
               onCancel={() => setForm(null)}
               onSubmit={submitForm}
               onStatusChange={changeEntryStatus}
+              onProposeAlternative={proposeAlternative}
+              onResolveReschedule={resolveRescheduleRequest}
               onDelete={deleteEntry}
             />
           </div>
@@ -924,12 +1002,17 @@ export function CalendarClient({
               offerings={offerings}
               conflicts={formConflicts}
               availabilityWarning={availabilityWarning}
+              lifecycleHistory={formLifecycleHistory}
+              changeRequests={formChangeRequests}
+              lifecycleUnavailable={lifecycleUnavailable}
               isSaving={isPending}
               disabled={Boolean(schemaError)}
               onChange={setForm}
               onCancel={() => setForm(null)}
               onSubmit={submitForm}
               onStatusChange={changeEntryStatus}
+              onProposeAlternative={proposeAlternative}
+              onResolveReschedule={resolveRescheduleRequest}
               onDelete={deleteEntry}
             />
           </div>
@@ -1638,12 +1721,17 @@ function EntryForm({
   offerings,
   conflicts,
   availabilityWarning,
+  lifecycleHistory,
+  changeRequests,
+  lifecycleUnavailable,
   isSaving,
   disabled,
   onChange,
   onCancel,
   onSubmit,
   onStatusChange,
+  onProposeAlternative,
+  onResolveReschedule,
   onDelete,
 }: {
   form: EntryFormState | null
@@ -1652,14 +1740,31 @@ function EntryForm({
   offerings: Service[]
   conflicts: CalendarEntry[]
   availabilityWarning: string | null
+  lifecycleHistory: BookingHistoryItem[]
+  changeRequests: BookingChangeRequest[]
+  lifecycleUnavailable: boolean
   isSaving: boolean
   disabled: boolean
   onChange: (form: EntryFormState) => void
   onCancel: () => void
   onSubmit: () => void
-  onStatusChange: (entryId: string, status: CalendarEntryStatus) => void
+  onStatusChange: (entryId: string, status: CalendarEntryStatus, privateNote?: string) => void
+  onProposeAlternative: (entryId: string, input: { startAt: string; endAt: string; customerMessage: string; privateNote: string }) => void
+  onResolveReschedule: (requestId: string, accept: boolean, privateNote?: string) => void
   onDelete: (entryId: string) => void
 }) {
+  const [lifecyclePrivateNote, setLifecyclePrivateNote] = useState("")
+  const [proposalStart, setProposalStart] = useState(form?.start_at ?? "")
+  const [proposalEnd, setProposalEnd] = useState(form?.end_at ?? "")
+  const [proposalMessage, setProposalMessage] = useState("")
+
+  useEffect(() => {
+    setLifecyclePrivateNote("")
+    setProposalStart(form?.start_at ?? "")
+    setProposalEnd(form?.end_at ?? "")
+    setProposalMessage("")
+  }, [form?.id, form?.start_at, form?.end_at])
+
   if (!form) {
     return (
       <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
@@ -1674,6 +1779,21 @@ function EntryForm({
         </div>
       </section>
     )
+  }
+
+  const isOnlineBooking = form.metadata?.source === "booking_engine"
+  const openCustomerRequests = changeRequests.filter((request) => request.status === "pending" && request.requested_by === "customer")
+
+  const propose = () => {
+    const start = new Date(proposalStart)
+    const end = new Date(proposalEnd)
+    if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end <= start) return
+    onProposeAlternative(form.id!, {
+      startAt: start.toISOString(),
+      endAt: end.toISOString(),
+      customerMessage: proposalMessage,
+      privateNote: lifecyclePrivateNote,
+    })
   }
 
   return (
@@ -1692,13 +1812,66 @@ function EntryForm({
           <div className="flex flex-col gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-amber-900">Deze aanvraag wacht op bevestiging.</p>
             <div className="flex gap-2">
-              <Button type="button" size="sm" onClick={() => onStatusChange(form.id!, "confirmed")} disabled={disabled || isSaving}>
+              <Button type="button" size="sm" onClick={() => onStatusChange(form.id!, "confirmed", lifecyclePrivateNote)} disabled={disabled || isSaving || (isOnlineBooking && lifecycleUnavailable)}>
                 Accepteren
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => onStatusChange(form.id!, "cancelled")} disabled={disabled || isSaving}>
+              <Button type="button" variant="outline" size="sm" onClick={() => onStatusChange(form.id!, "cancelled", lifecyclePrivateNote)} disabled={disabled || isSaving || (isOnlineBooking && lifecycleUnavailable)}>
                 Afwijzen
               </Button>
             </div>
+          </div>
+        ) : null}
+        {isOnlineBooking ? (
+          <div className="space-y-4 rounded-md border border-primary/20 bg-primary/5 p-3">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Boekingsverloop</p>
+              <p className="mt-1 text-xs text-muted-foreground">Klantmeldingen bevatten nooit de interne notitie hieronder.</p>
+            </div>
+            {lifecycleUnavailable ? (
+              <p className="rounded-md border border-dashed border-border bg-background p-2 text-xs text-muted-foreground">Voer de Phase 3-migratie uit om statusgeschiedenis en klantacties te gebruiken.</p>
+            ) : null}
+            <div className="grid gap-1.5">
+              <Label htmlFor="booking-lifecycle-private-note">Interne actienotitie</Label>
+              <Textarea id="booking-lifecycle-private-note" rows={2} maxLength={2000} value={lifecyclePrivateNote} onChange={(event) => setLifecyclePrivateNote(event.target.value)} placeholder="Alleen zichtbaar voor de eigenaar" />
+            </div>
+
+            {openCustomerRequests.map((request) => (
+              <div key={request.id} className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+                <p className="font-semibold">Klant vraagt een ander tijdstip</p>
+                <p className="mt-1">{formatEntryRange({ ...form, id: form.id!, business_id: "", service_id: form.service_id || null, contact_request_id: form.contact_request_id, source: form.source, created_at: request.created_at, updated_at: request.created_at, start_at: request.proposed_start_at, end_at: request.proposed_end_at } as CalendarEntry)}</p>
+                {request.customer_message ? <p className="mt-1 text-xs">{request.customer_message}</p> : null}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button type="button" size="sm" disabled={disabled || isSaving || lifecycleUnavailable} onClick={() => onResolveReschedule(request.id, true, lifecyclePrivateNote)}>Toepassen</Button>
+                  <Button type="button" size="sm" variant="outline" disabled={disabled || isSaving || lifecycleUnavailable} onClick={() => onResolveReschedule(request.id, false, lifecyclePrivateNote)}>Afwijzen</Button>
+                </div>
+              </div>
+            ))}
+
+            {form.status === "pending" || form.status === "confirmed" ? (
+              <details className="rounded-md border border-border bg-background p-3">
+                <summary className="cursor-pointer text-sm font-semibold">Alternatief tijdstip voorstellen</summary>
+                <div className="mt-3 grid gap-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div><Label htmlFor="booking-proposal-start">Start</Label><Input id="booking-proposal-start" className="mt-1" type="datetime-local" value={proposalStart} onChange={(event) => setProposalStart(event.target.value)} /></div>
+                    <div><Label htmlFor="booking-proposal-end">Einde</Label><Input id="booking-proposal-end" className="mt-1" type="datetime-local" value={proposalEnd} onChange={(event) => setProposalEnd(event.target.value)} /></div>
+                  </div>
+                  <div><Label htmlFor="booking-proposal-message">Bericht aan klant</Label><Textarea id="booking-proposal-message" className="mt-1" rows={2} maxLength={1000} value={proposalMessage} onChange={(event) => setProposalMessage(event.target.value)} /></div>
+                  <Button type="button" variant="outline" disabled={disabled || isSaving || lifecycleUnavailable || !proposalStart || !proposalEnd} onClick={propose}>Voorstel versturen</Button>
+                </div>
+              </details>
+            ) : null}
+
+            {lifecycleHistory.length > 0 ? (
+              <ol className="space-y-2 border-t border-primary/15 pt-3">
+                {lifecycleHistory.map((item) => (
+                  <li key={item.id} className="rounded-md bg-background p-2 text-xs">
+                    <div className="flex justify-between gap-2"><span className="font-semibold capitalize">{item.event_type.replaceAll("_", " ")}</span><time className="text-muted-foreground">{new Intl.DateTimeFormat("nl-NL", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.created_at))}</time></div>
+                    {item.public_message ? <p className="mt-1 text-muted-foreground">Klantbericht: {item.public_message}</p> : null}
+                    {item.private_note ? <p className="mt-1 text-muted-foreground">Intern: {item.private_note}</p> : null}
+                  </li>
+                ))}
+              </ol>
+            ) : null}
           </div>
         ) : null}
         {conflicts.length > 0 || availabilityWarning ? (

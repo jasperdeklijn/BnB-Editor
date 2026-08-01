@@ -27,6 +27,15 @@ Recommended v1: owner approval by default, capacity one, configurable service du
 
 Payment-provider integration, checkout, deposits, refunds, and payment webhooks are explicitly outside this plan.
 
+### Phase 1 decisions (implemented 2026-08-01)
+
+- Public booking and availability-calendar runtime remain Gold capabilities. Phase 1 only adds owner configuration and a read-only editor preview; it does not expose a public booking endpoint.
+- New settings default to disabled, owner approval, capacity one, a 60-minute duration, 30-minute slot interval, 24-hour notice, and a 90-day horizon.
+- B&B offerings default to stay mode with one minimum night, 30 maximum nights, 15:00 check-in, and 11:00 check-out. Other categories default to appointment mode.
+- Service-specific availability windows override business-wide windows for the same weekday, including an inactive service-specific row that deliberately closes that day.
+- Pending and confirmed entries consume capacity. Cancelled, completed, and note entries do not. Blocked entries always block the affected service or all services when they are business-wide.
+- Times are calculated in the configured IANA timezone and nonexistent local times during a DST transition are rejected.
+
 ## Data design
 
 ### Service booking configuration
@@ -146,26 +155,32 @@ Editor preview must simulate success and must never create holds, bookings, emai
 
 ### Phase 1: rules and availability engine
 
-- [ ] Confirm product decisions and supported plan tiers.
-- [ ] Add service booking settings and indexes/RLS.
-- [ ] Implement timezone-safe appointment and stay availability calculations.
-- [ ] Add conflict, capacity, buffer, notice, and horizon tests.
-- [ ] Render read-only availability in the editor before accepting submissions.
+- [x] Confirm product decisions and supported plan tiers.
+- [x] Add service booking settings and indexes/RLS.
+- [x] Implement timezone-safe appointment and stay availability calculations.
+- [x] Add conflict, capacity, buffer, notice, and horizon tests.
+- [x] Render read-only availability in the editor before accepting submissions.
+
+Implementation note: source, bootstrap SQL, and migration coverage are complete. Apply `20260801120000_add_service_booking_settings.sql` to the target Supabase project before expecting settings to persist there. No public booking submission path was added in Phase 1.
 
 ### Phase 2: public booking flow
 
-- [ ] Add authenticated-by-context public availability endpoint with rate limiting.
-- [ ] Build accessible date/time and stay-range selectors.
-- [ ] Add short-lived holds and transactional final revalidation.
-- [ ] Create pending or confirmed calendar entries according to service settings.
-- [ ] Keep preview completely side-effect free.
+- [x] Add authenticated-by-context public availability endpoint with rate limiting.
+- [x] Build accessible date/time and stay-range selectors.
+- [x] Add short-lived holds and transactional final revalidation.
+- [x] Create pending or confirmed calendar entries according to service settings.
+- [x] Keep preview completely side-effect free.
+
+Implementation note: calendar-mode service sections now use the published live snapshot as their public context, enforce the Gold booking entitlement server-side, and expose rate-limited availability, hold, and confirmation endpoints. Holds expire after ten minutes; service-level advisory locks and a final database recheck prevent capacity races before the request and calendar entry are created in one transaction. Preview uses local simulated values and returns before any booking request. Apply both Booking Engine migrations through `20260801130000_add_public_booking_holds.sql` before enabling this on a deployed site. No payments, invoice generation, notifications, or customer lifecycle links were added. Source tests, TypeScript, focused lint, entitlement/snapshot/multilingual regressions, and the production build pass; an interactive browser pass remains outstanding because the desktop browser connection was unavailable.
 
 ### Phase 3: lifecycle management
 
-- [ ] Add idempotent booking notifications.
-- [ ] Add secure customer view/cancel/reschedule links.
-- [ ] Add owner approve, decline, and alternative-time actions.
-- [ ] Record status history without leaking private notes.
+- [x] Add idempotent booking notifications.
+- [x] Add secure customer view/cancel/reschedule links.
+- [x] Add owner approve, decline, and alternative-time actions.
+- [x] Record status history without leaking private notes.
+
+Implementation note: lifecycle changes stay attached to the existing `calendar_entries` record. The Phase 3 migration adds versioned customer access, append-only public/private history, change requests, and an idempotent notification outbox. Customer links use an expiring HMAC signature and expose only explicitly selected public fields; owner notes are stored separately and never serialized by the customer API. Replacement times are checked with the availability engine and capacity is rechecked under a service advisory lock before an accepted proposal is applied. Initial delivery is attempted immediately and failed outbox rows retry through the authenticated ten-minute cron. Configure `BOOKING_LINK_SECRET` explicitly in production (the service-role key is only a server-side fallback), retain `CRON_SECRET`, and configure the existing SMTP variables before enabling mail. Apply `20260801140000_add_booking_lifecycle.sql` after the Phase 1 and Phase 2 migrations. No payment or invoice behavior was added. Focused lint, TypeScript, 46 booking/entitlement/snapshot/multilingual tests, and the production build pass; live SMTP, migrated Supabase transactions, and interactive browser rendering remain deployment checks because those external/runtime surfaces were unavailable locally.
 
 ### Phase 4: calendar interoperability
 
