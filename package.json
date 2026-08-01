@@ -16,6 +16,7 @@
     "test:editor-inspector": "node --test tests/editor-inspector-navigation.test.mjs",
     "test:editor-save": "node --test tests/editor-save-queue.test.mjs",
     "test:editor-reliability": "node --test tests/editor-reliability.test.mjs",
+    "test:section-editors": "node --test tests/repeating-section-editors.test.mjs",
     "start": "next start"
   },
   "dependencies": {

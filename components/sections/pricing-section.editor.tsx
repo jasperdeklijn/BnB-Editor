@@ -1,8 +1,9 @@
 "use client"
 
-import { Plus, Trash2, Type } from "lucide-react"
+import { Plus, Type } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { RepeatingItemActions, moveRepeatingItem } from "@/components/editor/repeating-item-actions"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SectionLinkSelect } from "@/components/editor/section-link-select"
@@ -27,6 +28,19 @@ export function PricingSectionEditor({ section, updateField, sectionTargetOption
   const saveTariffs = (next: TariffItem[]) => updateField("tariffs", next)
   const updatePlan = (index: number, values: Partial<PricingPlan>) => savePlans(plans.map((plan, planIndex) => planIndex === index ? { ...plan, ...values } : plan))
   const updateTariff = (index: number, values: Partial<TariffItem>) => saveTariffs(tariffs.map((item, itemIndex) => itemIndex === index ? { ...item, ...values } : item))
+  const duplicatePlan = (index: number) => {
+    const copyId = `plan-${Date.now()}`
+    const copy = {
+      ...plans[index],
+      id: copyId,
+      features: (plans[index].features || []).map((feature, featureIndex) => typeof feature === "string" ? feature : { ...feature, id: `${copyId}-feature-${featureIndex + 1}` }),
+    }
+    savePlans([...plans.slice(0, index + 1), copy, ...plans.slice(index + 1)])
+  }
+  const duplicateTariff = (index: number) => {
+    const copy = { ...tariffs[index], id: `tariff-${Date.now()}` }
+    saveTariffs([...tariffs.slice(0, index + 1), copy, ...tariffs.slice(index + 1)])
+  }
 
   return (
     <Card className="space-y-4 p-4">
@@ -47,7 +61,7 @@ export function PricingSectionEditor({ section, updateField, sectionTargetOption
           <div><p className="text-sm font-semibold">Pakketten</p><p className="text-xs text-muted-foreground">Voeg zelf zoveel pakketten toe als nodig.</p></div>
           {plans.map((plan, index) => (
             <div key={plan.id ?? index} className="space-y-2 rounded-lg border border-border p-3">
-              <div className="flex items-center justify-between"><span className="text-xs font-semibold">Pakket {index + 1}</span><Button type="button" variant="ghost" size="icon-sm" aria-label={`Pakket ${index + 1} verwijderen`} onClick={() => savePlans(plans.filter((_, planIndex) => planIndex !== index))}><Trash2 className="h-4 w-4" /></Button></div>
+              <div className="flex items-center justify-between"><span className="text-xs font-semibold">Pakket {index + 1}</span><RepeatingItemActions itemLabel={`Pakket ${index + 1}`} index={index} count={plans.length} onMove={(direction) => savePlans(moveRepeatingItem(plans, index, direction))} onDuplicate={() => duplicatePlan(index)} onDelete={() => savePlans(plans.filter((_, planIndex) => planIndex !== index))} /></div>
               <Input value={plan.name || ""} onChange={(event) => updatePlan(index, { name: event.target.value })} placeholder="Pakketnaam" />
               <div className="grid grid-cols-2 gap-2"><Input value={plan.price || ""} onChange={(event) => updatePlan(index, { price: event.target.value })} placeholder="Prijs" /><Input value={plan.period || ""} onChange={(event) => updatePlan(index, { period: event.target.value })} placeholder="Periode" /></div>
               <textarea value={plan.description || ""} onChange={(event) => updatePlan(index, { description: event.target.value })} placeholder="Beschrijving" className="min-h-16 w-full resize-none rounded-lg border border-input bg-background p-2 text-sm" />
@@ -66,7 +80,7 @@ export function PricingSectionEditor({ section, updateField, sectionTargetOption
           <div><p className="text-sm font-semibold">Tarievenlijst</p><p className="text-xs text-muted-foreground">Een menu met losse diensten en prijzen.</p></div>
           {tariffs.map((item, index) => (
             <div key={item.id ?? index} className="space-y-2 rounded-lg border border-border p-3">
-              <div className="flex items-center justify-between"><span className="text-xs font-semibold">Tarief {index + 1}</span><Button type="button" variant="ghost" size="icon-sm" aria-label={`Tarief ${index + 1} verwijderen`} onClick={() => saveTariffs(tariffs.filter((_, itemIndex) => itemIndex !== index))}><Trash2 className="h-4 w-4" /></Button></div>
+              <div className="flex items-center justify-between"><span className="text-xs font-semibold">Tarief {index + 1}</span><RepeatingItemActions itemLabel={`Tarief ${index + 1}`} index={index} count={tariffs.length} onMove={(direction) => saveTariffs(moveRepeatingItem(tariffs, index, direction))} onDuplicate={() => duplicateTariff(index)} onDelete={() => saveTariffs(tariffs.filter((_, itemIndex) => itemIndex !== index))} /></div>
               <div className="grid grid-cols-[1fr_110px] gap-2"><Input value={item.name || ""} onChange={(event) => updateTariff(index, { name: event.target.value })} placeholder="Dienst" /><Input value={item.price || ""} onChange={(event) => updateTariff(index, { price: event.target.value })} placeholder="Prijs" /></div>
               <Input value={item.description || ""} onChange={(event) => updateTariff(index, { description: event.target.value })} placeholder="Korte omschrijving" />
               <Input value={item.category || ""} onChange={(event) => updateTariff(index, { category: event.target.value })} placeholder="Categorie (optioneel)" />

@@ -130,12 +130,11 @@ Repeating visitor content carries stable item ids. Translation overlays are matc
 
 - Component: `components/sections/features-section.tsx`
 - Purpose: renders a list of business strengths or benefits.
-- Editable in the inspector: `title`, comma-separated feature text.
+- Editable in the inspector: `title` and individually managed feature items with add, duplicate, reorder, and delete controls.
 - Supported content JSON:
   - `title`: section heading.
-  - `features`: array of strings rendered as feature rows/cards.
+  - `features`: array of `{ id, text }` items (legacy strings remain renderable).
   - `layout`: feature grid, two columns, large cards, compact list, feature cards, or feature band.
-- Note: the renderer reads `features`. The current inspector input displays `features` but writes the edited comma-separated value to `items`, so this field should be checked before relying on inspector edits.
 
 ### `contact`
 
@@ -154,38 +153,36 @@ Repeating visitor content carries stable item ids. Translation overlays are matc
 
 - Component: `components/sections/footer-section.tsx`
 - Purpose: renders the bottom footer with company copy, link columns, and social links.
-- Editable in the inspector: only shared layout/style controls are currently exposed.
+- Editable in the inspector: company copy/details, visibility controls, link columns, individual links, social links, and shared layout/style controls. Repeating content supports add, duplicate, reorder, and delete actions.
 - Supported content JSON:
   - `companyName`: visible company name.
   - `companyDescription`: short footer description.
   - `columns`: array of `{ title, links }`, where links are `{ label, href }`.
   - `socialLinks`: array of `{ label, href }`.
   - `layout`: footer columns, reversed footer, large footer, compact footer, footer blocks, or centered footer.
-- Note: registry defaults currently write `brandName` and `copyright`, while the renderer reads `companyName` and computes copyright from the current year.
+- Legacy `brandName` remains an editor fallback for older footer content; new edits write `companyName`.
 
 ### `testimonials`
 
 - Component: `components/sections/testimonials-section.tsx`
 - Purpose: renders customer quotes and ratings.
-- Editable in the inspector: `title`, `subtitle`.
+- Editable in the inspector: `title`, `subtitle`, and each review's name, role, quote, rating, and optional image URL. Reviews support add, duplicate, reorder, and delete actions.
 - Supported content JSON:
   - `title`: section heading.
   - `subtitle`: supporting copy.
   - `items`: array of `{ id, name, role, quote, rating, image }`.
   - `layout`: review grid, two columns, large reviews, compact reviews, review cards, or review band.
-- Note: item editing is not exposed in the inspector yet. If `items` is empty, the renderer uses default testimonial examples.
 
 ### `faq`
 
 - Component: `components/sections/faq-section.tsx`
 - Purpose: renders an accordion of common questions and answers.
-- Editable in the inspector: `title`, `subtitle`.
+- Editable in the inspector: `title`, `subtitle`, and every question/answer. FAQ items support add, duplicate, reorder, and delete actions.
 - Supported content JSON:
   - `title`: section heading.
   - `subtitle`: supporting copy.
   - `items`: array of `{ id, question, answer }`.
   - `layout`: FAQ list, two columns, wide FAQ, compact FAQ, FAQ card, or FAQ band.
-- Note: item editing is not exposed in the inspector yet. If `items` is empty, the renderer uses default FAQ examples.
 
 ### `opening_hours`
 
@@ -204,13 +201,12 @@ Repeating visitor content carries stable item ids. Translation overlays are matc
 
 - Component: `components/sections/pricing-section.tsx`
 - Purpose: renders service packages or price cards.
-- Editable in the inspector: `title`, `subtitle`.
+- Editable in the inspector: `title`, `subtitle`, display mode, packages, package features and CTAs, and individual tariffs. Packages and tariffs support add, duplicate, reorder, and delete actions.
 - Supported content JSON:
   - `title`: section heading.
   - `subtitle`: supporting copy.
   - `plans`: array of `{ id, name, price, period, description, features, highlighted, ctaText, ctaHref }`.
   - `layout`: pricing grid, two columns, featured prices, compact prices, price cards, or price band.
-- Note: individual plan editing is not exposed in the inspector yet. If `plans` is empty, the renderer uses default package examples.
 
 ### `map`
 
@@ -229,7 +225,7 @@ Repeating visitor content carries stable item ids. Translation overlays are matc
 
 - Component: `components/sections/cta-section.tsx`
 - Purpose: renders a call-to-action band with one or two links.
-- Editable in the inspector: `title`, `subtitle`, `primaryCtaText`, `primaryCtaHref`, `secondaryCtaText`, `phone`, `layout`.
+- Editable in the inspector: `title`, `subtitle`, visibility plus text/target for both CTA buttons, `phone`, and `layout`.
 - Supported content JSON:
   - `title`: section heading.
   - `subtitle`: supporting copy.
@@ -237,7 +233,6 @@ Repeating visitor content carries stable item ids. Translation overlays are matc
   - `secondaryCtaText`, `secondaryCtaHref`: optional second CTA.
   - `phone`: optional phone action/display.
   - `layout`: centered CTA, text plus buttons, CTA banner, compact CTA, CTA card, or wide CTA.
-- Note: the inspector currently exposes `secondaryCtaText` and `phone`, but not `secondaryCtaHref`.
 
 ### `request_form`
 

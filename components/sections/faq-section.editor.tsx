@@ -1,10 +1,13 @@
 "use client"
 
+import { Plus, Type } from "lucide-react"
+import { RepeatingItemActions, moveRepeatingItem } from "@/components/editor/repeating-item-actions"
+import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { SectionEditorProps } from "@/components/editor/section-editor-types"
-import { Type } from "lucide-react"
+import type { FaqItem } from "@/components/sections/faq-section"
 
 const fallbackItems = [
   { id: "faq-1", question: "Hoe snel kan ik terecht?", answer: "In de meeste gevallen kunnen we binnen 1-3 werkdagen bij u terecht. Neem contact op voor een exacte planning." },
@@ -14,7 +17,12 @@ const fallbackItems = [
 ]
 
 export function FaqSectionEditor({ section, updateField, updateListItemField }: SectionEditorProps) {
-  const items = ((section.data as any).items as any[]) || fallbackItems
+  const items = (Array.isArray(section.data.items) ? section.data.items : fallbackItems) as FaqItem[]
+  const saveItems = (next: FaqItem[]) => updateField("items", next)
+  const duplicateItem = (index: number) => {
+    const copy = { ...items[index], id: `faq-${Date.now()}` }
+    saveItems([...items.slice(0, index + 1), copy, ...items.slice(index + 1)])
+  }
 
   return (
     <Card className="p-4 space-y-3">
@@ -43,6 +51,10 @@ export function FaqSectionEditor({ section, updateField, updateListItemField }: 
       </p>
       {items.map((item, index) => (
         <div key={item.id ?? index} className="space-y-2 rounded-lg border border-border p-3">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-semibold">Vraag {index + 1}</span>
+            <RepeatingItemActions itemLabel={`Vraag ${index + 1}`} index={index} count={items.length} onMove={(direction) => saveItems(moveRepeatingItem(items, index, direction))} onDuplicate={() => duplicateItem(index)} onDelete={() => saveItems(items.filter((_, itemIndex) => itemIndex !== index))} />
+          </div>
           <Input value={item.question || ""} onChange={(e) => updateListItemField("items", index, "question", e.target.value, fallbackItems)} placeholder="Vraag" />
           <textarea
             value={item.answer || ""}
@@ -52,6 +64,9 @@ export function FaqSectionEditor({ section, updateField, updateListItemField }: 
           />
         </div>
       ))}
+      <Button type="button" variant="outline" className="w-full" onClick={() => saveItems([...items, { id: `faq-${Date.now()}`, question: "Nieuwe vraag", answer: "" }])}>
+        <Plus className="mr-2 h-4 w-4" />Vraag toevoegen
+      </Button>
     </Card>
   )
 }

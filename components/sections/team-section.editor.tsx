@@ -1,8 +1,9 @@
 "use client"
 
-import { ImageIcon, Plus, Trash2, Users } from "lucide-react"
+import { ImageIcon, Plus, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { RepeatingItemActions, moveRepeatingItem } from "@/components/editor/repeating-item-actions"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { SectionEditorProps } from "@/components/editor/section-editor-types"
@@ -17,6 +18,10 @@ export function TeamSectionEditor({ section, updateField }: SectionEditorProps) 
   const members = Array.isArray(section.data.members) ? (section.data.members as TeamMember[]) : starterMembers
   const saveMembers = (next: TeamMember[]) => updateField("members", next)
   const updateMember = (index: number, values: Partial<TeamMember>) => saveMembers(members.map((member, memberIndex) => memberIndex === index ? { ...member, ...values } : member))
+  const duplicateMember = (index: number) => {
+    const copy = { ...members[index], id: `member-${Date.now()}` }
+    saveMembers([...members.slice(0, index + 1), copy, ...members.slice(index + 1)])
+  }
 
   return (
     <Card className="space-y-4 p-4">
@@ -29,7 +34,7 @@ export function TeamSectionEditor({ section, updateField }: SectionEditorProps) 
           <div key={member.id ?? index} className="space-y-2 rounded-lg border border-border p-3">
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs font-semibold">Teamlid {index + 1}</span>
-              <Button type="button" variant="ghost" size="icon-sm" aria-label={`Teamlid ${index + 1} verwijderen`} onClick={() => saveMembers(members.filter((_, memberIndex) => memberIndex !== index))}><Trash2 className="h-4 w-4" /></Button>
+              <RepeatingItemActions itemLabel={`Teamlid ${index + 1}`} index={index} count={members.length} onMove={(direction) => saveMembers(moveRepeatingItem(members, index, direction))} onDuplicate={() => duplicateMember(index)} onDelete={() => saveMembers(members.filter((_, memberIndex) => memberIndex !== index))} />
             </div>
             <Input placeholder="Naam" value={member.name || ""} onChange={(event) => updateMember(index, { name: event.target.value })} />
             <Input placeholder="Functie of titel" value={member.title || ""} onChange={(event) => updateMember(index, { title: event.target.value })} />

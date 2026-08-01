@@ -1,8 +1,9 @@
 "use client"
 
-import { Building2, Eye, EyeOff, Plus, Trash2, Type } from "lucide-react"
+import { Building2, Eye, EyeOff, Plus, Type } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { RepeatingItemActions, moveRepeatingItem } from "@/components/editor/repeating-item-actions"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SectionLinkSelect } from "@/components/editor/section-link-select"
@@ -29,6 +30,20 @@ export function FooterSectionEditor({ section, updateField, sectionTargetOptions
   const updateColumn = (columnIndex: number, values: Partial<FooterColumn>) => saveColumns(columns.map((column, index) => index === columnIndex ? { ...column, ...values } : column))
   const updateLink = (columnIndex: number, linkIndex: number, values: Partial<FooterLink>) => updateColumn(columnIndex, { links: columns[columnIndex].links.map((link, index) => index === linkIndex ? { ...link, ...values } : link) })
   const saveSocialLinks = (next: FooterLink[]) => updateField("socialLinks", next)
+  const duplicateColumn = (columnIndex: number) => {
+    const columnId = `footer-column-${Date.now()}`
+    const copy = { ...columns[columnIndex], id: columnId, links: columns[columnIndex].links.map((link, linkIndex) => ({ ...link, id: `${columnId}-link-${linkIndex + 1}` })) }
+    saveColumns([...columns.slice(0, columnIndex + 1), copy, ...columns.slice(columnIndex + 1)])
+  }
+  const duplicateLink = (columnIndex: number, linkIndex: number) => {
+    const links = columns[columnIndex].links
+    const copy = { ...links[linkIndex], id: `footer-link-${Date.now()}` }
+    updateColumn(columnIndex, { links: [...links.slice(0, linkIndex + 1), copy, ...links.slice(linkIndex + 1)] })
+  }
+  const duplicateSocialLink = (index: number) => {
+    const copy = { ...socialLinks[index], id: `footer-social-${Date.now()}` }
+    saveSocialLinks([...socialLinks.slice(0, index + 1), copy, ...socialLinks.slice(index + 1)])
+  }
 
   return (
     <div className="space-y-4">
@@ -56,21 +71,26 @@ export function FooterSectionEditor({ section, updateField, sectionTargetOptions
         {showLinks ? <>
           <p className="text-xs text-muted-foreground">Nieuwe footers starten met maximaal drie links. Verwijder wat je niet nodig hebt.</p>
           {columns.map((column, columnIndex) => <div key={column.id ?? columnIndex} className="space-y-2 rounded-lg border border-border p-3">
-            <div className="flex gap-2"><Input value={column.title || ""} onChange={(event) => updateColumn(columnIndex, { title: event.target.value })} placeholder="Kolomtitel" /><Button type="button" variant="ghost" size="icon" aria-label={`Linkkolom ${columnIndex + 1} verwijderen`} onClick={() => saveColumns(columns.filter((_, index) => index !== columnIndex))}><Trash2 className="h-4 w-4" /></Button></div>
+            <div className="flex items-center justify-between gap-2"><span className="text-xs font-semibold">Linkgroep {columnIndex + 1}</span><RepeatingItemActions itemLabel={`Linkgroep ${columnIndex + 1}`} index={columnIndex} count={columns.length} onMove={(direction) => saveColumns(moveRepeatingItem(columns, columnIndex, direction))} onDuplicate={() => duplicateColumn(columnIndex)} onDelete={() => saveColumns(columns.filter((_, index) => index !== columnIndex))} /></div>
+            <Input value={column.title || ""} onChange={(event) => updateColumn(columnIndex, { title: event.target.value })} placeholder="Kolomtitel" />
             {column.links.map((link, linkIndex) => <div key={link.id ?? linkIndex} className="space-y-2 rounded-md bg-muted/50 p-2">
-              <div className="flex gap-2"><Input value={link.label || ""} onChange={(event) => updateLink(columnIndex, linkIndex, { label: event.target.value })} placeholder="Linktekst" /><Button type="button" variant="ghost" size="icon" aria-label={`Link ${linkIndex + 1} verwijderen`} onClick={() => updateColumn(columnIndex, { links: column.links.filter((_, index) => index !== linkIndex) })}><Trash2 className="h-4 w-4" /></Button></div>
+              <div className="flex items-center justify-between gap-2"><span className="text-xs font-medium">Link {linkIndex + 1}</span><RepeatingItemActions itemLabel={`Link ${linkIndex + 1}`} index={linkIndex} count={column.links.length} onMove={(direction) => updateColumn(columnIndex, { links: moveRepeatingItem(column.links, linkIndex, direction) })} onDuplicate={() => duplicateLink(columnIndex, linkIndex)} onDelete={() => updateColumn(columnIndex, { links: column.links.filter((_, index) => index !== linkIndex) })} /></div>
+              <Input value={link.label || ""} onChange={(event) => updateLink(columnIndex, linkIndex, { label: event.target.value })} placeholder="Linktekst" />
               <SectionLinkSelect value={link.href || ""} onChange={(value) => updateLink(columnIndex, linkIndex, { href: value })} options={sectionTargetOptions} ariaLabel={`Doel voor footerlink ${linkIndex + 1}`} />
             </div>)}
             <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => updateColumn(columnIndex, { links: [...column.links, { id: `footer-link-${Date.now()}`, label: "Nieuwe link", href: "" }] })}><Plus className="mr-2 h-3.5 w-3.5" />Link toevoegen</Button>
           </div>)}
-          {columns.length === 0 ? <Button type="button" variant="outline" className="w-full" onClick={() => saveColumns([{ id: `footer-column-${Date.now()}`, title: "Snel naar", links: [] }])}><Plus className="mr-2 h-4 w-4" />Linkgroep toevoegen</Button> : null}
+          <Button type="button" variant="outline" className="w-full" onClick={() => saveColumns([...columns, { id: `footer-column-${Date.now()}`, title: "Nieuwe linkgroep", links: [] }])}><Plus className="mr-2 h-4 w-4" />Linkgroep toevoegen</Button>
         </> : null}
       </Card>
 
       <Card className="space-y-3 p-4">
         <VisibilityButton enabled={showSocialLinks} label="Sociale links" onClick={() => updateField("showSocialLinks", !showSocialLinks)} />
         {showSocialLinks ? <>
-          {socialLinks.map((link, index) => <div key={index} className="grid grid-cols-[1fr_1.3fr_auto] gap-2"><Input value={link.label || ""} onChange={(event) => saveSocialLinks(socialLinks.map((item, itemIndex) => itemIndex === index ? { ...item, label: event.target.value } : item))} placeholder="Platform" /><Input value={link.href || ""} onChange={(event) => saveSocialLinks(socialLinks.map((item, itemIndex) => itemIndex === index ? { ...item, href: event.target.value } : item))} placeholder="https://..." /><Button type="button" variant="ghost" size="icon" aria-label={`Sociale link ${index + 1} verwijderen`} onClick={() => saveSocialLinks(socialLinks.filter((_, itemIndex) => itemIndex !== index))}><Trash2 className="h-4 w-4" /></Button></div>)}
+          {socialLinks.map((link, index) => <div key={link.id ?? index} className="space-y-2 rounded-lg border border-border p-2">
+            <div className="flex items-center justify-between gap-2"><span className="text-xs font-medium">Sociaal kanaal {index + 1}</span><RepeatingItemActions itemLabel={`Sociaal kanaal ${index + 1}`} index={index} count={socialLinks.length} onMove={(direction) => saveSocialLinks(moveRepeatingItem(socialLinks, index, direction))} onDuplicate={() => duplicateSocialLink(index)} onDelete={() => saveSocialLinks(socialLinks.filter((_, itemIndex) => itemIndex !== index))} /></div>
+            <div className="grid grid-cols-2 gap-2"><Input value={link.label || ""} onChange={(event) => saveSocialLinks(socialLinks.map((item, itemIndex) => itemIndex === index ? { ...item, label: event.target.value } : item))} placeholder="Platform" /><Input value={link.href || ""} onChange={(event) => saveSocialLinks(socialLinks.map((item, itemIndex) => itemIndex === index ? { ...item, href: event.target.value } : item))} placeholder="https://..." /></div>
+          </div>)}
           <Button type="button" variant="outline" className="w-full" onClick={() => saveSocialLinks([...socialLinks, { label: "Instagram", href: "" }])}><Plus className="mr-2 h-4 w-4" />Sociale link toevoegen</Button>
         </> : null}
       </Card>
