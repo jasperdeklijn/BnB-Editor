@@ -41,6 +41,13 @@ export interface ServiceAvailabilityPreview {
   stay_options: StayAvailabilityOption[]
 }
 
+export type AvailabilityDayStatus = "available" | "limited" | "occupied" | "unavailable"
+
+export interface AvailabilityDaySummary {
+  date: string
+  status: AvailabilityDayStatus
+}
+
 interface AvailabilityInput {
   settings: ServiceBookingSettings
   windows: AvailabilityWindowInput[]
@@ -228,6 +235,81 @@ function effectiveDateTo(input: AvailabilityInput) {
   const localToday = localDateForInstant(now, input.settings.timezone)
   const horizon = addLocalDays(localToday, input.settings.booking_horizon_days)
   return input.date_to < horizon ? input.date_to : horizon
+}
+
+function hasBusyEntryOnLocalDate(
+  dateId: string,
+  settings: ServiceBookingSettings,
+  entries: BusyCalendarEntryInput[],
+) {
+  const dayStart = zonedDateTimeToUtc(dateId, "00:00", settings.timezone)
+  const nextDayStart = zonedDateTimeToUtc(addLocalDays(dateId, 1), "00:00", settings.timezone)
+  if (!dayStart || !nextDayStart) return false
+
+  return entries.some((entry) => {
+    if (entry.status === "cancelled" || entry.status === "completed" || entry.entry_type === "note") return false
+    const blocksService = entry.entry_type === "blocked"
+      || entry.status === "blocked"
+      || entry.service_id === settings.service_id
+    if (!blocksService) return false
+
+    const entryStart = new Date(entry.start_at).getTime()
+    const entryEnd = new Date(entry.end_at).getTime()
+    if (!Number.isFinite(entryStart) || !Number.isFinite(entryEnd)) return false
+    return overlaps(dayStart.getTime(), nextDayStart.getTime(), entryStart, entryEnd)
+  })
+}
+
+export function getAvailabilityDaySummaries(input: AvailabilityInput): AvailabilityDaySummary[] {
+  if (input.date_to < input.date_from) return []
+
+  const now = input.now ?? new Date()
+  const localToday = localDateForInstant(now, input.settings.timezone)
+  const horizon = addLocalDays(localToday, input.settings.booking_horizon_days)
+  const summaries: AvailabilityDaySummary[] = []
+
+  for (let dateId = input.date_from; dateId <= input.date_to; dateId = addLocalDays(dateId, 1)) {
+    if (
+      !input.settings.booking_enabled
+      || dateId < localToday
+      || dateId > horizon
+    ) {
+      summaries.push({ date: dateId, status: "unavailable" })
+      continue
+    }
+
+    const hasBusyEntry = hasBusyEntryOnLocalDate(dateId, input.settings, input.entries)
+    let isAvailable = false
+
+    if (input.settings.booking_mode === "appointment") {
+      isAvailable = getAppointmentAvailability({
+        ...input,
+        date_from: dateId,
+        date_to: dateId,
+        now,
+        limit: 1,
+      }).length > 0
+    } else {
+      const stayCheck = checkStayAvailability({
+        settings: input.settings,
+        windows: input.windows,
+        entries: input.entries,
+        arrival_date: dateId,
+        departure_date: addLocalDays(dateId, input.settings.minimum_nights),
+        now,
+      })
+      isAvailable = stayCheck.available
+    }
+
+    summaries.push({
+      date: dateId,
+      status: isAvailable
+        ? hasBusyEntry ? "limited" : "available"
+        : hasBusyEntry ? "occupied" : "unavailable",
+    })
+  }
+
+  return summaries
 }
 
 export function getAppointmentAvailability(input: AvailabilityInput): AppointmentAvailabilitySlot[] {

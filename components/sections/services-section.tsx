@@ -12,6 +12,7 @@ import { normalizeSectionLayout } from "@/lib/section-layouts"
 import { useWebsiteLocale } from "@/lib/site-i18n/provider"
 import { getSectionColorVars } from "@/lib/section-colors"
 import type { SiteMessages } from "@/lib/site-i18n/messages"
+import type { BusinessCategory } from "@/lib/business/categories"
 
 export type ServicesLayout = "grid" | "list" | "featured" | "magazine" | "minimal" | "carousel"
 
@@ -29,6 +30,10 @@ interface ServicesSectionProps {
   isPreview: boolean
   styles?: SectionStyles
   onUpdate?: (newData: Record<string, unknown>) => void
+  websiteId?: string | null
+  businessId?: string | null
+  businessCategory?: BusinessCategory | null
+  activeLocale?: string
 }
 
 interface ServiceDisplay {
@@ -105,6 +110,10 @@ interface PublicBookingAvailability {
   }
   date_bounds: { minimum: string; maximum: string }
   appointment_slots: PublicAppointmentSlot[]
+  availability_days?: Array<{
+    date: string
+    status: "available" | "limited" | "occupied" | "unavailable"
+  }>
   stay_check: {
     available: boolean
     reason: string
@@ -125,6 +134,14 @@ const BOOKING_FLOW_COPY = {
     stayUnavailable: "Deze verblijfsperiode is niet beschikbaar.",
     confirmed: "Je boeking is direct bevestigd en staat in de planning.",
     pending: "Je aanvraag staat als voorlopig in de planning.",
+    availabilityTitle: "Beschikbaarheid",
+    availableDay: "Vrij",
+    limitedDay: "Deels bezet",
+    occupiedDay: "Bezet",
+    unavailableDay: "Niet boekbaar",
+    previousMonth: "Vorige maand",
+    nextMonth: "Volgende maand",
+    calendarError: "Beschikbaarheid kon niet worden geladen.",
   },
   "en-GB": {
     arrival: "Arrival",
@@ -136,6 +153,14 @@ const BOOKING_FLOW_COPY = {
     stayUnavailable: "This stay is not available.",
     confirmed: "Your booking is confirmed and has been added to the calendar.",
     pending: "Your request has been added to the calendar provisionally.",
+    availabilityTitle: "Availability",
+    availableDay: "Available",
+    limitedDay: "Partly booked",
+    occupiedDay: "Booked",
+    unavailableDay: "Unavailable",
+    previousMonth: "Previous month",
+    nextMonth: "Next month",
+    calendarError: "Availability could not be loaded.",
   },
   "de-DE": {
     arrival: "Anreise",
@@ -147,6 +172,14 @@ const BOOKING_FLOW_COPY = {
     stayUnavailable: "Dieser Aufenthalt ist nicht verfügbar.",
     confirmed: "Ihre Buchung ist bestätigt und im Kalender eingetragen.",
     pending: "Ihre Anfrage wurde vorläufig in den Kalender eingetragen.",
+    availabilityTitle: "Verfügbarkeit",
+    availableDay: "Frei",
+    limitedDay: "Teilweise belegt",
+    occupiedDay: "Belegt",
+    unavailableDay: "Nicht buchbar",
+    previousMonth: "Vorheriger Monat",
+    nextMonth: "Nächster Monat",
+    calendarError: "Verfügbarkeit konnte nicht geladen werden.",
   },
   "fr-FR": {
     arrival: "Arrivée",
@@ -158,6 +191,14 @@ const BOOKING_FLOW_COPY = {
     stayUnavailable: "Ce séjour n’est pas disponible.",
     confirmed: "Votre réservation est confirmée et ajoutée au calendrier.",
     pending: "Votre demande a été ajoutée provisoirement au calendrier.",
+    availabilityTitle: "Disponibilité",
+    availableDay: "Libre",
+    limitedDay: "Partiellement occupé",
+    occupiedDay: "Occupé",
+    unavailableDay: "Non réservable",
+    previousMonth: "Mois précédent",
+    nextMonth: "Mois suivant",
+    calendarError: "La disponibilité n’a pas pu être chargée.",
   },
 } as const
 
@@ -175,6 +216,31 @@ function addDateInputDays(value: string, days: number) {
   const date = new Date(`${value}T00:00:00.000Z`)
   date.setUTCDate(date.getUTCDate() + days)
   return date.toISOString().slice(0, 10)
+}
+
+function monthStart(dateId: string) {
+  return `${dateId.slice(0, 7)}-01`
+}
+
+function shiftMonth(dateId: string, offset: number) {
+  const [year, month] = dateId.split("-").map(Number)
+  const shifted = new Date(Date.UTC(year, month - 1 + offset, 1))
+  return shifted.toISOString().slice(0, 10)
+}
+
+function monthEnd(dateId: string) {
+  return addDateInputDays(shiftMonth(dateId, 1), -1)
+}
+
+function calendarMonthCells(dateId: string) {
+  const [year, month] = dateId.split("-").map(Number)
+  const dayCount = new Date(Date.UTC(year, month, 0)).getUTCDate()
+  const firstWeekday = new Date(Date.UTC(year, month - 1, 1)).getUTCDay()
+  const mondayOffset = firstWeekday === 0 ? 6 : firstWeekday - 1
+  return [
+    ...Array.from({ length: mondayOffset }, () => null),
+    ...Array.from({ length: dayCount }, (_, index) => `${year.toString().padStart(4, "0")}-${month.toString().padStart(2, "0")}-${(index + 1).toString().padStart(2, "0")}`),
+  ]
 }
 
 // ---- Shared helpers ----
@@ -755,13 +821,182 @@ function CarouselLayout({
   )
 }
 
+type AvailabilityDay = NonNullable<PublicBookingAvailability["availability_days"]>[number]
+
+const availabilityDayStyles: Record<AvailabilityDay["status"], string> = {
+  available: "bg-emerald-100 text-emerald-800 ring-emerald-200",
+  limited: "bg-amber-100 text-amber-800 ring-amber-200",
+  occupied: "bg-rose-100 text-rose-800 ring-rose-200",
+  unavailable: "bg-slate-100 text-slate-400 ring-slate-200",
+}
+
+function AvailabilityMiniCalendar({
+  websiteId,
+  serviceId,
+  locale,
+}: {
+  websiteId: string
+  serviceId: string
+  locale?: string
+}) {
+  const copy = getBookingFlowCopy(locale)
+  const resolvedLocale = locale && locale in BOOKING_FLOW_COPY ? locale : "nl-NL"
+  const [visibleMonth, setVisibleMonth] = useState(() => monthStart(dateInputValue(0)))
+  const [days, setDays] = useState<AvailabilityDay[]>([])
+  const [bounds, setBounds] = useState<PublicBookingAvailability["date_bounds"] | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    const loadCalendar = async () => {
+      setLoading(true)
+      setError("")
+      try {
+        const query = new URLSearchParams({
+          websiteId,
+          serviceId,
+          dateFrom: visibleMonth,
+          dateTo: monthEnd(visibleMonth),
+        })
+        if (locale) query.set("locale", locale)
+
+        const response = await fetch(`/api/booking/availability?${query}`, {
+          cache: "no-store",
+          signal: controller.signal,
+        })
+        const payload = await response.json() as PublicBookingAvailability & { error?: string }
+        if (!response.ok) throw new Error(payload.error || copy.calendarError)
+        setDays(payload.availability_days ?? [])
+        setBounds(payload.date_bounds)
+      } catch (requestError) {
+        if (controller.signal.aborted) return
+        setDays([])
+        setError(requestError instanceof Error ? requestError.message : copy.calendarError)
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    }
+
+    void loadCalendar()
+    return () => controller.abort()
+  }, [copy.calendarError, locale, serviceId, visibleMonth, websiteId])
+
+  const statusByDate = new Map(days.map((day) => [day.date, day.status]))
+  const cells = calendarMonthCells(visibleMonth)
+  const weekdayLabels = Array.from({ length: 7 }, (_, index) => new Intl.DateTimeFormat(resolvedLocale, {
+    weekday: "narrow",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(2026, 7, 3 + index))))
+  const monthLabel = new Intl.DateTimeFormat(resolvedLocale, {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${visibleMonth}T12:00:00.000Z`))
+  const dayFormatter = new Intl.DateTimeFormat(resolvedLocale, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "UTC",
+  })
+  const statusLabels: Record<AvailabilityDay["status"], string> = {
+    available: copy.availableDay,
+    limited: copy.limitedDay,
+    occupied: copy.occupiedDay,
+    unavailable: copy.unavailableDay,
+  }
+  const previousMonth = shiftMonth(visibleMonth, -1)
+  const nextMonth = shiftMonth(visibleMonth, 1)
+  const canGoPrevious = bounds ? monthEnd(previousMonth) >= bounds.minimum : false
+  const canGoNext = bounds ? nextMonth <= bounds.maximum : true
+
+  return (
+    <div className="mt-5 rounded-xl border border-border bg-muted/40 p-3" aria-label={copy.availabilityTitle}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <CalendarDays className="h-4 w-4 text-[var(--section-accent)]" />
+          {copy.availabilityTitle}
+        </p>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setVisibleMonth(previousMonth)}
+            disabled={!canGoPrevious || loading}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-background hover:text-foreground disabled:cursor-not-allowed disabled:opacity-35"
+            aria-label={copy.previousMonth}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setVisibleMonth(nextMonth)}
+            disabled={!canGoNext || loading}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-background hover:text-foreground disabled:cursor-not-allowed disabled:opacity-35"
+            aria-label={copy.nextMonth}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <p className="mt-1 text-xs font-medium capitalize text-muted-foreground">{monthLabel}</p>
+
+      {error ? (
+        <p className="mt-3 rounded-lg bg-background px-3 py-2 text-xs text-muted-foreground" role="status">{error}</p>
+      ) : (
+        <div className={`mt-3 transition-opacity ${loading ? "opacity-45" : "opacity-100"}`} aria-busy={loading}>
+          <div className="grid grid-cols-7 gap-1 text-center" aria-hidden="true">
+            {weekdayLabels.map((label, index) => (
+              <span key={`${label}-${index}`} className="pb-1 text-[10px] font-semibold uppercase text-muted-foreground">{label}</span>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-1" role="grid" aria-label={`${copy.availabilityTitle}: ${monthLabel}`}>
+            {cells.map((dateId, index) => {
+              if (!dateId) return <span key={`empty-${index}`} aria-hidden="true" />
+              const status = statusByDate.get(dateId) ?? "unavailable"
+              const label = `${dayFormatter.format(new Date(`${dateId}T12:00:00.000Z`))}: ${statusLabels[status]}`
+              return (
+                <span
+                  key={dateId}
+                  role="gridcell"
+                  aria-label={label}
+                  title={label}
+                  className={`flex aspect-square min-h-7 items-center justify-center rounded-md text-[11px] font-semibold ring-1 ring-inset ${availabilityDayStyles[status]}`}
+                >
+                  {Number(dateId.slice(-2))}
+                </span>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1.5 text-[10px] text-muted-foreground">
+        {(["available", "limited", "occupied", "unavailable"] as const).map((status) => (
+          <span key={status} className="inline-flex items-center gap-1.5">
+            <span className={`h-2.5 w-2.5 rounded-sm ring-1 ring-inset ${availabilityDayStyles[status]}`} aria-hidden="true" />
+            {statusLabels[status]}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function ServiceInfoPopup({
   service,
   settings,
+  websiteId,
+  locale,
+  showAvailability,
   onClose,
 }: {
   service: ServiceDisplay
   settings: ServiceInfoPopupSettings
+  websiteId?: string | null
+  locale?: string
+  showAvailability: boolean
   onClose: () => void
 }) {
   const { messages } = useWebsiteLocale()
@@ -913,6 +1148,14 @@ function ServiceInfoPopup({
                 </div>
               ) : null}
             </div>
+
+            {showAvailability && websiteId ? (
+              <AvailabilityMiniCalendar
+                websiteId={websiteId}
+                serviceId={service.id}
+                locale={locale}
+              />
+            ) : null}
 
             {settings.helperText ? (
               <p className="mt-5 rounded-xl bg-primary/10 p-3 text-xs leading-6 text-primary">
@@ -1527,12 +1770,24 @@ function ServicesBookingSpace({
 
 // ---- Main section component ----
 
-export function ServicesSection({ data, styles, isPreview, onUpdate }: ServicesSectionProps) {
+export function ServicesSection({
+  data,
+  styles,
+  isPreview,
+  onUpdate,
+  websiteId: runtimeWebsiteId,
+  businessId: runtimeBusinessId,
+  businessCategory: runtimeBusinessCategory,
+  activeLocale: runtimeActiveLocale,
+}: ServicesSectionProps) {
   const { messages } = useWebsiteLocale()
   const title = (data.title as string) || messages.offering
   const layout = (servicesLayoutMap[normalizeSectionLayout(data.layout)] ?? "grid") as ServicesLayout
   const serviceIds = data.serviceIds as string[] | undefined
-  const bookingSettings = getBookingSpaceSettings(data, messages)
+  const bookingSettings = getBookingSpaceSettings(
+    runtimeBusinessCategory ? { ...data, businessCategory: runtimeBusinessCategory } : data,
+    messages,
+  )
   const popupSettings: ServiceInfoPopupSettings = {
     buttonLabel: (data.moreInfoButtonLabel as string) || messages.moreInfo,
     eyebrow: (data.infoPopupEyebrow as string) || messages.offering,
@@ -1551,8 +1806,9 @@ export function ServicesSection({ data, styles, isPreview, onUpdate }: ServicesS
   const [loading, setLoading] = useState(true)
   const [activeService, setActiveService] = useState<ServiceDisplay | null>(null)
 
-  const businessId = (data.businessId) as string | null | undefined
-  const websiteId = (data.websiteId) as string | null | undefined
+  const businessId = runtimeBusinessId ?? data.businessId as string | null | undefined
+  const websiteId = runtimeWebsiteId ?? data.websiteId as string | null | undefined
+  const activeLocale = runtimeActiveLocale ?? data.activeLocale as string | undefined
   const recipientEmail = data.recipientEmail as string | undefined
   const serviceIdsKey = (serviceIds ?? []).join(",")
 
@@ -1808,13 +2064,20 @@ export function ServicesSection({ data, styles, isPreview, onUpdate }: ServicesS
           businessId={businessId}
           websiteId={websiteId}
           recipientEmail={recipientEmail}
-          locale={data.activeLocale as string | undefined}
+          locale={activeLocale}
           isPreview={isPreview}
         />
         {activeService ? (
           <ServiceInfoPopup
             service={activeService}
             settings={popupSettings}
+            websiteId={websiteId}
+            locale={activeLocale}
+            showAvailability={
+              bookingSettings.enabled
+              && bookingSettings.mode === "calendar"
+              && (bookingSettings.serviceIds.length === 0 || bookingSettings.serviceIds.includes(activeService.id))
+            }
             onClose={() => setActiveService(null)}
           />
         ) : null}

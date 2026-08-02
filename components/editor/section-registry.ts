@@ -22,6 +22,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 import type { Section, SectionStyles, SectionType } from "@/lib/types"
+import type { BusinessCategory } from "@/lib/business/categories"
 import {
   DEFAULT_BUSINESS_EMAIL,
   DEFAULT_BUSINESS_NAME,
@@ -61,6 +62,10 @@ export interface SectionRenderProps {
   styles?: SectionStyles
   allSections?: Section[]
   device?: "desktop" | "tablet" | "mobile"
+  websiteId?: string | null
+  businessId?: string | null
+  businessCategory?: BusinessCategory | null
+  activeLocale?: string
 }
 
 export interface SectionDefinition {

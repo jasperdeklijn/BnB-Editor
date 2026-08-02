@@ -1922,7 +1922,10 @@ export function EditorClient({
           selectedSectionId={selectedSectionId}
           onSectionSelect={handleSectionSelect}
           device={device}
+          websiteId={websiteId}
           businessId={businessId}
+          businessCategory={businessCategory}
+          activeLocale={activeLocale}
           isDraggingNewSectionExternal={isMobileDraggingNewSection}
           isDraggingImageExternal={isMobileDraggingImage}
           onStartTutorial={handleStartTutorial}
@@ -1988,7 +1991,10 @@ export function EditorClient({
               selectedSectionId={selectedSectionId}
               onSectionSelect={handleSectionSelect}
               device={device}
+              websiteId={websiteId}
               businessId={businessId}
+              businessCategory={businessCategory}
+              activeLocale={activeLocale}
               isDraggingNewSectionExternal={isMobileDraggingNewSection}
               isDraggingImageExternal={isMobileDraggingImage}
               onStartTutorial={handleStartTutorial}

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react"
 import type { Section } from "@/lib/types"
+import type { BusinessCategory } from "@/lib/business/categories"
 import { getSectionDefinition } from "@/components/editor/section-registry"
 import { normalizeSectionStyleType } from "@/lib/section-style-types"
 
@@ -12,6 +13,10 @@ interface SectionRendererProps {
   wrapTransition?: boolean
   allSections?: Section[] // All sections for nav to generate links
   device?: "desktop" | "tablet" | "mobile" // Device mode for responsive preview
+  websiteId?: string | null
+  businessId?: string | null
+  businessCategory?: BusinessCategory | null
+  activeLocale?: string
 }
 
 export function TransitionWrapper({
@@ -164,12 +169,27 @@ export function TransitionWrapper({
   )
 }
 
-function SectionRendererComponent({ section, isPreview, onUpdate, wrapTransition, allSections, device }: SectionRendererProps) {
+function SectionRendererComponent({
+  section,
+  isPreview,
+  onUpdate,
+  wrapTransition,
+  allSections,
+  device,
+  websiteId,
+  businessId,
+  businessCategory,
+  activeLocale,
+}: SectionRendererProps) {
   const commonProps = {
     data: section.data,
     isPreview,
     ...(onUpdate && { onUpdate }), // Only include onUpdate if it exists
     styles: section.styles,
+    websiteId,
+    businessId,
+    businessCategory,
+    activeLocale,
   }
 
   const definition = getSectionDefinition(section.type)
@@ -199,5 +219,9 @@ export const SectionRenderer = React.memo(
     previous.isPreview === next.isPreview &&
     previous.wrapTransition === next.wrapTransition &&
     previous.allSections === next.allSections &&
-    previous.device === next.device,
+    previous.device === next.device &&
+    previous.websiteId === next.websiteId &&
+    previous.businessId === next.businessId &&
+    previous.businessCategory === next.businessCategory &&
+    previous.activeLocale === next.activeLocale,
 )

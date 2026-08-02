@@ -10,6 +10,7 @@ import {
 import { getDefaultSectionData as getRegistryDefaultSectionData, getSectionDefinition } from "@/components/editor/section-registry"
 import { SectionRenderer, TransitionWrapper } from "./section-renderer"
 import { applyThemeDefaultsToSection, resolveWebsiteTheme, type ResolvedTheme, type ThemeConfig } from "@/lib/themes"
+import type { BusinessCategory } from "@/lib/business/categories"
 
 interface EditorCanvasProps {
   sections: Section[]
@@ -22,7 +23,10 @@ interface EditorCanvasProps {
   selectedSectionId: string | null
   onSectionSelect: (id: string | null) => void
   device: "desktop" | "tablet" | "mobile"
+  websiteId?: string | null
   businessId?: string | null
+  businessCategory?: BusinessCategory | null
+  activeLocale?: string
   isDraggingNewSectionExternal?: boolean
   isDraggingImageExternal?: boolean
   onStartTutorial?: () => void
@@ -39,7 +43,10 @@ export function EditorCanvas({
   selectedSectionId,
   onSectionSelect,
   device,
+  websiteId,
   businessId,
+  businessCategory,
+  activeLocale,
   isDraggingNewSectionExternal = false,
   isDraggingImageExternal = false,
   onStartTutorial,
@@ -655,6 +662,10 @@ export function EditorCanvas({
                       wrapTransition={false}
                       allSections={section.type === "nav" || section.type === "footer" ? sections : undefined}
                       device={device}
+                      websiteId={websiteId}
+                      businessId={businessId}
+                      businessCategory={businessCategory}
+                      activeLocale={activeLocale}
                     />
                   </div>
                 </div>

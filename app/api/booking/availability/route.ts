@@ -5,6 +5,7 @@ import {
   checkStayAvailability,
   daysBetween,
   getAppointmentAvailability,
+  getAvailabilityDaySummaries,
   getStayAvailability,
   localDateForInstant,
 } from "@/lib/booking/availability"
@@ -82,6 +83,7 @@ export async function GET(request: NextRequest) {
     const appointmentSlots = context.settings.booking_mode === "appointment"
       ? getAppointmentAvailability(availabilityInput)
       : []
+    const availabilityDays = getAvailabilityDaySummaries(availabilityInput)
     const stayOptions = context.settings.booking_mode === "stay" && !arrivalDate && !departureDate
       ? getStayAvailability({ ...availabilityInput, limit: 31 })
       : []
@@ -108,6 +110,7 @@ export async function GET(request: NextRequest) {
       },
       date_bounds: { minimum: localToday, maximum: horizonDate },
       appointment_slots: appointmentSlots,
+      availability_days: availabilityDays,
       stay_options: stayOptions,
       stay_check: stayCheck,
     }, {

@@ -188,6 +188,48 @@ test("stay checks enforce minimum and maximum nights before public booking exist
   assert.equal(availability.checkStayAvailability({ ...base, departure_date: "2026-08-05" }).available, true)
 })
 
+test("availability day summaries distinguish free, partly booked, occupied, and unavailable dates", () => {
+  const weekdayWindows = [1, 2].map((weekday) => ({ ...mondayWindow, weekday }))
+  const occupiedEntry = {
+    service_id: "service-1",
+    entry_type: "appointment",
+    status: "confirmed",
+    start_at: "2026-08-03T07:00:00.000Z",
+    end_at: "2026-08-03T10:00:00.000Z",
+  }
+
+  const capacityOne = availability.getAvailabilityDaySummaries({
+    settings: settings(),
+    windows: weekdayWindows,
+    entries: [occupiedEntry],
+    date_from: "2026-08-03",
+    date_to: "2026-08-05",
+    now: new Date("2026-08-01T00:00:00.000Z"),
+  })
+  assert.deepEqual(capacityOne.map((day) => day.status), ["occupied", "available", "unavailable"])
+
+  const capacityTwo = availability.getAvailabilityDaySummaries({
+    settings: settings({ capacity: 2 }),
+    windows: weekdayWindows,
+    entries: [occupiedEntry],
+    date_from: "2026-08-03",
+    date_to: "2026-08-03",
+    now: new Date("2026-08-01T00:00:00.000Z"),
+  })
+  assert.equal(capacityTwo[0].status, "limited")
+})
+
+test("the public Diensten popup exposes a color-coded monthly availability preview", () => {
+  const route = fs.readFileSync(path.resolve("app/api/booking/availability/route.ts"), "utf8")
+  const servicesSection = fs.readFileSync(path.resolve("components/sections/services-section.tsx"), "utf8")
+  assert.match(route, /getAvailabilityDaySummaries/)
+  assert.match(route, /availability_days/)
+  assert.match(servicesSection, /AvailabilityMiniCalendar/)
+  assert.match(servicesSection, /available: "bg-emerald-100/)
+  assert.match(servicesSection, /occupied: "bg-rose-100/)
+  assert.match(servicesSection, /limitedDay: "Deels bezet"/)
+})
+
 test("phase 1 schema exists in migration and destructive bootstrap with owner RLS", () => {
   const migration = fs.readFileSync(path.resolve("supabase/migrations/20260801120000_add_service_booking_settings.sql"), "utf8")
   const init = fs.readFileSync(path.resolve("supabase/init.sql"), "utf8")
