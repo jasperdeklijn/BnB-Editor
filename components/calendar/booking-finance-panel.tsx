@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useState, useTransition } from "react"
-import { CreditCard, Download, FilePlus2, Mail, Plus, ReceiptText, Save, Trash2 } from "lucide-react"
+import { createPortal } from "react-dom"
+import { CreditCard, Download, FilePlus2, Mail, Plus, ReceiptText, Save, Trash2, X } from "lucide-react"
 
 import {
   createBookingInvoiceDraftAction,
@@ -122,6 +123,7 @@ export function BookingFinancePanel({
   const [serviceDate, setServiceDate] = useState(draft?.service_date || "")
   const [dueDate, setDueDate] = useState(draft?.due_date || "")
   const [notice, setNotice] = useState<{ tone: "success" | "error"; text: string } | null>(null)
+  const [invoiceEditorOpen, setInvoiceEditorOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   useEffect(() => {
@@ -138,6 +140,22 @@ export function BookingFinancePanel({
       setServiceDate(nextDraft.service_date); setDueDate(nextDraft.due_date)
     }
   }, [entry.id, invoices])
+  useEffect(() => {
+    setInvoiceEditorOpen(false)
+  }, [entry.id])
+  useEffect(() => {
+    if (!invoiceEditorOpen) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !isPending) setInvoiceEditorOpen(false)
+    }
+    window.addEventListener("keydown", closeOnEscape)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener("keydown", closeOnEscape)
+    }
+  }, [invoiceEditorOpen, isPending])
 
   const previewTotals = useMemo(() => {
     try { return calculateBookingFinancials(lines) } catch { return null }
@@ -163,7 +181,7 @@ export function BookingFinancePanel({
   const createDraft = () => startTransition(async () => {
     const result = await createBookingInvoiceDraftAction(entry.id)
     if (!result.success) return setNotice({ tone: "error", text: result.error })
-    replaceInvoice(result.invoice); setDraft(result.invoice); setNotice({ tone: "success", text: "Conceptfactuur aangemaakt." })
+    replaceInvoice(result.invoice); setDraft(result.invoice); setInvoiceEditorOpen(true); setNotice({ tone: "success", text: "Conceptfactuur aangemaakt." })
   })
 
   const persistDraft = async () => {
@@ -185,7 +203,7 @@ export function BookingFinancePanel({
       const saved = await persistDraft()
       const result = await issueBookingInvoiceAction(saved.id)
       if (!result.success) throw new Error(result.error)
-      replaceInvoice(result.invoice); setDraft(null); setNotice({ tone: "success", text: `Factuur ${result.invoice.invoice_number} definitief uitgegeven.` })
+      replaceInvoice(result.invoice); setDraft(null); setInvoiceEditorOpen(false); setNotice({ tone: "success", text: `Factuur ${result.invoice.invoice_number} definitief uitgegeven.` })
     } catch (error) { setNotice({ tone: "error", text: error instanceof Error ? error.message : "Uitgeven mislukt." }) }
   })
 
@@ -215,7 +233,68 @@ export function BookingFinancePanel({
   if (unavailable) return <StatusMessage tone="error">Voer eerst de Phase 5-factuurmigratie uit.</StatusMessage>
   if (!financial) return <StatusMessage tone="error">Het reserveringsnummer wordt aangemaakt zodra deze online boeking is bevestigd.</StatusMessage>
 
+  const invoiceEditor = draft && invoiceEditorOpen && typeof document !== "undefined"
+    ? createPortal(
+        <div className="fixed inset-0 z-[1000] flex h-[100dvh] flex-col overflow-hidden bg-background" role="dialog" aria-modal="true" aria-labelledby="invoice-editor-title">
+          <header className="shrink-0 border-b border-border bg-background/95 px-4 py-3 shadow-sm backdrop-blur sm:px-6">
+            <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 text-primary"><ReceiptText className="h-5 w-5" /><span className="text-xs font-semibold uppercase tracking-wide">Conceptfactuur</span></div>
+                <h2 id="invoice-editor-title" className="mt-0.5 truncate text-xl font-semibold">Factuur voor {entry.customer_name || "klant"}</h2>
+                <p className="truncate text-xs text-muted-foreground">Reservering {financial.reservation_number} · {entry.title}</p>
+              </div>
+              <Button type="button" variant="ghost" size="icon" onClick={() => setInvoiceEditorOpen(false)} disabled={isPending} aria-label="Factuur sluiten"><X className="h-5 w-5" /></Button>
+            </div>
+          </header>
+
+          <main className="min-h-0 flex-1 overflow-y-auto">
+            <div className="mx-auto grid w-full max-w-7xl gap-5 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.72fr)]">
+              <div className="grid content-start gap-5">
+                {notice ? <StatusMessage tone={notice.tone}>{notice.text}</StatusMessage> : null}
+                <section className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
+                  <div className="mb-4"><h3 className="font-semibold">Factuurregels</h3><p className="text-xs text-muted-foreground">Controleer de omschrijving, aantallen, prijs, korting en btw.</p></div>
+                  <LineEditor lines={draftLines} onChange={setDraftLines} disabled={isPending} />
+                </section>
+                <section className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
+                  <div className="mb-4"><h3 className="font-semibold">Factuurgegevens</h3><p className="text-xs text-muted-foreground">Deze gegevens worden vastgelegd zodra de factuur definitief wordt uitgegeven.</p></div>
+                  <div className="grid gap-4 xl:grid-cols-2">
+                    <PartyEditor prefix={`seller-${draft.id}`} title="Verkoper" seller party={seller} onChange={setSeller} disabled={isPending} />
+                    <PartyEditor prefix={`customer-${draft.id}`} title="Klant" party={customer} onChange={setCustomer} disabled={isPending} />
+                  </div>
+                </section>
+              </div>
+
+              <aside className="grid content-start gap-5">
+                <section className="rounded-xl border border-primary/20 bg-primary/5 p-4 shadow-sm sm:p-5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary">Concepttotaal</p>
+                  <p className="mt-1 text-3xl font-semibold">{formatMinorUnits(draftTotals?.totalMinor ?? 0)}</p>
+                  <p className="mt-2 text-xs text-muted-foreground">Er wordt geen betaling via FlexPagina verwerkt.</p>
+                </section>
+                <section className="grid gap-4 rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
+                  <div><h3 className="font-semibold">Datums en nummering</h3><p className="text-xs text-muted-foreground">Stel de leverdatum, betaaltermijn en factuurreeksen in.</p></div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2"><div><Label htmlFor={`service-date-${draft.id}`}>Leverdatum</Label><Input id={`service-date-${draft.id}`} className="mt-1" type="date" value={serviceDate} disabled={isPending} onChange={(event) => setServiceDate(event.target.value)} /></div><div><Label htmlFor={`due-date-${draft.id}`}>Vervaldatum</Label><Input id={`due-date-${draft.id}`} className="mt-1" type="date" value={dueDate} disabled={isPending} onChange={(event) => setDueDate(event.target.value)} /></div></div>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2"><div><Label htmlFor={`invoice-prefix-${draft.id}`}>Factuurreeks</Label><Input id={`invoice-prefix-${draft.id}`} className="mt-1" value={profile.invoice_prefix} maxLength={12} disabled={isPending} onChange={(event) => setProfile({ ...profile, invoice_prefix: event.target.value })} /></div><div><Label htmlFor={`credit-prefix-${draft.id}`}>Creditreeks</Label><Input id={`credit-prefix-${draft.id}`} className="mt-1" value={profile.credit_note_prefix} maxLength={12} disabled={isPending} onChange={(event) => setProfile({ ...profile, credit_note_prefix: event.target.value })} /></div></div>
+                  <div><Label htmlFor={`payment-term-${draft.id}`}>Standaard betaaltermijn (dagen)</Label><Input id={`payment-term-${draft.id}`} className="mt-1" type="number" min="0" max="365" value={profile.payment_term_days} disabled={isPending} onChange={(event) => setProfile({ ...profile, payment_term_days: Number(event.target.value) })} /></div>
+                  <div><Label htmlFor={`invoice-accent-${draft.id}`}>PDF-kleur</Label><Input id={`invoice-accent-${draft.id}`} className="mt-1 h-11" type="color" value={profile.accent_color} disabled={isPending} onChange={(event) => setProfile({ ...profile, accent_color: event.target.value })} /></div>
+                </section>
+                <p className="rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">We genereren een volledige Nederlandse factuur. Controleer bij buitenlandse, vrijgestelde of bijzondere btw-situaties eerst uw adviseur.</p>
+              </aside>
+            </div>
+          </main>
+
+          <footer className="shrink-0 border-t border-border bg-background/95 px-4 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.05)] backdrop-blur sm:px-6">
+            <div className="mx-auto flex w-full max-w-7xl flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <Button type="button" variant="ghost" className="min-h-11 sm:min-w-32" onClick={() => setInvoiceEditorOpen(false)} disabled={isPending}>Sluiten</Button>
+              <div className="grid gap-2 sm:flex"><Button type="button" variant="outline" className="min-h-11 sm:min-w-44" onClick={saveDraft} disabled={isPending || !draftTotals}><Save className="h-4 w-4" /> Concept opslaan</Button><Button type="button" className="min-h-11 sm:min-w-44" onClick={issueDraft} disabled={isPending || !draftTotals}><ReceiptText className="h-4 w-4" /> Definitief uitgeven</Button></div>
+            </div>
+          </footer>
+        </div>,
+        document.body,
+      )
+    : null
+
   return (
+    <>
     <section className="rounded-lg border border-border bg-card shadow-sm">
       <div className="border-b border-border px-4 py-3"><div className="flex items-center gap-2"><ReceiptText className="h-4 w-4 text-primary" /><h2 className="font-semibold">Prijs en factuur</h2></div><p className="mt-1 text-xs text-muted-foreground">Reservering {financial.reservation_number}. FlexPagina verwerkt geen betaling.</p></div>
       <div className="grid gap-4 p-4">
@@ -231,19 +310,9 @@ export function BookingFinancePanel({
         </details>
 
         {!draft ? <Button type="button" variant="outline" className="min-h-11" onClick={createDraft} disabled={isPending || financial.pricing_status !== "ready"}><FilePlus2 className="h-4 w-4" /> Conceptfactuur maken</Button> : (
-          <details className="rounded-md border border-primary/25 bg-primary/5 p-3" open>
-            <summary className="cursor-pointer text-sm font-semibold">Conceptfactuur bewerken</summary>
-            <div className="mt-4 grid gap-4">
-              <PartyEditor prefix={`seller-${draft.id}`} title="Verkoper" seller party={seller} onChange={setSeller} disabled={isPending} />
-              <PartyEditor prefix={`customer-${draft.id}`} title="Klant" party={customer} onChange={setCustomer} disabled={isPending} />
-              <div className="grid grid-cols-2 gap-2"><div><Label htmlFor={`service-date-${draft.id}`}>Leverdatum</Label><Input id={`service-date-${draft.id}`} className="mt-1" type="date" value={serviceDate} disabled={isPending} onChange={(event) => setServiceDate(event.target.value)} /></div><div><Label htmlFor={`due-date-${draft.id}`}>Vervaldatum</Label><Input id={`due-date-${draft.id}`} className="mt-1" type="date" value={dueDate} disabled={isPending} onChange={(event) => setDueDate(event.target.value)} /></div></div>
-              <LineEditor lines={draftLines} onChange={setDraftLines} disabled={isPending} />
-              <div className="grid gap-2 sm:grid-cols-2"><div><Label htmlFor={`invoice-prefix-${draft.id}`}>Factuurreeks</Label><Input id={`invoice-prefix-${draft.id}`} className="mt-1" value={profile.invoice_prefix} maxLength={12} disabled={isPending} onChange={(event) => setProfile({ ...profile, invoice_prefix: event.target.value })} /></div><div><Label htmlFor={`credit-prefix-${draft.id}`}>Creditreeks</Label><Input id={`credit-prefix-${draft.id}`} className="mt-1" value={profile.credit_note_prefix} maxLength={12} disabled={isPending} onChange={(event) => setProfile({ ...profile, credit_note_prefix: event.target.value })} /></div><div><Label htmlFor={`payment-term-${draft.id}`}>Standaard betaaltermijn (dagen)</Label><Input id={`payment-term-${draft.id}`} className="mt-1" type="number" min="0" max="365" value={profile.payment_term_days} disabled={isPending} onChange={(event) => setProfile({ ...profile, payment_term_days: Number(event.target.value) })} /></div><div><Label htmlFor={`invoice-accent-${draft.id}`}>PDF-kleur</Label><Input id={`invoice-accent-${draft.id}`} className="mt-1 h-11" type="color" value={profile.accent_color} disabled={isPending} onChange={(event) => setProfile({ ...profile, accent_color: event.target.value })} /></div></div>
-              <p className="text-sm font-semibold">Concepttotaal: {formatMinorUnits(draftTotals?.totalMinor ?? 0)}</p>
-              <div className="grid gap-2 sm:grid-cols-2"><Button type="button" variant="outline" className="min-h-11" onClick={saveDraft} disabled={isPending || !draftTotals}><Save className="h-4 w-4" /> Concept opslaan</Button><Button type="button" className="min-h-11" onClick={issueDraft} disabled={isPending || !draftTotals}><ReceiptText className="h-4 w-4" /> Definitief uitgeven</Button></div>
-              <p className="text-xs text-muted-foreground">We genereren altijd een volledige Nederlandse factuur. Controleer bij buitenlandse, vrijgestelde of bijzondere btw-situaties eerst uw adviseur.</p>
-            </div>
-          </details>
+          <div className="rounded-md border border-primary/25 bg-primary/5 p-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold">Conceptfactuur klaar om te bewerken</p><p className="text-xs text-muted-foreground">Totaal {formatMinorUnits(draftTotals?.totalMinor ?? draft.total_minor)}</p></div><Button type="button" className="min-h-11" onClick={() => setInvoiceEditorOpen(true)} disabled={isPending}><ReceiptText className="h-4 w-4" /> Conceptfactuur openen</Button></div>
+          </div>
         )}
 
         {invoices.filter((invoice) => invoice.status !== "draft").map((invoice) => (
@@ -259,5 +328,7 @@ export function BookingFinancePanel({
         ))}
       </div>
     </section>
+    {invoiceEditor}
+    </>
   )
 }
