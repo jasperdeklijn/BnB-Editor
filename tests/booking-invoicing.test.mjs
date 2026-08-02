@@ -44,12 +44,24 @@ test("issued invoices are immutable and corrections retain their audit trail", (
 test("payment remains owner-managed and invoice delivery is explicit", () => {
   const panel = read("components/calendar/booking-finance-panel.tsx")
   const invoicing = read("lib/booking/invoicing.ts")
+  const copy = read("lib/booking/email-copy.ts")
   assert.match(panel, /Handmatige betaalstatus/)
   assert.match(panel, /FlexPagina verwerkt geen betaling/)
   assert.match(panel, /window\.confirm\(`Factuur \$\{invoice\.invoice_number\} nu als PDF-bijlage/)
   assert.match(invoicing, /attachments: \[\{ filename:/)
-  assert.match(invoicing, /handmatig door de ondernemer verzonden/)
+  assert.match(copy, /handmatig door de ondernemer verzonden/)
   assert.doesNotMatch(invoicing, /stripe|mollie|adyen/i)
+})
+
+test("invoice delivery follows the original booking request locale", () => {
+  const invoicing = read("lib/booking/invoicing.ts")
+  const copy = read("lib/booking/email-copy.ts")
+  assert.match(invoicing, /contact_requests"\)\.select\("locale"\)/)
+  assert.match(invoicing, /normalizeBookingEmailLocale\(contactRequest\?\.locale\)/)
+  assert.match(invoicing, /getInvoiceEmailCopy/)
+  assert.match(copy, /Please find attached/)
+  assert.match(copy, /Im Anhang finden Sie/)
+  assert.match(copy, /Vous trouverez en pièce jointe/)
 })
 
 test("owner and customer PDF routes enforce their own authorization boundary", () => {

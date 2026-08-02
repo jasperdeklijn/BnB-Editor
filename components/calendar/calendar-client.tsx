@@ -133,6 +133,14 @@ const STATUS_STYLES: Record<CalendarEntryStatus, string> = {
   blocked: "border-zinc-300 bg-zinc-100 text-zinc-800",
 }
 
+const STATUS_DOT_STYLES: Record<CalendarEntryStatus, string> = {
+  pending: "bg-amber-500",
+  confirmed: "bg-emerald-500",
+  cancelled: "bg-red-500",
+  completed: "bg-slate-500",
+  blocked: "bg-zinc-600",
+}
+
 function startOfDay(date: Date) {
   const next = new Date(date)
   next.setHours(0, 0, 0, 0)
@@ -238,9 +246,18 @@ function rangesOverlap(startA: Date, endA: Date, startB: Date, endB: Date) {
   return startA < endB && endA > startB
 }
 
-function startsWithinRange(entry: CalendarEntry, start: Date, end: Date) {
-  const entryStart = new Date(entry.start_at)
-  return entryStart >= start && entryStart < end
+function overlapsRange(entry: CalendarEntry, start: Date, end: Date) {
+  return rangesOverlap(new Date(entry.start_at), new Date(entry.end_at), start, end)
+}
+
+function getEntryDayPhase(entry: CalendarEntry, day: Date) {
+  const start = new Date(entry.start_at)
+  const end = new Date(entry.end_at)
+  const effectiveEnd = new Date(Math.max(start.getTime(), end.getTime() - 1))
+  if (isSameDay(start, effectiveEnd)) return null
+  if (isSameDay(start, day)) return "Aankomst"
+  if (isSameDay(effectiveEnd, day)) return "Vertrek"
+  return "Bezet"
 }
 
 function servicesOverlap(a: string | null | undefined, b: string | null | undefined) {
@@ -475,7 +492,7 @@ export function CalendarClient({
   const visibleRangeEntries = useMemo(
     () =>
       visibleEntries.filter((entry) =>
-        startsWithinRange(entry, calendarViewRange.start, calendarViewRange.end),
+        overlapsRange(entry, calendarViewRange.start, calendarViewRange.end),
       ),
     [calendarViewRange, visibleEntries],
   )
@@ -489,12 +506,16 @@ export function CalendarClient({
 
   const entriesByDay = useMemo(() => {
     const grouped = new Map<string, CalendarEntry[]>()
-    for (const entry of visibleEntries) {
-      const key = dateKey(new Date(entry.start_at))
-      grouped.set(key, [...(grouped.get(key) ?? []), entry])
+    const firstDay = activeView === "month" ? startOfMonthGrid(cursorDate) : calendarViewRange.start
+    const numberOfDays = activeView === "month" ? 42 : activeView === "week" ? 7 : 1
+    for (let offset = 0; offset < numberOfDays; offset += 1) {
+      const day = addDays(firstDay, offset)
+      const nextDay = addDays(day, 1)
+      const dayEntries = visibleEntries.filter((entry) => overlapsRange(entry, day, nextDay))
+      if (dayEntries.length > 0) grouped.set(dateKey(day), dayEntries)
     }
     return grouped
-  }, [visibleEntries])
+  }, [activeView, calendarViewRange.start, cursorDate, visibleEntries])
 
   const offeringTitleById = useMemo(
     () => new Map(offerings.map((offering) => [offering.id, offering.title])),
@@ -855,10 +876,10 @@ export function CalendarClient({
         onClear={clearFilters}
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <SummaryCard label="In afwachting" value={pendingCount} tone="pending" />
-        <SummaryCard label="Bevestigd" value={confirmedCount} tone="confirmed" />
-        <SummaryCard label="Geblokkeerd" value={blockedCount} tone="blocked" />
+      <div className="grid grid-cols-3 gap-2 md:gap-4">
+        <SummaryCard label="In afwachting" shortLabel="Wachtend" value={pendingCount} tone="pending" active={filters.status === "pending"} onClick={() => setFilters((current) => ({ ...current, status: current.status === "pending" ? "all" : "pending" }))} />
+        <SummaryCard label="Bevestigd" shortLabel="Bevestigd" value={confirmedCount} tone="confirmed" active={filters.status === "confirmed"} onClick={() => setFilters((current) => ({ ...current, status: current.status === "confirmed" ? "all" : "confirmed" }))} />
+        <SummaryCard label="Geblokkeerd" shortLabel="Geblokkeerd" value={blockedCount} tone="blocked" active={filters.status === "blocked"} onClick={() => setFilters((current) => ({ ...current, status: current.status === "blocked" ? "all" : "blocked" }))} />
       </div>
 
       <div className="grid min-h-0 gap-4 xl:grid-cols-[minmax(0,1fr)_24rem]">
@@ -867,57 +888,48 @@ export function CalendarClient({
             <div className="min-w-0">
               <h2 className="font-semibold text-foreground">Kalenderoverzicht</h2>
               <p className="text-xs text-muted-foreground">
-                {copy.description} {filteredCountLabel}; {rangeCountLabel}.
+                {filteredCountLabel}; {rangeCountLabel}.
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex rounded-md border border-border bg-background p-0.5">
-                {(["month", "week", "day"] as CalendarView[]).map((view) => (
-                  <button
-                    key={view}
-                    type="button"
-                    onClick={() => setActiveView(view)}
-                    className={`rounded px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                      activeView === view
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {view === "month" ? "Maand" : view === "week" ? "Week" : "Dag"}
-                  </button>
-                ))}
+            <div className="grid w-full min-w-0 gap-2 lg:w-auto">
+              <div className="flex min-w-0 items-center justify-between gap-2 lg:justify-end">
+                <div className="inline-flex shrink-0 rounded-md border border-border bg-background p-0.5">
+                  {(["month", "week", "day"] as CalendarView[]).map((view) => (
+                    <button
+                      key={view}
+                      type="button"
+                      onClick={() => setActiveView(view)}
+                      aria-pressed={activeView === view}
+                      className={`rounded px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                        activeView === view
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {view === "month" ? "Maand" : view === "week" ? "Week" : "Dag"}
+                    </button>
+                  ))}
+                </div>
+                <div className="inline-flex shrink-0 items-center gap-1">
+                  <Button type="button" variant="outline" size="sm" onClick={() => moveCursor(-1)} aria-label="Vorige periode" title="Vorige periode">
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setCursorDate(new Date())}>Vandaag</Button>
+                  <Button type="button" variant="outline" size="sm" onClick={() => moveCursor(1)} aria-label="Volgende periode" title="Volgende periode">
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => moveCursor(-1)}
-                aria-label="Vorige periode"
-                title="Vorige periode"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => setCursorDate(new Date())}>
-                Vandaag
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => moveCursor(1)}
-                aria-label="Volgende periode"
-                title="Volgende periode"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-              <Button type="button" size="sm" onClick={() => openCreateForm(cursorDate)} disabled={Boolean(schemaError)}>
-                <Plus className="h-4 w-4" />
-                {copy.primaryAction}
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => openBlockedForm()} disabled={Boolean(schemaError)}>
-                <Ban className="h-4 w-4" />
-                Blokkade
-              </Button>
+              <div className="flex min-w-0 flex-wrap items-center gap-2 lg:justify-end">
+                <Button type="button" size="sm" onClick={() => openCreateForm(cursorDate)} disabled={Boolean(schemaError)}>
+                  <Plus className="h-4 w-4" />
+                  {copy.primaryAction}
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => openBlockedForm()} disabled={Boolean(schemaError)}>
+                  <Ban className="h-4 w-4" />
+                  Blokkade
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -979,9 +991,11 @@ export function CalendarClient({
           </div>
         </section>
 
-        <aside className="grid gap-4">
+        <aside className="grid min-w-0 gap-4">
           <div className="hidden md:block">
             <EntryForm
+              idPrefix="calendar-entry-desktop"
+              headingId="calendar-entry-desktop-title"
               form={form}
               copy={copy}
               offeringCopy={offeringCopy}
@@ -1004,6 +1018,7 @@ export function CalendarClient({
             {formEntry ? (
               <div className="mt-4">
                 <BookingFinancePanel
+                  idPrefix="calendar-finance-desktop"
                   entry={formEntry}
                   offering={formOffering}
                   financial={formFinancial}
@@ -1079,10 +1094,12 @@ export function CalendarClient({
       </div>
 
       {form ? (
-        <div className="fixed inset-0 z-50 flex items-end bg-black/45 md:hidden" role="dialog" aria-modal="true">
-          <button type="button" className="absolute inset-0 cursor-default" onClick={() => setForm(null)} aria-label="Formulier sluiten" />
-          <div className="relative max-h-[92vh] w-full overflow-y-auto rounded-t-xl bg-background shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-end bg-black/45 md:hidden" role="dialog" aria-modal="true" aria-labelledby="calendar-entry-mobile-title">
+          <div className="absolute inset-0" onClick={() => setForm(null)} aria-hidden="true" />
+          <div className="relative max-h-[92vh] w-full overflow-y-auto overflow-x-hidden rounded-t-xl bg-background shadow-2xl">
             <EntryForm
+              idPrefix="calendar-entry-mobile"
+              headingId="calendar-entry-mobile-title"
               form={form}
               copy={copy}
               offeringCopy={offeringCopy}
@@ -1105,6 +1122,7 @@ export function CalendarClient({
             {formEntry ? (
               <div className="p-4 pt-0">
                 <BookingFinancePanel
+                  idPrefix="calendar-finance-mobile"
                   entry={formEntry}
                   offering={formOffering}
                   financial={formFinancial}
@@ -1159,7 +1177,7 @@ function FilterPanel({
   const filterSummary = activeFilterLabels.length > 0 ? activeFilterLabels.join(" / ") : "Alle items"
 
   return (
-    <section className="rounded-lg border border-border bg-card p-3 shadow-sm sm:p-4">
+    <section className="min-w-0 rounded-lg border border-border bg-card p-3 shadow-sm sm:p-4">
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-primary" />
@@ -1181,7 +1199,7 @@ function FilterPanel({
         </div>
       </div>
 
-      <div className="mb-3 rounded-md border border-border bg-background px-3 py-2 text-xs text-muted-foreground sm:hidden">
+      <div className="mb-3 break-words rounded-md border border-border bg-background px-3 py-2 text-xs text-muted-foreground sm:hidden">
         {filterSummary}
       </div>
 
@@ -1311,20 +1329,28 @@ function CalendarEmptyState({
   )
 }
 
-function SummaryCard({ label, value, tone }: { label: string; value: number; tone: CalendarEntryStatus }) {
+function SummaryCard({ label, shortLabel, value, tone, active, onClick }: { label: string; shortLabel: string; value: number; tone: CalendarEntryStatus; active: boolean; onClick: () => void }) {
   const iconClass =
     tone === "pending" ? "text-amber-600" : tone === "confirmed" ? "text-emerald-600" : "text-zinc-600"
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`min-w-0 rounded-lg border bg-card p-2.5 text-left shadow-sm transition-colors hover:border-primary/50 md:p-4 ${active ? "border-primary ring-2 ring-primary/15" : "border-border"}`}
+    >
       <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-medium uppercase text-muted-foreground">{label}</p>
-          <p className="mt-2 text-2xl font-semibold text-foreground">{value}</p>
+        <div className="min-w-0">
+          <p className="truncate text-[10px] font-medium text-muted-foreground md:text-xs md:uppercase">
+            <span className="md:hidden">{shortLabel}</span>
+            <span className="hidden md:inline">{label}</span>
+          </p>
+          <p className="mt-1 text-xl font-semibold text-foreground md:mt-2 md:text-2xl">{value}</p>
         </div>
-        <Clock className={`h-5 w-5 ${iconClass}`} />
+        <Clock className={`hidden h-5 w-5 sm:block ${iconClass}`} />
       </div>
-    </div>
+    </button>
   )
 }
 
@@ -1345,6 +1371,17 @@ function MonthView({
 }) {
   const first = startOfMonthGrid(cursorDate)
   const days = Array.from({ length: 42 }, (_, index) => addDays(first, index))
+  const [selectedDayKey, setSelectedDayKey] = useState(() => dateKey(cursorDate))
+
+  useEffect(() => {
+    const selectedDate = new Date(`${selectedDayKey}T12:00:00`)
+    if (selectedDate.getMonth() !== cursorDate.getMonth() || selectedDate.getFullYear() !== cursorDate.getFullYear()) {
+      setSelectedDayKey(dateKey(new Date(cursorDate.getFullYear(), cursorDate.getMonth(), 1)))
+    }
+  }, [cursorDate, selectedDayKey])
+
+  const selectedDay = new Date(`${selectedDayKey}T12:00:00`)
+  const selectedDayEntries = entriesByDay.get(selectedDayKey) ?? []
 
   return (
     <div>
@@ -1369,27 +1406,45 @@ function MonthView({
           return (
             <div
               key={key}
-              className={`min-h-28 border-b border-r border-border p-0.5 text-left align-top transition-colors hover:bg-primary/5 sm:p-2 ${
+              className={`min-h-16 min-w-0 border-b border-r border-border p-0.5 text-left align-top transition-colors hover:bg-primary/5 sm:min-h-28 sm:p-2 ${
                 isCurrentMonth ? "bg-background" : "bg-muted/30 text-muted-foreground"
-              }`}
+              } ${selectedDayKey === key ? "bg-primary/5 sm:bg-background" : ""}`}
             >
+              <button
+                type="button"
+                onClick={() => dayEntries.length > 0 ? setSelectedDayKey(key) : onCreate(day)}
+                aria-label={dayEntries.length > 0 ? `${formatDayLabel(day)}, ${formatItemCount(dayEntries.length, "gepland")}` : addLabel}
+                title={dayEntries.length > 0 ? `${formatItemCount(dayEntries.length, "gepland")} op ${formatDayLabel(day)}` : addLabel}
+                className={`flex h-10 w-full items-center justify-between gap-1 rounded-md px-1.5 text-xs font-medium transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:hidden ${
+                  isToday ? "bg-primary text-primary-foreground hover:bg-primary" : ""
+                }`}
+              >
+                <span>{day.getDate()}</span>
+                {dayEntries.length > 0 ? (
+                  <span className="flex max-w-[2rem] items-center gap-0.5" aria-hidden="true">
+                    {dayEntries.slice(0, 2).map((entry) => <span key={entry.id} className={`h-1.5 w-1.5 rounded-full ${isToday ? "bg-white" : STATUS_DOT_STYLES[entry.status]}`} />)}
+                    {dayEntries.length > 2 ? <span className="text-[9px]">+{dayEntries.length - 2}</span> : null}
+                  </span>
+                ) : <Plus className="h-3.5 w-3.5 shrink-0" />}
+              </button>
               <button
                 type="button"
                 onClick={() => onCreate(day)}
                 aria-label={addLabel}
                 title={addLabel}
-                className={`flex h-10 w-full items-center justify-between gap-1 rounded-md px-1.5 text-xs font-medium transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:px-2 ${
+                className={`hidden h-10 w-full items-center justify-between gap-1 rounded-md px-2 text-xs font-medium transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 sm:flex ${
                   isToday ? "bg-primary text-primary-foreground hover:bg-primary" : ""
                 }`}
               >
                 <span>{day.getDate()}</span>
                 <Plus className="h-3.5 w-3.5 shrink-0" />
               </button>
-              <div className="mt-2 space-y-1">
+              <div className="mt-2 hidden space-y-1 sm:block">
                 {dayEntries.slice(0, 3).map((entry) => (
                   <EntryPill
                     key={entry.id}
                     entry={entry}
+                    displayDay={day}
                     offeringTitle={entry.service_id ? offeringTitleById.get(entry.service_id) : undefined}
                     onClick={onEdit}
                   />
@@ -1402,6 +1457,25 @@ function MonthView({
           )
         })}
       </div>
+      <section className="mt-3 rounded-lg border border-border bg-background p-3 sm:hidden" aria-label={`Planning voor ${formatDayLabel(selectedDay)}`}>
+        <div className="mb-3 flex min-w-0 items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h4 className="truncate text-sm font-semibold capitalize text-foreground">{formatDayLabel(selectedDay)}</h4>
+            <p className="text-xs text-muted-foreground">{formatItemCount(selectedDayEntries.length, "gepland")}</p>
+          </div>
+          <Button type="button" variant="outline" size="sm" onClick={() => onCreate(selectedDay)}>
+            <Plus className="h-4 w-4" />
+            Toevoegen
+          </Button>
+        </div>
+        {selectedDayEntries.length > 0 ? (
+          <div className="space-y-2">
+            {selectedDayEntries.map((entry) => (
+              <EntryCard key={entry.id} entry={entry} offeringTitle={entry.service_id ? offeringTitleById.get(entry.service_id) : undefined} onClick={() => onEdit(entry)} />
+            ))}
+          </div>
+        ) : <p className="rounded-md border border-dashed border-border p-3 text-sm text-muted-foreground">Geen items op deze dag.</p>}
+      </section>
     </div>
   )
 }
@@ -1461,6 +1535,7 @@ function WeekView({
                     <EntryPill
                       key={entry.id}
                       entry={entry}
+                      displayDay={day}
                       offeringTitle={entry.service_id ? offeringTitleById.get(entry.service_id) : undefined}
                       onClick={onEdit}
                     />
@@ -1500,13 +1575,26 @@ function WeekView({
               <p className="text-sm font-semibold text-foreground">{day.getDate()}</p>
             </div>
           ))}
+          <div className="border-b border-r border-border bg-muted/40 p-2 text-xs text-muted-foreground">Hele dag</div>
+          {days.map((day) => {
+            const continuingEntries = (entriesByDay.get(dateKey(day)) ?? []).filter((entry) => entry.all_day || !isSameDay(new Date(entry.start_at), day))
+            return (
+              <div key={`${dateKey(day)}-all-day`} className="min-h-16 border-b border-r border-border bg-background p-1.5">
+                <div className="space-y-1">
+                  {continuingEntries.map((entry) => (
+                    <EntryPill key={entry.id} entry={entry} displayDay={day} offeringTitle={entry.service_id ? offeringTitleById.get(entry.service_id) : undefined} onClick={onEdit} />
+                  ))}
+                </div>
+              </div>
+            )
+          })}
           {DAY_HOURS.map((hour) => (
             <Fragment key={hour}>
               <div className="border-b border-r border-border bg-muted/40 p-2 text-xs text-muted-foreground">
                 {String(hour).padStart(2, "0")}:00
               </div>
               {days.map((day) => {
-                const entries = (entriesByDay.get(dateKey(day)) ?? []).filter((entry) => new Date(entry.start_at).getHours() === hour)
+                const entries = (entriesByDay.get(dateKey(day)) ?? []).filter((entry) => !entry.all_day && isSameDay(new Date(entry.start_at), day) && new Date(entry.start_at).getHours() === hour)
 
                 return (
                   <div
@@ -1518,6 +1606,7 @@ function WeekView({
                         <EntryPill
                           key={entry.id}
                           entry={entry}
+                          displayDay={day}
                           offeringTitle={entry.service_id ? offeringTitleById.get(entry.service_id) : undefined}
                           onClick={onEdit}
                         />
@@ -1557,6 +1646,7 @@ function DayView({
   onEdit: (entry: CalendarEntry) => void
 }) {
   const dayEntries = entriesByDay.get(dateKey(cursorDate)) ?? []
+  const continuingEntries = dayEntries.filter((entry) => entry.all_day || !isSameDay(new Date(entry.start_at), cursorDate))
 
   return (
     <div>
@@ -1565,9 +1655,19 @@ function DayView({
         <h3 className="font-semibold capitalize text-foreground">{formatDayLabel(cursorDate)}</h3>
         <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">{rangeCountLabel}</span>
       </div>
+      {continuingEntries.length > 0 ? (
+        <div className="mb-3 rounded-lg border border-border bg-muted/30 p-3">
+          <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">Hele dag en doorlopend</p>
+          <div className="space-y-2">
+            {continuingEntries.map((entry) => (
+              <EntryPill key={entry.id} entry={entry} displayDay={cursorDate} offeringTitle={entry.service_id ? offeringTitleById.get(entry.service_id) : undefined} onClick={onEdit} />
+            ))}
+          </div>
+        </div>
+      ) : null}
       <div className="overflow-hidden rounded-lg border border-border">
         {DAY_HOURS.map((hour) => {
-          const entries = dayEntries.filter((entry) => new Date(entry.start_at).getHours() === hour)
+          const entries = dayEntries.filter((entry) => !entry.all_day && isSameDay(new Date(entry.start_at), cursorDate) && new Date(entry.start_at).getHours() === hour)
           return (
             <div
               key={hour}
@@ -1581,6 +1681,7 @@ function DayView({
                   <EntryPill
                     key={entry.id}
                     entry={entry}
+                    displayDay={cursorDate}
                     offeringTitle={entry.service_id ? offeringTitleById.get(entry.service_id) : undefined}
                     onClick={onEdit}
                   />
@@ -1603,14 +1704,17 @@ function DayView({
 
 function EntryPill({
   entry,
+  displayDay,
   offeringTitle,
   onClick,
 }: {
   entry: CalendarEntry
+  displayDay?: Date
   offeringTitle?: string
   onClick: (entry: CalendarEntry) => void
 }) {
   const detailText = [entry.customer_name, offeringTitle].filter(Boolean).join(" / ")
+  const dayPhase = displayDay ? getEntryDayPhase(entry, displayDay) : null
 
   return (
     <button
@@ -1622,7 +1726,7 @@ function EntryPill({
       className={`block w-full rounded border px-2 py-1 text-left text-[11px] font-medium ${STATUS_STYLES[entry.status]}`}
     >
       <span className="block truncate">
-        {formatEntryTime(entry)} / {STATUS_LABELS[entry.status]} / {entry.title || STATUS_LABELS[entry.status]}
+        {dayPhase || formatEntryTime(entry)} / {STATUS_LABELS[entry.status]} / {entry.title || STATUS_LABELS[entry.status]}
       </span>
       {detailText ? <span className="block truncate text-[10px] opacity-80">{detailText}</span> : null}
     </button>
@@ -1683,21 +1787,22 @@ function AvailabilityPanel({
   }
 
   return (
-    <section className="rounded-lg border border-border bg-card shadow-sm">
+    <section className="min-w-0 rounded-lg border border-border bg-card shadow-sm">
       <button
         type="button"
         onClick={() => setIsOpen((current) => !current)}
         className="flex w-full items-start justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/60"
         aria-expanded={isOpen}
       >
-        <span>
+        <span className="min-w-0">
           <span className="block font-semibold text-foreground">Beschikbaarheidsinstellingen</span>
-          <span className="mt-1 block text-xs text-muted-foreground">
+          <span className="mt-1 block text-xs text-muted-foreground sm:whitespace-normal">
             Vaste openingstijden staan los van de dagelijkse afsprakenlijst.
           </span>
         </span>
         <span className="flex shrink-0 items-center gap-2 text-xs font-medium text-muted-foreground">
-          {formatItemCount(windows.length, "ingesteld")}
+          <span className="sm:hidden">{windows.length}</span>
+          <span className="hidden sm:inline">{formatItemCount(windows.length, "ingesteld")}</span>
           <ChevronRight className={`h-4 w-4 transition-transform ${isOpen ? "rotate-90" : ""}`} />
         </span>
       </button>
@@ -1827,6 +1932,8 @@ function AvailabilityPanel({
 }
 
 function EntryForm({
+  idPrefix,
+  headingId,
   form,
   copy,
   offeringCopy,
@@ -1846,6 +1953,8 @@ function EntryForm({
   onResolveReschedule,
   onDelete,
 }: {
+  idPrefix: string
+  headingId: string
   form: EntryFormState | null
   copy: CalendarClientProps["copy"]
   offeringCopy: CalendarClientProps["offeringCopy"]
@@ -1869,6 +1978,9 @@ function EntryForm({
   const [proposalStart, setProposalStart] = useState(form?.start_at ?? "")
   const [proposalEnd, setProposalEnd] = useState(form?.end_at ?? "")
   const [proposalMessage, setProposalMessage] = useState("")
+  const [customerDetailsOpen, setCustomerDetailsOpen] = useState(!form?.id)
+  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false)
+  const fieldId = (name: string) => `${idPrefix}-${name}`
 
   useEffect(() => {
     setLifecyclePrivateNote("")
@@ -1876,6 +1988,11 @@ function EntryForm({
     setProposalEnd(form?.end_at ?? "")
     setProposalMessage("")
   }, [form?.id, form?.start_at, form?.end_at])
+
+  useEffect(() => {
+    setCustomerDetailsOpen(!form?.id)
+    setDeleteConfirmationOpen(false)
+  }, [form?.id])
 
   if (!form) {
     return (
@@ -1912,7 +2029,7 @@ function EntryForm({
     <section className="rounded-lg border border-border bg-card shadow-sm">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div>
-          <h2 className="font-semibold text-foreground">{form.id ? "Kalenderitem bewerken" : copy.primaryAction}</h2>
+          <h2 id={headingId} className="font-semibold text-foreground">{form.id ? "Kalenderitem bewerken" : copy.primaryAction}</h2>
           <p className="text-xs text-muted-foreground">Wijzig titel, tijd, status en gekoppeld aanbod.</p>
         </div>
         <Button type="button" variant="ghost" size="icon-sm" onClick={onCancel} aria-label="Formulier sluiten" title="Formulier sluiten">
@@ -1934,17 +2051,19 @@ function EntryForm({
           </div>
         ) : null}
         {isOnlineBooking ? (
-          <div className="space-y-4 rounded-md border border-primary/20 bg-primary/5 p-3">
-            <div>
-              <p className="text-sm font-semibold text-foreground">Boekingsverloop</p>
-              <p className="mt-1 text-xs text-muted-foreground">Klantmeldingen bevatten nooit de interne notitie hieronder.</p>
-            </div>
+          <details className="min-w-0 overflow-hidden rounded-md border border-primary/20 bg-primary/5">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 text-sm font-semibold text-foreground">
+              <span>Boekingsverloop en historie</span>
+              <span className="shrink-0 text-xs font-normal text-muted-foreground">{formatItemCount(lifecycleHistory.length, "vastgelegd")}</span>
+            </summary>
+            <div className="space-y-4 border-t border-primary/15 p-3">
+              <p className="text-xs text-muted-foreground">Klantmeldingen bevatten nooit de interne notitie hieronder.</p>
             {lifecycleUnavailable ? (
               <p className="rounded-md border border-dashed border-border bg-background p-2 text-xs text-muted-foreground">Voer de Phase 3-migratie uit om statusgeschiedenis en klantacties te gebruiken.</p>
             ) : null}
             <div className="grid gap-1.5">
-              <Label htmlFor="booking-lifecycle-private-note">Interne actienotitie</Label>
-              <Textarea id="booking-lifecycle-private-note" rows={2} maxLength={2000} value={lifecyclePrivateNote} onChange={(event) => setLifecyclePrivateNote(event.target.value)} placeholder="Alleen zichtbaar voor de eigenaar" />
+              <Label htmlFor={fieldId("booking-lifecycle-private-note")}>Interne actienotitie</Label>
+              <Textarea id={fieldId("booking-lifecycle-private-note")} rows={2} maxLength={2000} value={lifecyclePrivateNote} onChange={(event) => setLifecyclePrivateNote(event.target.value)} placeholder="Alleen zichtbaar voor de eigenaar" />
             </div>
 
             {openCustomerRequests.map((request) => (
@@ -1964,10 +2083,10 @@ function EntryForm({
                 <summary className="cursor-pointer text-sm font-semibold">Alternatief tijdstip voorstellen</summary>
                 <div className="mt-3 grid gap-3">
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div><Label htmlFor="booking-proposal-start">Start</Label><Input id="booking-proposal-start" className="mt-1" type="datetime-local" value={proposalStart} onChange={(event) => setProposalStart(event.target.value)} /></div>
-                    <div><Label htmlFor="booking-proposal-end">Einde</Label><Input id="booking-proposal-end" className="mt-1" type="datetime-local" value={proposalEnd} onChange={(event) => setProposalEnd(event.target.value)} /></div>
+                    <div><Label htmlFor={fieldId("booking-proposal-start")}>Start</Label><Input id={fieldId("booking-proposal-start")} className="mt-1" type="datetime-local" value={proposalStart} onChange={(event) => setProposalStart(event.target.value)} /></div>
+                    <div><Label htmlFor={fieldId("booking-proposal-end")}>Einde</Label><Input id={fieldId("booking-proposal-end")} className="mt-1" type="datetime-local" value={proposalEnd} onChange={(event) => setProposalEnd(event.target.value)} /></div>
                   </div>
-                  <div><Label htmlFor="booking-proposal-message">Bericht aan klant</Label><Textarea id="booking-proposal-message" className="mt-1" rows={2} maxLength={1000} value={proposalMessage} onChange={(event) => setProposalMessage(event.target.value)} /></div>
+                  <div><Label htmlFor={fieldId("booking-proposal-message")}>Bericht aan klant</Label><Textarea id={fieldId("booking-proposal-message")} className="mt-1" rows={2} maxLength={1000} value={proposalMessage} onChange={(event) => setProposalMessage(event.target.value)} /></div>
                   <Button type="button" variant="outline" disabled={disabled || isSaving || lifecycleUnavailable || !proposalStart || !proposalEnd} onClick={propose}>Voorstel versturen</Button>
                 </div>
               </details>
@@ -1984,7 +2103,8 @@ function EntryForm({
                 ))}
               </ol>
             ) : null}
-          </div>
+            </div>
+          </details>
         ) : null}
         {conflicts.length > 0 || availabilityWarning ? (
           <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
@@ -2007,9 +2127,9 @@ function EntryForm({
           </div>
         ) : null}
         <div className="grid gap-1.5">
-          <Label htmlFor="calendar-title">Titel</Label>
+          <Label htmlFor={fieldId("calendar-title")}>Titel</Label>
           <Input
-            id="calendar-title"
+            id={fieldId("calendar-title")}
             value={form.title}
             disabled={disabled}
             onChange={(event) => onChange({ ...form, title: event.target.value })}
@@ -2017,9 +2137,9 @@ function EntryForm({
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="grid gap-1.5">
-            <Label htmlFor="calendar-type">Type</Label>
+            <Label htmlFor={fieldId("calendar-type")}>Type</Label>
             <select
-              id="calendar-type"
+              id={fieldId("calendar-type")}
               value={form.entry_type}
               disabled={disabled}
               onChange={(event) => onChange({ ...form, entry_type: event.target.value as CalendarEntryType })}
@@ -2032,9 +2152,9 @@ function EntryForm({
             </select>
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="calendar-status">Status</Label>
+            <Label htmlFor={fieldId("calendar-status")}>Status</Label>
             <select
-              id="calendar-status"
+              id={fieldId("calendar-status")}
               value={form.status}
               disabled={disabled}
               onChange={(event) => onChange({ ...form, status: event.target.value as CalendarEntryStatus })}
@@ -2049,9 +2169,9 @@ function EntryForm({
           </div>
         </div>
         <div className="grid gap-1.5">
-          <Label htmlFor="calendar-service">{offeringCopy.singular[0].toUpperCase()}{offeringCopy.singular.slice(1)}</Label>
+          <Label htmlFor={fieldId("calendar-service")}>{offeringCopy.singular[0].toUpperCase()}{offeringCopy.singular.slice(1)}</Label>
           <select
-            id="calendar-service"
+            id={fieldId("calendar-service")}
             value={form.service_id}
             disabled={disabled}
             onChange={(event) => onChange({ ...form, service_id: event.target.value })}
@@ -2067,9 +2187,9 @@ function EntryForm({
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="grid gap-1.5">
-            <Label htmlFor="calendar-start">Start</Label>
+            <Label htmlFor={fieldId("calendar-start")}>Start</Label>
             <Input
-              id="calendar-start"
+              id={fieldId("calendar-start")}
               type="datetime-local"
               value={form.start_at}
               disabled={disabled}
@@ -2077,9 +2197,9 @@ function EntryForm({
             />
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="calendar-end">Einde</Label>
+            <Label htmlFor={fieldId("calendar-end")}>Einde</Label>
             <Input
-              id="calendar-end"
+              id={fieldId("calendar-end")}
               type="datetime-local"
               value={form.end_at}
               disabled={disabled}
@@ -2096,58 +2216,56 @@ function EntryForm({
           />
           Hele dag
         </label>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="grid gap-1.5">
-            <Label htmlFor="calendar-name">Klantnaam</Label>
-            <Input
-              id="calendar-name"
-              value={form.customer_name}
-              disabled={disabled}
-              onChange={(event) => onChange({ ...form, customer_name: event.target.value })}
-            />
+        <details className="min-w-0 overflow-hidden rounded-md border border-border bg-background" open={customerDetailsOpen} onToggle={(event) => setCustomerDetailsOpen(event.currentTarget.open)}>
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 text-sm font-semibold text-foreground">
+            <span>Klantgegevens en notities</span>
+            <span className="max-w-[50%] truncate text-xs font-normal text-muted-foreground">{form.customer_name || "Nog niet ingevuld"}</span>
+          </summary>
+          <div className="grid gap-3 border-t border-border p-3">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-1.5">
+                <Label htmlFor={fieldId("calendar-name")}>Klantnaam</Label>
+                <Input id={fieldId("calendar-name")} value={form.customer_name} disabled={disabled} onChange={(event) => onChange({ ...form, customer_name: event.target.value })} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label htmlFor={fieldId("calendar-phone")}>Telefoon</Label>
+                <Input id={fieldId("calendar-phone")} value={form.customer_phone} disabled={disabled} onChange={(event) => onChange({ ...form, customer_phone: event.target.value })} />
+              </div>
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor={fieldId("calendar-email")}>E-mail</Label>
+              <Input id={fieldId("calendar-email")} value={form.customer_email} disabled={disabled} onChange={(event) => onChange({ ...form, customer_email: event.target.value })} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor={fieldId("calendar-notes")}>Interne notities</Label>
+              <Textarea id={fieldId("calendar-notes")} rows={3} value={form.internal_notes} disabled={disabled} onChange={(event) => onChange({ ...form, internal_notes: event.target.value })} />
+            </div>
           </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="calendar-phone">Telefoon</Label>
-            <Input
-              id="calendar-phone"
-              value={form.customer_phone}
-              disabled={disabled}
-              onChange={(event) => onChange({ ...form, customer_phone: event.target.value })}
-            />
-          </div>
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="calendar-email">E-mail</Label>
-          <Input
-            id="calendar-email"
-            value={form.customer_email}
-            disabled={disabled}
-            onChange={(event) => onChange({ ...form, customer_email: event.target.value })}
-          />
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="calendar-notes">Interne notities</Label>
-          <Textarea
-            id="calendar-notes"
-            rows={3}
-            value={form.internal_notes}
-            disabled={disabled}
-            onChange={(event) => onChange({ ...form, internal_notes: event.target.value })}
-          />
-        </div>
-        <div className="sticky bottom-0 z-10 -mx-4 -mb-4 flex flex-col-reverse gap-2 border-t border-border bg-card p-4 sm:flex-row sm:justify-end md:static md:m-0 md:border-0 md:bg-transparent md:p-0">
-          {form.id ? (
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={() => onDelete(form.id!)}
-              disabled={disabled || isSaving}
-              className="sm:mr-auto"
-            >
-              <Trash2 className="h-4 w-4" />
-              Verwijderen
-            </Button>
-          ) : null}
+        </details>
+        {form.id ? (
+          <details className="min-w-0 overflow-hidden rounded-md border border-border bg-background">
+            <summary className="cursor-pointer px-3 py-3 text-sm font-medium text-muted-foreground">Geavanceerde acties</summary>
+            <div className="border-t border-border p-3">
+              {deleteConfirmationOpen ? (
+                <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-950">
+                  <p className="font-medium">Dit kalenderitem definitief verwijderen?</p>
+                  <p className="mt-1 text-xs">Deze actie kan niet ongedaan worden gemaakt.</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => setDeleteConfirmationOpen(false)} disabled={isSaving}>Annuleren</Button>
+                    <Button type="button" variant="destructive" size="sm" onClick={() => onDelete(form.id!)} disabled={disabled || isSaving}>
+                      <Trash2 className="h-4 w-4" /> Definitief verwijderen
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button type="button" variant="outline" size="sm" onClick={() => setDeleteConfirmationOpen(true)} disabled={disabled || isSaving} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+                  <Trash2 className="h-4 w-4" /> Kalenderitem verwijderen
+                </Button>
+              )}
+            </div>
+          </details>
+        ) : null}
+        <div className="sticky bottom-0 z-10 -mx-4 -mb-4 grid grid-cols-2 gap-2 border-t border-border bg-card p-4 md:static md:m-0 md:flex md:justify-end md:border-0 md:bg-transparent md:p-0">
           <Button type="button" variant="outline" onClick={onCancel} disabled={isSaving}>
             Annuleren
           </Button>

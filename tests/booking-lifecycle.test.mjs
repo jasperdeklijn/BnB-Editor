@@ -69,6 +69,22 @@ test("notification delivery claims outbox rows and uses stable message ids", () 
   assert.match(vercel, /\/api\/cron\/booking-notifications/)
 })
 
+test("customer booking emails follow the request locale while owner emails stay Dutch", () => {
+  const notifications = read("lib/booking/notifications.ts")
+  const copy = read("lib/booking/email-copy.ts")
+  for (const locale of ["nl-NL", "en-GB", "de-DE", "fr-FR"]) {
+    assert.match(copy, new RegExp(`"${locale}"`))
+  }
+  assert.match(notifications, /row\.recipient_type === "customer"/)
+  assert.match(notifications, /normalizeBookingEmailLocale\(row\.locale\)/)
+  assert.match(notifications, /: "nl-NL"/)
+  assert.match(notifications, /getBookingEmailActionLabel/)
+  assert.match(notifications, /getBookingEmailFallbackTitle\(emailLocale\)/)
+  assert.match(copy, /View booking/)
+  assert.match(copy, /Buchung ansehen/)
+  assert.match(copy, /Voir la réservation/)
+})
+
 test("owner calendar exposes approve, decline, alternatives, requests, and owner-only history", () => {
   const calendar = read("components/calendar/calendar-client.tsx")
   const actions = read("app/editor/calendar/actions.ts")

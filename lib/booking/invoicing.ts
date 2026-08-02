@@ -3,6 +3,7 @@ import "server-only"
 import { createHash, randomUUID } from "node:crypto"
 import nodemailer from "nodemailer"
 
+import { getInvoiceEmailCopy, normalizeBookingEmailLocale } from "@/lib/booking/email-copy"
 import { createInvoicePdf, type InvoicePdfSnapshot } from "@/lib/booking/invoice-pdf"
 import {
   calculateBookingFinancials,
@@ -531,6 +532,14 @@ export async function emailIssuedInvoice(invoiceId: string) {
   const password = process.env.SMTP_PASS
   if (!host || !user || !password) throw new Error("SMTP is niet ingesteld.")
   const admin = await createAdminClient()
+  const { data: calendarEntry } = await admin.from("calendar_entries")
+    .select("contact_request_id")
+    .eq("id", invoice.calendar_entry_id)
+    .maybeSingle()
+  const { data: contactRequest } = calendarEntry?.contact_request_id
+    ? await admin.from("contact_requests").select("locale").eq("id", calendarEntry.contact_request_id).maybeSingle()
+    : { data: null }
+  const emailLocale = normalizeBookingEmailLocale(contactRequest?.locale)
   const idempotencyKey = `invoice:${invoice.id}:${randomUUID()}`
   const { data: delivery, error: deliveryError } = await admin.from("booking_invoice_emails").insert({
     invoice_id: invoice.id, business_id: invoice.business_id, recipient_email: recipient, idempotency_key: idempotencyKey,
@@ -545,13 +554,18 @@ export async function emailIssuedInvoice(invoiceId: string) {
     auth: { user, pass: password }, connectionTimeout: 15_000, socketTimeout: 30_000,
   })
   try {
-    const label = storedInvoice.document_type === "credit_note" ? "creditfactuur" : "factuur"
+    const copy = getInvoiceEmailCopy({
+      documentType: storedInvoice.document_type,
+      invoiceNumber: storedInvoice.invoice_number || "",
+      reservationNumber: storedInvoice.reservation_number,
+      customerName: storedInvoice.customer_details.name || "",
+    }, emailLocale)
     const info = await transporter.sendMail({
       from: `${process.env.SMTP_FROM_NAME?.trim() || "FlexPagina boekingen"} <${process.env.SMTP_FROM?.trim() || user || PLATFORM_EMAILS.info}>`,
       to: recipient,
-      subject: `${label[0].toUpperCase()}${label.slice(1)} ${storedInvoice.invoice_number}`,
-      text: `Beste ${storedInvoice.customer_details.name || "klant"},\n\nIn de bijlage vindt u ${label} ${storedInvoice.invoice_number} voor reservering ${storedInvoice.reservation_number}.\n\nDeze e-mail is handmatig door de ondernemer verzonden.`,
-      html: `<p>Beste ${escapeHtml(storedInvoice.customer_details.name || "klant")},</p><p>In de bijlage vindt u ${label} <strong>${escapeHtml(storedInvoice.invoice_number)}</strong> voor reservering <strong>${escapeHtml(storedInvoice.reservation_number)}</strong>.</p><p>Deze e-mail is handmatig door de ondernemer verzonden.</p>`,
+      subject: copy.subject,
+      text: `${copy.greeting}\n\n${copy.attachment}\n\n${copy.manualDelivery}`,
+      html: `<div lang="${emailLocale}"><p>${escapeHtml(copy.greeting)}</p><p>${escapeHtml(copy.attachment)}</p><p>${escapeHtml(copy.manualDelivery)}</p></div>`,
       attachments: [{ filename: `${storedInvoice.invoice_number}.pdf`, content: Buffer.from(bytes), contentType: "application/pdf" }],
       messageId,
       headers: { "X-FlexPagina-Invoice-Delivery": delivery.id },

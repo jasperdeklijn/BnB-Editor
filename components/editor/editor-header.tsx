@@ -229,10 +229,10 @@ export function EditorHeader({
 
       <div className="flex-1 px-1 md:px-2 text-center flex justify-center gap-1 md:gap-4 min-w-0">
         {pageTitle ? (
-          <h1 className="inline-flex items-center justify-center gap-1 md:gap-2 text-xs md:text-sm font-semibold text-[var(--editor-header-fg)] truncate">
+          <div className="inline-flex items-center justify-center gap-1 md:gap-2 text-xs md:text-sm font-semibold text-[var(--editor-header-fg)] truncate">
             {titleIcon ? <span className="flex-shrink-0 text-lg">{titleIcon}</span> : null}
             <span className="truncate">{pageTitle}</span>
-          </h1>
+          </div>
         ) : null}
         {infoText ? (
           <span className="hidden md:inline-flex items-center gap-1.5 text-xs text-[var(--editor-header-fg)]/70 whitespace-nowrap">

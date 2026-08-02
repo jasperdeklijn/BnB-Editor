@@ -55,7 +55,7 @@ function partyValue(party: InvoiceParty, key: keyof InvoiceParty) {
   return String(party[key] || "")
 }
 
-function LineEditor({ lines, onChange, disabled }: { lines: EditableLine[]; onChange: (lines: EditableLine[]) => void; disabled: boolean }) {
+function LineEditor({ idPrefix, lines, onChange, disabled }: { idPrefix: string; lines: EditableLine[]; onChange: (lines: EditableLine[]) => void; disabled: boolean }) {
   const update = (index: number, values: Partial<EditableLine>) => onChange(lines.map((line, current) => current === index ? { ...line, ...values } : line))
   return (
     <div className="grid gap-3">
@@ -65,12 +65,12 @@ function LineEditor({ lines, onChange, disabled }: { lines: EditableLine[]; onCh
             <span className="text-xs font-semibold text-muted-foreground">Regel {index + 1}</span>
             <Button type="button" variant="ghost" size="icon-sm" className="text-destructive" disabled={disabled || lines.length === 1} onClick={() => onChange(lines.filter((_, current) => current !== index))} aria-label={`Regel ${index + 1} verwijderen`}><Trash2 className="h-4 w-4" /></Button>
           </div>
-          <div><Label htmlFor={`invoice-line-description-${line.id}`}>Omschrijving</Label><Input id={`invoice-line-description-${line.id}`} className="mt-1" value={line.description || ""} maxLength={200} disabled={disabled} onChange={(event) => update(index, { description: event.target.value })} /></div>
+          <div><Label htmlFor={`${idPrefix}-invoice-line-description-${line.id}`}>Omschrijving</Label><Input id={`${idPrefix}-invoice-line-description-${line.id}`} className="mt-1" value={line.description || ""} maxLength={200} disabled={disabled} onChange={(event) => update(index, { description: event.target.value })} /></div>
           <div className="grid grid-cols-2 gap-2">
-            <div><Label htmlFor={`invoice-line-quantity-${line.id}`}>Aantal</Label><Input id={`invoice-line-quantity-${line.id}`} className="mt-1" type="number" min="0.001" step="0.001" value={(Number(line.quantity_milli || 0) / 1000).toString()} disabled={disabled} onChange={(event) => update(index, { quantity_milli: Math.round(Number(event.target.value) * 1000) })} /></div>
-            <div><Label htmlFor={`invoice-line-price-${line.id}`}>Prijs excl. btw</Label><Input id={`invoice-line-price-${line.id}`} className="mt-1" type="number" min="0" step="0.01" value={(Number(line.unit_price_minor || 0) / 100).toFixed(2)} disabled={disabled} onChange={(event) => update(index, { unit_price_minor: Math.round(Number(event.target.value) * 100) })} /></div>
-            <div><Label htmlFor={`invoice-line-discount-${line.id}`}>Korting</Label><Input id={`invoice-line-discount-${line.id}`} className="mt-1" type="number" min="0" step="0.01" value={(Number(line.discount_minor || 0) / 100).toFixed(2)} disabled={disabled} onChange={(event) => update(index, { discount_minor: Math.round(Number(event.target.value) * 100) })} /></div>
-            <div><Label htmlFor={`invoice-line-vat-${line.id}`}>Btw %</Label><Input id={`invoice-line-vat-${line.id}`} className="mt-1" type="number" min="0" max="100" step="0.01" value={(Number(line.vat_rate_basis_points || 0) / 100).toString()} disabled={disabled} onChange={(event) => update(index, { vat_rate_basis_points: Math.round(Number(event.target.value) * 100) })} /></div>
+            <div><Label htmlFor={`${idPrefix}-invoice-line-quantity-${line.id}`}>Aantal</Label><Input id={`${idPrefix}-invoice-line-quantity-${line.id}`} className="mt-1" type="number" min="0.001" step="0.001" value={(Number(line.quantity_milli || 0) / 1000).toString()} disabled={disabled} onChange={(event) => update(index, { quantity_milli: Math.round(Number(event.target.value) * 1000) })} /></div>
+            <div><Label htmlFor={`${idPrefix}-invoice-line-price-${line.id}`}>Prijs excl. btw</Label><Input id={`${idPrefix}-invoice-line-price-${line.id}`} className="mt-1" type="number" min="0" step="0.01" value={(Number(line.unit_price_minor || 0) / 100).toFixed(2)} disabled={disabled} onChange={(event) => update(index, { unit_price_minor: Math.round(Number(event.target.value) * 100) })} /></div>
+            <div><Label htmlFor={`${idPrefix}-invoice-line-discount-${line.id}`}>Korting</Label><Input id={`${idPrefix}-invoice-line-discount-${line.id}`} className="mt-1" type="number" min="0" step="0.01" value={(Number(line.discount_minor || 0) / 100).toFixed(2)} disabled={disabled} onChange={(event) => update(index, { discount_minor: Math.round(Number(event.target.value) * 100) })} /></div>
+            <div><Label htmlFor={`${idPrefix}-invoice-line-vat-${line.id}`}>Btw %</Label><Input id={`${idPrefix}-invoice-line-vat-${line.id}`} className="mt-1" type="number" min="0" max="100" step="0.01" value={(Number(line.vat_rate_basis_points || 0) / 100).toString()} disabled={disabled} onChange={(event) => update(index, { vat_rate_basis_points: Math.round(Number(event.target.value) * 100) })} /></div>
           </div>
         </div>
       ))}
@@ -96,6 +96,7 @@ function PartyEditor({ prefix, title, party, seller, disabled, onChange }: { pre
 }
 
 export function BookingFinancePanel({
+  idPrefix,
   entry,
   offering,
   financial,
@@ -105,6 +106,7 @@ export function BookingFinancePanel({
   onFinancialChange,
   onInvoicesChange,
 }: {
+  idPrefix: string
   entry: CalendarEntry
   offering?: Service
   financial: ReservationFinancial | null
@@ -235,12 +237,12 @@ export function BookingFinancePanel({
 
   const invoiceEditor = draft && invoiceEditorOpen && typeof document !== "undefined"
     ? createPortal(
-        <div className="fixed inset-0 z-[1000] flex h-[100dvh] flex-col overflow-hidden bg-background" role="dialog" aria-modal="true" aria-labelledby="invoice-editor-title">
+        <div className="fixed inset-0 z-[1000] flex h-[100dvh] flex-col overflow-hidden bg-background" role="dialog" aria-modal="true" aria-labelledby={`${idPrefix}-invoice-editor-title`}>
           <header className="shrink-0 border-b border-border bg-background/95 px-4 py-3 shadow-sm backdrop-blur sm:px-6">
             <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex items-center gap-2 text-primary"><ReceiptText className="h-5 w-5" /><span className="text-xs font-semibold uppercase tracking-wide">Conceptfactuur</span></div>
-                <h2 id="invoice-editor-title" className="mt-0.5 truncate text-xl font-semibold">Factuur voor {entry.customer_name || "klant"}</h2>
+                <h2 id={`${idPrefix}-invoice-editor-title`} className="mt-0.5 truncate text-xl font-semibold">Factuur voor {entry.customer_name || "klant"}</h2>
                 <p className="truncate text-xs text-muted-foreground">Reservering {financial.reservation_number} · {entry.title}</p>
               </div>
               <Button type="button" variant="ghost" size="icon" onClick={() => setInvoiceEditorOpen(false)} disabled={isPending} aria-label="Factuur sluiten"><X className="h-5 w-5" /></Button>
@@ -253,13 +255,13 @@ export function BookingFinancePanel({
                 {notice ? <StatusMessage tone={notice.tone}>{notice.text}</StatusMessage> : null}
                 <section className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
                   <div className="mb-4"><h3 className="font-semibold">Factuurregels</h3><p className="text-xs text-muted-foreground">Controleer de omschrijving, aantallen, prijs, korting en btw.</p></div>
-                  <LineEditor lines={draftLines} onChange={setDraftLines} disabled={isPending} />
+                  <LineEditor idPrefix={`${idPrefix}-draft`} lines={draftLines} onChange={setDraftLines} disabled={isPending} />
                 </section>
                 <section className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
                   <div className="mb-4"><h3 className="font-semibold">Factuurgegevens</h3><p className="text-xs text-muted-foreground">Deze gegevens worden vastgelegd zodra de factuur definitief wordt uitgegeven.</p></div>
                   <div className="grid gap-4 xl:grid-cols-2">
-                    <PartyEditor prefix={`seller-${draft.id}`} title="Verkoper" seller party={seller} onChange={setSeller} disabled={isPending} />
-                    <PartyEditor prefix={`customer-${draft.id}`} title="Klant" party={customer} onChange={setCustomer} disabled={isPending} />
+                    <PartyEditor prefix={`${idPrefix}-seller-${draft.id}`} title="Verkoper" seller party={seller} onChange={setSeller} disabled={isPending} />
+                    <PartyEditor prefix={`${idPrefix}-customer-${draft.id}`} title="Klant" party={customer} onChange={setCustomer} disabled={isPending} />
                   </div>
                 </section>
               </div>
@@ -272,10 +274,10 @@ export function BookingFinancePanel({
                 </section>
                 <section className="grid gap-4 rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
                   <div><h3 className="font-semibold">Datums en nummering</h3><p className="text-xs text-muted-foreground">Stel de leverdatum, betaaltermijn en factuurreeksen in.</p></div>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2"><div><Label htmlFor={`service-date-${draft.id}`}>Leverdatum</Label><Input id={`service-date-${draft.id}`} className="mt-1" type="date" value={serviceDate} disabled={isPending} onChange={(event) => setServiceDate(event.target.value)} /></div><div><Label htmlFor={`due-date-${draft.id}`}>Vervaldatum</Label><Input id={`due-date-${draft.id}`} className="mt-1" type="date" value={dueDate} disabled={isPending} onChange={(event) => setDueDate(event.target.value)} /></div></div>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2"><div><Label htmlFor={`invoice-prefix-${draft.id}`}>Factuurreeks</Label><Input id={`invoice-prefix-${draft.id}`} className="mt-1" value={profile.invoice_prefix} maxLength={12} disabled={isPending} onChange={(event) => setProfile({ ...profile, invoice_prefix: event.target.value })} /></div><div><Label htmlFor={`credit-prefix-${draft.id}`}>Creditreeks</Label><Input id={`credit-prefix-${draft.id}`} className="mt-1" value={profile.credit_note_prefix} maxLength={12} disabled={isPending} onChange={(event) => setProfile({ ...profile, credit_note_prefix: event.target.value })} /></div></div>
-                  <div><Label htmlFor={`payment-term-${draft.id}`}>Standaard betaaltermijn (dagen)</Label><Input id={`payment-term-${draft.id}`} className="mt-1" type="number" min="0" max="365" value={profile.payment_term_days} disabled={isPending} onChange={(event) => setProfile({ ...profile, payment_term_days: Number(event.target.value) })} /></div>
-                  <div><Label htmlFor={`invoice-accent-${draft.id}`}>PDF-kleur</Label><Input id={`invoice-accent-${draft.id}`} className="mt-1 h-11" type="color" value={profile.accent_color} disabled={isPending} onChange={(event) => setProfile({ ...profile, accent_color: event.target.value })} /></div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2"><div><Label htmlFor={`${idPrefix}-service-date-${draft.id}`}>Leverdatum</Label><Input id={`${idPrefix}-service-date-${draft.id}`} className="mt-1" type="date" value={serviceDate} disabled={isPending} onChange={(event) => setServiceDate(event.target.value)} /></div><div><Label htmlFor={`${idPrefix}-due-date-${draft.id}`}>Vervaldatum</Label><Input id={`${idPrefix}-due-date-${draft.id}`} className="mt-1" type="date" value={dueDate} disabled={isPending} onChange={(event) => setDueDate(event.target.value)} /></div></div>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2"><div><Label htmlFor={`${idPrefix}-invoice-prefix-${draft.id}`}>Factuurreeks</Label><Input id={`${idPrefix}-invoice-prefix-${draft.id}`} className="mt-1" value={profile.invoice_prefix} maxLength={12} disabled={isPending} onChange={(event) => setProfile({ ...profile, invoice_prefix: event.target.value })} /></div><div><Label htmlFor={`${idPrefix}-credit-prefix-${draft.id}`}>Creditreeks</Label><Input id={`${idPrefix}-credit-prefix-${draft.id}`} className="mt-1" value={profile.credit_note_prefix} maxLength={12} disabled={isPending} onChange={(event) => setProfile({ ...profile, credit_note_prefix: event.target.value })} /></div></div>
+                  <div><Label htmlFor={`${idPrefix}-payment-term-${draft.id}`}>Standaard betaaltermijn (dagen)</Label><Input id={`${idPrefix}-payment-term-${draft.id}`} className="mt-1" type="number" min="0" max="365" value={profile.payment_term_days} disabled={isPending} onChange={(event) => setProfile({ ...profile, payment_term_days: Number(event.target.value) })} /></div>
+                  <div><Label htmlFor={`${idPrefix}-invoice-accent-${draft.id}`}>PDF-kleur</Label><Input id={`${idPrefix}-invoice-accent-${draft.id}`} className="mt-1 h-11" type="color" value={profile.accent_color} disabled={isPending} onChange={(event) => setProfile({ ...profile, accent_color: event.target.value })} /></div>
                 </section>
                 <p className="rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">We genereren een volledige Nederlandse factuur. Controleer bij buitenlandse, vrijgestelde of bijzondere btw-situaties eerst uw adviseur.</p>
               </aside>
@@ -295,18 +297,21 @@ export function BookingFinancePanel({
 
   return (
     <>
-    <section className="rounded-lg border border-border bg-card shadow-sm">
-      <div className="border-b border-border px-4 py-3"><div className="flex items-center gap-2"><ReceiptText className="h-4 w-4 text-primary" /><h2 className="font-semibold">Prijs en factuur</h2></div><p className="mt-1 text-xs text-muted-foreground">Reservering {financial.reservation_number}. FlexPagina verwerkt geen betaling.</p></div>
-      <div className="grid gap-4 p-4">
+    <details className="min-w-0 overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+      <summary className="flex cursor-pointer list-none items-start justify-between gap-3 px-4 py-3">
+        <div className="min-w-0"><div className="flex items-center gap-2"><ReceiptText className="h-4 w-4 text-primary" /><h2 className="font-semibold">Prijs en factuur</h2></div><p className="mt-1 truncate text-xs text-muted-foreground">Reservering {financial.reservation_number}. FlexPagina verwerkt geen betaling.</p></div>
+        <div className="shrink-0 text-right"><p className="text-sm font-semibold">{formatMinorUnits(previewTotals?.totalMinor ?? financial.total_minor)}</p><p className="text-[11px] text-muted-foreground">{invoices.length} {invoices.length === 1 ? "document" : "documenten"}</p></div>
+      </summary>
+      <div className="grid gap-4 border-t border-border p-4">
         {notice ? <StatusMessage tone={notice.tone}>{notice.text}</StatusMessage> : null}
         <div className="grid gap-2 sm:grid-cols-2">
-          <div><Label htmlFor={`settlement-${entry.id}`}>Handmatige betaalstatus</Label><select id={`settlement-${entry.id}`} className="mt-1 h-11 w-full rounded-md border border-input bg-background px-3 text-sm" value={financial.settlement_status} disabled={isPending} onChange={(event) => updateSettlement(event.target.value as SettlementStatus)}><option value="open">Open</option><option value="paid">Betaald</option><option value="refunded">Terugbetaald</option></select></div>
+          <div><Label htmlFor={`${idPrefix}-settlement-${entry.id}`}>Handmatige betaalstatus</Label><select id={`${idPrefix}-settlement-${entry.id}`} className="mt-1 h-11 w-full rounded-md border border-input bg-background px-3 text-sm" value={financial.settlement_status} disabled={isPending} onChange={(event) => updateSettlement(event.target.value as SettlementStatus)}><option value="open">Open</option><option value="paid">Betaald</option><option value="refunded">Terugbetaald</option></select></div>
           <div className="rounded-md bg-muted/60 p-3"><p className="text-xs text-muted-foreground">Reserveringstotaal</p><p className="text-lg font-semibold">{formatMinorUnits(previewTotals?.totalMinor ?? financial.total_minor)}</p></div>
         </div>
 
         <details className="rounded-md border border-border p-3" open={financial.pricing_status !== "ready"}>
           <summary className="cursor-pointer text-sm font-semibold">Reserveringsprijs bewerken</summary>
-          <div className="mt-3 grid gap-3"><LineEditor lines={lines} onChange={setLines} disabled={isPending} /><Button type="button" className="min-h-11" onClick={savePricing} disabled={isPending || !previewTotals}><Save className="h-4 w-4" /> Prijs vastleggen</Button></div>
+          <div className="mt-3 grid gap-3"><LineEditor idPrefix={`${idPrefix}-pricing`} lines={lines} onChange={setLines} disabled={isPending} /><Button type="button" className="min-h-11" onClick={savePricing} disabled={isPending || !previewTotals}><Save className="h-4 w-4" /> Prijs vastleggen</Button></div>
         </details>
 
         {!draft ? <Button type="button" variant="outline" className="min-h-11" onClick={createDraft} disabled={isPending || financial.pricing_status !== "ready"}><FilePlus2 className="h-4 w-4" /> Conceptfactuur maken</Button> : (
@@ -327,7 +332,7 @@ export function BookingFinancePanel({
           </article>
         ))}
       </div>
-    </section>
+    </details>
     {invoiceEditor}
     </>
   )
