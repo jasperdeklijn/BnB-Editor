@@ -184,23 +184,27 @@ Implementation note: lifecycle changes stay attached to the existing `calendar_e
 
 ### Phase 4: calendar interoperability
 
-- [ ] Add private iCal feed export with key rotation.
-- [ ] Add safe iCal busy-time import and deduplication.
-- [ ] Monitor stale imports and surface sync health.
-- [ ] Consider Google Calendar and Outlook OAuth only after import/export reliability is proven.
+- [x] Add private iCal feed export with key rotation.
+- [x] Add safe iCal busy-time import and deduplication.
+- [x] Monitor stale imports and surface sync health.
+- [x] Consider Google Calendar and Outlook OAuth only after import/export reliability is proven.
+
+Implementation note: each business can create a private bearer-token iCal subscription URL, pause it, or rotate the key to invalidate the previous URL immediately. The export contains calendar times, statuses, and titles, but excludes customer contact details, internal notes, and note-only entries; imported events are exported only as `Extern bezet` to avoid leaking or amplifying external details. Owner-configured HTTPS iCal imports validate DNS destinations against private/local networks, revalidate redirects, enforce a 12-second timeout and 2 MB response limit, support common recurring-event rules and exceptions, and fail closed on unsupported recurrence rules. A successful feed snapshot is applied transactionally through a service-role-only database function and deduplicated by source, UID, and recurrence identity. Failed imports retain the last successful blocking snapshot, retry with backoff, and surface never-synced, warning, stale, healthy, or paused health in the calendar. The authenticated cron checks due sources every fifteen minutes while each healthy source schedules its next sync hourly. Google Calendar and Outlook OAuth are deliberately deferred until production iCal reliability has been observed. Apply `20260802120000_add_calendar_interoperability.sql` after the Phase 1–3 migrations and retain `CRON_SECRET`. No payment, invoice, Google OAuth, or Outlook OAuth behavior was added in this phase.
 
 ### Phase 5: reservation pricing and invoice PDF
 
-- [ ] Generate a unique reservation number when a booking becomes confirmed.
-- [ ] Add a reservation price snapshot with currency, line items, VAT, subtotal, and total in minor units.
-- [ ] Add owner-managed `open`, `paid`, and `refunded` settlement statuses without payment-provider integration.
-- [ ] Add separate draft and issued invoice records with unique invoice numbers.
-- [ ] Let the owner edit draft invoice lines and seller/customer details before issue.
-- [ ] Generate a branded A4 invoice PDF containing the invoice number, reservation number, parties, dates, line items, VAT breakdown, and total.
-- [ ] Store the issued invoice snapshot and PDF so later reservation edits do not change historical invoices.
-- [ ] Allow PDF download and an explicit owner-triggered email attachment; never send automatically.
-- [ ] Add a safe void/correction path and define credit-note support before allowing issued financial values to change.
-- [ ] Validate invoice configuration against the business's applicable Dutch/EU invoicing requirements before production rollout.
+- [x] Generate a unique reservation number when a booking becomes confirmed.
+- [x] Add a reservation price snapshot with currency, line items, VAT, subtotal, and total in minor units.
+- [x] Add owner-managed `open`, `paid`, and `refunded` settlement statuses without payment-provider integration.
+- [x] Add separate draft and issued invoice records with unique invoice numbers.
+- [x] Let the owner edit draft invoice lines and seller/customer details before issue.
+- [x] Generate a branded A4 invoice PDF containing the invoice number, reservation number, parties, dates, line items, VAT breakdown, and total.
+- [x] Store the issued invoice snapshot and PDF so later reservation edits do not change historical invoices.
+- [x] Allow PDF download and an explicit owner-triggered email attachment; never send automatically.
+- [x] Add a safe void/correction path and define credit-note support before allowing issued financial values to change.
+- [x] Validate the standard invoice configuration against baseline Dutch/EU invoice-field requirements and flag exceptional tax situations for professional review before rollout.
+
+Implementation note: Phase 5 keeps reservation prices, manual settlement state, invoice snapshots, and stored PDFs separate from mutable calendar records. Confirmation assigns a stable `RES-...` reference; final invoices and full credit notes use business/year counters and cannot have their financial snapshot edited after issue. PDFs reuse the logo from the navigation of the website that received the booking, fall back to the business's published website, and include a `Powered by FlexPagina` footer. For safe server-side embedding, uploaded PNG/JPEG assets and embedded PNG/JPEG data are supported; arbitrary external logo URLs are not fetched. PDFs live in a private Supabase bucket and are available only through an authenticated owner route or the booking's signed customer link. E-mailing is always an explicit owner action with a PDF attachment, and no payment provider or money collection was added. The standard seller, customer, dates, line items, discount, VAT, subtotal, total, invoice number, and reservation reference are checked before issue; unusual exemptions, reverse charge, foreign VAT, and other special schemes remain a production tax-adviser decision. Apply `20260802140000_add_reservation_invoicing.sql` after the Phase 1–4 migrations.
 
 ## Acceptance criteria
 

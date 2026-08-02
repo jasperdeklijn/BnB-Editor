@@ -20,6 +20,8 @@
     "test:booking-availability": "node --test tests/booking-availability.test.mjs",
     "test:booking-public-flow": "node --test tests/booking-public-flow.test.mjs",
     "test:booking-lifecycle": "node --test tests/booking-lifecycle.test.mjs",
+    "test:booking-calendar-sync": "node --test tests/booking-calendar-interoperability.test.mjs",
+    "test:booking-invoicing": "node --test tests/booking-invoicing.test.mjs",
     "start": "next start"
   },
   "dependencies": {
@@ -69,6 +71,7 @@
     "next": "^16.1.6",
     "next-themes": "^0.4.6",
     "nodemailer": "^8.0.7",
+    "pdf-lib": "^1.17.1",
     "radix-ui": "^1.4.3",
     "react": "19.2.0",
     "react-day-picker": "9.8.0",

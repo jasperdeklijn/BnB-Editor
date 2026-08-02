@@ -51,6 +51,21 @@ export interface CustomerBookingView {
   canCancel: boolean
   canRequestReschedule: boolean
   cancellationCutoffMinutes: number
+  financial: {
+    reservationNumber: string
+    currency: string
+    settlementStatus: "open" | "paid" | "refunded"
+    totalMinor: number
+  } | null
+  invoices: Array<{
+    id: string
+    documentType: "invoice" | "credit_note"
+    invoiceNumber: string
+    status: "issued" | "credited"
+    totalMinor: number
+    currency: string
+    issuedAt: string
+  }>
   token: string
 }
 
@@ -145,6 +160,35 @@ export async function getCustomerBookingView(token: string): Promise<CustomerBoo
   ])
   if (historyResult.error || changesResult.error) return null
 
+  const [financialResult, invoicesResult] = await Promise.all([
+    supabase.from("booking_reservation_financials")
+      .select("reservation_number, currency, settlement_status, total_minor")
+      .eq("calendar_entry_id", entry.id)
+      .maybeSingle(),
+    supabase.from("booking_invoices")
+      .select("id, document_type, invoice_number, status, total_minor, currency, issued_at")
+      .eq("calendar_entry_id", entry.id)
+      .in("status", ["issued", "credited"])
+      .order("issued_at", { ascending: false }),
+  ])
+  const financial = financialResult.error || !financialResult.data ? null : {
+    reservationNumber: financialResult.data.reservation_number,
+    currency: financialResult.data.currency,
+    settlementStatus: financialResult.data.settlement_status as "open" | "paid" | "refunded",
+    totalMinor: Number(financialResult.data.total_minor),
+  }
+  const invoices = invoicesResult.error ? [] : (invoicesResult.data ?? []).flatMap((invoice) => (
+    invoice.invoice_number && invoice.issued_at ? [{
+      id: invoice.id,
+      documentType: invoice.document_type as "invoice" | "credit_note",
+      invoiceNumber: invoice.invoice_number,
+      status: invoice.status as "issued" | "credited",
+      totalMinor: Number(invoice.total_minor),
+      currency: invoice.currency,
+      issuedAt: invoice.issued_at,
+    }] : []
+  ))
+
   const cutoff = Number(settingsResult.data?.cancellation_cutoff_minutes ?? 0)
   const active = entry.status === "pending" || entry.status === "confirmed"
   const beforeCutoff = Date.now() <= new Date(entry.start_at).getTime() - cutoff * 60_000
@@ -158,6 +202,8 @@ export async function getCustomerBookingView(token: string): Promise<CustomerBoo
     canCancel: active && beforeCutoff,
     canRequestReschedule: active && beforeCutoff,
     cancellationCutoffMinutes: cutoff,
+    financial,
+    invoices,
     token,
   }
 }

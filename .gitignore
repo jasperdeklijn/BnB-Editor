@@ -12,6 +12,7 @@
 
 # local generated media/tooling artifacts
 /artifacts/
+/tmp/
 
 # debug
 npm-debug.log*

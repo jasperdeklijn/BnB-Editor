@@ -12,6 +12,8 @@ import {
 import { getServices } from "@/lib/supabase/services"
 import { getOfferingCopy } from "@/lib/business/categories"
 import { getBookingLifecycleData, type BookingLifecycleData } from "@/lib/booking/lifecycle"
+import { getCalendarSyncData, type CalendarSyncData } from "@/lib/calendar/sync"
+import { getBookingFinanceData, type BookingFinanceData } from "@/lib/booking/invoicing"
 
 export const metadata = {
   title: "Kalender | Website Maker",
@@ -64,6 +66,31 @@ export default async function CalendarPage({
   let calendarError: string | null = null
   let lifecycleData: BookingLifecycleData = { history: [], changeRequests: [] }
   let lifecycleUnavailable = false
+  let calendarSyncData: CalendarSyncData = { exportFeed: null, importSources: [] }
+  let calendarSyncUnavailable = false
+  let bookingFinanceData: BookingFinanceData = {
+    financials: [],
+    invoices: [],
+    profile: {
+      business_id: business.id,
+      legal_name: business.name,
+      address_line1: business.street || "",
+      address_line2: "",
+      postal_code: business.postal || "",
+      city: business.city || "",
+      country_code: (business.country || "NL").slice(0, 2).toUpperCase(),
+      email: business.contact_email || "",
+      vat_id: "",
+      kvk_number: "",
+      iban: "",
+      default_vat_basis_points: 2100,
+      invoice_prefix: "F",
+      credit_note_prefix: "CR",
+      payment_term_days: 14,
+      accent_color: "#16302B",
+    },
+  }
+  let bookingFinanceUnavailable = false
   const services = await getServices(business.id)
 
   try {
@@ -81,6 +108,20 @@ export default async function CalendarPage({
   } catch (error) {
     console.error("[calendar] Failed to load booking lifecycle:", error)
     lifecycleUnavailable = true
+  }
+
+  try {
+    calendarSyncData = await getCalendarSyncData(business.id)
+  } catch (error) {
+    console.error("[calendar] Failed to load calendar interoperability:", error)
+    calendarSyncUnavailable = true
+  }
+
+  try {
+    bookingFinanceData = await getBookingFinanceData(business.id)
+  } catch (error) {
+    console.error("[calendar] Failed to load reservation invoicing:", error)
+    bookingFinanceUnavailable = true
   }
 
   const initialOfferingId = services.some((service) => service.id === params?.service)
@@ -101,6 +142,10 @@ export default async function CalendarPage({
         initialAvailabilityWindows={availabilityWindows}
         initialLifecycle={lifecycleData}
         lifecycleUnavailable={lifecycleUnavailable}
+        initialCalendarSync={calendarSyncData}
+        calendarSyncUnavailable={calendarSyncUnavailable}
+        initialBookingFinance={bookingFinanceData}
+        bookingFinanceUnavailable={bookingFinanceUnavailable}
         offerings={services}
         initialOfferingId={initialOfferingId}
         initialEntryId={initialEntryId}

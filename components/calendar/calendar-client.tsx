@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label"
 import { StatusMessage } from "@/components/ui/status-message"
 import { Textarea } from "@/components/ui/textarea"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useEditorLayout } from "@/components/editor/editor-layout-context"
 import type {
   CalendarAvailabilityWindow,
@@ -30,6 +31,13 @@ import type {
 import type { Service } from "@/lib/supabase/services"
 import type { BusinessCategory } from "@/lib/business/categories"
 import type { BookingChangeRequest, BookingHistoryItem, BookingLifecycleData } from "@/lib/booking/lifecycle"
+import type { CalendarSyncData } from "@/lib/calendar/sync"
+import { BookingFinancePanel } from "@/components/calendar/booking-finance-panel"
+import type {
+  BookingFinanceData,
+  BookingInvoice,
+  ReservationFinancial,
+} from "@/lib/booking/invoicing"
 
 type CalendarView = "month" | "week" | "day"
 
@@ -40,6 +48,10 @@ interface CalendarClientProps {
   initialAvailabilityWindows: CalendarAvailabilityWindow[]
   initialLifecycle: BookingLifecycleData
   lifecycleUnavailable: boolean
+  initialCalendarSync: CalendarSyncData
+  calendarSyncUnavailable: boolean
+  initialBookingFinance: BookingFinanceData
+  bookingFinanceUnavailable: boolean
   offerings: Service[]
   initialOfferingId?: string | null
   initialEntryId?: string | null
@@ -86,6 +98,7 @@ type AvailabilityFormState = {
 }
 
 type CalendarFilterState = {
+  query: string
   status: "all" | CalendarEntryStatus
   serviceId: "all" | "unlinked" | string
   source: "all" | CalendarEntrySource
@@ -234,7 +247,9 @@ function servicesOverlap(a: string | null | undefined, b: string | null | undefi
   return !a || !b || a === b
 }
 
-function matchesCalendarFilters(entry: CalendarEntry, filters: CalendarFilterState) {
+function matchesCalendarFilters(entry: CalendarEntry, filters: CalendarFilterState, searchText: string) {
+  const query = filters.query.trim().toLocaleLowerCase("nl-NL")
+  if (query && !searchText.includes(query)) return false
   if (filters.status !== "all" && entry.status !== filters.status) return false
   if (filters.source !== "all" && entry.source !== filters.source) return false
   if (filters.serviceId === "unlinked" && entry.service_id) return false
@@ -383,6 +398,8 @@ export function CalendarClient({
   initialAvailabilityWindows,
   initialLifecycle,
   lifecycleUnavailable,
+  initialBookingFinance,
+  bookingFinanceUnavailable,
   offerings,
   initialOfferingId,
   initialEntryId,
@@ -390,13 +407,17 @@ export function CalendarClient({
   copy,
   offeringCopy,
 }: CalendarClientProps) {
+  const router = useRouter()
   const [entries, setEntries] = useState(initialEntries)
   const [availabilityWindows, setAvailabilityWindows] = useState(initialAvailabilityWindows)
   const [lifecycleHistory, setLifecycleHistory] = useState(initialLifecycle.history)
   const [changeRequests, setChangeRequests] = useState(initialLifecycle.changeRequests)
+  const [reservationFinancials, setReservationFinancials] = useState(initialBookingFinance.financials)
+  const [bookingInvoices, setBookingInvoices] = useState(initialBookingFinance.invoices)
   const [activeView, setActiveView] = useState<CalendarView>("month")
   const [cursorDate, setCursorDate] = useState(() => new Date())
   const [filters, setFilters] = useState<CalendarFilterState>({
+    query: "",
     status: "all",
     serviceId: initialOfferingId ?? "all",
     source: "all",
@@ -424,9 +445,31 @@ export function CalendarClient({
       : null),
     [offerings, filters.serviceId],
   )
+  const searchTextByEntryId = useMemo(() => {
+    const financialByEntryId = new Map(reservationFinancials.map((item) => [item.calendar_entry_id, item]))
+    const invoiceNumbersByEntryId = new Map<string, string[]>()
+    for (const invoice of bookingInvoices) {
+      if (!invoice.invoice_number) continue
+      invoiceNumbersByEntryId.set(invoice.calendar_entry_id, [
+        ...(invoiceNumbersByEntryId.get(invoice.calendar_entry_id) ?? []),
+        invoice.invoice_number,
+      ])
+    }
+    return new Map(entries.map((entry) => [
+      entry.id,
+      [
+        entry.title,
+        entry.customer_name,
+        entry.customer_email,
+        entry.customer_phone,
+        financialByEntryId.get(entry.id)?.reservation_number,
+        ...(invoiceNumbersByEntryId.get(entry.id) ?? []),
+      ].filter(Boolean).join(" ").toLocaleLowerCase("nl-NL"),
+    ]))
+  }, [bookingInvoices, entries, reservationFinancials])
   const visibleEntries = useMemo(
-    () => entries.filter((entry) => matchesCalendarFilters(entry, filters)),
-    [entries, filters],
+    () => entries.filter((entry) => matchesCalendarFilters(entry, filters, searchTextByEntryId.get(entry.id) ?? "")),
+    [entries, filters, searchTextByEntryId],
   )
   const calendarViewRange = useMemo(() => getCalendarViewRange(activeView, cursorDate), [activeView, cursorDate])
   const visibleRangeEntries = useMemo(
@@ -437,6 +480,7 @@ export function CalendarClient({
     [calendarViewRange, visibleEntries],
   )
   const hasActiveFilters =
+    Boolean(filters.query.trim()) ||
     filters.status !== "all" ||
     filters.serviceId !== "all" ||
     filters.source !== "all" ||
@@ -495,11 +539,25 @@ export function CalendarClient({
   const availabilityWarning = form ? getAvailabilityWarning(form, availabilityWindows) : null
   const formLifecycleHistory = form?.id ? lifecycleHistory.filter((item) => item.calendar_entry_id === form.id) : []
   const formChangeRequests = form?.id ? changeRequests.filter((request) => request.calendar_entry_id === form.id) : []
+  const formFinancial = form?.id ? reservationFinancials.find((item) => item.calendar_entry_id === form.id) ?? null : null
+  const formInvoices = form?.id ? bookingInvoices.filter((invoice) => invoice.calendar_entry_id === form.id) : []
+  const formOffering = form?.service_id ? offerings.find((offering) => offering.id === form.service_id) : undefined
+  const formEntry = form?.id ? entries.find((entry) => entry.id === form.id) ?? null : null
 
   useEffect(() => {
     setLifecycleHistory(initialLifecycle.history)
     setChangeRequests(initialLifecycle.changeRequests)
   }, [initialLifecycle])
+
+  useEffect(() => {
+    setEntries(initialEntries)
+    setAvailabilityWindows(initialAvailabilityWindows)
+  }, [initialAvailabilityWindows, initialEntries])
+
+  useEffect(() => {
+    setReservationFinancials(initialBookingFinance.financials)
+    setBookingInvoices(initialBookingFinance.invoices)
+  }, [initialBookingFinance])
 
   useEffect(() => {
     setHeaderSaving(isPending)
@@ -525,6 +583,7 @@ export function CalendarClient({
 
   const clearFilters = () => {
     setFilters({
+      query: "",
       status: "all",
       serviceId: "all",
       source: "all",
@@ -550,6 +609,11 @@ export function CalendarClient({
   }
 
   const openEditForm = (entry: CalendarEntry) => {
+    if (entry.source === "import") {
+      setForm(null)
+      setStatusMessage({ tone: "success", text: "Dit is een alleen-lezen iCal-blokkade. Beheer deze via Externe kalenders." })
+      return
+    }
     setForm(formStateFromEntry(entry))
     setStatusMessage(null)
   }
@@ -630,6 +694,7 @@ export function CalendarClient({
         setForm((current) => (current?.id === result.entry.id ? formStateFromEntry(result.entry) : current))
         setSaveState("saved")
         setStatusMessage({ tone: "success", text: status === "confirmed" ? "Aanvraag geaccepteerd." : "Aanvraag afgewezen." })
+        if (status === "confirmed") router.refresh()
       } catch (error) {
         console.error(error)
         setSaveState("error")
@@ -936,6 +1001,20 @@ export function CalendarClient({
               onResolveReschedule={resolveRescheduleRequest}
               onDelete={deleteEntry}
             />
+            {formEntry ? (
+              <div className="mt-4">
+                <BookingFinancePanel
+                  entry={formEntry}
+                  offering={formOffering}
+                  financial={formFinancial}
+                  invoices={formInvoices}
+                  profile={initialBookingFinance.profile}
+                  unavailable={bookingFinanceUnavailable}
+                  onFinancialChange={(financial: ReservationFinancial) => setReservationFinancials((current) => [financial, ...current.filter((item) => item.calendar_entry_id !== financial.calendar_entry_id)])}
+                  onInvoicesChange={(nextInvoices: BookingInvoice[]) => setBookingInvoices((current) => [...current.filter((invoice) => invoice.calendar_entry_id !== formEntry.id), ...nextInvoices])}
+                />
+              </div>
+            ) : null}
           </div>
 
           <section className="rounded-lg border border-border bg-card shadow-sm">
@@ -988,6 +1067,14 @@ export function CalendarClient({
             onCreate={createAvailabilityWindow}
             onDelete={deleteAvailabilityWindow}
           />
+
+          {/* External-calendar controls are intentionally hidden until this feature is ready to launch.
+          <CalendarSyncPanel
+            businessId={businessId}
+            initialData={initialCalendarSync}
+            unavailable={calendarSyncUnavailable}
+          />
+          */}
         </aside>
       </div>
 
@@ -1015,6 +1102,20 @@ export function CalendarClient({
               onResolveReschedule={resolveRescheduleRequest}
               onDelete={deleteEntry}
             />
+            {formEntry ? (
+              <div className="p-4 pt-0">
+                <BookingFinancePanel
+                  entry={formEntry}
+                  offering={formOffering}
+                  financial={formFinancial}
+                  invoices={formInvoices}
+                  profile={initialBookingFinance.profile}
+                  unavailable={bookingFinanceUnavailable}
+                  onFinancialChange={(financial: ReservationFinancial) => setReservationFinancials((current) => [financial, ...current.filter((item) => item.calendar_entry_id !== financial.calendar_entry_id)])}
+                  onInvoicesChange={(nextInvoices: BookingInvoice[]) => setBookingInvoices((current) => [...current.filter((invoice) => invoice.calendar_entry_id !== formEntry.id), ...nextInvoices])}
+                />
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -1044,6 +1145,7 @@ function FilterPanel({
   onClear: () => void
 }) {
   const activeFilterLabels = [
+    filters.query.trim() ? `Zoeken: ${filters.query.trim()}` : null,
     filters.status !== "all" ? STATUS_LABELS[filters.status] : null,
     filters.serviceId === "unlinked"
       ? "Geen koppeling"
@@ -1083,7 +1185,17 @@ function FilterPanel({
         {filterSummary}
       </div>
 
-      <div className={`${isMobileOpen ? "grid" : "hidden"} gap-3 sm:grid sm:grid-cols-2 xl:grid-cols-5`}>
+      <div className={`${isMobileOpen ? "grid" : "hidden"} gap-3 sm:grid sm:grid-cols-2 xl:grid-cols-6`}>
+        <div className="grid gap-1.5 sm:col-span-2 xl:col-span-1">
+          <Label htmlFor="calendar-filter-query">Zoeken</Label>
+          <Input
+            id="calendar-filter-query"
+            type="search"
+            value={filters.query}
+            placeholder="Naam, reserverings- of factuurnummer"
+            onChange={(event) => onChange({ ...filters, query: event.target.value })}
+          />
+        </div>
         <div className="grid gap-1.5">
           <Label htmlFor="calendar-filter-status">Status</Label>
           <select

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { CalendarDays, CheckCircle2, Clock, RefreshCw, XCircle } from "lucide-react"
+import { CalendarDays, CheckCircle2, Clock, FileDown, RefreshCw, XCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,6 +20,10 @@ function localInput(value: string) {
 function rangeLabel(start: string, end: string, timezone: string) {
   const formatter = new Intl.DateTimeFormat("nl-NL", { dateStyle: "long", timeStyle: "short", timeZone: timezone })
   return `${formatter.format(new Date(start))} – ${formatter.format(new Date(end))}`
+}
+
+function moneyLabel(value: number, currency: string) {
+  return new Intl.NumberFormat("nl-NL", { style: "currency", currency }).format(value / 100)
 }
 
 export function CustomerBookingClient({ initialBooking }: { initialBooking: CustomerBookingView }) {
@@ -91,6 +95,27 @@ export function CustomerBookingClient({ initialBooking }: { initialBooking: Cust
             </div>
           </div>
         </section>
+
+        {booking.financial ? (
+          <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm sm:p-8">
+            <h2 className="text-xl font-bold">Reservering en facturen</h2>
+            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+              <div><dt className="text-black/55">Reserveringsnummer</dt><dd className="font-semibold">{booking.financial.reservationNumber}</dd></div>
+              <div><dt className="text-black/55">Betaalstatus</dt><dd className="font-semibold">{{ open: "Open", paid: "Betaald", refunded: "Terugbetaald" }[booking.financial.settlementStatus]}</dd></div>
+              <div><dt className="text-black/55">Totaal</dt><dd className="font-semibold">{moneyLabel(booking.financial.totalMinor, booking.financial.currency)}</dd></div>
+            </dl>
+            {booking.invoices.length > 0 ? (
+              <div className="mt-5 grid gap-2">
+                {booking.invoices.map((invoice) => (
+                  <a key={invoice.id} className="flex min-h-11 items-center justify-between rounded-xl border border-black/10 px-4 py-2 text-sm font-semibold hover:bg-black/[0.03]" href={`/api/booking/manage/${encodeURIComponent(booking.token)}/invoice?invoiceId=${encodeURIComponent(invoice.id)}`}>
+                    <span>{invoice.documentType === "credit_note" ? "Creditfactuur" : "Factuur"} {invoice.invoiceNumber}<span className="ml-2 text-black/50">{moneyLabel(invoice.documentType === "credit_note" ? -invoice.totalMinor : invoice.totalMinor, invoice.currency)}</span></span>
+                    <FileDown className="h-4 w-4" />
+                  </a>
+                ))}
+              </div>
+            ) : <p className="mt-4 text-sm text-black/55">Er is nog geen uitgegeven factuur beschikbaar.</p>}
+          </section>
+        ) : null}
 
         {openAlternatives.map((proposal) => (
           <section key={proposal.id} className="rounded-3xl border border-amber-200 bg-amber-50 p-6">

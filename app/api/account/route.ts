@@ -78,12 +78,12 @@ export async function DELETE(request: Request) {
   }
 
   const admin = await createAdminClient()
-  const { data: websites, error: websitesError } = await admin
-    .from("websites")
-    .select("id")
-    .eq("user_id", user.id)
+  const [{ data: websites, error: websitesError }, { data: businesses, error: businessesError }] = await Promise.all([
+    admin.from("websites").select("id").eq("user_id", user.id),
+    admin.from("businesses").select("id").eq("user_id", user.id),
+  ])
 
-  if (websitesError) {
+  if (websitesError || businessesError) {
     return NextResponse.json({ error: "Accountgegevens konden niet worden gecontroleerd." }, { status: 500 })
   }
 
@@ -126,6 +126,23 @@ export async function DELETE(request: Request) {
     const { error: storageDeleteError } = await admin.storage.from("user-images").remove(batch)
     if (storageDeleteError) {
       return NextResponse.json({ error: "Bestanden konden niet worden verwijderd." }, { status: 500 })
+    }
+  }
+
+  const businessIds = (businesses ?? []).map((business) => business.id)
+  const { data: invoiceFiles, error: invoiceFilesError } = businessIds.length
+    ? await admin.from("booking_invoices").select("pdf_storage_path").in("business_id", businessIds).not("pdf_storage_path", "is", null)
+    : { data: [], error: null }
+  const invoicingSchemaUnavailable = invoiceFilesError?.code === "42P01" || invoiceFilesError?.code === "PGRST205"
+  if (invoiceFilesError && !invoicingSchemaUnavailable) {
+    return NextResponse.json({ error: "Factuurbestanden konden niet worden gecontroleerd." }, { status: 500 })
+  }
+  const invoicePaths = [...new Set((invoiceFiles ?? []).map((invoice) => invoice.pdf_storage_path).filter((path): path is string => Boolean(path)))]
+  for (let index = 0; index < invoicePaths.length; index += STORAGE_DELETE_BATCH_SIZE) {
+    const batch = invoicePaths.slice(index, index + STORAGE_DELETE_BATCH_SIZE)
+    const { error: storageDeleteError } = await admin.storage.from("booking-invoices").remove(batch)
+    if (storageDeleteError) {
+      return NextResponse.json({ error: "Factuurbestanden konden niet worden verwijderd." }, { status: 500 })
     }
   }
 
