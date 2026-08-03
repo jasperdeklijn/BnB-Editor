@@ -142,6 +142,9 @@ const BOOKING_FLOW_COPY = {
     previousMonth: "Vorige maand",
     nextMonth: "Volgende maand",
     calendarError: "Beschikbaarheid kon niet worden geladen.",
+    selectArrival: "Kies eerst een vrije aankomstdatum.",
+    selectDeparture: "Kies nu de vertrekdatum.",
+    selectDate: "Kies een vrije datum.",
   },
   "en-GB": {
     arrival: "Arrival",
@@ -161,6 +164,9 @@ const BOOKING_FLOW_COPY = {
     previousMonth: "Previous month",
     nextMonth: "Next month",
     calendarError: "Availability could not be loaded.",
+    selectArrival: "First choose an available arrival date.",
+    selectDeparture: "Now choose the departure date.",
+    selectDate: "Choose an available date.",
   },
   "de-DE": {
     arrival: "Anreise",
@@ -180,6 +186,9 @@ const BOOKING_FLOW_COPY = {
     previousMonth: "Vorheriger Monat",
     nextMonth: "Nächster Monat",
     calendarError: "Verfügbarkeit konnte nicht geladen werden.",
+    selectArrival: "Wählen Sie zuerst ein freies Anreisedatum.",
+    selectDeparture: "Wählen Sie jetzt das Abreisedatum.",
+    selectDate: "Wählen Sie ein freies Datum.",
   },
   "fr-FR": {
     arrival: "Arrivée",
@@ -199,6 +208,9 @@ const BOOKING_FLOW_COPY = {
     previousMonth: "Mois précédent",
     nextMonth: "Mois suivant",
     calendarError: "La disponibilité n’a pas pu être chargée.",
+    selectArrival: "Choisissez d’abord une date d’arrivée libre.",
+    selectDeparture: "Choisissez maintenant la date de départ.",
+    selectDate: "Choisissez une date libre.",
   },
 } as const
 
@@ -241,6 +253,15 @@ function calendarMonthCells(dateId: string) {
     ...Array.from({ length: mondayOffset }, () => null),
     ...Array.from({ length: dayCount }, (_, index) => `${year.toString().padStart(4, "0")}-${month.toString().padStart(2, "0")}-${(index + 1).toString().padStart(2, "0")}`),
   ]
+}
+
+function formatSelectedDate(dateId: string, locale?: string) {
+  return new Intl.DateTimeFormat(locale || "nl-NL", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  }).format(new Date(`${dateId}T12:00:00.000Z`))
 }
 
 // ---- Shared helpers ----
@@ -834,10 +855,18 @@ function AvailabilityMiniCalendar({
   websiteId,
   serviceId,
   locale,
+  selectedStartDate,
+  selectedEndDate,
+  selectionHint,
+  onSelectDate,
 }: {
   websiteId: string
   serviceId: string
   locale?: string
+  selectedStartDate?: string
+  selectedEndDate?: string
+  selectionHint?: string
+  onSelectDate?: (dateId: string) => void
 }) {
   const copy = getBookingFlowCopy(locale)
   const resolvedLocale = locale && locale in BOOKING_FLOW_COPY ? locale : "nl-NL"
@@ -912,7 +941,11 @@ function AvailabilityMiniCalendar({
   const canGoNext = bounds ? nextMonth <= bounds.maximum : true
 
   return (
-    <div className="mt-5 rounded-xl border border-border bg-muted/40 p-3" aria-label={copy.availabilityTitle}>
+    <div
+      className="mt-5 rounded-xl border border-border bg-muted/40 p-3"
+      aria-label={copy.availabilityTitle}
+      data-testid="services-availability-calendar"
+    >
       <div className="flex items-center justify-between gap-2">
         <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
           <CalendarDays className="h-4 w-4 text-[var(--section-accent)]" />
@@ -941,6 +974,7 @@ function AvailabilityMiniCalendar({
       </div>
 
       <p className="mt-1 text-xs font-medium capitalize text-muted-foreground">{monthLabel}</p>
+      {selectionHint ? <p className="mt-1 text-xs font-medium text-foreground" aria-live="polite">{selectionHint}</p> : null}
 
       {error ? (
         <p className="mt-3 rounded-lg bg-background px-3 py-2 text-xs text-muted-foreground" role="status">{error}</p>
@@ -956,13 +990,48 @@ function AvailabilityMiniCalendar({
               if (!dateId) return <span key={`empty-${index}`} aria-hidden="true" />
               const status = statusByDate.get(dateId) ?? "unavailable"
               const label = `${dayFormatter.format(new Date(`${dateId}T12:00:00.000Z`))}: ${statusLabels[status]}`
+              const isSelectable = Boolean(onSelectDate) && (status === "available" || status === "limited")
+              const isRangeStart = dateId === selectedStartDate
+              const isRangeEnd = dateId === selectedEndDate
+              const isInRange = Boolean(
+                selectedStartDate
+                && selectedEndDate
+                && dateId > selectedStartDate
+                && dateId < selectedEndDate,
+              )
+              const selectionClass = isRangeStart || isRangeEnd
+                ? "ring-2 ring-[var(--section-accent)] ring-offset-1"
+                : isInRange
+                  ? "outline outline-2 outline-[var(--section-accent)] outline-offset-[-2px]"
+                  : ""
+              const cellClassName = `flex aspect-square min-h-7 items-center justify-center rounded-md text-[11px] font-semibold ring-1 ring-inset ${availabilityDayStyles[status]} ${selectionClass}`
+
+              if (onSelectDate) {
+                return (
+                  <button
+                    key={dateId}
+                    type="button"
+                    role="gridcell"
+                    aria-label={label}
+                    aria-selected={isRangeStart || isRangeEnd || isInRange}
+                    title={label}
+                    disabled={!isSelectable}
+                    onClick={() => onSelectDate(dateId)}
+                    className={`${cellClassName} transition-transform enabled:cursor-pointer enabled:hover:scale-105 enabled:focus-visible:outline-none enabled:focus-visible:ring-2 enabled:focus-visible:ring-[var(--section-accent)] disabled:cursor-not-allowed`}
+                    data-date={dateId}
+                  >
+                    {Number(dateId.slice(-2))}
+                  </button>
+                )
+              }
+
               return (
                 <span
                   key={dateId}
                   role="gridcell"
                   aria-label={label}
                   title={label}
-                  className={`flex aspect-square min-h-7 items-center justify-center rounded-md text-[11px] font-semibold ring-1 ring-inset ${availabilityDayStyles[status]}`}
+                  className={cellClassName}
                 >
                   {Number(dateId.slice(-2))}
                 </span>
@@ -1216,6 +1285,7 @@ function ServicesBookingSpace({
   const [arrivalDate, setArrivalDate] = useState(() => dateInputValue(1))
   const [departureDate, setDepartureDate] = useState(() => dateInputValue(2))
   const [bookingResultStatus, setBookingResultStatus] = useState<"pending" | "confirmed" | null>(null)
+  const [stayDateSelectionStep, setStayDateSelectionStep] = useState<"arrival" | "departure" | "complete">("arrival")
   const isAccommodation = settings.requestType === "booking_request"
   const flowCopy = getBookingFlowCopy(locale)
 
@@ -1230,6 +1300,30 @@ function ServicesBookingSpace({
   }
 
   const selectedService = services.find((service) => service.id === form.serviceId) ?? null
+  const activeBookingMode = availability?.settings.booking_mode ?? (isAccommodation ? "stay" : "appointment")
+
+  useEffect(() => {
+    setStayDateSelectionStep("arrival")
+  }, [form.serviceId])
+
+  const handleCalendarDateSelect = (dateId: string) => {
+    if (activeBookingMode === "appointment") {
+      setAppointmentDate(dateId)
+      return
+    }
+
+    const minimumNights = availability?.settings.minimum_nights ?? 1
+    if (stayDateSelectionStep === "departure" && dateId > arrivalDate) {
+      const minimumDeparture = addDateInputDays(arrivalDate, minimumNights)
+      setDepartureDate(dateId < minimumDeparture ? minimumDeparture : dateId)
+      setStayDateSelectionStep("complete")
+      return
+    }
+
+    setArrivalDate(dateId)
+    setDepartureDate(addDateInputDays(dateId, minimumNights))
+    setStayDateSelectionStep("departure")
+  }
 
   useEffect(() => {
     if (settings.mode !== "calendar" || !form.serviceId) return
@@ -1542,68 +1636,55 @@ function ServicesBookingSpace({
 
               {settings.mode === "calendar" ? (
                 <div className="rounded-xl border border-border bg-secondary/50 p-4">
-                  {availability?.settings.booking_mode === "stay" ? (
+                  {websiteId && form.serviceId ? (
+                    <AvailabilityMiniCalendar
+                      websiteId={websiteId}
+                      serviceId={form.serviceId}
+                      locale={locale}
+                      selectedStartDate={activeBookingMode === "appointment" ? appointmentDate : arrivalDate}
+                      selectedEndDate={activeBookingMode === "appointment" ? undefined : departureDate}
+                      selectionHint={
+                        activeBookingMode === "appointment"
+                          ? flowCopy.selectDate
+                          : stayDateSelectionStep === "departure"
+                            ? flowCopy.selectDeparture
+                            : flowCopy.selectArrival
+                      }
+                      onSelectDate={handleCalendarDateSelect}
+                    />
+                  ) : null}
+
+                  {activeBookingMode === "stay" ? (
                     <div className="space-y-3">
                       <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="space-y-1.5">
-                          <label htmlFor="services-booking-arrival" className="text-sm font-medium text-foreground">
-                            {flowCopy.arrival} *
-                          </label>
-                          <input
-                            id="services-booking-arrival"
-                            type="date"
-                            min={availability.date_bounds.minimum}
-                            max={availability.date_bounds.maximum}
-                            value={arrivalDate}
-                            onChange={(event) => {
-                              const nextArrival = event.target.value
-                              setArrivalDate(nextArrival)
-                              if (departureDate <= nextArrival) setDepartureDate(addDateInputDays(nextArrival, 1))
-                            }}
-                            className="h-11 w-full rounded-lg border border-border bg-white px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
-                            required
-                          />
+                        <div className={`rounded-lg border bg-white px-3 py-2.5 ${stayDateSelectionStep === "arrival" ? "border-[var(--section-accent)] ring-2 ring-[var(--section-accent)]/15" : "border-border"}`}>
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{flowCopy.arrival}</p>
+                          <p className="mt-0.5 text-sm font-semibold text-foreground" data-testid="services-selected-arrival">
+                            {formatSelectedDate(arrivalDate, locale)}
+                          </p>
                         </div>
-                        <div className="space-y-1.5">
-                          <label htmlFor="services-booking-departure" className="text-sm font-medium text-foreground">
-                            {flowCopy.departure} *
-                          </label>
-                          <input
-                            id="services-booking-departure"
-                            type="date"
-                            min={addDateInputDays(arrivalDate, 1)}
-                            max={availability.date_bounds.maximum}
-                            value={departureDate}
-                            onChange={(event) => setDepartureDate(event.target.value)}
-                            className="h-11 w-full rounded-lg border border-border bg-white px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
-                            required
-                          />
+                        <div className={`rounded-lg border bg-white px-3 py-2.5 ${stayDateSelectionStep === "departure" ? "border-[var(--section-accent)] ring-2 ring-[var(--section-accent)]/15" : "border-border"}`}>
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{flowCopy.departure}</p>
+                          <p className="mt-0.5 text-sm font-semibold text-foreground" data-testid="services-selected-departure">
+                            {formatSelectedDate(departureDate, locale)}
+                          </p>
                         </div>
                       </div>
-                      <p className={`text-sm ${availability.stay_check?.available ? "text-emerald-700" : "text-muted-foreground"}`} aria-live="polite">
+                      <p className={`text-sm ${availability?.stay_check?.available ? "text-emerald-700" : "text-muted-foreground"}`} aria-live="polite">
                         {availabilityLoading
                           ? flowCopy.loading
-                          : availability.stay_check?.available
+                          : availability?.stay_check?.available
                             ? flowCopy.stayAvailable(availability.stay_check.nights)
                             : flowCopy.stayUnavailable}
                       </p>
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      <div className="space-y-1.5">
-                        <label htmlFor="services-booking-appointment-date" className="text-sm font-medium text-foreground">
-                          {messages.date} *
-                        </label>
-                        <input
-                          id="services-booking-appointment-date"
-                          type="date"
-                          min={availability?.date_bounds.minimum ?? dateInputValue(0)}
-                          max={availability?.date_bounds.maximum}
-                          value={appointmentDate}
-                          onChange={(event) => setAppointmentDate(event.target.value)}
-                          className="h-11 w-full rounded-lg border border-border bg-white px-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
-                          required
-                        />
+                      <div className="rounded-lg border border-border bg-white px-3 py-2.5">
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{messages.date}</p>
+                        <p className="mt-0.5 text-sm font-semibold text-foreground" data-testid="services-selected-appointment-date">
+                          {formatSelectedDate(appointmentDate, locale)}
+                        </p>
                       </div>
                       <fieldset>
                         <legend className="mb-2 text-sm font-medium text-foreground">{flowCopy.chooseTime} *</legend>
