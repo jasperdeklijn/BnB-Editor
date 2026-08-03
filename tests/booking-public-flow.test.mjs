@@ -58,18 +58,21 @@ test("availability, hold, and confirmation endpoints are rate limited and revali
   assert.match(confirm, /finalize_public_booking/)
 })
 
-test("calendar UI exposes labelled selectors and returns before any preview network call", () => {
+test("calendar UI exposes clickable date selection and returns before any preview network call", () => {
   const component = read("components/sections/services-section.tsx")
   const previewBranch = component.indexOf("if (isPreview) {")
   const holdFetch = component.indexOf('fetch("/api/booking/holds"')
 
   assert.ok(previewBranch >= 0)
   assert.ok(holdFetch > previewBranch)
-  assert.match(component, /services-booking-appointment-date/)
+  assert.match(component, /handleCalendarDateSelect/)
+  assert.match(component, /onSelectDate=\{handleCalendarDateSelect\}/)
   assert.match(component, /<fieldset>/)
   assert.match(component, /type="radio"/)
-  assert.match(component, /services-booking-arrival/)
-  assert.match(component, /services-booking-departure/)
+  assert.match(component, /services-selected-arrival/)
+  assert.match(component, /services-selected-departure/)
+  assert.match(component, /services-selected-appointment-date/)
+  assert.match(component, /aria-selected=/)
   assert.match(component, /aria-live="polite"/)
   assert.match(component, /settings\.mode === "calendar"/)
 })

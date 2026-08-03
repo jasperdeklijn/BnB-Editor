@@ -228,6 +228,10 @@ test("the public Diensten popup exposes a color-coded monthly availability previ
   assert.match(servicesSection, /available: "bg-emerald-100/)
   assert.match(servicesSection, /occupied: "bg-rose-100/)
   assert.match(servicesSection, /limitedDay: "Deels bezet"/)
+  assert.match(servicesSection, /websiteId && form\.serviceId/)
+  assert.match(servicesSection, /data-testid="services-availability-calendar"/)
+  assert.match(servicesSection, /onClick=\{\(\) => onSelectDate\(dateId\)\}/)
+  assert.match(servicesSection, /stayDateSelectionStep === "departure"/)
 })
 
 test("phase 1 schema exists in migration and destructive bootstrap with owner RLS", () => {
