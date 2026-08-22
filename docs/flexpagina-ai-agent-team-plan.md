@@ -1,266 +1,225 @@
-# FlexPagina AI-agentteam — implementatieplan
+# FlexPagina AI-agentteam — functioneel uitvoeringsplan
 
-> Status: voorstel voor ontwikkeling  
-> Doelgroep: developer(s), product owner en beheerder van FlexPagina  
-> Technische context: Next.js, TypeScript, Supabase, Vercel en OpenAI  
-> Verplichte ontwerpbron: `Style.md`
+> Status: gereed voor gefaseerde implementatie
+> Doelgroep: developer(s), product owner en beheerder van FlexPagina
+> Technische context: Next.js 16, TypeScript, Supabase, Vercel en Vercel AI Gateway
+> Verplichte ontwerpbron: `docs/style-guide.md`
 
-## 1. Doel van dit document
+## 1. Besluit en doel
 
-Dit document beschrijft hoe FlexPagina een gecontroleerd team van AI-agents kan krijgen dat overdag zelfstandig voorbereidende werkzaamheden uitvoert, terwijl de eigenaar 's avonds beslissingen, uitzonderingen en goedkeuringen afhandelt.
+FlexPagina krijgt een gecontroleerd, event-driven agentsysteem dat overdag voorbereidende werkzaamheden uitvoert en de eigenaar een centrale wachtrij geeft voor beslissingen en goedkeuringen.
 
-Het systeem moet ondersteunen bij:
+Dit plan bouwt voort op de bestaande:
 
-- marketing en leadvoorbereiding;
-- customer support;
-- het verwerken van productfeedback;
-- bugonderzoek en het voorbereiden van bugfixes;
-- het voorbereiden van nieuwe features;
-- kwaliteitscontrole;
-- administratieve signalering;
-- een dagelijks overzicht van uitgevoerd, geblokkeerd en goed te keuren werk.
+- leadagent in `lib/leads`, `/admin/leads` en `lead_agent_*`;
+- supportagent in `lib/mail`, `/admin/mailbox` en `mail_*`;
+- server-side admincontrole in `lib/security.ts` en `lib/mail/admin-api.ts`;
+- service-roleclient in `lib/supabase/admin.ts`;
+- cronbeveiliging met `CRON_SECRET`;
+- auditlog in `audit_logs`;
+- styling uit `docs/style-guide.md`.
 
-Het doel is **niet** om FlexPagina volledig autonoom te laten opereren. Agents mogen zelfstandig analyseren, classificeren, schrijven, testen en voorstellen doen. Acties met klantimpact, financieel risico of productierisico blijven afhankelijk van menselijke goedkeuring.
+Agents mogen analyseren, classificeren, concepten maken, intern opslaan en tests voorbereiden. Externe communicatie, financiële acties, codepublicatie, merges en deployments vereisen expliciete menselijke autorisatie.
 
-## 2. Productvisie
+## 2. Vastgelegde MVP-keuzes
 
-De eigenaar ziet in een centraal dashboard een "spinnenweb" van agents:
+Deze keuzes zijn bindend voor fase 0 tot en met fase 5.
 
-- de manager-agent staat in het midden;
-- gespecialiseerde agents staan rondom de manager;
-- verbindingen tonen hoe taken en resultaten worden overgedragen;
-- iedere agent toont de huidige status en taak;
-- risicovolle acties komen in een centrale goedkeuringswachtrij;
-- afgeronde en mislukte taken blijven controleerbaar in een auditlog;
-- iedere avond wordt automatisch een dagsamenvatting samengesteld.
+### 2.1 Runtime
 
-De gewenste gebruikerservaring is:
+- Vercel Route Handlers starten en verwerken jobs.
+- Vercel Cron roept cronroutes met `GET` aan.
+- Een dispatcher claimt per invocation maximaal twee jobs en verwerkt die met begrensde concurrency binnen dezelfde invocation.
+- Er wordt geen onbeheerde fire-and-forget-Promise gestart.
+- Iedere modelcall heeft een applicatietime-out van maximaal 25 seconden.
+- Iedere route die werk uitvoert declareert een passende `maxDuration`.
+- Doorlopende verwerking vereist een Vercel-plan dat cron vaker dan eenmaal per dag ondersteunt. Zonder dat plan is een externe scheduler of Supabase Cron een deploymentblocker.
 
-1. Overdag komen gebeurtenissen en geplande taken binnen.
-2. De manager-agent bepaalt welke specialist nodig is.
-3. De specialist levert een gestructureerd resultaat.
-4. Automatisch toegestaan werk wordt afgerond.
-5. Risicovol werk krijgt de status `awaiting_approval`.
-6. De eigenaar opent 's avonds het dashboard.
-7. De eigenaar keurt goed, past aan, wijst af of plant opnieuw in.
+### 2.2 Modelprovider
 
-## 3. Belangrijkste ontwerpprincipes
+- De MVP behoudt de bestaande Vercel AI Gateway en de Responses-compatibele endpoint `https://ai-gateway.vercel.sh/v1/responses`.
+- Provider en model komen uit een server-side allowlist/configuratie en worden per run opgeslagen.
+- De bestaande supportmodelconfiguratie is de startwaarde; modelwijzigingen worden met de evaluatieset vergeleken.
+- Modeloutput gebruikt waar ondersteund JSON Schema/Structured Outputs en wordt altijd opnieuw met Zod gevalideerd.
+- OpenAI background mode, OpenAI-webhooks en de Agents SDK zijn geen MVP-afhankelijkheid.
+- Als later OpenAI background mode nodig is, krijgt die integratie een directe OpenAI-client met `OPENAI_API_KEY`, ondertekende OpenAI-webhooks en een afzonderlijke provideradapter. Een Gateway-response wordt niet behandeld alsof het een OpenAI background response is.
 
-### 3.1 Manager houdt controle
+Officiële referenties:
 
-Gebruik primair het patroon **agents as tools**: de manager-agent blijft eigenaar van de workflow en roept specialisten aan voor begrensde deeltaken. Gebruik alleen een echte handoff wanneer een specialist ook daadwerkelijk de volledige verantwoordelijkheid voor een afzonderlijke conversatietak moet krijgen.
+- [OpenAI — background mode](https://developers.openai.com/api/docs/guides/background)
+- [OpenAI — webhooks](https://developers.openai.com/api/docs/guides/webhooks)
+- [OpenAI — orchestration and handoffs](https://developers.openai.com/api/docs/guides/agents/orchestration)
+- [Vercel — cron concurrency en idempotency](https://vercel.com/docs/cron-jobs/manage-cron-jobs)
+- [Vercel — OpenResponses API](https://vercel.com/docs/ai-gateway/sdks-and-apis/openresponses)
 
-De officiële OpenAI-documentatie adviseert specialistische agents smal te houden en pas te splitsen wanneer instructies, tools, beleid of outputcontracten wezenlijk verschillen. Zie [OpenAI — orchestration and handoffs](https://developers.openai.com/api/docs/guides/agents/orchestration).
+### 2.3 Eerste specialist
 
-### 3.2 Event-driven, niet permanent actief
+De bestaande supportagent is de eerste specialist. De eerste end-to-end workflow is:
 
-Agents hoeven niet continu te draaien. Een run start door:
+```text
+inkomende supportmail
+  -> idempotente agent_job
+  -> manager/policy-router
+  -> bestaande generateReplyDraft
+  -> agent_artifact met verwijzing naar mail_draft
+  -> approval
+  -> bestaande sendReply-executor
+  -> auditlog en job completed
+```
 
-- een webhook of applicatiegebeurtenis;
-- een geplande taak;
-- een handmatige opdracht;
-- een vervolgactie na menselijke goedkeuring.
+Tijdens de MVP wordt geen supportmail automatisch verzonden, ook niet bij hoge confidence. Automatisch verzenden kan pas na een observe-onlypilot, een goedgekeurde categoriepolicy en afzonderlijke productgoedkeuring.
 
-Dit beperkt kosten en voorkomt onnodige achtergrondactiviteit.
+### 2.4 Managerpatroon
 
-### 3.3 Menselijke goedkeuring bij extern effect
+De manager is in de MVP primair een deterministische orchestration- en policyservice:
 
-Een agent mag zonder goedkeuring informatie verzamelen en intern opslaan. Een agent mag niet zonder vooraf ingestelde autorisatie:
+- routeert bekende `job_type`-waarden;
+- controleert scope, risico, budget en kill switch;
+- bouwt de minimale context voor de specialist;
+- valideert specialistoutput;
+- bepaalt of een approval nodig is;
+- schrijft statusovergangen en auditgebeurtenissen.
 
-- een marketingmail verzenden;
-- een onzeker of gevoelig supportantwoord versturen;
-- geld terugboeken;
-- een korting of abonnement wijzigen;
-- persoonsgegevens verwijderen;
-- een database-migratie uitvoeren;
-- code mergen;
-- naar productie deployen;
-- juridische toezeggingen doen;
-- een klant beloven dat een onbekende bug definitief is opgelost.
+Alleen ambigue inhoudelijke classificatie mag een modelcall gebruiken. Het model krijgt nooit zelf onbeperkte toolkeuze of toestemming voor externe acties. Agents-as-tools en handoffs zijn uitbreidingsopties, geen vereiste voor de eerste workflow.
 
-### 3.4 Alles is traceerbaar
+## 3. Bestaande onderdelen en migratiestrategie
 
-Elke run moet aantoonbaar maken:
+Er worden geen parallelle vervangers gebouwd voor bestaande domeintabellen.
 
-- waardoor de run is gestart;
-- welke agent actief was;
-- welke input is gebruikt;
-- welke tools zijn aangeroepen;
-- welk resultaat is geproduceerd;
-- welke beslissing is genomen;
-- wie een goedkeuring heeft uitgevoerd;
-- welke fout of blokkade is ontstaan;
-- hoeveel modelgebruik de run heeft veroorzaakt.
+| Bestaand onderdeel | Gebruik in agentsysteem |
+| --- | --- |
+| `mail_messages` | bron voor supportjob |
+| `mail_drafts` | domeinrecord voor supportconcept |
+| `mail_knowledge_answers` | gepubliceerde supportkennis; geen nieuwe kennisbank in MVP |
+| `mail_sync_runs` | operationele mail-syncgeschiedenis |
+| `sendReply()` en `mail_drafts.send_key` | bestaande idempotente supportexecutor |
+| `lead_agent_settings` | bestaande marketingconfiguratie |
+| `lead_agent_runs` | domeinspecifieke marketingrun; later koppelbaar aan `agent_jobs` |
+| `ai_leads` | marketingartifact/domeinresultaat |
+| `audit_logs` | bestaand bedrijfsbreed auditoverzicht |
+| nieuwe `agent_audit_logs` | append-only technische agenttrail |
 
-### 3.5 Idempotent en hervatbaar
+De generieke agenttabellen orkestreren. Domeindata blijft in de bestaande tabellen. Een `agent_artifact` bevat daarom waar mogelijk een veilige samenvatting en een verwijzing zoals `mailDraftId` of `leadId`, niet een onbeperkte kopie van klantdata.
 
-Webhooks en geplande taken kunnen vaker dan één keer worden afgeleverd. Alle handlers moeten idempotent zijn. Een dubbele gebeurtenis mag niet leiden tot twee supportantwoorden, twee GitHub-issues of twee verzonden mails.
+Historische `mail_sync_runs` en `lead_agent_runs` worden niet gemigreerd. Nieuwe relevante runs kunnen een nullable `agent_job_id` krijgen. Daardoor blijft bestaande geschiedenis intact.
 
-## 4. Agentrollen
+## 4. Rollen en bevoegdheden
 
-### 4.1 Manager-agent
+### 4.1 Manager
 
-**Verantwoordelijkheden**
+Mag:
 
-- taak classificeren;
-- prioriteit en risico bepalen;
-- specialist kiezen;
-- benodigde context samenstellen;
-- resultaten controleren op compleetheid;
-- goedkeuring aanvragen;
-- dagsamenvatting maken;
-- blokkades zichtbaar maken.
-
-**Mag zelfstandig**
-
-- interne taken aanmaken;
+- jobs classificeren en routeren;
 - specialisten starten;
-- resultaten samenvoegen;
-- prioriteit voorstellen;
-- taken pauzeren bij ontbrekende informatie.
+- interne artifacts en approvals maken;
+- taken blokkeren bij ontbrekende informatie;
+- dagsamenvattingen maken.
 
-**Mag niet zelfstandig**
+Mag niet:
 
 - externe communicatie verzenden;
-- productiecode wijzigen of deployen;
-- financiële of juridische acties uitvoeren.
+- financiële acties uitvoeren;
+- code publiceren, mergen of deployen;
+- scopes, budgetten of eigen toolrechten verruimen.
 
-### 4.2 Marketing-agent
+### 4.2 Supportspecialist
 
-**Verantwoordelijkheden**
+Gebruikt uitsluitend:
 
-- potentiële B&B- en verhuurleads verzamelen;
-- bestaande websites analyseren;
-- leads kwalificeren;
-- persoonlijke conceptmails schrijven;
-- SEO- en contentvoorstellen maken;
-- campagneprestaties samenvatten.
+- het betrokken mailthread;
+- actieve `mail_knowledge_answers`;
+- begrensde, goedgekeurde voorbeeldmails;
+- de bestaande risk-policy en contextretrieval.
 
-**Outputcontract**
+Output:
 
-- bron en bedrijfsnaam;
-- contactinformatie indien rechtmatig beschikbaar;
-- reden waarom de lead past;
-- feitelijke websiteobservaties;
-- voorgestelde persoonlijke openingszin;
-- conceptbericht;
-- confidence en eventuele onzekerheden;
-- status `draft`, nooit direct `sent`.
+- onderwerp en antwoordconcept;
+- confidence met redenen;
+- ontbrekende informatie;
+- gebruikte kennis-ID's;
+- risico en aanbevolen vervolgactie;
+- nooit de status `sent`.
 
-### 4.3 Support-agent
+### 4.3 Marketingspecialist
 
-**Verantwoordelijkheden**
+Wordt pas na de supportworkflow aan het generieke systeem gekoppeld. De bestaande leadzoek- en scoringsfuncties blijven de bron van waarheid.
 
-- tickets classificeren;
-- urgentie en sentiment bepalen;
-- relevante kennisbankartikelen ophalen;
-- een antwoordconcept maken;
-- bekende, laag-risicovragen eventueel automatisch beantwoorden;
-- technische problemen escaleren;
-- relevante informatie structureren voor development.
+Mag automatisch:
 
-**Automatisch antwoord alleen wanneer**
+- leads zoeken binnen ingestelde limieten;
+- publiek beschikbare websites analyseren;
+- leads intern opslaan;
+- persoonlijke conceptteksten maken.
 
-- de vraag binnen een goedgekeurde categorie valt;
-- het antwoord rechtstreeks uit een actuele kennisbron volgt;
-- confidence boven de ingestelde drempel ligt;
-- er geen financiële, juridische, privacy- of veiligheidscomponent is;
-- het bericht geen boze, kwetsbare of complexe klantinteractie betreft.
+Mag niet automatisch:
 
-### 4.4 Product-agent
+- marketingmail verzenden;
+- contactinformatie omzeilen of onrechtmatig verzamelen;
+- campagnebudgetten wijzigen.
 
-**Verantwoordelijkheden**
+### 4.4 Product- en administratieagent
 
-- feedback clusteren;
-- dubbele verzoeken herkennen;
-- klantimpact samenvatten;
-- een probleemdefinitie opstellen;
-- acceptatiecriteria voorstellen;
-- prioriteit adviseren;
-- een concept-GitHub-issue voorbereiden.
+Niet in de MVP. Deze rollen mogen later alleen interne samenvattingen en voorstellen maken. Financiële of abonnementswijzigingen blijven altijd handmatig.
 
-De product-agent bepaalt niet zelfstandig dat een feature wordt gebouwd.
+### 4.5 Developer- en QA-agent
 
-### 4.5 Developer-agent
+Niet in de Vercel-MVP-worker. Codeonderzoek en worktrees vereisen later een afzonderlijke ephemeral runner, bijvoorbeeld een afgeschermde GitHub Action of andere geïsoleerde CI-runtime.
 
-**Verantwoordelijkheden**
+Die runtime krijgt:
 
-- bugs reproduceren;
-- code en logs onderzoeken;
-- oplossingsrichtingen vergelijken;
-- een aparte branch of geïsoleerde worktree gebruiken;
-- code en tests voorbereiden;
-- een concept-pull-request maken;
-- risico's en resterende onzekerheden rapporteren.
+- een aparte branch/worktree per taak;
+- geen productiesecrets;
+- geen merge- of deployrechten;
+- een commandoallowlist;
+- begrensde netwerktoegang;
+- test- en diffartifacts die terugkomen in een approval.
 
-**Verboden zonder goedkeuring**
-
-- rechtstreeks op de hoofdbranch werken;
-- bestaande gebruikerswijzigingen overschrijven;
-- destructieve databasecommando's uitvoeren;
-- secrets uitlezen of loggen;
-- een pull request mergen;
-- naar productie deployen.
-
-### 4.6 QA-agent
-
-**Verantwoordelijkheden**
-
-- acceptatiecriteria controleren;
-- unit-, integratie- en end-to-endtests uitvoeren;
-- regressierisico's zoeken;
-- autorisatie en multi-tenantisolatie controleren;
-- responsive en accessibilitychecks uitvoeren;
-- styling toetsen aan `Style.md`;
-- bevindingen prioriteren.
-
-### 4.7 Administratie-agent
-
-**Verantwoordelijkheden**
-
-- mislukte abonnementbetalingen signaleren;
-- ontbrekende of afwijkende factuurgegevens melden;
-- abonnementstatussen controleren;
-- financiële uitzonderingen klaarzetten voor beoordeling;
-- een dagelijks overzicht maken.
-
-Deze agent mag geen refund, korting, prijswijziging of abonnementwijziging zelfstandig uitvoeren.
-
-## 5. Voorgestelde architectuur
+## 5. Functionele architectuur
 
 ### 5.1 Componenten
 
 | Component | Verantwoordelijkheid |
 | --- | --- |
-| Next.js-dashboard | Agentnetwerk, taken, approvals, runs en dagoverzicht tonen |
-| Supabase Postgres | Duurzame opslag voor jobs, runs, resultaten en auditlogs |
-| Supabase Realtime | Statuswijzigingen live in het dashboard tonen |
-| Vercel Cron | Geplande marketingruns, controles en dagsamenvatting starten |
-| Next.js route handlers / server actions | Veilige interne API voor taken en approvals |
-| OpenAI Responses API / Agents SDK | Manager en gespecialiseerde agentruns uitvoeren |
-| OpenAI webhooks | Afronding van background responses verwerken |
-| GitHub-integratie | Issues lezen, branches/PR's voorbereiden en checks ophalen |
-| Kennisbank | Goedgekeurde support- en productdocumentatie doorzoekbaar maken |
-| E-mailadapter | Concepten opslaan en later gecontroleerd verzenden |
+| Next.js-admindashboard | jobs, runs, artifacts, approvals, status en dagoverzicht |
+| Supabase Postgres | queue, leases, runs, artifacts, approvals, executions en audittrail |
+| Supabase Realtime of polling | dashboardstatus verversen; geen onderdeel van queuecorrectheid |
+| `GET /api/cron/agents/dispatch` | jobs claimen en begrensd uitvoeren |
+| `GET /api/cron/agents/reconcile` | verlopen leases, onbekende executions en vastgelopen runs herstellen |
+| `GET /api/cron/agents/daily-summary` | tijdzonebewuste dagsamenvatting enqueueën |
+| Manager/policyservice | routering, risico, budget, outputvalidatie en approvalbeleid |
+| Vercel AI Gateway-adapter | synchrone Responses-modelcalls in de MVP |
+| Domeinadapters | bestaande mail-, lead-, audit- en later GitHubfuncties aanroepen |
 
-Background responses kunnen via webhooks een `response.completed`-gebeurtenis terugsturen naar een eigen endpoint. Het endpoint moet webhookhandtekeningen verifiëren. Zie [OpenAI — webhooks](https://developers.openai.com/api/docs/guides/webhooks) en [OpenAI — background mode](https://developers.openai.com/api/docs/guides/background).
+### 5.2 End-to-end datastroom
 
-### 5.2 Logische datastroom
+1. Een trigger roept `enqueue_agent_job` aan met een stabiele deduplicatiesleutel.
+2. De dispatcher controleert `agents_enabled`, dagbudget en batchlimiet.
+3. `claim_agent_jobs` claimt maximaal twee beschikbare jobs met `FOR UPDATE SKIP LOCKED` en zet een lease.
+4. De manager valideert jobtype, scope, payloadversie en risico.
+5. Een `agent_run` wordt gestart.
+6. De specialist produceert gestructureerde output.
+7. Zod valideert de output; ongeldige output leidt tot maximaal één veilige modelretry.
+8. Het resultaat wordt als immutable `agent_artifact` opgeslagen.
+9. De policyservice zet de job op `completed` of `awaiting_approval`.
+10. Bij approval maakt de server atomisch één `agent_execution` aan.
+11. De domeinexecutor voert de actie uit met dezelfde idempotency key.
+12. Statuswijzigingen en agent-auditregels worden transactioneel vastgelegd.
 
-1. Trigger maakt een `agent_job` aan.
-2. Worker claimt de job met een atomische statuswijziging.
-3. Manager-agent classificeert taak en risico.
-4. Manager maakt een of meer `agent_runs` aan.
-5. Specialist voert de begrensde taak uit.
-6. Gestructureerde output wordt gevalideerd.
-7. Resultaat wordt opgeslagen als `agent_artifact`.
-8. Policy-engine bepaalt `completed` of `awaiting_approval`.
-9. Bij goedkeuring voert een afzonderlijke executor de actie uit.
-10. Auditlog registreert iedere overgang.
+### 5.3 Geen exactly-once-claim
 
-### 5.3 Statusmodel
+Het systeem belooft geen wiskundige exactly-once-executie over externe providers. Het levert:
 
-Gebruik minimaal:
+- idempotente enqueueing;
+- één actieve lease per job;
+- single-use approvals;
+- één executionrecord per approval en artifactversie;
+- stabiele provider-idempotency keys waar ondersteund;
+- reconciliatie bij een onbekende uitkomst;
+- geen blinde retry van een externe actie als niet vastgesteld kan worden of die al is uitgevoerd.
+
+## 6. Statusmodellen
+
+### 6.1 Jobstatus
 
 ```text
 queued
@@ -268,738 +227,774 @@ claimed
 running
 waiting_for_dependency
 awaiting_approval
-approved
-rejected
 executing
 completed
 failed
+dead_letter
 cancelled
 expired
 ```
 
-Statusovergangen moeten server-side worden gevalideerd. De client mag niet willekeurig een job op `completed` zetten.
-
-## 6. Datamodel
-
-De precieze namen mogen worden aangepast aan bestaande conventies, maar onderstaande verantwoordelijkheden moeten behouden blijven.
-
-### 6.1 `agent_jobs`
-
-- `id uuid primary key`
-- `tenant_id uuid null`
-- `type text`
-- `source text`
-- `source_event_id text`
-- `priority text`
-- `risk_level text`
-- `status text`
-- `payload jsonb`
-- `scheduled_for timestamptz`
-- `claimed_at timestamptz null`
-- `claimed_by text null`
-- `attempt_count integer`
-- `max_attempts integer`
-- `created_at timestamptz`
-- `updated_at timestamptz`
-- unieke constraint op relevante combinatie van `source` en `source_event_id`.
-
-### 6.2 `agent_runs`
-
-- `id uuid primary key`
-- `job_id uuid references agent_jobs`
-- `parent_run_id uuid null`
-- `agent_type text`
-- `model text`
-- `status text`
-- `input_summary text`
-- `output_summary text null`
-- `provider_response_id text null`
-- `prompt_version text`
-- `started_at timestamptz`
-- `finished_at timestamptz null`
-- `input_tokens integer null`
-- `output_tokens integer null`
-- `estimated_cost numeric null`
-- `error_code text null`
-- `error_message text null`
-
-### 6.3 `agent_artifacts`
-
-- `id uuid primary key`
-- `run_id uuid references agent_runs`
-- `artifact_type text`
-- `title text`
-- `content jsonb`
-- `version integer`
-- `created_at timestamptz`
-
-Voorbeelden: supportconcept, leadrapport, featurebrief, testrapport, patchsamenvatting en dagsamenvatting.
-
-### 6.4 `agent_approvals`
-
-- `id uuid primary key`
-- `job_id uuid references agent_jobs`
-- `artifact_id uuid null`
-- `action_type text`
-- `risk_level text`
-- `status text`
-- `requested_at timestamptz`
-- `expires_at timestamptz null`
-- `decided_at timestamptz null`
-- `decided_by uuid null`
-- `decision_note text null`
-- `execution_idempotency_key text`
-
-### 6.5 `agent_audit_logs`
-
-- append-only;
-- actor type en actor id;
-- gebeurtenistype;
-- objecttype en object id;
-- vorige en nieuwe status;
-- veilige metadata zonder secrets of volledige gevoelige prompts;
-- timestamp;
-- correlatie-id.
-
-### 6.6 `knowledge_documents`
-
-- documenttype;
-- titel;
-- inhoud;
-- versie;
-- publicatiestatus;
-- eigenaar;
-- laatst beoordeeld op;
-- geldig tot of reviewdatum;
-- tenant/global scope.
-
-Een support-agent mag uitsluitend automatisch antwoorden op basis van gepubliceerde en actuele kennisdocumenten.
-
-## 7. API- en backendcontracten
-
-Voorgestelde routes, aangepast aan bestaande routeconventies:
+Belangrijkste overgangen:
 
 ```text
-POST /api/internal/agents/jobs
-POST /api/internal/agents/jobs/:id/cancel
-POST /api/internal/agents/jobs/:id/retry
-GET  /api/admin/agents/jobs
-GET  /api/admin/agents/runs/:id
-GET  /api/admin/agents/approvals
-POST /api/admin/agents/approvals/:id/approve
-POST /api/admin/agents/approvals/:id/reject
-POST /api/webhooks/openai
-POST /api/webhooks/github
-POST /api/cron/agents/marketing
-POST /api/cron/agents/daily-summary
+queued -> claimed
+claimed -> running|queued|dead_letter
+running -> completed|awaiting_approval|waiting_for_dependency|queued|failed|dead_letter
+waiting_for_dependency -> queued|cancelled|expired
+awaiting_approval -> executing|cancelled|expired
+executing -> completed|failed
+failed -> queued|dead_letter|cancelled
+iedere niet-terminale status -> cancelled via een bevoegde cancelactie
 ```
 
-### Verplichte backendregels
+### 6.2 Runstatus
 
-- Interne endpoints hebben een server-side secret of service-authenticatie.
-- Cronroutes controleren het cronsecret.
-- Webhookroutes verifiëren handtekeningen op de onbewerkte requestbody.
-- Approvalroutes vereisen een ingelogde, bevoegde beheerder.
-- Alle schrijfacties gebruiken een idempotency key.
-- Alle payloads worden runtime gevalideerd, bijvoorbeeld met Zod.
-- Nooit vertrouwen op alleen TypeScript-types.
-- Rate limiting geldt voor externe en kostbare endpoints.
-- Time-outs en retries hebben begrensde exponential backoff met jitter.
-- Een dead-letterstatus bewaart definitief mislukte jobs voor onderzoek.
+```text
+queued
+in_progress
+completed
+failed
+cancelled
+```
 
-## 8. Veiligheids- en autorisatiemodel
+### 6.3 Approvalstatus
 
-### 8.1 Least privilege
+```text
+pending
+approved
+rejected
+expired
+invalidated
+executed
+execution_failed
+```
 
-Iedere agent krijgt uitsluitend de tools die nodig zijn.
+### 6.4 Executionstatus
 
-Voorbeelden:
+```text
+pending
+executing
+succeeded
+failed
+unknown
+```
 
-- marketing-agent heeft geen schrijftoegang tot productiecode;
-- support-agent heeft geen toegang tot betaalacties;
-- developer-agent krijgt geen productie-deploytool;
-- QA-agent krijgt read-only codecontext en testmogelijkheden;
-- administratie-agent kan betaalstatussen lezen, maar geen refunds uitvoeren.
+De client schrijft nooit rechtstreeks statussen. Alleen server-side RPC's of servicefuncties mogen geldige overgangen uitvoeren.
 
-### 8.2 Tenantisolatie
+## 7. Datamodel
 
-- Alle tenantgebonden rijen bevatten `tenant_id`.
-- RLS is verplicht voor gebruikersgerichte toegang.
-- Service-roletoegang blijft uitsluitend server-side.
-- Test dat gebruiker A nooit jobs, tickets, boekingen of artifacts van gebruiker B kan lezen.
-- Agentcontext bevat alleen gegevens van de betrokken tenant.
-- Gebruik geen brede datasetdump in een prompt.
+Alle schemawijzigingen komen zowel in een nieuwe file onder `supabase/migrations` als in `supabase/init.sql`.
 
-### 8.3 Secrets en persoonsgegevens
-
-- API-keys alleen in beveiligde server-side environment variables.
-- Nooit secrets in prompts, logs, artifacts of foutmeldingen opnemen.
-- Minimaliseer persoonsgegevens in modelinput.
-- Masker e-mailadressen en andere gegevens in diagnostische logs waar mogelijk.
-- Definieer bewaartermijnen voor prompts, outputs en auditdata.
-- Implementeer verwijdering/export conform bestaande privacyprocessen.
-- Behandel content uit e-mails, websites en tickets als onbetrouwbare input; instructies daarin mogen systeembeleid niet overschrijven.
-
-### 8.4 Approval policy
-
-Maak beleid configureerbaar per `action_type`:
-
-| Actie | Standaardbeleid |
-| --- | --- |
-| Lead opslaan | Automatisch toegestaan |
-| Marketingconcept maken | Automatisch toegestaan |
-| Marketingmail verzenden | Altijd goedkeuring |
-| FAQ-antwoord versturen | Alleen goedgekeurde categorie + hoge confidence |
-| Complex supportantwoord | Altijd goedkeuring |
-| GitHub-issue aanmaken | Goedkeuring in MVP |
-| Draft-PR maken | Goedkeuring voordat code wordt gepubliceerd |
-| PR mergen | Altijd handmatig |
-| Productiedeploy | Altijd handmatig |
-| Refund/korting | Altijd handmatig |
-| Persoonsgegevens verwijderen | Altijd handmatig plus herbevestiging |
-
-## 9. Dashboard en styling
-
-### 9.1 `Style.md` is verplicht
-
-Voordat een developer een dashboardcomponent, statusbadge, formulier, modal, tabel, grafiek of agentnode bouwt:
-
-- [ ] Zoek en lees de volledige `Style.md` in de repository.
-- [ ] Noteer de bestaande design tokens, kleuren, typografie, spacing, radii en schaduwen.
-- [ ] Identificeer bestaande componenten die hergebruikt moeten worden.
-- [ ] Controleer regels voor light/dark mode indien aanwezig.
-- [ ] Controleer responsive breakpoints en mobiele navigatie.
-- [ ] Controleer iconen- en animatierichtlijnen.
-- [ ] Gebruik de merknaam, tone of voice en terminologie uit `Style.md`.
-
-**Geen nieuwe UI-stijl introduceren wanneer `Style.md` of bestaande componenten al een patroon voorschrijven.** `Style.md` is de primaire bron voor de bedrijfsstyling. Als `Style.md` ontbreekt, tegenstrijdig of onvolledig is, moet de developer dit als blocker melden en geen eigen kleurenpalet verzinnen.
-
-### 9.2 Dashboardpagina's
+### 7.1 `agent_jobs`
 
 Minimaal:
 
+- `id uuid primary key default gen_random_uuid()`;
+- `business_id uuid null references businesses(id) on delete cascade`;
+- `scope text not null check (scope in ('platform','business'))`;
+- check: platform heeft `business_id is null`, business heeft `business_id is not null`;
+- `job_type text not null`;
+- `payload_version integer not null default 1`;
+- `source text not null`;
+- `deduplication_key text not null`;
+- `priority smallint not null default 50`;
+- `risk_level text not null`;
+- `status text not null`;
+- `payload jsonb not null default '{}'`;
+- `scheduled_for timestamptz not null default now()`;
+- `available_at timestamptz not null default now()`;
+- `claimed_at timestamptz null`;
+- `claimed_by text null`;
+- `lease_expires_at timestamptz null`;
+- `heartbeat_at timestamptz null`;
+- `attempt_count integer not null default 0`;
+- `max_attempts integer not null default 3`;
+- `last_error_code text null`;
+- `last_error_message text null`;
+- `correlation_id uuid not null default gen_random_uuid()`;
+- `created_at`, `updated_at`, `completed_at`.
+
+Constraints en indexes:
+
+- unique `(source, deduplication_key)`;
+- index op `(status, available_at, priority desc)` voor claimen;
+- index op `lease_expires_at` voor reconciliatie;
+- index op `(business_id, created_at desc)`;
+- payloadgrootte begrenzen in applicatiecode.
+
+### 7.2 `agent_job_dependencies`
+
+- `job_id`;
+- `depends_on_job_id`;
+- unique combinatie;
+- check tegen self-dependency;
+- alleen voldaan wanneer dependency `completed` is;
+- cycli worden bij insert door de service geweigerd.
+
+### 7.3 `agent_runs`
+
+- `id`, `job_id`, `parent_run_id`;
+- `agent_type`;
+- `provider` en `model`;
+- `status`;
+- `prompt_version`;
+- `provider_response_id` nullable;
+- veilige `input_summary` en `output_summary`;
+- `input_tokens`, `output_tokens`, `total_tokens` nullable;
+- `estimated_cost` nullable en `currency`;
+- `started_at`, `finished_at`;
+- `error_code`, gesaniteerde `error_message`.
+
+Volledige prompts en secrets worden niet in deze tabel opgeslagen.
+
+### 7.4 `agent_artifacts`
+
+- `id`, `job_id`, `run_id`;
+- `artifact_type`;
+- `title`;
+- `content jsonb` met veilige inhoud of domeinrecord-ID;
+- `version integer not null`;
+- `content_hash text not null`;
+- `supersedes_artifact_id uuid null`;
+- `created_at`;
+- unique `(job_id, artifact_type, version)`.
+
+Artifacts zijn immutable. Een edit maakt een nieuwe versie.
+
+### 7.5 `agent_approvals`
+
+- `id`, `job_id`, `artifact_id`;
+- `artifact_content_hash`;
+- `action_type`, `risk_level`, `status`;
+- `requested_at`, `expires_at`;
+- `decided_at`, `decided_by`, `decision_note`;
+- `created_at`, `updated_at`.
+
+Een approval wordt `invalidated` zodra een nieuwere artifactversie de onderliggende inhoud wijzigt.
+
+### 7.6 `agent_executions`
+
+- `id`, `job_id`, `approval_id`, `artifact_id`;
+- `executor_type`;
+- `idempotency_key text not null unique`;
+- `status`;
+- `attempt_count`, `max_attempts`;
+- `provider_action_id` nullable;
+- `result_summary` nullable;
+- `last_error_code`, gesaniteerde `last_error_message`;
+- `started_at`, `finished_at`, `created_at`.
+
+Een unieke constraint op `approval_id` voorkomt een tweede execution voor dezelfde approval.
+
+### 7.7 `agent_audit_logs`
+
+Append-only tabel met:
+
+- actor type en actor id;
+- event type;
+- object type en object id;
+- vorige en nieuwe status;
+- correlation-id;
+- veilige metadata;
+- timestamp.
+
+Er komen geen update- of deletepolicies. Agentstatus-RPC's schrijven de status en auditregel in dezelfde databasetransactie. Materiële externe acties schrijven daarnaast een samenvatting naar het bestaande `audit_logs`.
+
+Een database-trigger weigert `UPDATE` en `DELETE` op bestaande auditregels voor normale applicatierollen. Alleen een expliciete beheer-/migratieprocedure mag onderhoud uitvoeren.
+
+### 7.8 `agent_settings`
+
+Server-owned singleton met minimaal:
+
+- `agents_enabled boolean default false` als kill switch;
+- `observe_only boolean default true`;
+- `daily_budget numeric`;
+- `max_jobs_per_dispatch integer default 2`;
+- `support_enabled`, `marketing_enabled`;
+- goedgekeurde modelallowlist en standaardmodellen;
+- `updated_at`, `updated_by`.
+
+## 8. Databasefuncties
+
+Gebruik security-definerfuncties met een lege, vaste `search_path`, expliciete grants en server-only aanroep.
+
+### 8.1 `enqueue_agent_job`
+
+- valideert jobtype, scope en payloadversie;
+- accepteert een niet-lege deduplicatiesleutel;
+- doet insert-or-return-existing op `(source, deduplication_key)`;
+- maakt bij een duplicate geen tweede externe actie of run;
+- schrijft `job.enqueued` alleen voor een nieuwe job.
+
+### 8.2 `claim_agent_jobs`
+
+- gebruikt `FOR UPDATE SKIP LOCKED`;
+- selecteert alleen `queued`, beschikbare, niet-geblokkeerde jobs;
+- respecteert priority en ouderdom;
+- zet `claimed_by`, `claimed_at` en `lease_expires_at`;
+- verhoogt `attempt_count` atomisch;
+- retourneert maximaal de ingestelde batchgrootte.
+
+### 8.3 `transition_agent_job`
+
+- lockt de jobrij;
+- valideert de overgang tegen vaste server-side regels;
+- controleert de actieve lease waar vereist;
+- wijzigt status;
+- schrijft de auditregel in dezelfde transactie.
+
+### 8.4 `renew_agent_job_lease`
+
+- alleen de actuele worker mag verlengen;
+- verlengt nooit voorbij de maximale runtijd;
+- schrijft niet voor ieder heartbeatmoment een onnodige auditregel.
+
+### 8.5 `requeue_expired_agent_jobs`
+
+- vindt verlopen leases;
+- zet herstelbare jobs terug naar `queued` met backoff en jitter;
+- zet jobs met opgebruikte pogingen op `dead_letter`;
+- schrijft een auditregel per overgang.
+
+## 9. API-contracten
+
+Alle externe input en dynamische routeparameters worden met Zod gevalideerd.
+
+### 9.1 Cronroutes — altijd `GET`
+
+```text
+GET /api/cron/agents/dispatch
+GET /api/cron/agents/reconcile
+GET /api/cron/agents/daily-summary
+GET /api/cron/mail-sync
+GET /api/cron/leads
+```
+
+Regels:
+
+- dezelfde `Authorization: Bearer ${CRON_SECRET}`-controle als bestaande cronroutes;
+- geen queryparametersecret;
+- `Cache-Control: no-store`;
+- stabiele lokale periodesleutel in `Europe/Amsterdam` voor dagsamenvatting en marketingruns;
+- dubbele croninvocations leveren door deduplicatie maximaal één job op;
+- Vercel Cron retryt niet automatisch, dus fouten blijven zichtbaar voor reconciliatie.
+
+### 9.2 Interne serverroutes
+
+```text
+POST /api/internal/agents/jobs
+POST /api/internal/agents/jobs/[jobId]/cancel
+POST /api/internal/agents/jobs/[jobId]/retry
+```
+
+Deze routes vereisen service-authenticatie en zijn niet bedoeld voor browserclients.
+
+### 9.3 Adminroutes
+
+```text
+GET  /api/admin/agents/jobs
+GET  /api/admin/agents/jobs/[jobId]
+GET  /api/admin/agents/runs/[runId]
+GET  /api/admin/agents/approvals
+POST /api/admin/agents/approvals/[approvalId]/approve
+POST /api/admin/agents/approvals/[approvalId]/reject
+POST /api/admin/agents/artifacts/[artifactId]/revise
+POST /api/admin/agents/jobs/[jobId]/retry
+POST /api/admin/agents/settings
+```
+
+Regels:
+
+- gebruik de bestaande server-side `isAdmin`/`requireAdminApiUser`-grens;
+- maak de service-roleclient pas nadat adminautorisatie geslaagd is;
+- valideer alle mutaties runtime;
+- approve/reject lockt de approval en is single-use;
+- approve controleert expiry en artifacthash;
+- hoog-risicoacties vereisen recente herauthenticatie voordat ze later worden toegevoegd.
+
+### 9.4 Optionele OpenAI-webhookroute — niet in MVP
+
+```text
+POST /api/webhooks/openai
+```
+
+Pas toevoegen als directe OpenAI background responses daadwerkelijk worden gebruikt. Dan gelden:
+
+- verifieer de handtekening op de onbewerkte requestbody met de officiële SDK;
+- verwerk completed, failed, incomplete en cancelled;
+- dedupliceer op webhookevent-ID;
+- haal de response server-side op;
+- koppel alleen aan een bekende `provider_response_id`;
+- antwoord snel met 2xx en verwerk idempotent;
+- voeg pollingreconciliatie toe voor gemiste webhooks.
+
+## 10. Supportworkflow in de MVP
+
+### 10.1 Trigger
+
+Na succesvolle mailboxsync wordt voor ieder nieuw inkomend bericht één job aangemaakt:
+
+```json
+{
+  "jobType": "support.reply_draft",
+  "source": "mail_message",
+  "deduplicationKey": "<mail_account_id>:<mail_message_id>",
+  "scope": "platform",
+  "payloadVersion": 1,
+  "payload": {
+    "threadId": "uuid",
+    "messageId": "uuid"
+  }
+}
+```
+
+De payload bevat alleen IDs. De specialist laadt gegevens server-side na scopecontrole.
+
+### 10.2 Verwerking
+
+1. Manager controleert dat thread en message bestaan en bij elkaar horen.
+2. Manager maakt een support-run.
+3. Specialist hergebruikt `generateReplyDraft()`.
+4. Prompt-injectiontekst uit de mail blijft onbetrouwbare data.
+5. Zod valideert de modeloutput.
+6. Bestaande risk-policy kan confidence verlagen.
+7. Artifact verwijst naar `mailDraftId` en bevat alleen veilige metadata.
+8. Approval met `action_type = support.send_reply` wordt aangemaakt.
+9. Job wacht op approval.
+
+### 10.3 Approval en uitvoering
+
+1. Admin ziet bronmail, kennisbasis, confidence, risico en concept.
+2. Edit maakt eerst een nieuwe artifactversie en invalideert de oude approval.
+3. Approve controleert de actuele hash en maakt één executionrecord.
+4. Executor roept de bestaande `sendReply()` aan met de stabiele `send_key`.
+5. Bij bewezen SMTP-succes worden execution en job voltooid.
+6. Bij timeout na SMTP-overdracht wordt status `unknown`; er wordt niet blind opnieuw verzonden.
+7. Reconciliatie controleert de bestaande outbound message en IMAP-sentstatus voordat retry wordt toegestaan.
+
+## 11. Marketingworkflow na de support-MVP
+
+De bestaande `GET /api/cron/leads` blijft eerst werken. Daarna wordt die route dunner:
+
+1. route berekent de bestaande Amsterdam-periodesleutel;
+2. route enqueuet `marketing.lead_search`;
+3. dispatcher roept de bestaande `runLeadSearch()` aan;
+4. `lead_agent_runs` krijgt optioneel `agent_job_id`;
+5. gevonden leads blijven in `ai_leads`;
+6. artifact bevat aantallen, lead-ID's, bronnen en onzekerheden;
+7. opslaan is automatisch toegestaan;
+8. iedere outbound marketingmail vereist approval en is niet in de eerste marketingfase opgenomen.
+
+## 12. Approvalmatrix
+
+| Actie | MVP-beleid |
+| --- | --- |
+| Supportconcept maken | automatisch |
+| Supportmail verzenden | altijd approval |
+| Lead zoeken en intern opslaan | automatisch binnen limieten |
+| Marketingconcept maken | automatisch |
+| Marketingmail verzenden | altijd approval; executor later bouwen |
+| GitHub-issue aanmaken | approval |
+| Draft-PR publiceren | approval |
+| PR mergen | niet beschikbaar voor agent |
+| Productiedeploy | niet beschikbaar voor agent |
+| Refund, korting of abonnement wijzigen | niet beschikbaar voor agent |
+| Persoonsgegevens verwijderen | bestaande privacyflow plus herbevestiging; geen agentexecutor |
+
+`observe_only = true` voorkomt tijdens de pilot alle externe executions, ook na een per ongeluk aangemaakte approval.
+
+## 13. Security en privacy
+
+### 13.1 Scope en RLS
+
+- FlexPagina gebruikt `businesses.id` als businessscope; introduceer geen parallel `tenant_id`-concept.
+- Platformjobs hebben expliciet `scope = platform` en `business_id = null`.
+- Businessjobs hebben expliciet `scope = business` en een geldig `business_id`.
+- Browsergebruikers krijgen geen directe schrijfrechten op agenttabellen.
+- Adminqueries blijven server-side en admin-only.
+- Service-roletoegang wordt uitsluitend na authenticatie/autorisatie gebruikt.
+- Test business A tegen business B voor iedere read- en mutationroute.
+
+### 13.2 Prompt- en toolveiligheid
+
+- E-mails, websites, tickets, logs en GitHubtekst zijn onbetrouwbare data.
+- Onbetrouwbare tekst kan geen toolrechten, beleid, model of outputcontract veranderen.
+- Iedere specialist krijgt alleen expliciet toegewezen domeinfuncties.
+- Toolinput wordt gevalideerd en output wordt begrensd.
+- Modeltekst is nooit bewijs dat een toolactie is uitgevoerd; alleen het executionrecord en providerresultaat gelden.
+
+### 13.3 Gegevensminimalisatie
+
+- Stuur alleen velden die nodig zijn voor de taak.
+- Log geen API-keys, cookies, mailwachtwoorden of service-rolekeys.
+- Sla geen volledige prompts op in run- of auditrecords.
+- Saniteer foutmeldingen voordat ze in de database komen.
+- Voeg vóór productie bewaartermijnen toe voor jobs, runs, artifacts en auditdata.
+- Verwijder of anonimiseer agentdata mee met bestaande account/privacyflows.
+
+### 13.4 Budget en rate limiting
+
+- Dagbudget wordt vóór iedere modelrun gereserveerd of conservatief gecontroleerd.
+- Bij bereikt budget worden niet-kritieke jobs uitgesteld.
+- Maximaal één veilige modelretry bij ongeldige output.
+- Exponentiële backoff met jitter voor tijdelijke infrastructuurfouten.
+- Rate limiting op handmatige run-, retry- en approvalroutes.
+- Kill switch wordt vóór claimen en vóór externe execution opnieuw gecontroleerd.
+
+## 14. Dashboard en styling
+
+Alle UI volgt `docs/style-guide.md` en hergebruikt bestaande admincomponenten, buttons, dialogs, badges en tabellen.
+
+### 14.1 Pagina's
+
 ```text
 /admin/agents
-/admin/agents/jobs/[id]
+/admin/agents/jobs/[jobId]
 /admin/agents/approvals
 /admin/agents/history
 /admin/agents/settings
 ```
 
-### 9.3 Hoofdscherm: agent-spinnenweb
+### 14.2 MVP-hoofdscherm
 
-Het hoofdscherm toont:
+Begin met een functionele operationele weergave:
 
-- manager-agent centraal;
-- specialistische agents rondom;
-- neutrale lijnen voor beschikbare relaties;
-- actieve lijnen voor lopende overdracht;
-- visueel onderscheid tussen actief, beschikbaar, geblokkeerd, mislukt en wacht op goedkeuring;
-- huidige korte taak per agent;
-- klik/tap op agent voor details;
-- één duidelijk geselecteerd detailgebied;
-- geen decoratieve animaties die informatie niet verbeteren;
-- ondersteuning voor `prefers-reduced-motion`.
+- `Jouw beslissing nodig`;
+- `Klaar voor goedkeuring`;
+- `Automatisch afgerond`;
+- `Mislukt of geblokkeerd`;
+- kill-switchstatus en dagbudget;
+- filters op agent, status, risico en datum;
+- directe link naar run, artifact en audittrail.
 
-### 9.4 Avondoverzicht
+Het spinnenweb is een aanvullende visualisatie in fase 4, niet de enige manier om status te begrijpen. Tabellen en lijsten blijven de toegankelijke bron van waarheid.
 
-Vier primaire werkbakken:
+### 14.3 Agent-spinnenweb
 
-1. **Jouw beslissing nodig**
-2. **Klaar voor goedkeuring**
-3. **Automatisch afgerond**
-4. **Mislukt of geblokkeerd**
+- manager centraal en specialisten rondom;
+- actieve verbinding alleen bij een echte lopende overdracht;
+- status nooit alleen met kleur;
+- klik- en toetsenbordbediening;
+- korte actuele taak per agent;
+- `prefers-reduced-motion`;
+- geen continue decoratieve animaties;
+- mobiele fallback als verticale agentlijst.
 
-Per item minimaal:
+### 14.4 Accessibility en responsive
 
-- titel;
-- betrokken agent;
-- aanmaaktijd;
-- risico;
-- korte samenvatting;
-- aanbevolen actie;
-- primaire actie en veilige secundaire acties;
-- link naar volledige run/audittrail.
+- werkt vanaf 320 px;
+- geen afgesneden approvalacties;
+- logische focusvolgorde en focus return;
+- dialogs met correcte focus trapping;
+- semantische tabelheaders;
+- toegankelijke namen en live status waar nuttig;
+- WCAG AA-contrast;
+- loading, empty, error, stale en offline states.
 
-### 9.5 Accessibility en responsive eisen
+## 15. Cron- en dagschema
 
-- Alle acties zijn met toetsenbord bereikbaar.
-- Status wordt niet uitsluitend met kleur gecommuniceerd.
-- Agentnodes hebben toegankelijke namen.
-- Focusvolgorde is logisch.
-- Contrast voldoet minimaal aan WCAG AA.
-- Dialogen hebben correcte focus trapping en terugkeer.
-- Tabellen hebben semantische headers.
-- Dashboard werkt vanaf 320 px breed.
-- Geen horizontaal afgesneden approvalacties.
-- Motion wordt verminderd wanneer het OS dit vraagt.
+Alle tijdgebaseerde deduplicatiesleutels worden met `Europe/Amsterdam` berekend, niet met de serverlokale tijd.
 
-## 10. Volledig praktijkvoorbeeld: klant meldt dat bevestigingsmail ontbreekt
+| Trigger | Frequentie | Effect |
+| --- | --- | --- |
+| mail sync | iedere 5–10 minuten indien plan dit ondersteunt | nieuwe berichten opslaan en supportjobs enqueueën |
+| dispatcher | iedere 5 minuten | maximaal twee beschikbare jobs uitvoeren |
+| reconciler | iedere 15 minuten | verlopen leases en onbekende executions controleren |
+| lead scheduler | bestaande maandagplanning | één marketingjob per Amsterdam-week |
+| daily summary | periodieke cron met Amsterdam-tijdguard | één summaryjob per lokale kalenderdag rond 17:30 |
 
-### 10.1 Trigger
+Als frequente cron niet beschikbaar is, mogen de routes handmatig worden getest maar is de continue productiewerking niet opgeleverd.
 
-Een klant verstuurt via het supportformulier:
+## 16. Implementatiefasen
 
-> "Mijn gast krijgt geen bevestigingsmail na een boeking."
+### Fase 0 — voorbereiding en beslissingen
 
-### 10.2 Automatische verwerking
+- [ ] Lees `docs/style-guide.md`, repositorydocs en huidige agentflows volledig.
+- [ ] Leg Vercel-plan en beschikbare cronfrequentie vast.
+- [ ] Bevestig Vercel AI Gateway als MVP-provider.
+- [ ] Leg toegestane modeldata, bewaartermijnen en subverwerkers vast.
+- [ ] Schrijf threat model voor prompt injection, scopelekken en dubbele externe acties.
+- [ ] Leg approvalmatrix, dagbudget en kill-switchbeheer vast.
+- [ ] Maak payloadschemas en promptversies voor `support.reply_draft`.
 
-1. Supportendpoint maakt ticket en `agent_job` aan.
-2. Idempotency key voorkomt dubbele verwerking.
-3. Manager-agent classificeert:
-   - categorie: `booking_email`;
-   - urgentie: `high`;
-   - risico: `medium`;
-   - mogelijk technisch probleem: `true`.
-4. Support-agent zoekt relevante kennisdocumenten en recente soortgelijke tickets.
-5. Als een bekende configuratiefout waarschijnlijk is:
-   - agent maakt antwoordconcept;
-   - agent vraagt ontbrekende veilige informatie op;
-   - concept wacht op goedkeuring indien confidence te laag is.
-6. Als een productbug waarschijnlijk is:
-   - product-agent maakt een bugbrief;
-   - developer-agent krijgt geanonimiseerde context;
-   - developer-agent onderzoekt relevante logs en code;
-   - developer-agent reproduceert het probleem;
-   - developer-agent maakt patch en tests in geïsoleerde branch;
-   - QA-agent controleert regressie, mailflow en tenantisolatie.
-7. Manager-agent bundelt:
-   - oorzaak;
-   - impact;
-   - voorgestelde oplossing;
-   - testresultaten;
-   - conceptantwoord;
-   - benodigde goedkeuring.
-8. Dashboard toont 's avonds:
-   - `1 supportantwoord klaar`;
-   - `1 draft-PR klaar voor review`;
-   - `productiedeploy vereist handmatige goedkeuring`.
+Exitcriteria:
 
-### 10.3 Voorbeeld van artifact
+- [ ] Geen open besluit over worker, provider, scope of approvalbeleid.
+- [ ] Dataclassificatie en threat model goedgekeurd.
+- [ ] MVP-testset bevat minimaal normale, ambigue en schadelijke supportinput.
+
+### Fase 1 — queue en transactionele statusmotor
+
+- [ ] Maak migratie voor jobs, dependencies, runs, artifacts, approvals, executions, settings en agent-auditlogs.
+- [ ] Spiegel schema in `supabase/init.sql`.
+- [ ] Implementeer enqueue-, claim-, transition-, renew- en reconcile-RPC's.
+- [ ] Voeg constraints, indexes, RLS en expliciete grants toe.
+- [ ] Bouw serverrepositories en Zodschemas.
+- [ ] Test dubbele enqueue, concurrent claims, lease expiry, retries en dead-letter.
+- [ ] Test platformscope en businessscope.
+
+Exitcriteria:
+
+- [ ] Twee gelijktijdige workers krijgen nooit dezelfde actieve lease.
+- [ ] Iedere statusovergang heeft transactioneel een auditregel.
+- [ ] Een gecrashte worker levert na lease expiry herstel of dead-letter op.
+- [ ] Reset via `supabase/init.sql` levert hetzelfde schema.
+
+### Fase 2 — bestaande supportagent integreren
+
+- [ ] Laat mailboxsync voor nieuwe inbound messages idempotent supportjobs enqueueën.
+- [ ] Bouw deterministische managerrouter voor `support.reply_draft`.
+- [ ] Hergebruik `generateReplyDraft`, risk-policy en knowledge retrieval.
+- [ ] Centraliseer Gateway-call, timeout, providermetadata en gebruiksregistratie.
+- [ ] Gebruik Structured Outputs waar Gateway/model dit ondersteunt en valideer met Zod.
+- [ ] Maak artifact met `mailDraftId`, hash en veilige samenvatting.
+- [ ] Zet iedere supportjob op `awaiting_approval`.
+- [ ] Bouw mocks; standaardtests doen geen echte modelcall.
+
+Exitcriteria:
+
+- [ ] Tien representatieve supportcases leveren geldig concept of verklaarde failure.
+- [ ] Prompt-injectioncases krijgen geen extra rechten.
+- [ ] Duplicate maildelivery levert maximaal één job en één actueel concept op.
+- [ ] Geen supportmail kan door deze fase worden verzonden.
+
+### Fase 3 — approvals en veilige supportexecutor
+
+- [ ] Bouw approval API en overzicht.
+- [ ] Toon bron, kennis, confidence, risico, artifactversie en audittrail.
+- [ ] Implementeer edit als nieuwe immutable artifactversie.
+- [ ] Implementeer approve, reject, expiry en invalidation.
+- [ ] Maak atomisch één executionrecord per approval.
+- [ ] Koppel executor aan bestaande `sendReply` en `send_key`.
+- [ ] Behandel timeout na extern effect als `unknown`.
+- [ ] Voeg reconciliatie toe voordat een onbekende send opnieuw mag.
+
+Exitcriteria:
+
+- [ ] Dubbel klikken kan maximaal één execution maken.
+- [ ] Oude of verlopen approval kan niet worden uitgevoerd.
+- [ ] Gewijzigd concept vereist nieuwe approval.
+- [ ] Onbevoegde gebruiker krijgt 403 en geen service-rolequery.
+- [ ] Observe-only blokkeert iedere send.
+
+### Fase 4 — dispatcher, dagoverzicht en operations
+
+- [ ] Voeg beveiligde GET-cronroutes toe.
+- [ ] Verwerk maximaal twee jobs met begrensde concurrency.
+- [ ] Voeg timeoutmonitor, retries, dead-letter en handmatige retry toe.
+- [ ] Voeg kill switch en dagbudget toe.
+- [ ] Bouw avondoverzicht en operationele agentpagina's.
+- [ ] Voeg gecontroleerde polling of Realtime toe.
+- [ ] Bouw toegankelijke desktop- en mobiele states.
+- [ ] Voeg alerts toe voor herhaald falen en bereikt budget.
+
+Exitcriteria:
+
+- [ ] Systeem werkt zonder ingelogde eigenaar en zonder lokale computer.
+- [ ] Duplicate croninvocation heeft geen dubbel effect.
+- [ ] Vastgelopen job wordt zichtbaar hersteld of dead-letter.
+- [ ] Dashboard werkt vanaf 320 px en status is niet kleurafhankelijk.
+
+### Fase 5 — marketing integreren en pilot
+
+- [ ] Laat bestaande leadscheduler een generieke marketingjob enqueueën.
+- [ ] Hergebruik bestaande leadservices en limieten.
+- [ ] Koppel nieuwe `lead_agent_runs` aan `agent_job_id`.
+- [ ] Maak leadartifact met bronnen, scores en onzekerheden.
+- [ ] Houd outbound marketing uitgeschakeld.
+- [ ] Draai minimaal twee weken observe-only.
+- [ ] Meet acceptatie, correcties, fouten, kosten en tijdwinst.
+
+Exitcriteria:
+
+- [ ] Leadjobs zijn idempotent per Amsterdam-week/periodesleutel.
+- [ ] Geen marketingmail wordt automatisch verzonden.
+- [ ] Pilotdata ondersteunt een expliciet go/no-go-besluit.
+
+### Fase 6 — optionele OpenAI background mode
+
+Alleen uitvoeren als gemeten taken regelmatig niet binnen de synchrone workerlimiet passen.
+
+- [ ] Voeg officiële OpenAI SDK en directe OpenAI-provideradapter toe.
+- [ ] Gebruik `background: true` uitsluitend voor geschikte lange runs.
+- [ ] Voeg ondertekende OpenAI-webhookroute toe.
+- [ ] Verwerk terminale events idempotent.
+- [ ] Poll en reconcile gemiste events.
+- [ ] Documenteer dataretentie en providerkeuze opnieuw.
+- [ ] Houd bestaande Gateway-adapter voor korte runs of migreer bewust; vermeng response-ID's niet.
+
+### Fase 7 — developer/QA en overige specialisten
+
+- [ ] Kies en beveilig een ephemeral code-runner buiten de Vercel webworker.
+- [ ] Gebruik GitHub App-rechten met least privilege.
+- [ ] Maak alleen draft-PR's na approval.
+- [ ] Laat QA onafhankelijk tests en diff beoordelen.
+- [ ] Houd merge en deploy handmatig.
+- [ ] Voeg product- en administratieagent alleen toe na aantoonbare MVP-waarde.
+- [ ] Gebruik Responses multi-agent beta alleen voor concrete onafhankelijke deeltaken en na kosten/evalvergelijking.
+
+## 17. Teststrategie
+
+### 17.1 Nieuwe tests
+
+Voeg minimaal toe:
+
+```text
+tests/agent-queue.test.mjs
+tests/agent-status-transitions.test.mjs
+tests/agent-support-workflow.test.mjs
+tests/agent-approvals.test.mjs
+tests/agent-cron-security.test.mjs
+tests/agent-business-isolation.test.mjs
+```
+
+Voeg scripts toe:
 
 ```json
 {
-  "type": "bug_resolution_proposal",
-  "ticketId": "SUP-1042",
-  "summary": "Bevestigingsmail wordt niet gestart wanneer een boeking via de factuurconversie ontstaat.",
-  "evidence": [
-    "Reproductie geslaagd in testomgeving",
-    "Mailjob ontbreekt voor booking source invoice_conversion",
-    "Bestaande normale boekingsflow werkt"
-  ],
-  "proposedChange": "Roep dezelfde booking-confirmation enqueue service aan na succesvolle conversie.",
-  "tests": [
-    "unit test voor invoice_conversion",
-    "integration test voor mailjob enqueue",
-    "regressietest voor normale boeking"
-  ],
-  "risk": "medium",
-  "requiresApproval": true
+  "test:agents": "node --test tests/agent-*.test.mjs",
+  "typecheck": "tsc --noEmit"
 }
 ```
 
-### 10.4 Acceptatiecriteria voor dit voorbeeld
+`next.config.mjs` bevat momenteel `typescript.ignoreBuildErrors: true`. Daarom is een geslaagde build geen bewijs van typesafety. `npm run typecheck` is verplicht en `ignoreBuildErrors` moet vóór productie worden verwijderd.
 
-- [ ] Dubbele supportwebhooks leveren maximaal één job op.
-- [ ] Ticket bevat geen secrets in agentcontext.
-- [ ] Agent benoemt onzekerheid en verzint geen logresultaten.
-- [ ] Developer-agent werkt niet op de hoofdbranch.
-- [ ] Bestaande normale boekingsflow blijft werken.
-- [ ] Nieuwe test faalt vóór en slaagt na de patch.
-- [ ] QA-agent rapporteert concrete testresultaten.
-- [ ] Supportmail wordt niet verzonden vóór het toegestane approvalmoment.
-- [ ] Deploy gebeurt niet automatisch.
-- [ ] Auditlog verbindt ticket, job, runs, artifact en approval.
+### 17.2 Verplichte scenario's
 
-## 11. Geplande werkdag
+1. Normale supportvraag.
+2. Ambigue vraag met ontbrekende informatie.
+3. Boze klant met refundverzoek.
+4. Mail met prompt-injectioninstructie.
+5. Mail met API-key of ander secret in de tekst.
+6. Duplicate IMAP-message of webhookdelivery.
+7. Ongeldige modeloutput.
+8. Modeltimeout vóór extern effect.
+9. Timeout nadat SMTP mogelijk is geaccepteerd.
+10. Twee workers claimen gelijktijdig.
+11. Lease verloopt halverwege een run.
+12. Approval wordt tweemaal verstuurd.
+13. Artifact wijzigt na approvalaanvraag.
+14. Approval verloopt.
+15. Niet-admin probeert approval uit te voeren.
+16. Business A probeert business B te lezen.
+17. Dagbudget is bereikt.
+18. Kill switch wordt geactiveerd tussen approval en execution.
+19. Cronrun start tweemaal.
+20. Bestaande tests falen al vóór een wijziging.
 
-Voorbeeldschema, configureerbaar en niet hardcoded:
+### 17.3 Live verificatie
 
-| Moment | Taak |
-| --- | --- |
-| 08:00 | Manager controleert openstaande en verlopen jobs |
-| 09:00 | Marketing-agent verzamelt en kwalificeert leads |
-| Doorlopend | Nieuwe supporttickets starten supportworkflow |
-| Doorlopend | GitHub/Sentry-events starten triageworkflow |
-| 15:00 | Product-agent bundelt nieuwe feedback |
-| 17:30 | Manager maakt dagsamenvatting |
-| 's Avonds | Eigenaar verwerkt approvals en beslissingen |
+- Tests gebruiken standaard mocks en veroorzaken geen modelkosten.
+- Een gecontroleerde live-evaluatie gebruikt aparte testdata.
+- SMTP-test gebruikt een veilige testmailbox.
+- Supabase-migratie wordt eerst lokaal/staging toegepast.
+- Productieclaims volgen pas nadat migrations, RLS, cron en echte serverconfiguratie zijn geverifieerd.
 
-Voor iedere cronrun geldt:
+## 18. Observability en succesmetingen
 
-- [ ] beveiligde endpointcontrole;
-- [ ] maximaal één actieve run per jobtype/periode;
-- [ ] configureerbare limiet;
-- [ ] spendlimiet;
-- [ ] retries met maximum;
-- [ ] resultaat in auditlog;
-- [ ] zichtbare foutstatus.
+Per job/run minimaal zichtbaar:
 
-## 12. Stappenplan voor implementatie
+- correlation-id;
+- trigger en deduplicatiesleutel;
+- job-, run-, approval- en executionstatus;
+- specialist, provider, model en promptversie;
+- start- en eindtijd;
+- tokengebruik en geschatte kosten indien beschikbaar;
+- retry- en leasegeschiedenis;
+- gesaniteerde foutcode;
+- artifactversie en beslisser.
 
-### Fase 0 — inventarisatie en randvoorwaarden
+Meet tijdens pilot:
 
-**Doel:** bestaande architectuur en styling begrijpen voordat er code wordt gewijzigd.
+- aantal jobs per type;
+- concepttijd;
+- approvaltijd;
+- acceptatie-, edit- en afwijzingspercentage;
+- gemiddelde edit ratio van supportconcepten;
+- ongeldige of onbruikbare outputs;
+- geneutraliseerde duplicates;
+- policy- en securityblokkades;
+- dead-letterpercentage;
+- kosten per taaktype;
+- geschatte menselijke tijdwinst;
+- incidenten door agentexecutions.
 
-- [ ] Lees `Style.md` volledig.
-- [ ] Lees repository-instructies zoals `AGENTS.md` en README's.
-- [ ] Breng bestaande auth, rollen, RLS en adminroutes in kaart.
-- [ ] Breng bestaande e-mail-, booking-, invoice- en supportflows in kaart.
-- [ ] Inventariseer bestaande GitHub- en loggingintegraties.
-- [ ] Bepaal welke gegevens naar een AI-provider mogen.
-- [ ] Leg bewaartermijnen en privacyregels vast.
-- [ ] Definieer MVP-agentrollen: manager, marketing en support óf manager en developer.
-- [ ] Schrijf een threat model voor prompt injection, tenantlekken en ongewenste toolacties.
-- [ ] Definieer budget- en rate-limits.
+Succes betekent minder voorbereidingstijd zonder stijging van fouten of klantimpact. Maximale autonomie is geen MVP-doel.
 
-**Exitcriteria**
+## 19. Rollout en rollback
 
-- [ ] Architectuurnotitie goedgekeurd.
-- [ ] Dataclassificatie voltooid.
-- [ ] `Style.md`-regels vertaald naar concrete UI-eisen.
-- [ ] Approvalmatrix goedgekeurd.
+1. Deploy databasebasis met `agents_enabled = false`.
+2. Verifieer RLS, grants, RPC's en adminroutes in staging.
+3. Activeer queue en dispatcher met mocks.
+4. Activeer echte supportgeneratie met `observe_only = true`.
+5. Vergelijk twee weken lang artifacts met menselijke antwoorden.
+6. Activeer approvals, maar houd executions geblokkeerd.
+7. Activeer supportexecutor voor admins na go/no-go.
+8. Integreer marketing pas na stabiele supportmetingen.
+9. Automatiseer een laag-risicoactie pas na een apart besluit.
 
-### Fase 1 — jobqueue, runs en auditlog
+Rollback:
 
-**Doel:** een betrouwbare basis zonder agents met externe acties.
+- zet eerst `agents_enabled = false`;
+- stop nieuwe crontriggers;
+- laat lopende externe executions niet blind opnieuw starten;
+- behoud jobs, runs en audittrail voor onderzoek;
+- herstel bestaande mailbox- en leadinterfaces onafhankelijk van het generieke dashboard;
+- verwijder tabellen niet tijdens operationele rollback.
 
-- [ ] Maak database-migraties voor jobs, runs, artifacts, approvals en auditlogs.
-- [ ] Voeg enums/check constraints of gevalideerde statuswaarden toe.
-- [ ] Implementeer idempotency.
-- [ ] Implementeer atomisch claimen van jobs.
-- [ ] Implementeer retries en dead-letterstatus.
-- [ ] Voeg RLS en server-only servicefuncties toe.
-- [ ] Bouw veilige adminqueries.
-- [ ] Test concurrente claims.
-- [ ] Test dubbele events.
+## 20. Definition of Done
 
-**Exitcriteria**
-
-- [ ] Geen job kan door twee workers tegelijk worden uitgevoerd.
-- [ ] Iedere statusovergang staat in de auditlog.
-- [ ] Tenantisolatietests slagen.
-- [ ] Mislukte jobs zijn herstelbaar.
-
-### Fase 2 — manager-agent en één specialist
-
-**Doel:** klein beginnen en de volledige keten bewijzen.
-
-Aanbevolen eerste specialist: support-agent of marketing-agent. Voeg nog geen zeven actieve agents tegelijk toe.
-
-- [ ] Definieer managerprompt en versionering.
-- [ ] Definieer één smal specialistcontract.
-- [ ] Gebruik gestructureerde output met runtimevalidatie.
-- [ ] Sla response-id, status, gebruik en veilige samenvatting op.
-- [ ] Implementeer time-out en foutafhandeling.
-- [ ] Bouw mocks zodat tests geen echte API-kosten hoeven te maken.
-- [ ] Voeg evaluatieset toe met normale, ambigue en schadelijke input.
-- [ ] Test prompt injection vanuit ticket- of websitecontent.
-
-**Exitcriteria**
-
-- [ ] Agent kan tien representatieve taken correct classificeren.
-- [ ] Ongeldige output wordt geweigerd en veilig opnieuw geprobeerd.
-- [ ] Geen externe actie wordt zonder approval uitgevoerd.
-- [ ] Kosten en tokengebruik zijn per run zichtbaar.
-
-### Fase 3 — approvalworkflow
-
-**Doel:** eigenaar kan 's avonds gecontroleerd beslissen.
-
-- [ ] Bouw approvaloverzicht.
-- [ ] Bouw detailweergave met bewijs, onzekerheden en aanbevolen actie.
-- [ ] Voeg approve, reject, edit en retry toe.
-- [ ] Maak approvals single-use.
-- [ ] Voeg expiration en stale-data-controle toe.
-- [ ] Vereis recente herauthenticatie voor hoog-risicoacties.
-- [ ] Registreer beslisser en beslissing.
-- [ ] Laat executor alleen goedgekeurde artifacts uitvoeren.
-
-**Exitcriteria**
-
-- [ ] Dubbel klikken voert een actie maximaal één keer uit.
-- [ ] Verlopen approval kan niet worden uitgevoerd.
-- [ ] Gewijzigd onderliggend artifact maakt oude approval ongeldig.
-- [ ] Onbevoegde gebruiker krijgt geen toegang.
-
-### Fase 4 — dashboard en spinnenweb
-
-**Doel:** live inzicht in werkzaamheden.
-
-- [ ] Bouw de UI uitsluitend volgens `Style.md`.
-- [ ] Hergebruik bestaande layout-, button-, modal-, badge- en tablecomponenten.
-- [ ] Toon agentstatussen via Realtime of gecontroleerde polling.
-- [ ] Maak agentnodes klikbaar en toetsenbordtoegankelijk.
-- [ ] Toon actieve overdrachten zonder afleidende animatie.
-- [ ] Voeg avondoverzicht met vier werkbakken toe.
-- [ ] Voeg lege, laad-, fout- en offline-statussen toe.
-- [ ] Voeg mobiele variant toe.
-- [ ] Test reduced motion.
-
-**Exitcriteria**
-
-- [ ] Stylingreview tegen `Style.md` is uitgevoerd.
-- [ ] Dashboard werkt op mobiel en desktop.
-- [ ] Status is niet alleen door kleur herkenbaar.
-- [ ] Approvalacties zijn duidelijk en veilig.
-
-### Fase 5 — background mode, cron en webhooks
-
-**Doel:** werkzaamheden gaan door als eigenaar niet actief is.
-
-- [ ] Voeg beveiligde crontriggers toe.
-- [ ] Implementeer OpenAI background responses waar nuttig.
-- [ ] Implementeer webhookendpoint met handtekeningverificatie.
-- [ ] Verwerk `response.completed`, `response.failed` en relevante statussen idempotent.
-- [ ] Voeg timeoutmonitor voor vastgelopen runs toe.
-- [ ] Voeg dagsamenvatting toe.
-- [ ] Voeg kostenplafond per dag en per agent toe.
-- [ ] Voeg noodstop toe om alle nieuwe agentruns te pauzeren.
-
-**Exitcriteria**
-
-- [ ] Systeem werkt met uitgelogde eigenaar en uitgeschakelde lokale computer.
-- [ ] Gemiste webhook kan via reconciliatie worden hersteld.
-- [ ] Een duplicate webhook heeft geen dubbel effect.
-- [ ] Daglimiet stopt nieuwe niet-kritieke runs.
-
-### Fase 6 — developer- en QA-agent
-
-**Doel:** bugs en features veilig voorbereiden.
-
-- [ ] Koppel goedgekeurde issues aan codecontext.
-- [ ] Gebruik altijd aparte branch/worktree.
-- [ ] Definieer toegestane en verboden commando's.
-- [ ] Voorkom toegang tot productiesecrets.
-- [ ] Laat agent bestaande tests draaien vóór wijziging.
-- [ ] Vereis tests voor gewijzigd gedrag.
-- [ ] Laat QA-agent onafhankelijk reviewen.
-- [ ] Maak alleen draft-PR's.
-- [ ] Voeg changelog- en documentatiecontrole toe.
-- [ ] Houd merge en deploy handmatig.
-
-**Exitcriteria**
-
-- [ ] Geen rechtstreekse wijziging op hoofdbranch.
-- [ ] Geen merge- of deployrechten voor agents.
-- [ ] Testresultaten en diff zijn zichtbaar in approval.
-- [ ] Foutieve patch kan veilig worden verwijderd zonder gebruikerswerk te raken.
-
-### Fase 7 — uitbreiding en optimalisatie
-
-Pas uitbreiden wanneer meetgegevens aantonen dat de bestaande workflow waarde levert.
-
-- [ ] Voeg product-agent toe.
-- [ ] Voeg administratie-agent toe.
-- [ ] Automatiseer alleen bewezen laag-risicocategorieën.
-- [ ] Voeg parallelle subagents alleen toe voor echt onafhankelijke deeltaken.
-- [ ] Meet extra tokengebruik tegenover tijdwinst.
-- [ ] Herzie prompts en policies op basis van echte fouten.
-- [ ] Voer periodieke security- en privacyreview uit.
-
-De ingebouwde Responses API multi-agentfunctie is momenteel bèta en kan tokengebruik verhogen. Gebruik deze alleen voor concrete, onafhankelijke werkstromen, niet als standaard voor iedere taak. Zie [OpenAI — multi-agent](https://developers.openai.com/api/docs/guides/responses-multi-agent).
-
-## 13. Developer Definition of Done
-
-Een agentfeature is pas gereed wanneer alle toepasselijke punten zijn afgevinkt.
+Een fase is pas klaar wanneer alle toepasselijke punten aantoonbaar zijn gevalideerd.
 
 ### Functioneel
 
 - [ ] Happy path werkt end-to-end.
-- [ ] Lege, ongeldige en ambigue input wordt veilig verwerkt.
-- [ ] Duplicate events veroorzaken geen duplicate acties.
-- [ ] Run kan veilig opnieuw worden geprobeerd.
-- [ ] Approval is vereist volgens de matrix.
-- [ ] Dagsamenvatting verwijst naar de juiste jobs en artifacts.
+- [ ] Duplicate triggers veroorzaken geen duplicate externe actie.
+- [ ] Leaseherstel en dead-letter werken.
+- [ ] Approval is single-use, actueel en niet verlopen.
+- [ ] Onbekende externe uitkomst wordt niet blind geretryd.
+- [ ] Kill switch blokkeert claim en execution.
 
-### Codekwaliteit
+### Code en database
 
-- [ ] Code volgt bestaande repositoryconventies.
-- [ ] Geen `any` zonder onderbouwde reden.
-- [ ] Runtimevalidatie voor externe input en modeloutput.
-- [ ] Geen duplicatie van bestaande services of componenten.
-- [ ] Server/clientgrenzen zijn correct.
-- [ ] Geen secrets of service-rolekeys in clientbundles.
-- [ ] Migraties zijn vooruit en veilig terug te draaien waar mogelijk.
-
-### Styling
-
-- [ ] `Style.md` is aantoonbaar gevolgd.
-- [ ] Bestaande componenten en tokens zijn hergebruikt.
-- [ ] Geen hardcoded merkkleuren wanneer tokens bestaan.
-- [ ] Typografie en spacing volgen het bedrijfssysteem.
-- [ ] Light/dark mode werkt indien ondersteund.
-- [ ] Mobiele layout is getest.
-- [ ] Loading, empty, error en disabled states zijn ontworpen.
+- [ ] Repositoryconventies en bestaande services zijn hergebruikt.
+- [ ] Migratie en `supabase/init.sql` zijn gelijkwaardig.
+- [ ] Externe input en modeloutput hebben runtimevalidatie.
+- [ ] Status en audit worden transactioneel geschreven.
+- [ ] `npm run typecheck` slaagt.
+- [ ] Relevante bestaande en nieuwe tests slagen.
+- [ ] Geen secrets of service-rolekeys zitten in clientbundles of logs.
 
 ### Security en privacy
 
-- [ ] RLS en rolchecks zijn aanwezig en getest.
-- [ ] Prompt injection is meegenomen in tests.
-- [ ] Modelinput bevat alleen noodzakelijke persoonsgegevens.
-- [ ] Webhookhandtekeningen worden geverifieerd.
-- [ ] Idempotency keys worden gebruikt.
-- [ ] Rate limit en kostenlimiet zijn aanwezig.
-- [ ] Auditlog bevat geen secrets.
-- [ ] Toolrechten zijn minimaal.
+- [ ] Admin- en businessgrenzen zijn server-side getest.
+- [ ] Prompt injection is getest.
+- [ ] Modelcontext bevat alleen noodzakelijke data.
+- [ ] Bewaartermijnen en verwijdering zijn vastgelegd.
+- [ ] Rate limit, budgetlimiet en kill switch werken.
+- [ ] Auditlogs bevatten geen secrets of volledige gevoelige prompts.
 
-### Testen
+### UI
 
-- [ ] Unit tests voor policies, validators en statusovergangen.
-- [ ] Integratietests voor queue, approvals en webhookverwerking.
-- [ ] Tenantisolatietests.
-- [ ] Tests voor retries, timeout en duplicate delivery.
-- [ ] UI-tests voor approve/reject/edit.
-- [ ] Accessibilitycontrole.
-- [ ] Tests draaien zonder standaard echte modelcalls.
-- [ ] Een kleine gecontroleerde live-evaluatie is apart uitgevoerd.
+- [ ] `docs/style-guide.md` is gevolgd.
+- [ ] Bestaande componenten en tokens zijn hergebruikt.
+- [ ] Loading, empty, error, stale, offline en disabled states bestaan.
+- [ ] Mobiel vanaf 320 px is getest.
+- [ ] Keyboard, focus, reduced motion en WCAG AA zijn gecontroleerd.
+- [ ] Status is niet uitsluitend door kleur herkenbaar.
 
-### Observability
+### Operations
 
-- [ ] Correlatie-id door de volledige workflow.
-- [ ] Runstatus en fout zichtbaar in dashboard.
-- [ ] Kosten/gebruik per run zichtbaar.
-- [ ] Alert op herhaald falen.
-- [ ] Alert op overschreden budget.
-- [ ] Dead-letterjobs zijn vindbaar en herstelbaar.
+- [ ] Cronfrequentie past bij het actieve Vercel-plan of de vervangende scheduler.
+- [ ] Dispatcher heeft begrensde concurrency en maximale duur.
+- [ ] Reconciliatie herstelt gemiste of vastgelopen verwerking.
+- [ ] Budget- en faalalerts zijn zichtbaar.
+- [ ] Rollback via kill switch is getest.
+- [ ] Productieconfiguratie en Supabase-migratie zijn live geverifieerd voordat productie als klaar wordt gemeld.
 
-## 14. Testscenario's
+## 21. Eindresultaat
 
-Minimaal opnemen in automatische of gecontroleerde evaluatietests:
+Na fase 4 beschikt FlexPagina over een betrouwbare agentworkflow voor supportconcepten, menselijke approvals, veilige verzending, herstelbare jobs en een dagelijks operationeel overzicht. Na fase 5 gebruikt ook de bestaande leadagent dezelfde queue en observability zonder bestaande domeindata te dupliceren.
 
-1. Normale eenvoudige supportvraag.
-2. Ambigue supportvraag met te weinig informatie.
-3. Boze klant met refundverzoek.
-4. Ticket met instructie om systeembeleid te negeren.
-5. Ticket met een API-key of ander secret in de tekst.
-6. Dubbele webhookdelivery.
-7. OpenAI-timeout.
-8. Ongeldige gestructureerde modeloutput.
-9. Agent hallucineert een logregel die niet bestaat.
-10. Marketinglead zonder betrouwbare contactinformatie.
-11. Marketingwebsite bevat prompt-injectiontekst.
-12. Developer-agent treft een dirty worktree aan.
-13. Test suite faalt al vóór de wijziging.
-14. Approval wordt tweemaal verstuurd.
-15. Approval wordt uitgevoerd nadat artifact is aangepast.
-16. Gebruiker van tenant A probeert run van tenant B te lezen.
-17. Dagbudget is bereikt.
-18. Webhook komt binnen voordat lokale jobstatus is bijgewerkt.
-19. Cronrun start tweemaal gelijktijdig.
-20. Systeem wordt halverwege een run herstart.
-
-## 15. Monitoring en succesmetingen
-
-Meet vanaf de MVP:
-
-- aantal jobs per agenttype;
-- percentage automatisch afgerond;
-- percentage dat approval nodig had;
-- acceptatie- en afwijzingspercentage van agentvoorstellen;
-- gemiddelde tijd tot eerste supportconcept;
-- gemiddelde tijd tot avondbeslissing;
-- aantal incorrecte of onbruikbare outputs;
-- aantal dubbele gebeurtenissen dat veilig is geneutraliseerd;
-- aantal beveiligings- of policyblokkades;
-- modelkosten per taaktype;
-- geschatte menselijke tijdwinst;
-- bugs veroorzaakt door agentwijzigingen;
-- percentage supportantwoorden dat handmatig sterk aangepast moest worden.
-
-Streef niet direct naar maximale autonomie. Een daling van menselijke voorbereidingstijd zonder stijging van fouten is de primaire succesmaatstaf.
-
-## 16. MVP-afbakening
-
-### Wel in MVP
-
-- jobqueue en auditlog;
-- manager-agent;
-- één specialist, bij voorkeur support of marketing;
-- gestructureerde outputs;
-- approvalwachtrij;
-- avondoverzicht;
-- basis-agentstatusdashboard volgens `Style.md`;
-- kostenlimiet en noodstop;
-- handmatige retry;
-- basis-evaluaties.
-
-### Niet in MVP
-
-- zeven agents die tegelijk autonoom werken;
-- automatisch mergen of deployen;
-- automatische refunds;
-- volledig autonome outbound marketing;
-- onbegrensde toegang tot e-mail of database;
-- eigen vectorzoekinfrastructuur wanneer eenvoudige kennisretrieval volstaat;
-- dynamische agents die zelf nieuwe permanente agentrollen maken;
-- complexe langetermijnplanning zonder concrete businesswaarde.
-
-## 17. Aanbevolen eerste sprintindeling
-
-### Sprint 1
-
-- inventarisatie en `Style.md`-review;
-- datamodel en migraties;
-- queue, runstatus en auditlog;
-- adminlijst met mockdata;
-- security- en tenanttests.
-
-### Sprint 2
-
-- manager-agent;
-- support- of marketing-specialist;
-- structured output;
-- artifacts;
-- kostenregistratie;
-- testset en mocks.
-
-### Sprint 3
-
-- approvals;
-- avondoverzicht;
-- agent-spinnenweb volgens `Style.md`;
-- Realtime/polling;
-- responsive en accessibilityreview.
-
-### Sprint 4
-
-- cron en background runs;
-- webhookverificatie;
-- retries en reconciliatie;
-- dagsamenvatting;
-- pilot met alleen interne taken.
-
-## 18. Pilot en rollout
-
-1. Start in `observe-only`: agents analyseren, maar ondernemen niets.
-2. Vergelijk outputs twee weken met menselijke beslissingen.
-3. Activeer conceptgeneratie voor één taaktype.
-4. Activeer approvals voor gecontroleerde vervolgacties.
-5. Automatiseer pas een laag-risicoactie na voldoende correcte voorbeelden.
-6. Houd een kill switch beschikbaar.
-7. Evalueer wekelijks fouten, kosten en tijdwinst.
-8. Breid pas daarna uit met een volgende agent.
-
-## 19. Eindchecklist voor oplevering
-
-- [ ] De eigenaar kan zien welke agents actief, beschikbaar, geblokkeerd of mislukt zijn.
-- [ ] De eigenaar kan iedere run terugvinden en begrijpen.
-- [ ] De eigenaar krijgt dagelijks één helder avondoverzicht.
-- [ ] Risicovolle acties wachten aantoonbaar op goedkeuring.
-- [ ] Geen agent kan buiten zijn toolrechten handelen.
-- [ ] Geen agent kan zelfstandig mergen, deployen of geld terugboeken.
-- [ ] Dubbele events veroorzaken geen dubbel extern effect.
-- [ ] RLS en tenantisolatie zijn getest.
-- [ ] Webhookhandtekeningen worden geverifieerd.
-- [ ] Modeloutputs worden runtime gevalideerd.
-- [ ] Kosten- en rate-limits zijn ingesteld.
-- [ ] Auditlogs bevatten geen secrets.
-- [ ] `Style.md` is gebruikt voor alle bedrijfsstyling.
-- [ ] Dashboard is responsive en toegankelijk.
-- [ ] Developer- en QA-checklists zijn volledig afgevinkt.
-- [ ] Pilot is uitgevoerd voordat automatische klantacties worden ingeschakeld.
-
-## 20. Samenvatting voor de developer
-
-Bouw eerst een betrouwbare workflowmotor en pas daarna meer agents. Houd de manager-agent verantwoordelijk voor de totale taak. Geef iedere specialist een smalle rol, minimale toolrechten en een gevalideerd outputcontract. Laat alles met extern, financieel, juridisch of productie-effect via een expliciete approval lopen. Maak iedere run traceerbaar, hervatbaar en idempotent. Gebruik `Style.md` als verplichte bron voor alle styling en hergebruik de bestaande FlexPagina-componenten. Begin met één specialist en bewijs tijdwinst en kwaliteit voordat het agentteam wordt uitgebreid.
-
+Nieuwe agentrollen, OpenAI background mode, multi-agent en codewijzigende agents komen pas daarna. Daardoor blijft het systeem controleerbaar, idempotent en passend bij de huidige FlexPagina-architectuur.

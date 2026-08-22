@@ -11,8 +11,27 @@
     },
     {
       "path": "/api/cron/mail-sync",
-      "schedule": "0 21 * * *"
+      "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/booking-notifications",
+      "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/calendar-sync",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/agents/dispatch",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/agents/reconcile",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/agents/daily-summary",
+      "schedule": "30 * * * *"
     }
-
   ]
 }

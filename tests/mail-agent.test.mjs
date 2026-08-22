@@ -49,7 +49,7 @@ test("schema and cron keep the agent durable and scheduled", () => {
     assert.match(migration, new RegExp(`create table if not exists public\\.${table}`))
     assert.match(init, new RegExp(`create table public\\.${table}`))
   }
-  assert.ok(vercel.crons.some((cron) => cron.path === "/api/cron/mail-sync" && /^\d+ \d+ \* \* \*$/.test(cron.schedule)))
+  assert.ok(vercel.crons.some((cron) => cron.path === "/api/cron/mail-sync" && cron.schedule.split(/\s+/).length === 5))
   assert.match(sendReply, /renderFlexPaginaReplyHtml/)
   assert.match(sendReply, /html: renderFlexPaginaReplyHtml\(input\.body\)/)
 })

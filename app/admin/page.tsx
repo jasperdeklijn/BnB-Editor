@@ -253,6 +253,12 @@ export default async function AdminPage() {
                 description="Beheer de planning, regio's en notificaties."
               />
               <AdminLink
+                href="/admin/agents"
+                icon={Bot}
+                title="AI-agentteam"
+                description="Beheer taken, goedkeuringen, uitvoering en veiligheidslimieten."
+              />
+              <AdminLink
                 href="/admin/audit-logs"
                 icon={ClipboardList}
                 title="Auditlogs"

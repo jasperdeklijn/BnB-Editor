@@ -2,8 +2,8 @@ import "server-only"
 
 import { ImapFlow } from "imapflow"
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { enqueueAgentJob } from "@/lib/agents/repository"
 import { requireMailServerConfig } from "@/lib/mail/config"
-import { generateReplyDraft } from "@/lib/mail/generate-reply"
 import { parseMailboxMessage } from "@/lib/mail/parse-message"
 import { isAutomatedMail } from "@/lib/mail/risk-policy"
 import { resolveMailThread } from "@/lib/mail/threading"
@@ -180,7 +180,14 @@ export async function syncMailbox(input: { trigger: "cron" | "manual"; runKey: s
 
     for (const target of draftTargets.slice(0, 10)) {
       try {
-        await generateReplyDraft(supabase, target)
+        await enqueueAgentJob(supabase, {
+          jobType: "support.reply",
+          source: "mail_message",
+          deduplicationKey: target.messageId,
+          payload: target,
+          priority: 80,
+          riskLevel: "medium",
+        })
         totals.drafts += 1
       } catch {
         totals.failed += 1
