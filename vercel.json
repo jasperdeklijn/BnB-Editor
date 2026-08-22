@@ -19,7 +19,7 @@
     },
     {
       "path": "/api/cron/calendar-sync",
-     "schedule": "0 8 * * 1"
+      "schedule": "15 2 * * *"
     },
     {
       "path": "/api/cron/agents/dispatch",

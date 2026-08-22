@@ -27,6 +27,9 @@ import {
   rotateCalendarExportFeed,
   setCalendarExportEnabled,
   setCalendarImportSourceEnabled,
+  updateCalendarImportSource,
+  type CalendarExportTarget,
+  type CalendarProvider,
 } from "@/lib/calendar/sync"
 import {
   createBookingInvoiceDraft,
@@ -179,19 +182,22 @@ export async function rejectRescheduleRequestAction(requestId: string, privateNo
   }
 }
 
-export async function rotateCalendarExportFeedAction(businessId: string) {
+export async function rotateCalendarExportFeedAction(
+  businessId: string,
+  input: { serviceId?: string | null; targetProvider?: CalendarExportTarget } = {},
+) {
   try {
-    const data = await rotateCalendarExportFeed(businessId)
+    const result = await rotateCalendarExportFeed(businessId, input)
     revalidatePath("/editor/calendar")
-    return { success: true as const, data }
+    return { success: true as const, ...result }
   } catch (error) {
     return { success: false as const, error: getErrorMessage(error) }
   }
 }
 
-export async function setCalendarExportEnabledAction(businessId: string, enabled: boolean) {
+export async function setCalendarExportEnabledAction(feedId: string, enabled: boolean) {
   try {
-    const data = await setCalendarExportEnabled(businessId, enabled)
+    const data = await setCalendarExportEnabled(feedId, enabled)
     revalidatePath("/editor/calendar")
     return { success: true as const, data }
   } catch (error) {
@@ -201,7 +207,7 @@ export async function setCalendarExportEnabledAction(businessId: string, enabled
 
 export async function createCalendarImportSourceAction(
   businessId: string,
-  input: { name: string; feedUrl: string },
+  input: { serviceId?: string | null; provider?: CalendarProvider; name: string; feedUrl: string },
 ) {
   try {
     const result = await createCalendarImportSource(businessId, input)
@@ -217,6 +223,16 @@ export async function setCalendarImportSourceEnabledAction(sourceId: string, ena
     const data = await setCalendarImportSourceEnabled(sourceId, enabled)
     revalidatePath("/editor/calendar")
     return { success: true as const, data }
+  } catch (error) {
+    return { success: false as const, error: getErrorMessage(error) }
+  }
+}
+
+export async function updateCalendarImportSourceAction(sourceId: string, input: { name: string; feedUrl: string }) {
+  try {
+    const result = await updateCalendarImportSource(sourceId, input)
+    revalidatePath("/editor/calendar")
+    return { success: true as const, ...result }
   } catch (error) {
     return { success: false as const, error: getErrorMessage(error) }
   }

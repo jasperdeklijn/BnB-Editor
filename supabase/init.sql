@@ -2494,20 +2494,41 @@ create policy "Users can update their own images"
 -- ------------------------------------------------------------
 
 create table public.calendar_export_feeds (
-  business_id uuid primary key references public.businesses(id) on delete cascade,
-  access_token uuid not null unique default gen_random_uuid(),
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  service_id uuid,
+  target_provider text not null default 'overview'
+    check (target_provider in ('overview', 'booking_com', 'google_calendar')),
+  access_token uuid unique,
+  token_hash text unique,
+  token_prefix text,
   token_version integer not null default 1 check (token_version > 0),
   enabled boolean not null default true,
   last_rotated_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  constraint calendar_export_feeds_service_business_fkey
+    foreign key (service_id, business_id)
+    references public.services(id, business_id) on delete cascade,
+  constraint calendar_export_feeds_scope_check check (
+    (target_provider = 'overview' and service_id is null)
+    or (target_provider <> 'overview' and service_id is not null)
+  ),
+  constraint calendar_export_feeds_token_check check (
+    access_token is not null or token_hash is not null
+  )
 );
 
 create table public.calendar_import_sources (
   id uuid primary key default gen_random_uuid(),
   business_id uuid not null references public.businesses(id) on delete cascade,
+  service_id uuid,
+  provider text not null default 'other'
+    check (provider in ('booking_com', 'google_calendar', 'other')),
   name text not null check (char_length(name) between 1 and 100),
-  feed_url text not null check (char_length(feed_url) between 1 and 2048),
+  feed_url text not null check (char_length(feed_url) between 1 and 4096),
+  url_host text not null default '',
+  feed_url_fingerprint text,
   enabled boolean not null default true,
   last_sync_started_at timestamptz,
   last_sync_succeeded_at timestamptz,
@@ -2523,7 +2544,11 @@ create table public.calendar_import_sources (
   next_sync_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint calendar_import_sources_business_url_key unique (business_id, feed_url)
+  constraint calendar_import_sources_service_business_fkey
+    foreign key (service_id, business_id)
+    references public.services(id, business_id) on delete cascade,
+  constraint calendar_import_sources_provider_scope_check
+    check (provider = 'other' or service_id is not null)
 );
 
 alter table public.calendar_entries
@@ -2542,9 +2567,25 @@ create unique index calendar_entries_external_event_key
 create index calendar_import_sources_due_idx
   on public.calendar_import_sources (next_sync_at)
   where enabled = true;
+create unique index calendar_import_sources_service_provider_key
+  on public.calendar_import_sources (service_id, provider)
+  where service_id is not null and provider in ('booking_com', 'google_calendar');
+create unique index calendar_import_sources_fingerprint_key
+  on public.calendar_import_sources (
+    business_id,
+    coalesce(service_id, '00000000-0000-0000-0000-000000000000'::uuid),
+    feed_url_fingerprint
+  )
+  where feed_url_fingerprint is not null;
 create index calendar_entries_external_source_idx
   on public.calendar_entries (external_source_id)
   where external_source_id is not null;
+create unique index calendar_export_feeds_overview_key
+  on public.calendar_export_feeds (business_id)
+  where target_provider = 'overview' and service_id is null;
+create unique index calendar_export_feeds_service_provider_key
+  on public.calendar_export_feeds (service_id, target_provider)
+  where service_id is not null;
 
 create trigger set_calendar_export_feeds_updated_at
   before update on public.calendar_export_feeds
@@ -2590,6 +2631,7 @@ as $$
 declare
   selected_source public.calendar_import_sources%rowtype;
   imported_count integer;
+  safe_title text;
 begin
   if jsonb_typeof(p_events) <> 'array' or jsonb_array_length(p_events) > 5000 then
     raise exception 'Invalid calendar import payload';
@@ -2616,6 +2658,12 @@ begin
     raise exception 'Invalid calendar event payload';
   end if;
 
+  safe_title := case selected_source.provider
+    when 'booking_com' then 'Geboekt via Booking.com'
+    when 'google_calendar' then 'Bezet via Google Agenda'
+    else 'Extern bezet'
+  end;
+
   insert into public.calendar_entries (
     business_id, service_id, contact_request_id, entry_type, status, source,
     title, customer_name, customer_email, customer_phone, start_at, end_at,
@@ -2623,13 +2671,13 @@ begin
     external_source_id, external_uid, external_occurrence_key
   )
   select
-    selected_source.business_id, null, null, 'blocked', 'blocked', 'import',
-    left(coalesce(nullif(event.summary, ''), 'Extern bezet'), 200), '', '', '',
+    selected_source.business_id, selected_source.service_id, null, 'blocked', 'blocked', 'import',
+    safe_title, '', '', '',
     event.start_at, event.end_at, coalesce(event.all_day, false),
     'Europe/Amsterdam', '',
     jsonb_build_object('calendar_import', jsonb_build_object(
       'source_id', selected_source.id,
-      'source_name', selected_source.name
+      'provider', selected_source.provider
     )),
     selected_source.id, left(event.uid, 1000), event.occurrence_key
   from jsonb_to_recordset(p_events) as event(
@@ -2638,6 +2686,7 @@ begin
   )
   on conflict (external_source_id, external_uid, external_occurrence_key)
   do update set
+    service_id = excluded.service_id,
     title = excluded.title,
     start_at = excluded.start_at,
     end_at = excluded.end_at,
@@ -2666,9 +2715,13 @@ comment on table public.calendar_export_feeds is
 comment on table public.calendar_import_sources is
   'Owner-configured, read-only iCal sources with durable sync health and retry scheduling.';
 comment on column public.calendar_import_sources.feed_url is
-  'Sensitive bearer URL. Owner-only through RLS and never exposed by public APIs.';
+  'AES-256-GCM encrypted iCal URL. Legacy plaintext values are encrypted on their next synchronization.';
+comment on column public.calendar_import_sources.feed_url_fingerprint is
+  'Keyed fingerprint used for duplicate detection without exposing the secret URL.';
 comment on column public.calendar_entries.external_occurrence_key is
   'Stable per-source recurrence identity used for idempotent iCal upserts.';
+comment on column public.calendar_export_feeds.token_hash is
+  'SHA-256 hash of new export bearer tokens. The raw token is shown only when created or rotated.';
 
 -- ------------------------------------------------------------
 -- Booking Engine 2.0 phase 5: pricing and invoice PDFs

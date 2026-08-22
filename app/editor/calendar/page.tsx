@@ -14,6 +14,7 @@ import { getOfferingCopy } from "@/lib/business/categories"
 import { getBookingLifecycleData, type BookingLifecycleData } from "@/lib/booking/lifecycle"
 import { getCalendarSyncData, type CalendarSyncData } from "@/lib/calendar/sync"
 import { getBookingFinanceData, type BookingFinanceData } from "@/lib/booking/invoicing"
+import { getServiceBookingSettings } from "@/lib/supabase/booking-settings"
 
 export const metadata = {
   title: "Kalender | Website Maker",
@@ -66,7 +67,7 @@ export default async function CalendarPage({
   let calendarError: string | null = null
   let lifecycleData: BookingLifecycleData = { history: [], changeRequests: [] }
   let lifecycleUnavailable = false
-  let calendarSyncData: CalendarSyncData = { exportFeed: null, importSources: [] }
+  let calendarSyncData: CalendarSyncData = { overviewFeed: null, exportFeeds: [], importSources: [] }
   let calendarSyncUnavailable = false
   let bookingFinanceData: BookingFinanceData = {
     financials: [],
@@ -92,6 +93,15 @@ export default async function CalendarPage({
   }
   let bookingFinanceUnavailable = false
   const services = await getServices(business.id)
+  let calendarAccommodations: Array<{ id: string; title: string }> = []
+
+  try {
+    const bookingSettings = await getServiceBookingSettings(business.id)
+    const stayServiceIds = new Set(bookingSettings.filter((settings) => settings.booking_mode === "stay").map((settings) => settings.service_id))
+    calendarAccommodations = services.filter((service) => stayServiceIds.has(service.id)).map((service) => ({ id: service.id, title: service.title }))
+  } catch (error) {
+    console.error("[calendar] Failed to load accommodation settings:", error)
+  }
 
   try {
     ;[entries, availabilityWindows] = await Promise.all([
@@ -144,6 +154,7 @@ export default async function CalendarPage({
         lifecycleUnavailable={lifecycleUnavailable}
         initialCalendarSync={calendarSyncData}
         calendarSyncUnavailable={calendarSyncUnavailable}
+        calendarAccommodations={calendarAccommodations}
         initialBookingFinance={bookingFinanceData}
         bookingFinanceUnavailable={bookingFinanceUnavailable}
         offerings={services}

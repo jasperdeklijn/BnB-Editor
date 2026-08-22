@@ -32,6 +32,7 @@ import type { Service } from "@/lib/supabase/services"
 import type { BusinessCategory } from "@/lib/business/categories"
 import type { BookingChangeRequest, BookingHistoryItem, BookingLifecycleData } from "@/lib/booking/lifecycle"
 import type { CalendarSyncData } from "@/lib/calendar/sync"
+import { CalendarSyncPanel } from "@/components/calendar/calendar-sync-panel"
 import { BookingFinancePanel } from "@/components/calendar/booking-finance-panel"
 import type {
   BookingFinanceData,
@@ -50,6 +51,7 @@ interface CalendarClientProps {
   lifecycleUnavailable: boolean
   initialCalendarSync: CalendarSyncData
   calendarSyncUnavailable: boolean
+  calendarAccommodations: Array<{ id: string; title: string }>
   initialBookingFinance: BookingFinanceData
   bookingFinanceUnavailable: boolean
   offerings: Service[]
@@ -415,6 +417,9 @@ export function CalendarClient({
   initialAvailabilityWindows,
   initialLifecycle,
   lifecycleUnavailable,
+  initialCalendarSync,
+  calendarSyncUnavailable,
+  calendarAccommodations,
   initialBookingFinance,
   bookingFinanceUnavailable,
   offerings,
@@ -1083,13 +1088,12 @@ export function CalendarClient({
             onDelete={deleteAvailabilityWindow}
           />
 
-          {/* External-calendar controls are intentionally hidden until this feature is ready to launch.
           <CalendarSyncPanel
             businessId={businessId}
+            accommodations={calendarAccommodations}
             initialData={initialCalendarSync}
             unavailable={calendarSyncUnavailable}
           />
-          */}
         </aside>
       </div>
 
