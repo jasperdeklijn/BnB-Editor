@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 import { PLATFORM_BASE_URL, PLATFORM_DOMAIN } from "@/lib/platform"
+import { isOnboardingEnabled } from "@/lib/onboarding/config"
 
 const platformDomain = PLATFORM_DOMAIN.toLowerCase().replace(/^www\./, "")
 const platformHosts = new Set([platformDomain, `www.${platformDomain}`])
@@ -148,12 +149,39 @@ if (hostname.endsWith(`.${platformDomain}`)) {
     request.nextUrl.pathname === "/editor" ||
     request.nextUrl.pathname.startsWith("/editor/") ||
     request.nextUrl.pathname === "/admin" ||
-    request.nextUrl.pathname.startsWith("/admin/")
+    request.nextUrl.pathname.startsWith("/admin/") ||
+    request.nextUrl.pathname === "/onboarding"
 
   if (requiresAuthentication && !user) {
     const url = request.nextUrl.clone()
     url.pathname = "/auth/login"
+    if (request.nextUrl.pathname === "/onboarding") url.searchParams.set("next", "/onboarding")
     return NextResponse.redirect(url)
+  }
+
+  if (user && isOnboardingEnabled()) {
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("onboarding_completed_at")
+      .eq("id", user.id)
+      .maybeSingle()
+
+    if (!profileError) {
+      const onboardingIncomplete = !profile?.onboarding_completed_at
+      const isAuthPage = ["/auth", "/auth/login", "/auth/sign-up", "/auth/sign-up-success"].includes(request.nextUrl.pathname)
+
+      if (request.nextUrl.pathname === "/onboarding" && !onboardingIncomplete) {
+        return NextResponse.redirect(new URL("/editor", request.url))
+      }
+      if (isAuthPage) {
+        return NextResponse.redirect(new URL(onboardingIncomplete ? "/onboarding" : "/editor", request.url))
+      }
+      if (requiresAuthentication && request.nextUrl.pathname !== "/onboarding" && onboardingIncomplete) {
+        const onboardingUrl = new URL("/onboarding", request.url)
+        onboardingUrl.searchParams.set("returnTo", `${request.nextUrl.pathname}${request.nextUrl.search}`)
+        return NextResponse.redirect(onboardingUrl)
+      }
+    }
   }
 
   return supabaseResponse

@@ -39,16 +39,31 @@ interface ProfileClientProps {
   userId: string
   email: string
   initialMeta: Record<string, unknown>
+  initialProfile: {
+    first_name: string
+    last_name: string
+    full_name: string
+    phone: string | null
+    job_title: string | null
+    bio: string | null
+    avatar_url: string | null
+    locale: string
+  } | null
   initialWebsites: Array<{ id: string; title: string; slug: string }>
 }
 
-export function ProfileClient({ userId, email, initialMeta, initialWebsites }: ProfileClientProps) {
+export function ProfileClient({ userId, email, initialMeta, initialProfile, initialWebsites }: ProfileClientProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [fullName, setFullName] = useState((initialMeta.full_name as string) ?? "")
-  const [phone, setPhone] = useState((initialMeta.phone as string) ?? "")
-  const [bio, setBio] = useState((initialMeta.bio as string) ?? "")
-  const [avatarUrl, setAvatarUrl] = useState((initialMeta.avatar_url as string) ?? "")
+  const legacyFullName = (initialMeta.full_name as string) ?? ""
+  const legacyNameParts = legacyFullName.trim().split(/\s+/)
+  const [firstName, setFirstName] = useState(initialProfile?.first_name || legacyNameParts[0] || "")
+  const [lastName, setLastName] = useState(initialProfile?.last_name || legacyNameParts.slice(1).join(" ") || "")
+  const [phone, setPhone] = useState(initialProfile?.phone ?? (initialMeta.phone as string) ?? "")
+  const [jobTitle, setJobTitle] = useState(initialProfile?.job_title ?? "")
+  const [locale, setLocale] = useState(initialProfile?.locale ?? "nl-NL")
+  const [bio, setBio] = useState(initialProfile?.bio ?? (initialMeta.bio as string) ?? "")
+  const [avatarUrl, setAvatarUrl] = useState(initialProfile?.avatar_url ?? (initialMeta.avatar_url as string) ?? "")
   const [isSaving, setIsSaving] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [websites, setWebsites] = useState(initialWebsites)
@@ -57,6 +72,7 @@ export function ProfileClient({ userId, email, initialMeta, initialWebsites }: P
   const [accountConfirmation, setAccountConfirmation] = useState("")
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
   const { setIsSaving: setHeaderSaving, setSaveState } = useEditorLayout()
+  const fullName = `${firstName} ${lastName}`.trim()
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -90,27 +106,23 @@ export function ProfileClient({ userId, email, initialMeta, initialWebsites }: P
   const handleSave = async () => {
     setIsSaving(true)
     setHeaderSaving(true)
-    const supabase = createClient()
-
-    const { error } = await supabase.auth.updateUser({
-      data: {
-        full_name: fullName,
-        phone,
-        bio,
-        avatar_url: avatarUrl,
-      },
+    const response = await fetch("/api/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ firstName, lastName, phone, jobTitle, bio, avatarUrl, locale }),
     })
+    const result = await response.json().catch(() => ({}))
 
     setIsSaving(false)
     setHeaderSaving(false)
 
-    if (error) {
+    if (!response.ok) {
       setSaveState("error")
-      toast.error("Failed to save profile")
+      toast.error(result.error || "Profiel kon niet worden opgeslagen")
       return
     }
 
-    toast.success("Profile saved successfully")
+    toast.success("Profiel opgeslagen")
   }
 
   const handleExport = async () => {
@@ -231,18 +243,16 @@ export function ProfileClient({ userId, email, initialMeta, initialWebsites }: P
           </div>
 
           <div className="p-6 space-y-5">
-            {/* Full name */}
-            <div className="space-y-2">
-              <Label htmlFor="fullName" className="flex items-center gap-2 text-sm font-medium">
-                <User className="h-3.5 w-3.5 text-primary" />
-                Volledige naam
-              </Label>
-              <Input
-                id="fullName"
-                placeholder="Jane Doe"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-              />
+            {/* Name */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="firstName" className="flex items-center gap-2 text-sm font-medium"><User className="h-3.5 w-3.5 text-primary" />Voornaam</Label>
+                <Input id="firstName" autoComplete="given-name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName" className="text-sm font-medium">Achternaam</Label>
+                <Input id="lastName" autoComplete="family-name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+              </div>
             </div>
 
             {/* Email — read-only */}
@@ -276,6 +286,19 @@ export function ProfileClient({ userId, email, initialMeta, initialWebsites }: P
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
               />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="jobTitle" className="text-sm font-medium">Functie of rol</Label>
+                <Input id="jobTitle" autoComplete="organization-title" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="locale" className="text-sm font-medium">Taal van FlexPagina</Label>
+                <select id="locale" value={locale} onChange={(e) => setLocale(e.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm">
+                  <option value="nl-NL">Nederlands</option><option value="en-GB">English</option><option value="de-DE">Deutsch</option><option value="fr-FR">Français</option>
+                </select>
+              </div>
             </div>
 
             {/* Bio */}

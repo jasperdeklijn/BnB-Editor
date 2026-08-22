@@ -9,7 +9,8 @@ export async function GET() {
     return Response.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const [businessResult, websiteResult, requestResult, subscriptionResult, imageMetadataResult, storageResult] = await Promise.all([
+  const [profileResult, businessResult, websiteResult, requestResult, subscriptionResult, imageMetadataResult, storageResult] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     supabase.from("businesses").select("*").eq("user_id", user.id),
     supabase.from("websites").select("*").eq("user_id", user.id),
     supabase.from("contact_requests").select("*").eq("user_id", user.id),
@@ -18,7 +19,7 @@ export async function GET() {
     supabase.storage.from("user-images").list(user.id, { limit: 1000, sortBy: { column: "name", order: "asc" } }),
   ])
 
-  const primaryError = businessResult.error || websiteResult.error || requestResult.error || subscriptionResult.error || imageMetadataResult.error || storageResult.error
+  const primaryError = profileResult.error || businessResult.error || websiteResult.error || requestResult.error || subscriptionResult.error || imageMetadataResult.error || storageResult.error
   if (primaryError) {
     console.warn("[account-export] Primary export query failed", { message: primaryError.message })
     return Response.json({ error: "De gegevens konden niet worden geëxporteerd." }, { status: 500 })
@@ -77,6 +78,7 @@ export async function GET() {
       lastSignInAt: user.last_sign_in_at,
       metadata: user.user_metadata,
     },
+    profile: profileResult.data,
     businesses,
     websites,
     websiteSections: sectionsResult.data ?? [],

@@ -15,17 +15,25 @@ export default async function ProfilePage() {
     redirect("/auth/login")
   }
 
-  const { data: websites } = await supabase
-    .from("websites")
-    .select("id, title, slug")
-    .eq("user_id", data.user.id)
-    .order("created_at", { ascending: true })
+  const [{ data: websites }, { data: profile }] = await Promise.all([
+    supabase
+      .from("websites")
+      .select("id, title, slug")
+      .eq("user_id", data.user.id)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("profiles")
+      .select("first_name, last_name, full_name, phone, job_title, bio, avatar_url, locale")
+      .eq("id", data.user.id)
+      .maybeSingle(),
+  ])
 
   return (
     <ProfileClient
       userId={data.user.id}
       email={data.user.email ?? ""}
       initialMeta={data.user.user_metadata ?? {}}
+      initialProfile={profile}
       initialWebsites={websites ?? []}
     />
   )

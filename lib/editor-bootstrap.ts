@@ -17,6 +17,7 @@ export const getEditorBootstrap = cache(async () => {
       displayName: null,
       businessId: null,
       businessCategory: null,
+      onboardingCompleted: false,
     }
   }
 
@@ -24,7 +25,7 @@ export const getEditorBootstrap = cache(async () => {
   const [{ data: profile }, { data: business }] = await Promise.all([
     supabase
       .from("profiles")
-      .select("avatar_url, full_name")
+      .select("avatar_url, full_name, onboarding_completed_at")
       .eq("id", user.id)
       .maybeSingle(),
     supabase
@@ -47,5 +48,6 @@ export const getEditorBootstrap = cache(async () => {
       (typeof authMetadata.full_name === "string" ? authMetadata.full_name : null),
     businessId: business?.id ?? null,
     businessCategory: (business?.category as BusinessCategory | null) ?? null,
+    onboardingCompleted: Boolean(profile?.onboarding_completed_at),
   }
 })

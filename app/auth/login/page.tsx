@@ -30,9 +30,16 @@ export default function LoginPage() {
       const result = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(result.error || "Inloggen is niet gelukt.")
       const requestedPath = new URLSearchParams(window.location.search).get("next")
+      const safeRequestedPath = requestedPath && requestedPath.startsWith("/") && !requestedPath.startsWith("//")
+        ? requestedPath
+        : null
       const nextPath =
-        requestedPath && requestedPath.startsWith("/") && !requestedPath.startsWith("//")
-          ? requestedPath
+        result.requiresOnboarding
+          ? safeRequestedPath && !safeRequestedPath.startsWith("/auth") && !safeRequestedPath.startsWith("/onboarding")
+            ? `/onboarding?returnTo=${encodeURIComponent(safeRequestedPath)}`
+            : "/onboarding"
+          : safeRequestedPath
+          ? safeRequestedPath
           : "/editor"
       router.push(nextPath)
     } catch (error: unknown) {

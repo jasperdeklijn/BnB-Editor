@@ -15,6 +15,8 @@ export interface Business {
   country: string | null
   contact_email: string | null
   phone: string | null
+  chamber_of_commerce_number: string | null
+  vat_number: string | null
   whatsapp: string | null
   website_url: string | null
   opening_note: string | null
@@ -37,6 +39,8 @@ type BusinessRow = {
   description: string | null
   email: string | null
   phone: string | null
+  chamber_of_commerce_number: string | null
+  vat_number: string | null
   whatsapp: string | null
   website_url: string | null
   street: string | null
@@ -66,6 +70,8 @@ function parseBusiness(row: BusinessRow): Business {
     country: row.country,
     contact_email: row.email,
     phone: row.phone,
+    chamber_of_commerce_number: row.chamber_of_commerce_number,
+    vat_number: row.vat_number,
     whatsapp: row.whatsapp,
     website_url: row.website_url,
     opening_note: row.opening_note,
@@ -87,6 +93,8 @@ function toBusinessPayload(updates: Partial<BusinessInput>): Record<string, unkn
   if (updates.description !== undefined) payload.description = updates.description
   if (updates.contact_email !== undefined) payload.email = updates.contact_email
   if (updates.phone !== undefined) payload.phone = updates.phone
+  if (updates.chamber_of_commerce_number !== undefined) payload.chamber_of_commerce_number = updates.chamber_of_commerce_number
+  if (updates.vat_number !== undefined) payload.vat_number = updates.vat_number
   if (updates.whatsapp !== undefined) payload.whatsapp = updates.whatsapp
   if (updates.street !== undefined) payload.street = updates.street
   if (updates.city !== undefined) payload.city = updates.city

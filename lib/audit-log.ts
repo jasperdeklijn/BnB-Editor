@@ -34,6 +34,11 @@ export type AuditAction =
   | "mail.reply_sent"
   | "mail.thread_updated"
   | "mail.knowledge_changed"
+  | "onboarding.step_completed"
+  | "onboarding.completed"
+  | "onboarding.started"
+  | "onboarding.step_viewed"
+  | "onboarding.validation_failed"
 
 type AuditMetadata = Record<string, unknown> | null
 

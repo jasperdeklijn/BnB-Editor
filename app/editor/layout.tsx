@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { EditorLayoutClient } from "@/components/editor/editor-layout-client"
 import { getEditorBootstrap } from "@/lib/editor-bootstrap"
+import { isOnboardingEnabled } from "@/lib/onboarding/config"
 
 export const metadata = {
   title: "Editor | Website Maker",
@@ -16,9 +17,12 @@ export default async function EditorLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { user, avatarUrl, displayName, businessCategory } = await getEditorBootstrap()
+  const { user, avatarUrl, displayName, businessCategory, onboardingCompleted } = await getEditorBootstrap()
   if (!user) {
     redirect("/auth/login")
+  }
+  if (isOnboardingEnabled() && !onboardingCompleted) {
+    redirect("/onboarding")
   }
 
   return (

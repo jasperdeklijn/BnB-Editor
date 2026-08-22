@@ -45,6 +45,8 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
   const [postal, setPostal] = useState(business.postal ?? "")
   const [country, setCountry] = useState(business.country ?? "NL")
   const [phone, setPhone] = useState(business.phone ?? "")
+  const [chamberOfCommerceNumber, setChamberOfCommerceNumber] = useState(business.chamber_of_commerce_number ?? "")
+  const [vatNumber, setVatNumber] = useState(business.vat_number ?? "")
   const [contactEmail, setContactEmail] = useState(business.contact_email ?? "")
   const [whatsapp, setWhatsapp] = useState(business.whatsapp ?? "")
   const [websiteUrl, setWebsiteUrl] = useState(business.website_url ?? "")
@@ -75,6 +77,8 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
         postal: postal || null,
         country: country || null,
         phone: phone || null,
+        chamber_of_commerce_number: chamberOfCommerceNumber || null,
+        vat_number: vatNumber || null,
         contact_email: contactEmail || null,
         whatsapp: whatsapp || null,
         website_url: websiteUrl || null,
@@ -199,6 +203,28 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Address */}
+        <div className="rounded-xl border border-border bg-card shadow-sm">
+          <div className="flex items-center gap-3 border-b border-border px-6 py-4 bg-secondary/40 rounded-t-xl">
+            <div className="rounded-md bg-primary/15 p-1.5 text-primary"><FileText className="h-4 w-4" /></div>
+            <div>
+              <h2 className="font-semibold text-foreground">Registratiegegevens</h2>
+              <p className="text-xs text-muted-foreground">Optionele wettelijke bedrijfsnummers</p>
+            </div>
+          </div>
+          <div className="grid gap-5 p-6 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="chamberOfCommerceNumber">KvK-nummer</Label>
+              <Input id="chamberOfCommerceNumber" inputMode="numeric" maxLength={20} value={chamberOfCommerceNumber} onChange={(event) => setChamberOfCommerceNumber(event.target.value)} placeholder="12345678" />
+              <p className="text-xs text-muted-foreground">Bij Nederlandse bedrijven: acht cijfers.</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="vatNumber">Btw-nummer</Label>
+              <Input id="vatNumber" maxLength={32} value={vatNumber} onChange={(event) => setVatNumber(event.target.value)} placeholder="NL123456789B01" />
             </div>
           </div>
         </div>

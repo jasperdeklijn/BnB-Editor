@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { logAuditEvent } from "@/lib/audit-log"
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
 import { createClient } from "@/lib/supabase/server"
+import { isOnboardingEnabled } from "@/lib/onboarding/config"
 
 const LOGIN_ERROR = "Inloggen is niet gelukt. Controleer uw gegevens en probeer het opnieuw."
 
@@ -35,6 +36,15 @@ export async function POST(request: Request) {
     request,
   })
 
-  return NextResponse.json({ success: true })
-}
+  let requiresOnboarding = false
+  if (isOnboardingEnabled()) {
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("onboarding_completed_at")
+      .eq("id", data.user.id)
+      .maybeSingle()
+    requiresOnboarding = !profileError && !profile?.onboarding_completed_at
+  }
 
+  return NextResponse.json({ success: true, requiresOnboarding })
+}
