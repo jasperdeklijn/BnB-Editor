@@ -151,10 +151,11 @@ if (hostname.endsWith(`.${platformDomain}`)) {
     request.nextUrl.pathname === "/admin" ||
     request.nextUrl.pathname.startsWith("/admin/") ||
     request.nextUrl.pathname === "/onboarding"
+  const requiresRecoverySession = request.nextUrl.pathname === "/auth/update-password"
 
-  if (requiresAuthentication && !user) {
+  if ((requiresAuthentication || requiresRecoverySession) && !user) {
     const url = request.nextUrl.clone()
-    url.pathname = "/auth/login"
+    url.pathname = requiresRecoverySession ? "/auth/forgot-password" : "/auth/login"
     if (request.nextUrl.pathname === "/onboarding") url.searchParams.set("next", "/onboarding")
     return NextResponse.redirect(url)
   }

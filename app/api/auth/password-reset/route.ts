@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { PLATFORM_BASE_URL } from "@/lib/platform"
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
 import { createClient } from "@/lib/supabase/server"
 
@@ -21,9 +22,11 @@ export async function POST(request: Request) {
   }
 
   const supabase = await createClient()
-  const origin = new URL(request.url).origin
+  const requestUrl = new URL(request.url)
+  const isLocalRequest = requestUrl.hostname === "localhost" || requestUrl.hostname === "127.0.0.1"
+  const baseUrl = isLocalRequest ? requestUrl.origin : PLATFORM_BASE_URL
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin}/auth/update-password`,
+    redirectTo: `${baseUrl}/auth/callback?next=/auth/update-password`,
   })
 
   if (error) {
@@ -32,4 +35,3 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ message: GENERIC_MESSAGE })
 }
-

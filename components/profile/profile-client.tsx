@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   Download,
   Globe2,
+  KeyRound,
   ShieldAlert,
   Trash2,
 } from "lucide-react"
@@ -71,6 +72,10 @@ export function ProfileClient({ userId, email, initialMeta, initialProfile, init
   const [deletingWebsiteId, setDeletingWebsiteId] = useState<string | null>(null)
   const [accountConfirmation, setAccountConfirmation] = useState("")
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [repeatPassword, setRepeatPassword] = useState("")
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
   const { setIsSaving: setHeaderSaving, setSaveState } = useEditorLayout()
   const fullName = `${firstName} ${lastName}`.trim()
 
@@ -142,6 +147,39 @@ export function ProfileClient({ userId, email, initialMeta, initialProfile, init
       toast.error("Gegevens konden niet worden geëxporteerd")
     } finally {
       setIsExporting(false)
+    }
+  }
+
+  const handleChangePassword = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    if (newPassword.length < 8) {
+      toast.error("Gebruik minimaal 8 tekens voor uw nieuwe wachtwoord")
+      return
+    }
+    if (newPassword !== repeatPassword) {
+      toast.error("De nieuwe wachtwoorden komen niet overeen")
+      return
+    }
+
+    setIsChangingPassword(true)
+    try {
+      const response = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(result.error || "Wachtwoord kon niet worden gewijzigd")
+
+      setCurrentPassword("")
+      setNewPassword("")
+      setRepeatPassword("")
+      toast.success("Wachtwoord gewijzigd")
+    } catch (changeError) {
+      toast.error(changeError instanceof Error ? changeError.message : "Wachtwoord kon niet worden gewijzigd")
+    } finally {
+      setIsChangingPassword(false)
     }
   }
 
@@ -335,6 +373,62 @@ export function ProfileClient({ userId, email, initialMeta, initialProfile, init
               )}
             </Button>
           </div>
+        </div>
+
+        <div className="mt-8 rounded-xl border border-border bg-card shadow-sm">
+          <div className="flex items-center gap-3 border-b border-border bg-secondary/40 px-6 py-4">
+            <div className="rounded-md bg-primary/15 p-1.5 text-primary"><KeyRound className="h-4 w-4" /></div>
+            <div>
+              <h2 className="font-semibold text-foreground">Wachtwoord wijzigen</h2>
+              <p className="text-xs text-muted-foreground">Bevestig eerst uw huidige wachtwoord.</p>
+            </div>
+          </div>
+          <form onSubmit={handleChangePassword} className="space-y-5 p-6">
+            <div className="space-y-2">
+              <Label htmlFor="current-password">Huidig wachtwoord</Label>
+              <Input
+                id="current-password"
+                type="password"
+                required
+                autoComplete="current-password"
+                value={currentPassword}
+                onChange={(event) => setCurrentPassword(event.target.value)}
+              />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">Nieuw wachtwoord</Label>
+                <Input
+                  id="new-password"
+                  type="password"
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  value={newPassword}
+                  onChange={(event) => setNewPassword(event.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="repeat-new-password">Nieuw wachtwoord herhalen</Label>
+                <Input
+                  id="repeat-new-password"
+                  type="password"
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  value={repeatPassword}
+                  onChange={(event) => setRepeatPassword(event.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs text-muted-foreground">Gebruik minimaal 8 tekens.</p>
+              <Button type="submit" disabled={isChangingPassword || !currentPassword || !newPassword || !repeatPassword}>
+                {isChangingPassword ? <Loader2 className="animate-spin" /> : <KeyRound />}
+                {isChangingPassword ? "Wijzigen…" : "Wachtwoord wijzigen"}
+              </Button>
+            </div>
+          </form>
         </div>
 
         <div className="mt-8 rounded-xl border border-border bg-card shadow-sm">

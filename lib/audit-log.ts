@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 export type AuditAction =
   | "login"
   | "logout"
+  | "password.changed"
   | "website.created"
   | "website.published"
   | "website.unpublished"

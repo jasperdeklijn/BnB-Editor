@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import { ErrorPageShell } from "@/components/layout/error-page-shell"
 
 export const metadata: Metadata = {
-  title: "Inloggen niet gelukt",
+  title: "Herstellink niet geldig",
 }
 
 export default async function AuthErrorPage({
@@ -16,13 +16,13 @@ export default async function AuthErrorPage({
 
   return (
     <ErrorPageShell
-      eyebrow="Inloggen niet gelukt"
-      title="We konden je niet aanmelden"
-      description="De aanmeldlink kan verlopen zijn of de verbinding is onderbroken. Probeer opnieuw in te loggen om verder te gaan."
-      primaryHref="/auth/login"
-      primaryLabel="Opnieuw inloggen"
-      secondaryHref="/"
-      secondaryLabel="Naar de homepage"
+      eyebrow="Wachtwoord herstellen"
+      title="De herstellink werkt niet meer"
+      description="De link kan verlopen of al gebruikt zijn. Vraag een nieuwe herstellink aan om uw wachtwoord opnieuw in te stellen."
+      primaryHref="/auth/forgot-password"
+      primaryLabel="Nieuwe link aanvragen"
+      secondaryHref="/auth/login"
+      secondaryLabel="Terug naar inloggen"
       detail={errorDetail ? <>Foutmelding: <span className="font-semibold">{errorDetail}</span></> : undefined}
     />
   )
