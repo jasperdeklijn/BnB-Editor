@@ -26,6 +26,7 @@
     "test:booking-calendar-sync": "node --test tests/booking-calendar-interoperability.test.mjs",
     "test:booking-invoicing": "node --test tests/booking-invoicing.test.mjs",
     "test:calendar-ux": "node --test tests/calendar-ux-current.test.mjs",
+    "test:reservations": "node --test tests/reservations-overview.test.mjs",
     "start": "next start"
   },
   "dependencies": {

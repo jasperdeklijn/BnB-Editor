@@ -65,13 +65,18 @@ function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Kalenderitem kon niet worden opgeslagen."
 }
 
+function revalidateBookingOwnerPages() {
+  revalidatePath("/editor/calendar")
+  revalidatePath("/editor/reservations")
+}
+
 export async function createCalendarEntryAction(
   businessId: string,
   input: CalendarEntryInput,
 ): Promise<CalendarActionResult> {
   try {
     const entry = await createCalendarEntry(businessId, input)
-    revalidatePath("/editor/calendar")
+    revalidateBookingOwnerPages()
     return { success: true, entry }
   } catch (error) {
     return { success: false, error: getErrorMessage(error) }
@@ -91,7 +96,7 @@ export async function updateCalendarEntryAction(
         console.error("[calendar] Entry saved but booking notification failed", notificationError)
       }
     }
-    revalidatePath("/editor/calendar")
+    revalidateBookingOwnerPages()
     return { success: true, entry }
   } catch (error) {
     return { success: false, error: getErrorMessage(error) }
@@ -103,7 +108,7 @@ export async function deleteCalendarEntryAction(
 ): Promise<DeleteCalendarEntryActionResult> {
   try {
     await deleteCalendarEntry(entryId)
-    revalidatePath("/editor/calendar")
+    revalidateBookingOwnerPages()
     return { success: true, id: entryId }
   } catch (error) {
     return { success: false, error: getErrorMessage(error) }
@@ -142,7 +147,7 @@ export async function transitionBookingAction(
 ): Promise<CalendarActionResult> {
   try {
     const result = await transitionOwnerBooking(entryId, status, privateNote)
-    revalidatePath("/editor/calendar")
+    revalidateBookingOwnerPages()
     return { success: true, entry: result.entry }
   } catch (error) {
     return { success: false, error: getErrorMessage(error) }
@@ -155,7 +160,7 @@ export async function proposeAlternativeAction(
 ) {
   try {
     const result = await proposeOwnerAlternative(entryId, input)
-    revalidatePath("/editor/calendar")
+    revalidateBookingOwnerPages()
     return { success: true as const, request: result.request }
   } catch (error) {
     return { success: false as const, error: getErrorMessage(error) }
@@ -165,7 +170,7 @@ export async function proposeAlternativeAction(
 export async function acceptRescheduleRequestAction(requestId: string): Promise<CalendarActionResult> {
   try {
     const result = await acceptCustomerRescheduleRequest(requestId)
-    revalidatePath("/editor/calendar")
+    revalidateBookingOwnerPages()
     return { success: true, entry: result.entry }
   } catch (error) {
     return { success: false, error: getErrorMessage(error) }
@@ -175,7 +180,7 @@ export async function acceptRescheduleRequestAction(requestId: string): Promise<
 export async function rejectRescheduleRequestAction(requestId: string, privateNote = "") {
   try {
     await rejectCustomerRescheduleRequest(requestId, privateNote)
-    revalidatePath("/editor/calendar")
+    revalidateBookingOwnerPages()
     return { success: true as const, requestId }
   } catch (error) {
     return { success: false as const, error: getErrorMessage(error) }
@@ -261,7 +266,7 @@ export async function deleteCalendarImportSourceAction(sourceId: string) {
 export async function saveReservationPricingAction(entryId: string, lines: Array<Partial<BookingFinancialLine>>) {
   try {
     const financial = await saveReservationPricing(entryId, lines)
-    revalidatePath("/editor/calendar")
+    revalidateBookingOwnerPages()
     return { success: true as const, financial }
   } catch (error) {
     return { success: false as const, error: getErrorMessage(error) }
@@ -271,7 +276,7 @@ export async function saveReservationPricingAction(entryId: string, lines: Array
 export async function setReservationSettlementStatusAction(entryId: string, status: SettlementStatus) {
   try {
     const financial = await setReservationSettlementStatus(entryId, status)
-    revalidatePath("/editor/calendar")
+    revalidateBookingOwnerPages()
     return { success: true as const, financial }
   } catch (error) {
     return { success: false as const, error: getErrorMessage(error) }
@@ -281,7 +286,7 @@ export async function setReservationSettlementStatusAction(entryId: string, stat
 export async function createBookingInvoiceDraftAction(entryId: string) {
   try {
     const invoice = await createBookingInvoiceDraft(entryId)
-    revalidatePath("/editor/calendar")
+    revalidateBookingOwnerPages()
     return { success: true as const, invoice }
   } catch (error) {
     return { success: false as const, error: getErrorMessage(error) }
@@ -298,7 +303,7 @@ export async function saveBookingInvoiceDraftAction(invoiceId: string, input: {
 }) {
   try {
     const invoice = await saveBookingInvoiceDraft(invoiceId, input)
-    revalidatePath("/editor/calendar")
+    revalidateBookingOwnerPages()
     return { success: true as const, invoice }
   } catch (error) {
     return { success: false as const, error: getErrorMessage(error) }
@@ -308,7 +313,7 @@ export async function saveBookingInvoiceDraftAction(invoiceId: string, input: {
 export async function issueBookingInvoiceAction(invoiceId: string) {
   try {
     const invoice = await issueBookingInvoice(invoiceId)
-    revalidatePath("/editor/calendar")
+    revalidateBookingOwnerPages()
     return { success: true as const, invoice }
   } catch (error) {
     return { success: false as const, error: getErrorMessage(error) }
@@ -318,7 +323,7 @@ export async function issueBookingInvoiceAction(invoiceId: string) {
 export async function voidBookingInvoiceAction(invoiceId: string, reason: string) {
   try {
     const invoice = await voidUndeliveredInvoice(invoiceId, reason)
-    revalidatePath("/editor/calendar")
+    revalidateBookingOwnerPages()
     return { success: true as const, invoice }
   } catch (error) {
     return { success: false as const, error: getErrorMessage(error) }
@@ -328,7 +333,7 @@ export async function voidBookingInvoiceAction(invoiceId: string, reason: string
 export async function createFullCreditNoteAction(invoiceId: string) {
   try {
     const invoice = await createFullCreditNote(invoiceId)
-    revalidatePath("/editor/calendar")
+    revalidateBookingOwnerPages()
     return { success: true as const, invoice }
   } catch (error) {
     return { success: false as const, error: getErrorMessage(error) }
@@ -338,7 +343,7 @@ export async function createFullCreditNoteAction(invoiceId: string) {
 export async function emailBookingInvoiceAction(invoiceId: string) {
   try {
     const delivery = await emailIssuedInvoice(invoiceId)
-    revalidatePath("/editor/calendar")
+    revalidateBookingOwnerPages()
     return { success: true as const, delivery }
   } catch (error) {
     return { success: false as const, error: getErrorMessage(error) }

@@ -272,7 +272,9 @@ async function ownerContext() {
 }
 
 async function ownedBusiness(businessId: string) {
-  const { supabase, user } = await ownerContext()
+  const supabase = await createClient()
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  if (userError || !user) throw new Error("Niet ingelogd.")
   const { data, error } = await supabase.from("businesses").select("*").eq("id", businessId).eq("user_id", user.id).maybeSingle()
   if (error || !data) throw new Error("Bedrijf niet gevonden.")
   return { supabase, user, business: data as Record<string, unknown> }
@@ -294,11 +296,17 @@ async function ownedInvoice(invoiceId: string) {
   return { supabase, user, invoice: parseInvoice(data as Record<string, unknown>) }
 }
 
-export async function getBookingFinanceData(businessId: string): Promise<BookingFinanceData> {
+export async function getBookingFinanceData(businessId: string, entryId?: string): Promise<BookingFinanceData> {
   const { supabase, business } = await ownedBusiness(businessId)
+  let financialsQuery = supabase.from("booking_reservation_financials").select("*").eq("business_id", businessId)
+  let invoicesQuery = supabase.from("booking_invoices").select("*").eq("business_id", businessId)
+  if (entryId) {
+    financialsQuery = financialsQuery.eq("calendar_entry_id", entryId)
+    invoicesQuery = invoicesQuery.eq("calendar_entry_id", entryId)
+  }
   const [financials, invoices, profile] = await Promise.all([
-    supabase.from("booking_reservation_financials").select("*").eq("business_id", businessId),
-    supabase.from("booking_invoices").select("*").eq("business_id", businessId).order("created_at", { ascending: false }),
+    financialsQuery,
+    invoicesQuery.order("created_at", { ascending: false }),
     supabase.from("booking_invoice_profiles").select("*").eq("business_id", businessId).maybeSingle(),
   ])
   if (financials.error || invoices.error || profile.error) throw financials.error || invoices.error || profile.error

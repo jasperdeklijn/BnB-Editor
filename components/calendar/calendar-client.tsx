@@ -34,6 +34,11 @@ import type { BookingChangeRequest, BookingHistoryItem, BookingLifecycleData } f
 import type { CalendarSyncData } from "@/lib/calendar/sync"
 import { CalendarSyncPanel } from "@/components/calendar/calendar-sync-panel"
 import { BookingFinancePanel } from "@/components/calendar/booking-finance-panel"
+import {
+  BOOKING_STATUS_DOT_STYLES as STATUS_DOT_STYLES,
+  BOOKING_STATUS_LABELS as STATUS_LABELS,
+  BOOKING_STATUS_STYLES as STATUS_STYLES,
+} from "@/lib/booking/status-presentation"
 import type {
   BookingFinanceData,
   BookingInvoice,
@@ -112,35 +117,11 @@ const WEEKDAY_LABELS = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"]
 const WEEKDAY_FULL_LABELS = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"]
 const DAY_HOURS = Array.from({ length: 12 }, (_, index) => index + 8)
 
-const STATUS_LABELS: Record<CalendarEntryStatus, string> = {
-  pending: "In afwachting",
-  confirmed: "Bevestigd",
-  cancelled: "Geannuleerd",
-  completed: "Afgerond",
-  blocked: "Geblokkeerd",
-}
-
 const SOURCE_LABELS: Record<CalendarEntrySource, string> = {
   manual: "Handmatig",
   website_form: "Websiteformulier",
   contact_request: "Aanvraag",
   import: "Import",
-}
-
-const STATUS_STYLES: Record<CalendarEntryStatus, string> = {
-  pending: "border-amber-200 bg-amber-50 text-amber-900",
-  confirmed: "border-emerald-200 bg-emerald-50 text-emerald-900",
-  cancelled: "border-red-200 bg-red-50 text-red-900",
-  completed: "border-slate-200 bg-slate-50 text-slate-700",
-  blocked: "border-zinc-300 bg-zinc-100 text-zinc-800",
-}
-
-const STATUS_DOT_STYLES: Record<CalendarEntryStatus, string> = {
-  pending: "bg-amber-500",
-  confirmed: "bg-emerald-500",
-  cancelled: "bg-red-500",
-  completed: "bg-slate-500",
-  blocked: "bg-zinc-600",
 }
 
 function startOfDay(date: Date) {

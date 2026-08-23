@@ -361,6 +361,29 @@ export async function updateCalendarEntryStatus(
   return updateCalendarEntry(entryId, { status })
 }
 
+export async function transitionCalendarEntryStatus(
+  entryId: string,
+  expectedStatus: CalendarEntryStatus,
+  status: CalendarEntryStatus,
+  metadata?: Record<string, unknown>,
+): Promise<CalendarEntry> {
+  const supabase = await createClient()
+  await assertCurrentUserRuntimeEntitlement(supabase, "booking_management")
+  const existing = await getOwnedCalendarEntryRow(entryId, supabase)
+  if (existing.status !== expectedStatus) throw new Error("De reserveringsstatus is intussen gewijzigd. Vernieuw de pagina en probeer opnieuw.")
+
+  const { data, error } = await supabase
+    .from("calendar_entries")
+    .update({ status, ...(metadata ? { metadata } : {}) })
+    .eq("id", entryId)
+    .eq("status", expectedStatus)
+    .select("*")
+    .maybeSingle()
+  if (error) throw error
+  if (!data) throw new Error("De reserveringsstatus is intussen gewijzigd. Vernieuw de pagina en probeer opnieuw.")
+  return parseCalendarEntry(data as CalendarEntryRow)
+}
+
 export async function deleteCalendarEntry(entryId: string): Promise<void> {
   const supabase = await createClient()
   await assertCurrentUserRuntimeEntitlement(supabase, "booking_management")

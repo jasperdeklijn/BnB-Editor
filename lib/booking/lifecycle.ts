@@ -56,11 +56,17 @@ async function currentOwnerBooking(entryId: string) {
   return { supabase, user, entry }
 }
 
-export async function getBookingLifecycleData(businessId: string): Promise<BookingLifecycleData> {
+export async function getBookingLifecycleData(businessId: string, entryId?: string): Promise<BookingLifecycleData> {
   const supabase = await createClient()
+  let historyQuery = supabase.from("booking_status_history").select("*").eq("business_id", businessId)
+  let changesQuery = supabase.from("booking_change_requests").select("*").eq("business_id", businessId)
+  if (entryId) {
+    historyQuery = historyQuery.eq("calendar_entry_id", entryId)
+    changesQuery = changesQuery.eq("calendar_entry_id", entryId)
+  }
   const [historyResult, changesResult] = await Promise.all([
-    supabase.from("booking_status_history").select("*").eq("business_id", businessId).order("created_at", { ascending: true }),
-    supabase.from("booking_change_requests").select("*").eq("business_id", businessId).order("created_at", { ascending: false }),
+    historyQuery.order("created_at", { ascending: true }),
+    changesQuery.order("created_at", { ascending: false }),
   ])
   if (historyResult.error || changesResult.error) throw historyResult.error || changesResult.error
   return {
