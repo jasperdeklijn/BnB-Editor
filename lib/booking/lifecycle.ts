@@ -149,6 +149,17 @@ export async function transitionOwnerBooking(entryId: string, status: "confirmed
   }
   const { data, error } = await supabase.from("calendar_entries").update({ status, metadata }).eq("id", entry.id).eq("status", "pending").select("*").maybeSingle()
   if (error || !data) throw new Error("De boekingsstatus kon niet worden bijgewerkt.")
+  if (status === "confirmed" && entry.contact_request_id) {
+    const now = new Date().toISOString()
+    const { error: inquiryError } = await supabase
+      .from("contact_requests")
+      .update({ status: "won", status_changed_at: now, last_activity_at: now, closed_at: now, closed_reason: "Boeking bevestigd" })
+      .eq("id", entry.contact_request_id)
+      .eq("business_id", entry.business_id)
+    if (inquiryError && inquiryError.code !== "42P01" && inquiryError.code !== "42703") {
+      console.error("[booking] Booking confirmed but linked enquiry could not be marked won", inquiryError)
+    }
+  }
   const notification = await deliverBestEffort(entry.id)
   return { entry: data as CalendarEntry, notification }
 }

@@ -429,6 +429,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Aanvraag kon niet worden opgeslagen." }, { status: 500 })
     }
 
+    if (context.businessId && contactRequest?.id) {
+      const { error: messageError } = await context.supabase.from("contact_request_messages").insert({
+        contact_request_id: contactRequest.id,
+        business_id: context.businessId,
+        direction: "inbound",
+        sender_email: email,
+        sender_name: name,
+        recipient_email: context.recipientEmail,
+        subject: REQUEST_LABELS[requestType],
+        body: message,
+        delivery_status: "received",
+        idempotency_key: `contact-request:${contactRequest.id}`,
+        sent_at: new Date().toISOString(),
+      })
+
+      if (messageError) {
+        // The request itself remains valid when an older deployment has not yet applied the inbox migration.
+        console.error("[requests] Failed to store inbox message:", messageError)
+      }
+    }
+
     const calendarDate = parsePreferredDate(preferredDate)
     let calendarEntryCreated = false
 
@@ -446,7 +467,7 @@ export async function POST(request: NextRequest) {
         entry_type: getCalendarEntryType(requestType),
         status: "pending",
         source: "contact_request",
-        title: requestType === "booking_request" ? "Nieuwe boekingsaanvraag" : "Nieuwe afspraakaanvraag",
+        title: requestType === "booking_request" ? "Nieuwe voorkeursboeking" : "Nieuwe voorkeursafspraak",
         customer_name: name,
         customer_email: email,
         customer_phone: phone,
@@ -463,6 +484,8 @@ export async function POST(request: NextRequest) {
           service_id: calendarServiceId,
           source,
           locale: submissionLocale,
+          availability_checked: false,
+          request_intent: "preferred_date",
         },
       })
 

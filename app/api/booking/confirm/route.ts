@@ -78,6 +78,36 @@ export async function POST(request: NextRequest) {
     const result = Array.isArray(data) ? data[0] : data
     if (!result?.calendar_entry_id) throw new PublicBookingError("De boeking kon niet worden opgeslagen.", 500)
 
+    if (result.contact_request_id) {
+      const { error: inboxError } = await context.supabase.from("contact_request_messages").insert({
+        contact_request_id: result.contact_request_id,
+        business_id: context.businessId,
+        direction: "inbound",
+        sender_email: email,
+        sender_name: name,
+        recipient_email: context.recipientEmail,
+        subject: context.settings.booking_mode === "stay" ? "Boekingsaanvraag" : "Afspraakaanvraag",
+        body: message,
+        delivery_status: "received",
+        idempotency_key: `contact-request:${result.contact_request_id}`,
+        sent_at: new Date().toISOString(),
+      })
+      if (inboxError) {
+        // Booking finalization remains transactional and valid when the optional inbox migration is not deployed yet.
+        console.error("[booking] Booking saved but inbox history could not be stored", inboxError)
+      }
+
+      if (result.booking_status === "confirmed") {
+        const now = new Date().toISOString()
+        const { error: inquiryError } = await context.supabase
+          .from("contact_requests")
+          .update({ status: "won", status_changed_at: now, last_activity_at: now, closed_at: now, closed_reason: "Direct bevestigde boeking" })
+          .eq("id", result.contact_request_id)
+          .eq("business_id", context.businessId)
+        if (inquiryError) console.error("[booking] Booking confirmed but linked enquiry could not be marked won", inquiryError)
+      }
+    }
+
     let notification = { sent: 0, failed: 0, skipped: 0 }
     try {
       notification = await deliverBookingNotifications(result.calendar_entry_id)

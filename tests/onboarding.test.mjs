@@ -109,6 +109,8 @@ test("route gating, accessible steps, slug checks, and settings integration stay
   assert.match(websiteStep, /api\/onboarding\/slug/)
   assert.match(profile, /api\/profile/)
   assert.match(business, /chamberOfCommerceNumber/)
+  assert.match(business, /fixed inset-x-3 bottom-3/)
+  assert.match(read("lib/supabase/business.ts"), /const requiredText = \(value: string \| null\) => value \?\? ""/)
   assert.match(accountExport, /profile: profileResult\.data/)
 })
 
@@ -120,4 +122,3 @@ test("starter generation personalizes core sections and responds to the website 
   assert.match(starter, /data\.title = input\.businessName/)
   assert.match(starter, /data\.email = input\.email/)
 })
-

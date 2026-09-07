@@ -333,7 +333,60 @@ create table public.contact_requests (
   payload jsonb not null default '{}'::jsonb,
   recipient_email text not null default '',
   source text not null default 'website_form',
+  status text not null default 'new'
+    check (status in ('new', 'in_progress', 'awaiting_customer', 'won', 'lost', 'spam', 'archived')),
+  status_changed_at timestamptz not null default now(),
+  last_activity_at timestamptz not null default now(),
+  last_replied_at timestamptz,
+  follow_up_at timestamptz,
+  closed_at timestamptz,
+  closed_reason text not null default '',
+  owner_notes text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table public.contact_request_messages (
+  id uuid primary key default gen_random_uuid(),
+  contact_request_id uuid not null references public.contact_requests(id) on delete cascade,
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  direction text not null check (direction in ('inbound', 'outbound')),
+  sender_email text not null default '',
+  sender_name text not null default '',
+  recipient_email text not null default '',
+  subject text not null default '',
+  body text not null default '',
+  delivery_status text not null default 'received'
+    check (delivery_status in ('received', 'queued', 'sent', 'failed')),
+  provider_message_id text,
+  idempotency_key text not null unique,
+  error_message text,
+  sent_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table public.contact_request_activities (
+  id uuid primary key default gen_random_uuid(),
+  contact_request_id uuid not null references public.contact_requests(id) on delete cascade,
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  actor_user_id uuid references auth.users(id) on delete set null,
+  event_type text not null check (event_type in ('status_changed', 'note_added', 'follow_up_set', 'reply_sent')),
+  body text not null default '',
+  metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
+);
+
+create table public.contact_request_reply_templates (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references public.businesses(id) on delete cascade,
+  name text not null,
+  subject text not null default '',
+  body text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint contact_request_reply_templates_name_not_blank check (btrim(name) <> ''),
+  constraint contact_request_reply_templates_name_unique unique (business_id, name)
 );
 
 create table public.calendar_entries (
@@ -1673,6 +1726,18 @@ create trigger set_mail_knowledge_answers_updated_at
   before update on public.mail_knowledge_answers
   for each row execute procedure public.set_updated_at();
 
+create trigger set_contact_requests_updated_at
+  before update on public.contact_requests
+  for each row execute procedure public.set_updated_at();
+
+create trigger set_contact_request_messages_updated_at
+  before update on public.contact_request_messages
+  for each row execute procedure public.set_updated_at();
+
+create trigger set_contact_request_reply_templates_updated_at
+  before update on public.contact_request_reply_templates
+  for each row execute procedure public.set_updated_at();
+
 -- ------------------------------------------------------------
 -- Indexes
 -- ------------------------------------------------------------
@@ -1715,6 +1780,13 @@ create index idx_website_sections_type on public.website_sections (type);
 create index idx_contact_requests_website_id on public.contact_requests (website_id);
 create index idx_contact_requests_business_id on public.contact_requests (business_id);
 create index idx_contact_requests_user_id_created_at on public.contact_requests (user_id, created_at desc);
+create index idx_contact_requests_business_inbox on public.contact_requests (business_id, status, last_activity_at desc);
+create index idx_contact_requests_business_follow_up on public.contact_requests (business_id, follow_up_at)
+  where follow_up_at is not null and closed_at is null;
+create index idx_contact_request_messages_request_created on public.contact_request_messages (contact_request_id, created_at);
+create index idx_contact_request_messages_business_created on public.contact_request_messages (business_id, created_at desc);
+create index idx_contact_request_activities_request_created on public.contact_request_activities (contact_request_id, created_at);
+create index idx_contact_request_reply_templates_business on public.contact_request_reply_templates (business_id, name);
 
 create index idx_calendar_entries_business_start on public.calendar_entries (business_id, start_at);
 create index idx_calendar_entries_business_end on public.calendar_entries (business_id, end_at);
@@ -1789,6 +1861,9 @@ alter table public.website_sections enable row level security;
 alter table public.website_section_translations enable row level security;
 alter table public.section_transitions enable row level security;
 alter table public.contact_requests enable row level security;
+alter table public.contact_request_messages enable row level security;
+alter table public.contact_request_activities enable row level security;
+alter table public.contact_request_reply_templates enable row level security;
 alter table public.calendar_entries enable row level security;
 alter table public.calendar_availability_windows enable row level security;
 alter table public.booking_holds enable row level security;
@@ -2174,6 +2249,90 @@ create policy "Anyone can insert public contact requests"
 create policy "Users can delete own contact requests"
   on public.contact_requests for delete
   using (auth.uid() = user_id);
+
+create policy "Users can update own contact requests"
+  on public.contact_requests for update
+  using (
+    exists (
+      select 1 from public.businesses b
+      where b.id = contact_requests.business_id and b.user_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.businesses b
+      where b.id = contact_requests.business_id and b.user_id = auth.uid()
+    )
+  );
+
+create policy "Users can view own contact request messages"
+  on public.contact_request_messages for select
+  using (
+    exists (
+      select 1 from public.businesses b
+      where b.id = contact_request_messages.business_id and b.user_id = auth.uid()
+    )
+  );
+
+create policy "Users can insert own outbound contact request messages"
+  on public.contact_request_messages for insert
+  with check (
+    direction = 'outbound'
+    and exists (
+      select 1 from public.businesses b
+      where b.id = contact_request_messages.business_id and b.user_id = auth.uid()
+    )
+  );
+
+create policy "Users can update own outbound contact request messages"
+  on public.contact_request_messages for update
+  using (
+    direction = 'outbound'
+    and exists (
+      select 1 from public.businesses b
+      where b.id = contact_request_messages.business_id and b.user_id = auth.uid()
+    )
+  )
+  with check (
+    direction = 'outbound'
+    and exists (
+      select 1 from public.businesses b
+      where b.id = contact_request_messages.business_id and b.user_id = auth.uid()
+    )
+  );
+
+create policy "Users can view own contact request activities"
+  on public.contact_request_activities for select
+  using (
+    exists (
+      select 1 from public.businesses b
+      where b.id = contact_request_activities.business_id and b.user_id = auth.uid()
+    )
+  );
+
+create policy "Users can insert own contact request activities"
+  on public.contact_request_activities for insert
+  with check (
+    exists (
+      select 1 from public.businesses b
+      where b.id = contact_request_activities.business_id and b.user_id = auth.uid()
+    )
+  );
+
+create policy "Users can manage own contact request reply templates"
+  on public.contact_request_reply_templates for all
+  using (
+    exists (
+      select 1 from public.businesses b
+      where b.id = contact_request_reply_templates.business_id and b.user_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.businesses b
+      where b.id = contact_request_reply_templates.business_id and b.user_id = auth.uid()
+    )
+  );
 
 -- Calendar entries
 create policy "Users can view own calendar entries"

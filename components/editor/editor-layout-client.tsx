@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { EditorHeader } from "./editor-header"
 import { usePathname, useRouter } from "next/navigation"
 import { EditorLayoutProvider, type EditorSaveState } from "./editor-layout-context"
-import { CalendarDays, ImageIcon, Globe, Home, Briefcase, LayoutTemplate, Search, CreditCard, User, ClipboardList } from "lucide-react"
+import { CalendarDays, ImageIcon, Globe, Home, Briefcase, LayoutTemplate, Search, CreditCard, User, ClipboardList, MessageSquareText } from "lucide-react"
 import { DEFAULT_SITE_TITLE } from "@/lib/business-naming"
 import { getOfferingCopy, type BusinessCategory } from "@/lib/business/categories"
 
@@ -31,6 +31,7 @@ export function EditorLayoutClient({
     "/editor/business": "Bedrijfsgegevens",
     "/editor/images": "Afbeeldingen",
     "/editor/services": offeringCopy.title,
+    "/editor/requests": "Aanvragen",
     "/editor/reservations": "Reserveringen",
     "/editor/calendar": businessCategory === "bnb" ? "Boekingskalender" : "Afsprakenkalender",
     "/editor/domains": "Domeininstellingen",
@@ -44,6 +45,7 @@ export function EditorLayoutClient({
     "/editor/business": <Home className="h-4 w-4" />,
     "/editor/images": <ImageIcon className="h-4 w-4" />,
     "/editor/services": <Briefcase className="h-4 w-4" />,
+    "/editor/requests": <MessageSquareText className="h-4 w-4" />,
     "/editor/reservations": <ClipboardList className="h-4 w-4" />,
     "/editor/calendar": <CalendarDays className="h-4 w-4" />,
     "/editor/domains": <Globe className="h-4 w-4" />,

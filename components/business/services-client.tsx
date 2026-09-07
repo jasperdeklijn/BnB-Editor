@@ -296,6 +296,16 @@ function BookingSettingsPanel({
           ) : <p className="mt-1 text-xs text-muted-foreground">Geen vrije momenten in de komende 14 dagen. Controleer beschikbaarheidsvensters, blokkades en boekregels.</p>}
           <p className="mt-2 text-[10px] text-muted-foreground">Alleen-lezen voorbeeld. De live kalender gebruikt deze regels; publiek boeken blijft Gold.</p>
         </div>
+        {draft.booking_enabled ? (
+          <div className="rounded-md border border-emerald-500/25 bg-emerald-500/5 p-2.5 text-xs text-emerald-950">
+            <p className="font-semibold">Klaarzetten voor live boeken</p>
+            <ol className="mt-1 list-decimal space-y-1 pl-4 text-emerald-900">
+              <li>Controleer deze boekregels en tijdzone.</li>
+              <li><Link href="/editor/calendar" className="underline underline-offset-2">Stel beschikbaarheid in de kalender in.</Link></li>
+              <li>Zet in de website-editor de Boekingsruimte op Beschikbaarheid en publiceer daarna de site.</li>
+            </ol>
+          </div>
+        ) : null}
       </div>
     </details>
   )

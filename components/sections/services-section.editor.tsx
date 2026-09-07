@@ -26,7 +26,7 @@ function getBookingSpaceDefaults(category?: BusinessCategory | null) {
         intro: "Kies een accommodatie en stuur een boekingsaanvraag met je gewenste check-in datum.",
         buttonLabel: "Boeking aanvragen",
         successText: "Boekingsaanvraag ontvangen. We nemen zo snel mogelijk contact met je op.",
-        helperText: "Je aanvraag wordt als voorlopige boeking in de planning gezet.",
+        helperText: "We controleren je gewenste periode voordat we deze bevestigen.",
         requestType: "booking_request",
       }
     : {
@@ -34,7 +34,7 @@ function getBookingSpaceDefaults(category?: BusinessCategory | null) {
         intro: "Kies een dienst en stuur een aanvraag met je gewenste datum en tijd.",
         buttonLabel: "Afspraak aanvragen",
         successText: "Aanvraag ontvangen. We nemen zo snel mogelijk contact met je op.",
-        helperText: "Je aanvraag wordt als voorlopige afspraak in de planning gezet.",
+        helperText: "We controleren je gewenste moment voordat we dit bevestigen.",
         requestType: "appointment",
       }
 }
@@ -410,9 +410,9 @@ export function ServicesSectionEditor({
               <Label className="text-xs mb-1.5 block">Weergave</Label>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { value: "inline", label: "Formulier" },
+                  { value: "inline", label: "Voorkeur" },
                   { value: "cta", label: "Knop" },
-                  { value: "calendar", label: "Kalender" },
+                  { value: "calendar", label: "Beschikbaarheid" },
                 ].map((option) => {
                   const active = (((section.data as any).bookingSpaceMode as string | undefined) || "inline") === option.value
                   return (
@@ -430,6 +430,15 @@ export function ServicesSectionEditor({
                 })}
               </div>
             </div>
+            {(((section.data as any).bookingSpaceMode as string | undefined) || "inline") !== "calendar" ? (
+              <p className="rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-950">
+                Dit is een voorkeursaanvraag. Gebruik Beschikbaarheid voor tijden of verblijven die direct server-side worden gecontroleerd.
+              </p>
+            ) : (
+              <p className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-2 text-xs text-emerald-950">
+                Beschikbaarheid controleert tijden en verblijven vóór de aanvraag wordt opgeslagen. Stel de regels en openingstijden eerst in bij {offeringCopy.title} en in de kalender.
+              </p>
+            )}
             <div>
               <Label className="text-xs mb-1.5 block">Titel</Label>
               <Input

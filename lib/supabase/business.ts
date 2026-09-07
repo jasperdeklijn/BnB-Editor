@@ -86,28 +86,33 @@ function parseBusiness(row: BusinessRow): Business {
 
 function toBusinessPayload(updates: Partial<BusinessInput>): Record<string, unknown> {
   const payload: Record<string, unknown> = {}
+  // The original businesses schema keeps its regular text fields NOT NULL and
+  // represents an omitted value as an empty string. The editor deliberately
+  // uses null for blank optional inputs, so normalize before reaching Postgres
+  // instead of making the entire save fail on one blank field.
+  const requiredText = (value: string | null) => value ?? ""
 
-  if (updates.name !== undefined) payload.name = updates.name
+  if (updates.name !== undefined) payload.name = requiredText(updates.name)
   if (updates.category !== undefined) payload.category = updates.category
-  if (updates.tagline !== undefined) payload.tagline = updates.tagline
-  if (updates.description !== undefined) payload.description = updates.description
-  if (updates.contact_email !== undefined) payload.email = updates.contact_email
-  if (updates.phone !== undefined) payload.phone = updates.phone
+  if (updates.tagline !== undefined) payload.tagline = requiredText(updates.tagline)
+  if (updates.description !== undefined) payload.description = requiredText(updates.description)
+  if (updates.contact_email !== undefined) payload.email = requiredText(updates.contact_email)
+  if (updates.phone !== undefined) payload.phone = requiredText(updates.phone)
   if (updates.chamber_of_commerce_number !== undefined) payload.chamber_of_commerce_number = updates.chamber_of_commerce_number
   if (updates.vat_number !== undefined) payload.vat_number = updates.vat_number
-  if (updates.whatsapp !== undefined) payload.whatsapp = updates.whatsapp
-  if (updates.street !== undefined) payload.street = updates.street
-  if (updates.city !== undefined) payload.city = updates.city
-  if (updates.postal !== undefined) payload.postal = updates.postal
-  if (updates.country !== undefined) payload.country = updates.country
-  if (updates.website_url !== undefined) payload.website_url = updates.website_url
-  if (updates.languages !== undefined) payload.languages = updates.languages
-  if (updates.opening_note !== undefined) payload.opening_note = updates.opening_note
+  if (updates.whatsapp !== undefined) payload.whatsapp = requiredText(updates.whatsapp)
+  if (updates.street !== undefined) payload.street = requiredText(updates.street)
+  if (updates.city !== undefined) payload.city = requiredText(updates.city)
+  if (updates.postal !== undefined) payload.postal = requiredText(updates.postal)
+  if (updates.country !== undefined) payload.country = requiredText(updates.country)
+  if (updates.website_url !== undefined) payload.website_url = requiredText(updates.website_url)
+  if (updates.languages !== undefined) payload.languages = requiredText(updates.languages)
+  if (updates.opening_note !== undefined) payload.opening_note = requiredText(updates.opening_note)
   if (updates.appointment_start_time !== undefined) {
-    payload.appointment_start_time = updates.appointment_start_time
+    payload.appointment_start_time = requiredText(updates.appointment_start_time)
   }
   if (updates.appointment_end_time !== undefined) {
-    payload.appointment_end_time = updates.appointment_end_time
+    payload.appointment_end_time = requiredText(updates.appointment_end_time)
   }
   if (updates.capacity !== undefined) payload.capacity = updates.capacity
 

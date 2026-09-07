@@ -70,19 +70,19 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
       const updated = await updateBusiness(business.id, {
         name,
         category,
-        tagline: tagline || null,
-        description: description || null,
-        street: street || null,
-        city: city || null,
-        postal: postal || null,
-        country: country || null,
-        phone: phone || null,
+        tagline,
+        description,
+        street,
+        city,
+        postal,
+        country,
+        phone,
         chamber_of_commerce_number: chamberOfCommerceNumber || null,
         vat_number: vatNumber || null,
-        contact_email: contactEmail || null,
-        whatsapp: whatsapp || null,
-        website_url: websiteUrl || null,
-        opening_note: openingNote || null,
+        contact_email: contactEmail,
+        whatsapp,
+        website_url: websiteUrl,
+        opening_note: openingNote,
       })
       setBusiness(updated)
       setStatus({ tone: "success", text: "Gegevens opgeslagen." })
@@ -102,6 +102,7 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
       title="Bedrijfsgegevens"
       description="Beheer de basisinformatie, contactgegevens en online aanwezigheid van uw bedrijf."
       maxWidth="2xl"
+      contentClassName="pb-24"
     >
         {status ? <StatusMessage tone={status.tone}>{status.text}</StatusMessage> : null}
         {/* Category */}
@@ -421,8 +422,8 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-3">
+        {/* The action remains in reach even on this long settings page. */}
+        <div className="fixed inset-x-3 bottom-3 z-40 flex justify-end sm:inset-x-auto sm:right-6 sm:bottom-6">
           <Button onClick={handleSave} disabled={isSaving}>
             {isSaving ? (
               <>
