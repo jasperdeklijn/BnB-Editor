@@ -104,29 +104,18 @@ if (hostname.endsWith(`.${platformDomain}`)) {
     }
 
     const normalizedHostname = hostname.replace(/^www\./, "")
-    const { data: websiteDomain, error: domainError } = await supabase
-      .from("website_domains")
-      .select("website_id")
-      .eq("domain", normalizedHostname)
-      .eq("status", "active")
+    const { data: website, error: websiteError } = await supabase
+      .rpc("get_public_website", { p_slug: null, p_domain: normalizedHostname })
       .maybeSingle()
+    const publicWebsite = website as { slug: string } | null
 
-    const { data: website, error: websiteError } = websiteDomain
-      ? await supabase
-          .from("websites")
-          .select("slug")
-          .eq("id", websiteDomain.website_id)
-          .eq("published", true)
-          .maybeSingle()
-      : { data: null, error: null }
-
-    if (domainError || websiteError) {
-      console.error("Custom domain lookup failed:", domainError || websiteError)
+    if (websiteError) {
+      console.error("Custom domain lookup failed:", websiteError)
     }
 
-    if (website?.slug) {
+    if (publicWebsite?.slug) {
       const url = request.nextUrl.clone()
-      url.pathname = `/site/${website.slug}${request.nextUrl.pathname}`
+      url.pathname = `/site/${publicWebsite.slug}${request.nextUrl.pathname}`
       return rewriteWebsite(request, url)
     }
 

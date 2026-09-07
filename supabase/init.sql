@@ -116,7 +116,8 @@ create table public.businesses (
   capacity integer,
   languages text not null default '',
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  constraint businesses_id_user_id_key unique (id, user_id)
 );
 
 create table public.services (
@@ -217,7 +218,10 @@ create table public.websites (
   live_published_at timestamptz,
   draft_version uuid not null default gen_random_uuid(),
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  constraint websites_business_owner_fkey
+    foreign key (business_id, user_id)
+    references public.businesses(id, user_id)
 );
 
 create table public.website_visits (
@@ -1908,16 +1912,6 @@ create policy "Users can delete own image metadata"
   using (user_id = auth.uid());
 
 -- Businesses
-create policy "Anyone can view published website businesses"
-  on public.businesses for select
-  using (
-    exists (
-      select 1 from public.websites w
-      where w.business_id = businesses.id
-        and w.published = true
-    )
-  );
-
 create policy "Users can view own businesses"
   on public.businesses for select
   using (auth.uid() = user_id);
@@ -1936,16 +1930,6 @@ create policy "Users can delete own businesses"
   using (auth.uid() = user_id);
 
 -- Services
-create policy "Anyone can view published website services"
-  on public.services for select
-  using (
-    exists (
-      select 1 from public.websites w
-      where w.business_id = services.business_id
-        and w.published = true
-    )
-  );
-
 create policy "Users can view own services"
   on public.services for select
   using (
@@ -2052,10 +2036,6 @@ create policy "Users can delete own service booking settings"
   );
 
 -- Websites
-create policy "Anyone can view published websites"
-  on public.websites for select
-  using (published = true);
-
 create policy "Users can view their own websites"
   on public.websites for select
   using (auth.uid() = user_id);
@@ -2074,17 +2054,6 @@ create policy "Users can delete their own websites"
   using (auth.uid() = user_id);
 
 -- Website domains
-create policy "Anyone can view active domains of published websites"
-  on public.website_domains for select
-  using (
-    status = 'active'
-    and exists (
-      select 1 from public.websites w
-      where w.id = website_domains.website_id
-        and w.published = true
-    )
-  );
-
 create policy "Users can view their own website domains"
   on public.website_domains for select
   using (
@@ -2180,16 +2149,6 @@ create policy "Users can manage own service translations"
   ));
 
 -- Website sections
-create policy "Anyone can view sections of published websites"
-  on public.website_sections for select
-  using (
-    exists (
-      select 1 from public.websites w
-      where w.id = website_sections.website_id
-        and w.published = true
-    )
-  );
-
 create policy "Users can view their own website sections"
   on public.website_sections for select
   using (
@@ -2536,16 +2495,6 @@ create policy "Users can delete own calendar availability windows"
   );
 
 -- Section transitions
-create policy "Anyone can view transitions of published websites"
-  on public.section_transitions for select
-  using (
-    exists (
-      select 1 from public.websites w
-      where w.id = section_transitions.website_id
-        and w.published = true
-    )
-  );
-
 create policy "Users can view their own website transitions"
   on public.section_transitions for select
   using (
@@ -2597,9 +2546,18 @@ create policy "Users can delete their own website transitions"
 -- Storage bucket and policies
 -- ------------------------------------------------------------
 
-insert into storage.buckets (id, name, public)
-values ('user-images', 'user-images', true)
-on conflict (id) do update set public = excluded.public;
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'user-images',
+  'user-images',
+  true,
+  5242880,
+  array['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+)
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
 
 drop policy if exists "Users can upload their own images" on storage.objects;
 drop policy if exists "Users can view their own images" on storage.objects;
@@ -4596,6 +4554,40 @@ comment on table public.agent_artifacts is 'Immutable versioned agent outputs; p
 comment on table public.agent_approvals is 'Single-use human decisions bound to an exact artifact content hash.';
 comment on table public.agent_executions is 'External side-effect ledger with stable idempotency keys and unknown outcome support.';
 comment on table public.agent_audit_logs is 'Append-only technical trail for agent state and approval changes.';
+
+create or replace function public.get_public_website(
+  p_slug text default null,
+  p_domain text default null
+)
+returns table (id uuid, slug text, published boolean, live_snapshot jsonb)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select w.id, w.slug, w.published, w.live_snapshot
+  from public.websites w
+  where w.published = true
+    and w.live_snapshot is not null
+    and (
+      (p_slug is not null and char_length(p_slug) between 1 and 120 and w.slug = p_slug)
+      or (
+        p_domain is not null
+        and char_length(p_domain) between 1 and 253
+        and exists (
+          select 1 from public.website_domains d
+          where d.website_id = w.id
+            and d.domain = lower(trim(trailing '.' from p_domain))
+            and d.status = 'active'
+        )
+      )
+    )
+  order by case when p_slug is not null and w.slug = p_slug then 0 else 1 end
+  limit 1;
+$$;
+
+revoke all on function public.get_public_website(text, text) from public;
+grant execute on function public.get_public_website(text, text) to anon, authenticated;
 
 commit;
 

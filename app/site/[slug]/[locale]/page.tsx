@@ -16,11 +16,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug, locale } = await params
   const client = await createClient()
   const { data: website } = await client
-    .from("websites")
-    .select("slug, published, live_snapshot")
-    .eq("slug", slug)
+    .rpc("get_public_website", { p_slug: slug, p_domain: null })
     .maybeSingle()
-  const snapshot = website?.published && isWebsiteLiveSnapshot(website.live_snapshot) ? website.live_snapshot : null
+  const publicWebsite = website as { published: boolean; live_snapshot: unknown } | null
+  const snapshot = publicWebsite?.published && isWebsiteLiveSnapshot(publicWebsite.live_snapshot) ? publicWebsite.live_snapshot : null
   const active = snapshot?.locales?.find((entry) => entry.pathSegment === locale && !entry.isDefault)
   if (!snapshot || !active) notFound()
 

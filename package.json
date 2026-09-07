@@ -6,6 +6,7 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "eslint .",
+    "test": "node scripts/run-tests.mjs",
     "typecheck": "tsc --noEmit",
     "test:agents": "node --test tests/agent-queue.test.mjs tests/agent-status-transitions.test.mjs tests/agent-support-workflow.test.mjs tests/agent-approvals.test.mjs tests/agent-cron-security.test.mjs tests/agent-business-isolation.test.mjs tests/agent-network.test.mjs",
     "test:entitlements": "node --test tests/entitlements.test.mjs",
@@ -93,12 +94,14 @@
     "zod": "3.25.76"
   },
   "overrides": {
+    "browserslist": "4.28.7",
     "mailparser": {
       "html-to-text": "9.0.5"
     }
   },
   "pnpm": {
     "overrides": {
+      "browserslist": "4.28.7",
       "mailparser>html-to-text": "9.0.5",
       "lodash@<=4.17.23": "4.18.0",
       "brace-expansion@<1.1.18": "1.1.18",

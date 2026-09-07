@@ -5,8 +5,6 @@ import { Card } from "@/components/ui/card"
 import { PricingPlan } from "@/lib/types/pricing"
 import { Calendar, CreditCard, Settings } from "lucide-react"
 import { formatPrice } from "@/lib/pricing"
-import { handleManageSubscription } from "@/lib/stripe-placeholder"
-import { toast } from "sonner"
 
 interface BillingSummarySidebarProps {
   currentPlan: PricingPlan
@@ -30,15 +28,6 @@ export function BillingSummarySidebar({
   onEditPayment,
 }: BillingSummarySidebarProps) {
   const totalCharge = monthlyCharge + addonsPrice
-
-  const handleManageClick = async () => {
-    if (onManageSubscription) {
-      onManageSubscription()
-    } else {
-      await handleManageSubscription("")
-      toast.info("Zou naar het Stripe Customer Portal verwijzen")
-    }
-  }
 
   return (
     <Card className="sticky top-24 rounded-xl border border-border bg-card p-8 shadow-sm">
@@ -104,15 +93,17 @@ export function BillingSummarySidebar({
       {/* Action buttons */}
       <div className="space-y-3">
         <Button
-          onClick={handleManageClick}
+          onClick={onManageSubscription}
+          disabled={!onManageSubscription}
           className="w-full gap-2"
         >
           <Settings className="h-4 w-4" />
-          Abonnement beheren
+          {onManageSubscription ? "Abonnement beheren" : "Abonnement beheren — binnenkort"}
         </Button>
 
         <Button
           onClick={onEditPayment}
+          disabled={!onEditPayment}
           variant="outline"
           className="w-full gap-2"
         >

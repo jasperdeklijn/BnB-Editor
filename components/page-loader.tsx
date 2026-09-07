@@ -41,10 +41,8 @@ export async function loadPublicWebsitePage({
   const { data: website, error } = isPreview
     ? await websiteSections.fetchWebsiteWithSectionsBySlug(slug, supabase)
     : await supabase
-        .from("websites")
-        .select("id, user_id, business_id, title, slug, custom_domain, published, seo, theme_config, live_snapshot")
-        .eq("slug", slug)
-        .single()
+        .rpc("get_public_website", { p_slug: slug, p_domain: null })
+        .maybeSingle()
 
   if (error || !website) return notFound()
 

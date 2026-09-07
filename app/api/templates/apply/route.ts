@@ -24,8 +24,34 @@ export async function POST(request: NextRequest) {
       businessId?: string
     }
 
-    if (!category) {
+    if (!category || !getTemplatePreset(category)) {
       return NextResponse.json({ error: "Category is required" }, { status: 400 })
+    }
+
+    if (businessId) {
+      const { data: ownedBusiness, error: businessOwnershipError } = await supabase
+        .from("businesses")
+        .select("id")
+        .eq("id", businessId)
+        .eq("user_id", user.id)
+        .maybeSingle()
+
+      if (businessOwnershipError || !ownedBusiness) {
+        return NextResponse.json({ error: "Business not found" }, { status: 404 })
+      }
+    }
+
+    if (websiteId) {
+      const { data: ownedWebsite, error: websiteOwnershipError } = await supabase
+        .from("websites")
+        .select("id")
+        .eq("id", websiteId)
+        .eq("user_id", user.id)
+        .maybeSingle()
+
+      if (websiteOwnershipError || !ownedWebsite) {
+        return NextResponse.json({ error: "Website not found" }, { status: 404 })
+      }
     }
 
     const businessDefaults = getBizDefaultsFromTemplate(category)

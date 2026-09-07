@@ -12,13 +12,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params
   const client = await createClient()
   const { data: website } = await client
-    .from("websites")
-    .select("slug, published, live_snapshot")
-    .eq("slug", slug)
+    .rpc("get_public_website", { p_slug: slug, p_domain: null })
     .maybeSingle()
+  const publicWebsite = website as { slug: string; published: boolean; live_snapshot: unknown } | null
 
-  const snapshot = website?.published && isWebsiteLiveSnapshot(website.live_snapshot)
-    ? website.live_snapshot
+  const snapshot = publicWebsite?.published && isWebsiteLiveSnapshot(publicWebsite.live_snapshot)
+    ? publicWebsite.live_snapshot
     : null
   const defaultLocale = snapshot?.locales?.find((entry) => entry.isDefault)
   const business = defaultLocale?.business ?? snapshot?.business
@@ -26,7 +25,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = getSeoTitle(seo, business?.name || snapshot?.website.title || "Website")
   const description = getSeoDescription(seo, business?.description)
   const customDomain = snapshot?.website.customDomain
-  const url = customDomain ? `https://${customDomain}` : `/site/${snapshot?.website.slug ?? website?.slug ?? slug}`
+  const url = customDomain ? `https://${customDomain}` : `/site/${snapshot?.website.slug ?? publicWebsite?.slug ?? slug}`
   const languageAlternates = snapshot?.locales
     ? Object.fromEntries([
         ...snapshot.locales.map((entry) => [entry.locale, `${url}${entry.isDefault ? "" : `/${entry.pathSegment}`}`]),
