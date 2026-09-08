@@ -6,7 +6,7 @@ import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
 export const dynamic = "force-dynamic"
 
 export async function GET(request: NextRequest, context: { params: Promise<{ token: string }> }) {
-  const limit = checkRateLimit(getRateLimitKey(request, "calendar_ical_export"), 120, 5 * 60 * 1000)
+  const limit = await checkRateLimit(getRateLimitKey(request, "calendar_ical_export"), 120, 5 * 60 * 1000)
   if (!limit.allowed) return NextResponse.json({ error: "Te veel kalenderverzoeken." }, { status: 429 })
   const { token } = await context.params
   const calendar = await getPrivateIcalFeed(token)

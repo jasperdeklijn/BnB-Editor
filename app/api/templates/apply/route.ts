@@ -72,14 +72,6 @@ export async function POST(request: NextRequest) {
 
       if (existingBusiness) {
         resolvedBusinessId = existingBusiness.id
-        const { error: businessUpdateError } = await supabase
-          .from("businesses")
-          .update(businessDefaults)
-          .eq("id", resolvedBusinessId)
-
-        if (businessUpdateError) {
-          return NextResponse.json({ error: "Failed to update business" }, { status: 500 })
-        }
       } else {
         const { data: createdBusiness, error: businessCreateError } = await supabase
           .from("businesses")
@@ -107,10 +99,6 @@ export async function POST(request: NextRequest) {
 
       if (existingWebsite) {
         resolvedWebsiteId = existingWebsite.id
-        await supabase
-          .from("websites")
-          .update({ business_id: resolvedBusinessId || null, updated_at: new Date().toISOString() })
-          .eq("id", resolvedWebsiteId)
       } else {
         const { data: website, error } = await supabase
           .from("websites")
@@ -128,23 +116,6 @@ export async function POST(request: NextRequest) {
         }
 
         resolvedWebsiteId = website.id
-      }
-    }
-
-    if (resolvedWebsiteId && resolvedBusinessId) {
-      const appliedTemplate = getTemplatePreset(category)
-      const { error: websiteLinkError } = await supabase
-        .from("websites")
-        .update({
-          business_id: resolvedBusinessId,
-          applied_template_id: appliedTemplate?.id ?? category,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", resolvedWebsiteId)
-        .eq("user_id", user.id)
-
-      if (websiteLinkError) {
-        return NextResponse.json({ error: "Failed to update website" }, { status: 500 })
       }
     }
 
@@ -221,36 +192,23 @@ export async function POST(request: NextRequest) {
     // would turn it into section overrides and prevent later theme changes from
     // updating the generated sections.
     const sections = generateSectionsFromTemplate(category, resolvedBusinessId)
-
-    await supabase.from("website_sections").delete().eq("website_id", resolvedWebsiteId)
-
-    const { error: sectionsError } = await supabase
-      .from("website_sections")
-      .insert(
-        sections.map((section, position) => ({
-          website_id: resolvedWebsiteId,
-          type: section.type,
-          content: section.data,
-          styles: section.styles || {},
-          position: position + 1,
-        }))
-      )
-
-    if (sectionsError) {
-      return NextResponse.json({ error: "Failed to create sections" }, { status: 500 })
+    if (!resolvedBusinessId) {
+      return NextResponse.json({ error: "Business not found" }, { status: 404 })
     }
+    const demoServices = getDemoServicesFromTemplate(category, resolvedBusinessId)
+    const appliedTemplate = getTemplatePreset(category)
+    const { error: transactionError } = await supabase.rpc("apply_template_transaction", {
+      p_website_id: resolvedWebsiteId,
+      p_business_id: resolvedBusinessId,
+      p_applied_template_id: appliedTemplate?.id ?? category,
+      p_business_defaults: businessDefaults,
+      p_sections: sections,
+      p_services: demoServices,
+    } as never)
 
-    if (resolvedBusinessId) {
-      await supabase.from("services").delete().eq("business_id", resolvedBusinessId)
-      const demoServices = getDemoServicesFromTemplate(category, resolvedBusinessId)
-
-      if (demoServices.length > 0) {
-        const { error: servicesError } = await supabase.from("services").insert(demoServices)
-
-        if (servicesError) {
-          console.warn("Failed to insert demo services:", servicesError)
-        }
-      }
+    if (transactionError) {
+      console.error("Atomic template apply failed:", transactionError)
+      return NextResponse.json({ error: "Failed to apply template atomically" }, { status: 500 })
     }
 
     return NextResponse.json({

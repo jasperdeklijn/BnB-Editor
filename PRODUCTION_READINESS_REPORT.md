@@ -1,7 +1,9 @@
 # FlexPagina.nl Production Readiness Report
 
-Audit date: 2026-09-07  
-Scope: repository `BnB-Editor`, including application routes, server actions, Supabase schema/RLS, booking and invoice logic, configuration, dependencies, and local automated validation.  
+Audit date: 2026-09-08
+
+Scope: repository `BnB-Editor`, including application routes, server actions, Supabase schema/RLS, booking and invoice logic, configuration, dependencies, and local automated validation.
+
 Checklist source: `docs/Production Readiness Checklist.md`
 
 ## Executive summary
@@ -10,27 +12,27 @@ Checklist source: `docs/Production Readiness Checklist.md`
 Production readiness: NOT READY
 
 Open critical issues: 0
-Open high issues: 4
-Open medium issues: 4
+Open high issues: 2
+Open medium issues: 1
 Open low issues: 1
-Open score: 29
+Open score: 13
 ```
 
 The source tree has strong booking, invoice, calendar, multilingual, entitlement, onboarding, and agent-workflow safeguards. The complete local suite passes, the production build succeeds, all application tables in the consolidated schema enable RLS, and the production dependency audit is clean after remediation.
 
-The application is not ready for paying production customers. Stripe is deliberately still a placeholder; rate limiting is process-local and therefore bypassable across serverless instances; template apply/restore is destructive across multiple non-transactional requests; and backup/restore has documentation but no verified production backup or restore evidence. Live two-tenant RLS/authentication, SMTP, DNS/SSL, provider, deployment, and browser journeys were not performed because this audit did not use or mutate production systems.
+The application is not ready for paying production customers because Stripe is deliberately still a placeholder, production backup/restore has not been proven, and provider/deployment release gates require the future business accounts. The code-level blockers that can be completed before administration are now fixed in source: shared database rate limiting, transactional template replacement, private form destinations, server-validated/quota-controlled uploads, an environment contract, a readiness endpoint, and performance budgets. Their database migration is not yet applied to Supabase.
 
 ## Audit basis
 
 - 477 repository files inventoried (excluding dependencies/build output).
-- 59 route files and 65 exported HTTP handlers inventoried.
+- 60 route files and 67 exported HTTP handlers inventoried.
 - Server actions in editor calendar, requests, reservations, onboarding, and shared Supabase modules inspected.
 - 574 database call sites (`from`, `rpc`, insert/update/delete/upsert patterns) inventoried; security-critical and service-role paths were reviewed in detail.
-- 52 application tables found in `supabase/init.sql`; all 52 enable RLS. Service-owned operational tables intentionally have no browser policies.
+- 54 application tables found in `supabase/init.sql`; all 54 enable RLS. Service-owned operational tables intentionally have no browser policies.
 - Local `.env` and `.env.local` were inspected by variable name only. Neither file is tracked, and `.env*` is ignored. Secret values are not reproduced here.
 - No production credentials, customer data, Stripe operations, DNS changes, Supabase mutations, email delivery, or deployment changes were used.
 
-## Open findings
+## Findings and current disposition
 
 ### PAY-001
 
@@ -56,9 +58,9 @@ Recommended fix: make an explicit product decision: either launch without automa
 Severity: HIGH  
 Category: Rate limiting and abuse protection  
 Location: `lib/rate-limit.ts`  
-Status: FAIL
+Status: FIXED IN SOURCE; MIGRATION NOT APPLIED
 
-Problem: public and authentication endpoints use an in-memory `Map`. Each serverless instance has a separate bucket and restarts clear state.
+Resolution: all public and authenticated endpoint limits now call the atomic `check_rate_limit` database RPC with a SHA-256 key. Raw IP addresses are not stored, production fails closed if the shared limiter is unavailable, and only local development has a process fallback.
 
 Why it matters: an attacker can spread requests across instances/restarts and bypass limits on login, password reset, contact requests, booking availability/holds/confirmation, analytics, customer links, and iCal export.
 
@@ -68,16 +70,16 @@ How to reproduce:
 2. Send requests with the same action/IP until instance A returns 429.
 3. Send the same request to instance B; its independent bucket still allows it.
 
-Recommended fix: use a shared atomic store (for example a database RPC or managed Redis), define trusted proxy/IP handling, fail safely when the limiter is unavailable, and add distributed/concurrency tests.
+Deployment requirement: apply `20260908120000_pre_administration_readiness.sql`, then run concurrent multi-instance verification before production traffic.
 
 ### DATA-001
 
 Severity: HIGH  
 Category: Data integrity  
 Location: `app/api/templates/apply/route.ts`, `app/api/templates/restore/route.ts`  
-Status: FAIL
+Status: FIXED IN SOURCE; MIGRATION NOT APPLIED
 
-Problem: template apply and restore delete sections/services before subsequent inserts and related upserts complete. The operations span multiple database requests without one transaction.
+Resolution: template replacement and restore now call owner-authorized `apply_template_transaction` and `restore_template_transaction` RPCs. Deletes, inserts, translations, links, and defaults roll back together on any error.
 
 Why it matters: a constraint error, schema mismatch, database interruption, or failed later insert can leave a customer's website partially or completely cleared.
 
@@ -87,7 +89,7 @@ How to reproduce:
 2. The existing sections are deleted.
 3. A later insert fails and the earlier delete is not rolled back.
 
-Recommended fix: move apply/restore to owner-authorized transactional RPCs, validate the complete payload before mutation, use optimistic draft-version checks, and return one atomic result.
+Deployment requirement: apply the migration and exercise valid, invalid, and injected-failure restores on a non-production clone.
 
 ### OPS-001
 
@@ -107,35 +109,35 @@ Recommended fix: verify provider retention, create a separate Storage backup, ru
 Severity: MEDIUM  
 Category: Privacy and public data  
 Location: `lib/website-snapshot.ts`, public section props  
-Status: PARTIAL
+Status: FIXED IN SOURCE; MIGRATION NOT APPLIED
 
-Problem: published snapshots can contain `ownerEmail` and section `recipientEmail` values so public forms can submit the configured recipient. These values can reach client-rendered data even though the request API re-resolves the destination server-side.
+Resolution: new snapshots omit `ownerEmail` and strip `recipientEmail`. Public forms submit only an opaque section key; the server resolves the address from owner-scoped `website_form_destinations`. The migration backfills destinations and scrubs existing live snapshots.
 
 Why it matters: a private account or routing address may be unnecessarily exposed to scraping.
 
-Recommended fix: publish an opaque form/section identifier and resolve the destination only on the server. Scrub legacy snapshots on republish or with a reviewed migration.
+Deployment requirement: review the snapshot scrub on a clone, apply it, and verify custom form delivery plus business/account fallbacks.
 
 ### UPLOAD-001
 
 Severity: MEDIUM  
 Category: File uploads  
 Location: `lib/user-images.ts`, `components/images/*`, Storage configuration  
-Status: PARTIAL
+Status: FIXED IN SOURCE; MIGRATION NOT APPLIED
 
-Problem: the bucket now rejects oversized and undocumented MIME types, including SVG, but the 50 MB per-user quota is enforced in the client and file signatures are not inspected server-side.
+Resolution: the browser now uploads through authenticated `/api/images/upload`. The route validates actual JPEG/PNG/GIF/WebP signatures, dimensions, pixel count, preview shape, and size; uses server-owned Storage access; cleans partial uploads; and relies on a locked database trigger for the 50 MB account quota. Direct authenticated Storage mutations are removed.
 
 Why it matters: direct Storage API calls can bypass the aggregate quota and can label arbitrary bytes with an allowed MIME type.
 
-Recommended fix: route uploads through a server-issued reservation/RPC, atomically enforce aggregate usage, inspect magic bytes and dimensions, and periodically reconcile orphaned objects.
+Deployment requirement: apply the migration, test concurrent quota exhaustion, and add scheduled orphan reconciliation after production Storage is available.
 
 ### OBS-001
 
 Severity: MEDIUM  
 Category: Monitoring and logging  
 Location: application configuration and dependencies  
-Status: FAIL
+Status: PARTIAL; PROVIDER CONNECTION PENDING
 
-Problem: analytics and structured console logging exist, but no error/uptime monitoring integration or alert routing was found for API, auth, database, booking, iCal, email, PDF, Stripe, domain, or SSL failures.
+Resolution so far: `/api/health` now performs no-cache environment and database readiness checks suitable for an uptime monitor. Provider-backed error capture, alert routing, source maps, and production synthetic checks still require a selected monitoring account and deployed environment.
 
 Why it matters: production failures may only be discovered through customer reports.
 
@@ -146,22 +148,22 @@ Recommended fix: add error tracking and uptime/synthetic checks, alert on cron/o
 Severity: MEDIUM  
 Category: Environment configuration  
 Location: repository root and deployment settings  
-Status: PARTIAL
+Status: FIXED IN SOURCE; DEPLOYED VALUES NOT VERIFIED
 
-Problem: 38 environment variable names are referenced, but there is no committed `.env.example` or single deployment manifest describing required/optional scope, allowed environments, and rotation owner.
+Resolution: a value-free `.env.example` now inventories core, security, mail, mailbox, AI, lead, and Vercel variables. `getEnvironmentReadiness` validates launch-critical presence, HTTPS Supabase configuration, and minimum secret length; `/api/health` exposes only pass/fail states.
 
 Why it matters: preview/production omissions or unsafe reuse are easy and build success does not prove runtime completeness.
 
-Recommended fix: add a value-free environment contract and a startup/deployment validation step. Verify Vercel development, preview, and production values separately.
+Deployment requirement: fill and separately verify Development, Preview, and Production values after the provider accounts exist.
 
 ### PERF-001
 
 Severity: LOW  
 Category: Performance  
 Location: deployed application  
-Status: NOT TESTED
+Status: BUDGETS DEFINED; DEPLOYED MEASUREMENTS PENDING
 
-Problem: no Lighthouse/Web Vitals budget, load test, large-site fixture, or measured cold-start/query baseline was run.
+Resolution so far: `lighthouserc.json` defines three-run performance, accessibility, best-practice, SEO, LCP, CLS, TBT, and server-response budgets. Deployed Lighthouse/Web Vitals, load, large-site, cold-start, and query measurements still require a production-like environment.
 
 Recommended fix: define budgets and test representative marketing, editor, public site, booking, image-heavy, and large-calendar journeys.
 
@@ -210,7 +212,7 @@ This table covers all 46 top-level checklist sections. `PASS` means the checked 
 |---:|---|---|---|
 | 1 | Architectuur & codebase | PARTIAL | Clear server/client split, ignored env files, security headers, clean lint/build/audit; environment contract and full unused/deprecated package review remain. |
 | 2 | Multi-tenant security | PARTIAL | Owner filters/RLS and new composite ownership constraint; live two-account IDOR read/update/delete matrix not run. |
-| 3 | Supabase security | PARTIAL | All 52 application tables enable RLS; critical policies/RPC grants reviewed; live anon/authenticated/service-role policy tests not run. |
+| 3 | Supabase security | PARTIAL | All 54 application tables enable RLS; critical policies/RPC grants reviewed; live anon/authenticated/service-role policy tests not run. |
 | 4 | Account & onboarding | PARTIAL | Recovery and resumable onboarding tests pass; live signup, duplicate email, verification, expiry, and browser resume not run. |
 | 5 | Website editor | PARTIAL | Save queue, retry, undo, publish flush and section tests pass; full interactive CRUD/responsive matrix not run. |
 | 6 | Publieke websites | PARTIAL | Live snapshots, SEO, 404, anonymous RPC, and draft isolation are code-backed; deployed desktop/tablet/mobile checks not run. |
@@ -223,36 +225,36 @@ This table covers all 46 top-level checklist sections. `PASS` means the checked 
 | 13 | Meertaligheid | PARTIAL | NL/EN/DE/FR routing, overlays, hashes, fallback and live/editor propagation pass tests; exhaustive visual/copy audit not run. |
 | 14 | Contactformulier | PARTIAL | Server validation, escaping, honeypot, request limits and ownership resolution exist; shared limiter and 100-request test remain. |
 | 15 | E-mail | NOT TESTED | SMTP/IMAP code and durable outbox behavior exist, but SPF/DKIM/DMARC, bounce, deliverability and live links were not checked. |
-| 16 | File uploads & images | PARTIAL | Owner path RLS and per-file bucket limits are present; UPLOAD-001 remains. |
+| 16 | File uploads & images | PARTIAL | Server signature/dimension validation, locked account quota, cleanup, owner metadata RLS, and bucket limits are source-backed; migration and live concurrency/reconciliation checks remain. |
 | 17 | Algemene web security | PARTIAL | Auth, admin guards, SSRF controls, token hashing, CSP and validation were reviewed; no full dynamic penetration/CSRF suite was run. |
-| 18 | Rate limiting & abuse | FAIL | SEC-002: limits are not shared across instances. |
+| 18 | Rate limiting & abuse | PARTIAL | Shared atomic hashed database limiter is source-backed; migration and distributed live verification remain. |
 | 19 | Database integrity | PARTIAL | FKs, checks, unique keys, RLS, idempotency and booking locks are extensive; migration was not executed against a live clone. |
-| 20 | Concurrency & race conditions | PARTIAL | Booking/publish/agent/outbox paths use locks, CAS or idempotency; DATA-001 remains for templates. |
+| 20 | Concurrency & race conditions | PARTIAL | Booking/publish/agent/outbox paths use locks/CAS/idempotency and templates now use transactional RPCs; migration and live failure injection remain. |
 | 21 | GDPR / AVG | PARTIAL | Export, deletion, legal docs, retention guidance and minimal analytics exist; live deletion/export and retention operations not verified. |
 | 22 | Cookies & tracking | PASS | Analytics loads only after explicit consent; necessary-only choice and settings reopening are implemented. Deployment verification remains recommended. |
 | 23 | SEO | PARTIAL | Metadata, canonical/hreflang, OG/Twitter, robots, sitemap and no-index preview behavior exist; deployed crawler validation not run. |
-| 24 | Performance | NOT TESTED | PERF-001. |
+| 24 | Performance | PARTIAL | Lighthouse budgets are committed; deployed measurements, load, Web Vitals, and large-data tests remain. |
 | 25 | Mobile | PARTIAL | Responsive/touch/calendar tests exist; complete real-device/editor/public/booking/domain matrix not run. |
 | 26 | Accessibility | PARTIAL | Semantic labels, keyboard affordances, named dialogs and focus states are present in tested areas; no full screen-reader/contrast audit. |
 | 27 | Backup & disaster recovery | NOT TESTED | Procedure exists; OPS-001 remains. |
-| 28 | Monitoring & logging | FAIL | OBS-001; logging avoids obvious secrets but provider alerting and redaction verification are incomplete. |
+| 28 | Monitoring & logging | PARTIAL | A database/environment readiness endpoint exists; provider error capture, uptime checks, alert routing, and redaction verification remain. |
 | 29 | Vercel / production deployment | PARTIAL | Production build and Vercel cron/config inspection pass; environment, domain, HTTPS, rollback and deployed error pages not verified. |
-| 30 | Environment variables | PARTIAL | 38 names inventoried and secrets remain server-only; ENV-001 and deployed value verification remain. |
-| 31 | API audit | PARTIAL | All 59 route files/65 handlers inventoried and critical paths reviewed; dynamic authenticated/tenant/provider tests remain. |
+| 30 | Environment variables | PARTIAL | A committed value-free contract and launch-critical readiness checks exist; deployed value/separation/rotation verification remains. |
+| 31 | API audit | PARTIAL | All 60 route files/67 handlers inventoried and critical paths reviewed; dynamic authenticated/tenant/provider tests remain. |
 | 32 | Database query audit | PARTIAL | 574 call sites inventoried and service-role/public/booking/admin hotspots reviewed; live RLS evidence remains. |
 | 33 | Dependency audit | PASS | Frozen pnpm install succeeds; production audit reports zero known vulnerabilities; lockfiles are consistent. |
-| 34 | Automated testing | PARTIAL | 147 tests pass; no Stripe tests, live Supabase policy suite, or browser E2E suite. |
+| 34 | Automated testing | PARTIAL | 154 tests pass; no Stripe tests, live Supabase policy suite, or browser E2E suite. |
 | 35 | End-to-end customer journey | NOT TESTED | No safe migrated test environment/account/provider set was supplied. |
 | 36 | Failure testing | PARTIAL | Code-backed retry/failure tests cover editor, calendar, booking, outboxes and agents; database/SMTP/provider outage injection not run. |
-| 37 | Data consistency | PARTIAL | Booking/invoice/publish/entitlement invariants are tested; Stripe reconciliation is absent and template transactionality remains. |
+| 37 | Data consistency | PARTIAL | Booking/invoice/publish/entitlement invariants and transactional template replacement are source-backed; Stripe reconciliation and live migration tests remain. |
 | 38 | Security headers | PARTIAL | CSP, HSTS, nosniff, referrer, frame and permissions headers are configured; deployed headers and CSP breakage not tested. |
-| 39 | Public vs private data | PARTIAL | SEC-R002 closes draft-table exposure; private booking/invoice/customer tables are owner/service scoped; PRIV-001 remains. |
+| 39 | Public vs private data | PARTIAL | Draft-table exposure is closed and form destinations are removed/scrubbed from public snapshots; live migration and two-tenant tests remain. |
 | 40 | Admin functionality | PARTIAL | Every admin page/API reviewed uses server-side admin authorization before service-role access; live non-admin browser checks not run. |
 | 41 | Business logic | PARTIAL | Booking and invoice rules are well tested; Stripe subscription rules are not implemented. |
 | 42 | Edge cases | PARTIAL | Booking, locale, empty snapshot, subscription and calendar cases have tests; large-data, deleted-user, provider and deployment cases remain. |
-| 43 | Production launch blockers | FAIL | PAY-001, SEC-002, DATA-001, OPS-001 and unperformed live release gates prevent launch. |
+| 43 | Production launch blockers | FAIL | PAY-001, OPS-001, unapplied migrations, and unperformed live/provider release gates prevent launch. |
 | 44 | Codex audit output | PASS | This report contains verdict, findings, reproduction, recommendations, validation and changes. |
-| 45 | Final score | NOT READY | 4×HIGH + 4×MEDIUM + 1×LOW = 29. |
+| 45 | Final score | NOT READY | 2×HIGH + 1×MEDIUM + 1×LOW = 13; source-fixed items still require migration/deployment proof. |
 | 46 | Final instructions | PASS | Static audit, tests, dependency audit, typecheck, lint and build were executed; unsafe production mutations were not. |
 
 ## API and server-action inventory
@@ -309,12 +311,14 @@ Boundary legend: `public` means intentionally anonymous with input/context check
 | `/api/domain` | GET, POST | user/RLS, normalized input, rate limit |
 | `/api/domain/[domainId]` | PATCH, DELETE | user/RLS ownership, rate limit |
 | `/api/domain/verify` | GET | user/RLS ownership, rate limit |
+| `/api/health` | GET | public, no-cache readiness states only; no secrets/details |
+| `/api/images/upload` | POST | user, shared rate limit, signature/dimension checks, server-owned Storage, database quota |
 | `/api/onboarding/event` | POST | user, allow-listed event, rate limit |
 | `/api/onboarding/slug` | GET | user, normalized/reserved slug, rate limit |
 | `/api/profile` | PATCH | user, schema/RLS |
 | `/api/requests` | POST | public published context, validation/honeypot/escaping, rate limit |
-| `/api/templates/apply` | POST | user/RLS plus explicit website/business ownership; DATA-001 |
-| `/api/templates/restore` | POST | user/RLS plus explicit website/business ownership; DATA-001 |
+| `/api/templates/apply` | POST | user/RLS plus explicit ownership; one transactional replacement RPC |
+| `/api/templates/restore` | POST | user/RLS plus explicit ownership; one transactional restore RPC |
 | `/api/themes` | GET, POST | user/RLS; POST explicitly verifies owner |
 | `/api/websites/delete` | DELETE | user/RLS, rate limit, scoped domain cleanup |
 | `/api/websites/publish` | POST | user/RLS, entitlement, CAS snapshot promotion, rate limit |
@@ -372,7 +376,7 @@ Vercel domain management:
 
 | Command | Result |
 |---|---|
-| `pnpm test` | PASS — 147 tests, 0 failures |
+| `pnpm test` | PASS — 154 tests, 0 failures |
 | `pnpm lint` | PASS |
 | `pnpm typecheck` | PASS |
 | `pnpm build` | PASS — optimized production build after final hardening |
@@ -385,7 +389,7 @@ The new `pnpm test` command uses `scripts/run-tests.mjs` so Windows runs only `t
 
 ## Not executed
 
-- Applying `20260907120000_production_security_hardening.sql` to Supabase.
+- Applying `20260907120000_production_security_hardening.sql` and `20260908120000_pre_administration_readiness.sql` to Supabase.
 - Two-account live cross-tenant read/update/delete/publish/storage tests.
 - Live signup/login/logout/session-expiry/recovery/email-verification flows.
 - Stripe test-mode lifecycle and webhook replay (implementation absent).
@@ -401,12 +405,11 @@ The new `pnpm test` command uses `scripts/run-tests.mjs` so Windows runs only `t
 
 Do not admit paying production customers until all of the following are complete:
 
-1. Decide and implement the payment scope; if payments are in scope, close PAY-001 with signed idempotent webhooks and test-mode E2E evidence.
-2. Replace the process-local limiter and close SEC-002.
-3. Make template apply/restore atomic and close DATA-001.
-4. Apply the hardening migration to a safe target, investigate any validation failure, then execute the two-tenant RLS/IDOR matrix.
-5. Verify production/preview environment separation, cron secrets, SMTP, domain/SSL, and provider configuration.
-6. Complete and record a database plus Storage restore drill.
-7. Add monitoring/alerting and run the full customer journey in a migrated non-production environment.
+1. Complete the administrative/provider prerequisites in `docs/Post-Administration Go-Live Tasklist.md`.
+2. Decide and implement the payment scope; if payments are in scope, close PAY-001 with signed idempotent webhooks and test-mode E2E evidence.
+3. Apply both readiness migrations to a safe target, investigate any validation failure, then execute transactional, quota, snapshot-scrub, shared-limiter, and two-tenant RLS/IDOR tests.
+4. Verify production/preview environment separation, cron secrets, SMTP, domain/SSL, and provider configuration.
+5. Complete and record a database plus Storage restore drill.
+6. Connect monitoring/alerting to `/api/health` and application failures, then run Lighthouse/load and the full customer journey in a migrated non-production environment.
 
 Final verdict: **NOT READY**.

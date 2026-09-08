@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic"
 
 export async function GET(request: Request, context: { params: Promise<{ invoiceId: string }> }) {
   const { invoiceId } = await context.params
-  const limit = checkRateLimit(getRateLimitKey(request, "booking_invoice_pdf"), 30, 5 * 60 * 1000)
+  const limit = await checkRateLimit(getRateLimitKey(request, "booking_invoice_pdf"), 30, 5 * 60 * 1000)
   if (!limit.allowed) return NextResponse.json({ error: "Te veel PDF-verzoeken." }, { status: 429 })
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

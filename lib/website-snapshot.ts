@@ -60,7 +60,6 @@ export interface WebsiteLiveSnapshot {
   draftVersion: string
   website: {
     id: string
-    userId: string
     businessId: string | null
     title: string
     slug: string
@@ -68,7 +67,6 @@ export interface WebsiteLiveSnapshot {
     seo: Record<string, unknown>
     themeConfig: ThemeConfig | null
   }
-  ownerEmail: string | null
   business: SnapshotBusiness | null
   services: SnapshotService[]
   availabilityWindows: SnapshotAvailabilityWindow[]
@@ -93,7 +91,6 @@ interface BuildSnapshotOptions {
   supabase: SupabaseClient
   websiteId: string
   userId: string
-  ownerEmail?: string | null
 }
 
 export function isWebsiteLiveSnapshot(value: unknown): value is WebsiteLiveSnapshot {
@@ -115,7 +112,6 @@ export async function buildWebsiteLiveSnapshot({
   supabase,
   websiteId,
   userId,
-  ownerEmail = null,
 }: BuildSnapshotOptions): Promise<WebsiteLiveSnapshot> {
   const { data: website, error: websiteError } = await supabase
     .from("websites")
@@ -226,6 +222,7 @@ export async function buildWebsiteLiveSnapshot({
   const services = (servicesResult.data as SnapshotService[] | null) ?? []
   const sections: Section[] = (sectionsResult.data ?? []).map((row) => {
     const content = (row.content ?? {}) as Record<string, unknown>
+    const { recipientEmail: _privateRecipientEmail, ...publicContent } = content
     const selectedServiceIds = Array.isArray(content.serviceIds) ? content.serviceIds : []
     const sectionServices =
       selectedServiceIds.length > 0
@@ -236,11 +233,11 @@ export async function buildWebsiteLiveSnapshot({
       id: row.id,
       type: row.type as SectionType,
       data: {
-        ...content,
+        ...publicContent,
         businessId,
         websiteId: website.id,
         businessCategory: business?.category ?? null,
-        recipientEmail: content.recipientEmail || business?.email || ownerEmail || undefined,
+        formDestinationKey: row.id,
         ...(row.type === "services" ? { services: sectionServices } : {}),
       },
       styles: (row.styles ?? {}) as Section["styles"],
@@ -387,7 +384,6 @@ export async function buildWebsiteLiveSnapshot({
     draftVersion: website.draft_version,
     website: {
       id: website.id,
-      userId: website.user_id,
       businessId,
       title: website.title,
       slug: website.slug,
@@ -395,7 +391,6 @@ export async function buildWebsiteLiveSnapshot({
       seo: (website.seo ?? {}) as Record<string, unknown>,
       themeConfig: (website.theme_config as ThemeConfig | null) ?? null,
     },
-    ownerEmail,
     business: defaultLocaleBundle?.business ?? business,
     services: defaultLocaleBundle?.services ?? services,
     availabilityWindows: (availabilityResult.data as SnapshotAvailabilityWindow[] | null) ?? [],

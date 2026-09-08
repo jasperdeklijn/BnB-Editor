@@ -82,7 +82,7 @@ export async function loadPublicWebsitePage({
   const { data: userData } = liveSnapshot
     ? { data: null }
     : await adminSupabase.auth.admin.getUserById(website.user_id)
-  const userEmail = liveSnapshot?.ownerEmail ?? userData?.user?.email
+  const userEmail = userData?.user?.email
 
   const { data: currentBusinessDetails } = !liveSnapshot && websiteBusinessId
     ? await adminSupabase
@@ -127,8 +127,6 @@ export async function loadPublicWebsitePage({
             businessId: liveSnapshot.website.businessId,
             websiteId: liveSnapshot.website.id,
             businessCategory: liveSnapshot.business?.category ?? null,
-            recipientEmail:
-              section.data.recipientEmail || liveSnapshot.business?.email || liveSnapshot.ownerEmail || undefined,
             ...(section.type === "services" && !Array.isArray(section.data.services)
               ? { services: snapshotServices }
               : {}),

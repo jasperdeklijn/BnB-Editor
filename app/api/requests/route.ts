@@ -39,7 +39,7 @@ const FIELD_LIMITS = {
   message: 3000,
   websiteId: 80,
   businessId: 80,
-  recipientEmail: 254,
+  formDestinationKey: 80,
   source: 80,
   locale: 20,
 }
@@ -110,8 +110,7 @@ function looksLikeSpam(input: {
 function logRejectedRequest(reason: string, request: NextRequest, metadata: Record<string, unknown> = {}) {
   console.warn("[requests] Rejected public request", {
     reason,
-    ip: getRateLimitKey(request, "contact_form").replace("contact_form:", ""),
-    userAgent: request.headers.get("user-agent"),
+    requestId: request.headers.get("x-vercel-id") || request.headers.get("x-request-id") || undefined,
     ...metadata,
   })
 }
@@ -161,13 +160,14 @@ function createTransporter() {
 async function resolveRequestContext(input: {
   websiteId?: string
   businessId?: string
-  recipientEmail?: string
+  formDestinationKey?: string
 }) {
   const supabase = await createAdminClient()
   const websiteId = input.websiteId || null
   let businessId = input.businessId || null
   let userId: string | null = null
   let businessEmail = ""
+  let formDestinationEmail = ""
   let userEmail = ""
   let businessName = "uw website"
   let acceptsPublicRequests = false
@@ -194,7 +194,18 @@ async function resolveRequestContext(input: {
       businessId = snapshot?.website.businessId || businessId || website.business_id || null
       businessName = snapshot?.business?.name || snapshot?.website.title || website.title || businessName
       businessEmail = snapshot?.business?.email || ""
-      userEmail = snapshot?.ownerEmail || ""
+      const publicSectionIds = snapshot
+        ? new Set([...snapshot.sections, ...snapshot.locales.flatMap((entry) => entry.sections)].map((section) => section.id))
+        : new Set<string>()
+      if (input.formDestinationKey && publicSectionIds.has(input.formDestinationKey)) {
+        const { data: destination } = await supabase
+          .from("website_form_destinations")
+          .select("recipient_email")
+          .eq("website_id", website.id)
+          .eq("section_id", input.formDestinationKey)
+          .maybeSingle()
+        formDestinationEmail = destination?.recipient_email || ""
+      }
     }
   }
 
@@ -217,7 +228,7 @@ async function resolveRequestContext(input: {
     userEmail = data?.user?.email || ""
   }
 
-  const recipientEmail = businessEmail || userEmail || input.recipientEmail || FROM_EMAIL
+  const recipientEmail = formDestinationEmail || businessEmail || userEmail || FROM_EMAIL
 
   return { supabase, websiteId, businessId, userId, recipientEmail, businessName, acceptsPublicRequests, liveServiceIds, liveLocales }
 }
@@ -275,7 +286,7 @@ function buildEmailHtml(input: {
 
 export async function POST(request: NextRequest) {
   try {
-    const rateLimit = checkRateLimit(getRateLimitKey(request, "contact_form"), 8, 10 * 60 * 1000)
+    const rateLimit = await checkRateLimit(getRateLimitKey(request, "contact_form"), 8, 10 * 60 * 1000)
     if (!rateLimit.allowed) {
       logRejectedRequest("rate_limited", request, { resetAt: rateLimit.resetAt })
       return NextResponse.json({ error: "Te veel aanvragen. Probeer het later opnieuw." }, { status: 429 })
@@ -330,7 +341,7 @@ export async function POST(request: NextRequest) {
     const context = await resolveRequestContext({
       websiteId,
       businessId,
-      recipientEmail: limitString(body.recipientEmail, FIELD_LIMITS.recipientEmail),
+      formDestinationKey: limitString(body.formDestinationKey, FIELD_LIMITS.formDestinationKey),
     })
     const submissionLocale = context.liveLocales.includes(locale) ? locale : DEFAULT_WEBSITE_LOCALE
 

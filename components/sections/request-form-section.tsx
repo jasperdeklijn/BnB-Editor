@@ -61,7 +61,7 @@ interface FormState {
 type FieldKey = keyof FormState
 type VisibleFieldKey = Exclude<FieldKey, "company">
 
-function useRequestForm(recipientEmail?: string, requestType: RequestType = "contact", businessId?: string, websiteId?: string, locale?: string, isPreview = false, localizedError = "Er is een fout opgetreden.") {
+function useRequestForm(formDestinationKey?: string, requestType: RequestType = "contact", businessId?: string, websiteId?: string, locale?: string, isPreview = false, localizedError = "Er is een fout opgetreden.") {
   const [form, setForm] = useState<FormState>({
     name: "",
     email: "",
@@ -90,7 +90,7 @@ function useRequestForm(recipientEmail?: string, requestType: RequestType = "con
       const res = await fetch("/api/requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, recipientEmail, requestType, businessId, websiteId, locale, source: "request_form_section" }),
+        body: JSON.stringify({ ...form, formDestinationKey, requestType, businessId, websiteId, locale, source: "request_form_section" }),
       })
       await res.json()
       if (!res.ok) {
@@ -114,7 +114,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
   const title = (data.title as string) || "Stuur een aanvraag"
   const subtitle = data.subtitle as string | undefined
   const requestType = ((data.requestType as RequestType) || "contact") satisfies RequestType
-  const recipientEmail = data.recipientEmail as string | undefined
+  const formDestinationKey = data.formDestinationKey as string | undefined
   const businessId = data.businessId as string | undefined
   const websiteId = data.websiteId as string | undefined
   const locale = data.activeLocale as string | undefined
@@ -127,7 +127,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
   const localizedButton = requestType === "appointment" ? messages.requestAppointment : requestType === "quote" ? messages.quoteRequest : requestType === "whatsapp" ? messages.openWhatsApp : messages.submit
   const Icon = config.icon
 
-  const { form, update, submit, status, errorMsg } = useRequestForm(recipientEmail, requestType, businessId, websiteId, locale, isPreview, messages.error)
+  const { form, update, submit, status, errorMsg } = useRequestForm(formDestinationKey, requestType, businessId, websiteId, locale, isPreview, messages.error)
 
   const sectionStyle: React.CSSProperties = {
     ...getSectionColorVars(styles),

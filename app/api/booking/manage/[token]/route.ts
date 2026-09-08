@@ -27,7 +27,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
-  const limit = checkRateLimit(getRateLimitKey(request, "booking_manage"), 12, 10 * 60 * 1000)
+  const limit = await checkRateLimit(getRateLimitKey(request, "booking_manage"), 12, 10 * 60 * 1000)
   if (!limit.allowed) return NextResponse.json({ error: "Te veel pogingen. Probeer het later opnieuw." }, { status: 429 })
 
   const { token } = await params

@@ -27,7 +27,6 @@ const validSnapshot = {
   publishedAt: "2026-07-12T12:00:00.000Z",
   draftVersion: "00000000-0000-0000-0000-000000000001",
   website: { id: "website-1" },
-  ownerEmail: null,
   business: null,
   services: [],
   availabilityWindows: [],

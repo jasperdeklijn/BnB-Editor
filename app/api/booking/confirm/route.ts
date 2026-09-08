@@ -18,7 +18,7 @@ function text(value: unknown, maximum: number) {
 
 export async function POST(request: NextRequest) {
   try {
-    const limit = checkRateLimit(getRateLimitKey(request, "booking_confirm"), 8, 10 * 60 * 1000)
+    const limit = await checkRateLimit(getRateLimitKey(request, "booking_confirm"), 8, 10 * 60 * 1000)
     if (!limit.allowed) {
       throw new PublicBookingError("Te veel boekingspogingen. Probeer het later opnieuw.", 429, "RATE_LIMITED")
     }

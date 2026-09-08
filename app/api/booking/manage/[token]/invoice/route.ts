@@ -7,7 +7,7 @@ import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
 export const dynamic = "force-dynamic"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
-  const limit = checkRateLimit(getRateLimitKey(request, "customer_invoice_pdf"), 20, 10 * 60 * 1000)
+  const limit = await checkRateLimit(getRateLimitKey(request, "customer_invoice_pdf"), 20, 10 * 60 * 1000)
   if (!limit.allowed) return NextResponse.json({ error: "Te veel PDF-verzoeken." }, { status: 429 })
   const { token } = await params
   const view = await getCustomerBookingView(token)

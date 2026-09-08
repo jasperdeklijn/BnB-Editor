@@ -7,9 +7,9 @@ import { EditorPageShell } from "@/components/editor/editor-page-shell"
 import { useEditorLayout } from "@/components/editor/editor-layout-context"
 import { createClient } from "@/lib/supabase/client"
 import {
-  createCroppedImagePreview,
   loadUserImages,
   USER_IMAGES_BUCKET,
+  uploadUserImage,
   type UserImageAsset,
 } from "@/lib/user-images"
 import { ImageGrid } from "./image-grid"
@@ -53,7 +53,6 @@ export function ImagesClient({ userId }: ImagesClientProps) {
     setIsUploading(true)
     setIsSaving(true)
     let failed = false
-    let runningUsage = totalUsage
 
     try {
       for (const file of files) {
@@ -68,65 +67,13 @@ export function ImagesClient({ userId }: ImagesClientProps) {
           continue
         }
 
-        let preview: Blob
         try {
-          preview = await createCroppedImagePreview(file)
-        } catch {
+          await uploadUserImage(supabase, userId, file)
+          toast.success(`${file.name} succesvol geüpload`)
+        } catch (error) {
           failed = true
-          toast.error(`${file.name} kon niet als afbeelding worden verwerkt`)
-          continue
+          toast.error(error instanceof Error ? error.message : `Mislukt om ${file.name} te uploaden`)
         }
-
-        if (runningUsage + file.size + preview.size > MAX_TOTAL_SIZE) {
-          failed = true
-          toast.error("Upload zou je opslaglimiet van 50 MB overschrijden")
-          break
-        }
-
-        const imageId = crypto.randomUUID()
-        const extension = file.name.split(".").pop()?.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || "bin"
-        const originalPath = `${userId}/originals/${imageId}.${extension}`
-        const thumbnailPath = `${userId}/thumbnails/${imageId}.webp`
-        const { error: originalError } = await supabase.storage
-          .from(USER_IMAGES_BUCKET)
-          .upload(originalPath, file, { cacheControl: "31536000", upsert: false })
-
-        if (originalError) {
-          failed = true
-          toast.error(`Mislukt om ${file.name} te uploaden: ${originalError.message}`)
-          continue
-        }
-
-        const { error: thumbnailError } = await supabase.storage
-          .from(USER_IMAGES_BUCKET)
-          .upload(thumbnailPath, preview, { contentType: "image/webp", cacheControl: "31536000", upsert: false })
-
-        if (thumbnailError) {
-          await supabase.storage.from(USER_IMAGES_BUCKET).remove([originalPath])
-          failed = true
-          toast.error(`Mislukt om een snel voorbeeld voor ${file.name} te bewaren`)
-          continue
-        }
-
-        const { error: metadataError } = await supabase.from("user_images").insert({
-          id: imageId,
-          user_id: userId,
-          display_name: file.name,
-          original_path: originalPath,
-          thumbnail_path: thumbnailPath,
-          original_size: file.size,
-          thumbnail_size: preview.size,
-        })
-
-        if (metadataError) {
-          await supabase.storage.from(USER_IMAGES_BUCKET).remove([originalPath, thumbnailPath])
-          failed = true
-          toast.error(`Mislukt om ${file.name} aan de bibliotheek toe te voegen`)
-          continue
-        }
-
-        runningUsage += file.size + preview.size
-        toast.success(`${file.name} succesvol geüpload`)
       }
 
       await fetchImages()

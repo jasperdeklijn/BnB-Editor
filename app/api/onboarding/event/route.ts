@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   const { data, error } = await supabase.auth.getUser()
   if (error || !data.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const limit = checkRateLimit(getRateLimitKey(request, `onboarding_event:${data.user.id}`), 60, 60_000)
+  const limit = await checkRateLimit(getRateLimitKey(request, `onboarding_event:${data.user.id}`), 60, 60_000)
   if (!limit.allowed) return new NextResponse(null, { status: 204 })
 
   const body = await request.json().catch(() => null)
@@ -39,4 +39,3 @@ export async function POST(request: Request) {
   })
   return new NextResponse(null, { status: 204 })
 }
-

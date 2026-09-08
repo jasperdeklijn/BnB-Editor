@@ -52,7 +52,7 @@ interface FormState {
   company: string
 }
 
-function useContactForm(recipientEmail?: string, businessId?: string, websiteId?: string, locale?: string, isPreview = false, localizedError = "Er is een fout opgetreden.") {
+function useContactForm(formDestinationKey?: string, businessId?: string, websiteId?: string, locale?: string, isPreview = false, localizedError = "Er is een fout opgetreden.") {
   const [form, setForm] = useState<FormState>({ name: "", email: "", phone: "", message: "", company: "" })
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [errorMsg, setErrorMsg] = useState("")
@@ -72,7 +72,7 @@ function useContactForm(recipientEmail?: string, businessId?: string, websiteId?
       const res = await fetch("/api/requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, recipientEmail, businessId, websiteId, locale, requestType: "contact", source: "contact_section" }),
+        body: JSON.stringify({ ...form, formDestinationKey, businessId, websiteId, locale, requestType: "contact", source: "contact_section" }),
       })
       await res.json()
       if (!res.ok) {
@@ -94,7 +94,7 @@ function useContactForm(recipientEmail?: string, businessId?: string, websiteId?
 // ─── Shared Form Fields ───────────────────────────────────────────────────────
 
 interface ContactFormProps {
-  recipientEmail?: string
+  formDestinationKey?: string
   businessId?: string
   websiteId?: string
   locale?: string
@@ -104,9 +104,9 @@ interface ContactFormProps {
   isPreview?: boolean
 }
 
-function ContactForm({ recipientEmail, businessId, websiteId, locale, accentColor, buttonLabel = "Verstuur bericht", compact, isPreview = false }: ContactFormProps) {
+function ContactForm({ formDestinationKey, businessId, websiteId, locale, accentColor, buttonLabel = "Verstuur bericht", compact, isPreview = false }: ContactFormProps) {
   const { messages } = useWebsiteLocale()
-  const { form, update, submit, status, errorMsg } = useContactForm(recipientEmail, businessId, websiteId, locale, isPreview, messages.error)
+  const { form, update, submit, status, errorMsg } = useContactForm(formDestinationKey, businessId, websiteId, locale, isPreview, messages.error)
 
   if (status === "success") {
     return (
@@ -273,7 +273,7 @@ function ClassicLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps
             <EditableText as="p" data={data} path={["subtitle"]} value={(data.subtitle as string) || "Neem gerust contact met ons op. We helpen je graag verder."} isPreview={isPreview} onUpdate={onUpdate} className="mb-6 text-muted-foreground" style={textStyle} multiline />
             <InfoBlock address={data.address as string} phone={data.phone as string} email={data.email as string} textStyle={textStyle} />
           </div>
-          <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} locale={data.activeLocale as string} isPreview={isPreview} />
+          <ContactForm formDestinationKey={data.formDestinationKey as string} businessId={data.businessId as string} websiteId={data.websiteId as string} locale={data.activeLocale as string} isPreview={isPreview} />
         </div>
       </div>
     </section>
@@ -318,7 +318,7 @@ function SplitLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps) 
         {/* Right form */}
         <div className="flex flex-1 flex-col justify-center bg-[var(--section-surface)] px-8 py-12 text-[var(--section-surface-foreground)] md:px-12">
           <h3 className="mb-6 text-xl font-semibold">{messages.sendMessage}</h3>
-          <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} locale={data.activeLocale as string} isPreview={isPreview} />
+          <ContactForm formDestinationKey={data.formDestinationKey as string} businessId={data.businessId as string} websiteId={data.websiteId as string} locale={data.activeLocale as string} isPreview={isPreview} />
         </div>
       </div>
     </section>
@@ -365,7 +365,7 @@ function MinimalLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps
           )}
         </div>
         <div className="rounded-2xl border border-border bg-[var(--section-surface)] p-6 text-left text-[var(--section-surface-foreground)] shadow-sm backdrop-blur">
-          <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} locale={data.activeLocale as string} isPreview={isPreview} compact />
+          <ContactForm formDestinationKey={data.formDestinationKey as string} businessId={data.businessId as string} websiteId={data.websiteId as string} locale={data.activeLocale as string} isPreview={isPreview} compact />
         </div>
       </div>
     </section>
@@ -422,7 +422,7 @@ function CardLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps) {
             {/* Form */}
             <div className="px-8 py-10 md:col-span-3">
               <h3 className="mb-6 text-lg font-semibold">{messages.sendMessage}</h3>
-              <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} locale={data.activeLocale as string} isPreview={isPreview} accentColor={styles?.accentColor || "#b45309"} />
+              <ContactForm formDestinationKey={data.formDestinationKey as string} businessId={data.businessId as string} websiteId={data.websiteId as string} locale={data.activeLocale as string} isPreview={isPreview} accentColor={styles?.accentColor || "#b45309"} />
             </div>
           </div>
         </div>
@@ -471,7 +471,7 @@ function FullwidthLayout({ data, isPreview, styles, onUpdate }: ContactLayoutPro
       {/* Form below */}
       <div className="bg-[var(--section-surface)] px-4 py-12 text-[var(--section-surface-foreground)] sm:px-6">
         <div className="mx-auto max-w-2xl">
-          <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} locale={data.activeLocale as string} isPreview={isPreview} />
+          <ContactForm formDestinationKey={data.formDestinationKey as string} businessId={data.businessId as string} websiteId={data.websiteId as string} locale={data.activeLocale as string} isPreview={isPreview} />
         </div>
       </div>
     </section>
@@ -524,7 +524,7 @@ function CenteredLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProp
         </div>
         {/* Form */}
         <div className="mx-auto max-w-xl rounded-2xl border border-border bg-[var(--section-surface)] p-8 text-[var(--section-surface-foreground)] shadow-sm backdrop-blur">
-          <ContactForm recipientEmail={data.recipientEmail as string} businessId={data.businessId as string} websiteId={data.websiteId as string} locale={data.activeLocale as string} isPreview={isPreview} />
+          <ContactForm formDestinationKey={data.formDestinationKey as string} businessId={data.businessId as string} websiteId={data.websiteId as string} locale={data.activeLocale as string} isPreview={isPreview} />
         </div>
       </div>
     </section>

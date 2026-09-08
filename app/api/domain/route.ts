@@ -55,7 +55,7 @@ export async function POST(request: Request) {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const rateLimit = checkRateLimit(getRateLimitKey(request, `domain_add:${user.id}`), 12, 60 * 60 * 1000)
+  const rateLimit = await checkRateLimit(getRateLimitKey(request, `domain_add:${user.id}`), 12, 60 * 60 * 1000)
   if (!rateLimit.allowed) {
     return NextResponse.json({ error: "Te veel domeinpogingen. Probeer het later opnieuw." }, { status: 429 })
   }

@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server"
 const GENERIC_MESSAGE = "Als dit e-mailadres bij ons bekend is, ontvangt u een link om uw wachtwoord opnieuw in te stellen."
 
 export async function POST(request: Request) {
-  const rateLimit = checkRateLimit(getRateLimitKey(request, "password_reset"), 4, 30 * 60 * 1000)
+  const rateLimit = await checkRateLimit(getRateLimitKey(request, "password_reset"), 4, 30 * 60 * 1000)
   if (!rateLimit.allowed) {
     return NextResponse.json(
       { error: "Te veel aanvragen. Probeer het later opnieuw." },

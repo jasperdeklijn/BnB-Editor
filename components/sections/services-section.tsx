@@ -1253,7 +1253,7 @@ function ServicesBookingSpace({
   services,
   businessId,
   websiteId,
-  recipientEmail,
+  formDestinationKey,
   locale,
   isPreview,
 }: {
@@ -1261,7 +1261,7 @@ function ServicesBookingSpace({
   services: ServiceDisplay[]
   businessId?: string | null
   websiteId?: string | null
-  recipientEmail?: string
+  formDestinationKey?: string
   locale?: string
   isPreview?: boolean
 }) {
@@ -1508,7 +1508,7 @@ function ServicesBookingSpace({
           requestType: settings.requestType,
           businessId,
           websiteId,
-          recipientEmail,
+          formDestinationKey,
           locale,
           source: "services_booking_space",
         }),
@@ -1890,7 +1890,7 @@ export function ServicesSection({
   const businessId = runtimeBusinessId ?? data.businessId as string | null | undefined
   const websiteId = runtimeWebsiteId ?? data.websiteId as string | null | undefined
   const activeLocale = runtimeActiveLocale ?? data.activeLocale as string | undefined
-  const recipientEmail = data.recipientEmail as string | undefined
+  const formDestinationKey = data.formDestinationKey as string | undefined
   const serviceIdsKey = (serviceIds ?? []).join(",")
 
   useEffect(() => {
@@ -2144,7 +2144,7 @@ export function ServicesSection({
             : services}
           businessId={businessId}
           websiteId={websiteId}
-          recipientEmail={recipientEmail}
+          formDestinationKey={formDestinationKey}
           locale={activeLocale}
           isPreview={isPreview}
         />

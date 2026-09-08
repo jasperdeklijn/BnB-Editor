@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   if (authError || !user) return NextResponse.json({ error: "Log eerst in." }, { status: 401 })
   if (!isAdmin(user)) return NextResponse.json({ error: "Geen beheerderstoegang." }, { status: 403 })
 
-  const rateLimit = checkRateLimit(getRateLimitKey(request, `lead_search:${user.id}`), 5, 10 * 60 * 1000)
+  const rateLimit = await checkRateLimit(getRateLimitKey(request, `lead_search:${user.id}`), 5, 10 * 60 * 1000)
   if (!rateLimit.allowed) {
     const retryAfter = Math.max(1, Math.ceil((rateLimit.resetAt - Date.now()) / 1_000))
     return NextResponse.json(

@@ -7,7 +7,7 @@ import { isOnboardingEnabled } from "@/lib/onboarding/config"
 const LOGIN_ERROR = "Inloggen is niet gelukt. Controleer uw gegevens en probeer het opnieuw."
 
 export async function POST(request: Request) {
-  const rateLimit = checkRateLimit(getRateLimitKey(request, "login"), 8, 15 * 60 * 1000)
+  const rateLimit = await checkRateLimit(getRateLimitKey(request, "login"), 8, 15 * 60 * 1000)
   if (!rateLimit.allowed) {
     return NextResponse.json(
       { error: "Te veel inlogpogingen. Probeer het later opnieuw." },

@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const { data: authData, error: authError } = await supabase.auth.getUser()
   if (authError || !authData.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const limit = checkRateLimit(getRateLimitKey(request, `onboarding_slug:${authData.user.id}`), 30, 60_000)
+  const limit = await checkRateLimit(getRateLimitKey(request, `onboarding_slug:${authData.user.id}`), 30, 60_000)
   if (!limit.allowed) return NextResponse.json({ error: "Te veel controles." }, { status: 429 })
 
   const rawSlug = new URL(request.url).searchParams.get("slug") ?? ""
@@ -34,4 +34,3 @@ export async function GET(request: Request) {
 
   return NextResponse.json({ available: (data ?? []).length === 0, slug }, { headers: { "Cache-Control": "no-store" } })
 }
-

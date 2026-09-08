@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export async function POST(request: Request) {
-  const rateLimit = checkRateLimit(getRateLimitKey(request, "website_visit"), 60, 60 * 60 * 1000)
+  const rateLimit = await checkRateLimit(getRateLimitKey(request, "website_visit"), 60, 60 * 60 * 1000)
   if (!rateLimit.allowed) return new NextResponse(null, { status: 204 })
 
   const body = await request.json().catch(() => null)

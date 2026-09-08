@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const rateLimit = checkRateLimit(getRateLimitKey(request, `website_publish:${user.id}`), 12, 10 * 60 * 1000)
+  const rateLimit = await checkRateLimit(getRateLimitKey(request, `website_publish:${user.id}`), 12, 10 * 60 * 1000)
   if (!rateLimit.allowed) {
     return NextResponse.json({ error: "Te veel publicatiepogingen. Probeer het later opnieuw." }, { status: 429 })
   }
@@ -126,7 +126,6 @@ export async function POST(request: Request) {
       supabase,
       websiteId,
       userId: user.id,
-      ownerEmail: user.email,
     })
   } catch (snapshotError) {
     const snapshotMessage = snapshotError instanceof Error ? snapshotError.message : ""

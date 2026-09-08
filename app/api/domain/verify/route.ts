@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const rateLimit = checkRateLimit(getRateLimitKey(request, `domain_verify:${user.id}`), 15, 10 * 60 * 1000)
+  const rateLimit = await checkRateLimit(getRateLimitKey(request, `domain_verify:${user.id}`), 15, 10 * 60 * 1000)
   if (!rateLimit.allowed) {
     return NextResponse.json({ error: "Te veel verificatiepogingen. Probeer het later opnieuw." }, { status: 429 })
   }

@@ -35,13 +35,13 @@ export interface PublicBookingContext {
   recipientEmail: string
 }
 
-function sectionAllowsCalendarBooking(snapshot: WebsiteLiveSnapshot, serviceId: string) {
+function calendarBookingSectionIds(snapshot: WebsiteLiveSnapshot, serviceId: string) {
   const sections = [
     ...snapshot.sections,
     ...snapshot.locales.flatMap((locale) => locale.sections),
   ]
 
-  return sections.some((section) => {
+  return [...new Set(sections.filter((section) => {
     if (section.type !== "services") return false
     const data = section.data as Record<string, unknown>
     if (data.bookingSpaceEnabled !== true || data.bookingSpaceMode !== "calendar") return false
@@ -49,7 +49,11 @@ function sectionAllowsCalendarBooking(snapshot: WebsiteLiveSnapshot, serviceId: 
       ? data.bookingSpaceServiceIds.filter((id): id is string => typeof id === "string")
       : []
     return selected.length === 0 || selected.includes(serviceId)
-  })
+  }).map((section) => section.id))]
+}
+
+function sectionAllowsCalendarBooking(snapshot: WebsiteLiveSnapshot, serviceId: string) {
+  return calendarBookingSectionIds(snapshot, serviceId).length > 0
 }
 
 export async function resolvePublicBookingContext(input: {
@@ -115,6 +119,19 @@ export async function resolvePublicBookingContext(input: {
   const liveLocale = snapshot.locales.find((candidate) => candidate.locale === requestedLocale)
     ?? snapshot.locales.find((candidate) => candidate.isDefault)
   const localizedService = liveLocale?.services.find((candidate) => candidate.id === service.id)
+  const destinationSectionIds = calendarBookingSectionIds(snapshot, service.id)
+  const { data: destination } = destinationSectionIds.length
+    ? await supabase
+        .from("website_form_destinations")
+        .select("recipient_email")
+        .eq("website_id", website.id)
+        .in("section_id", destinationSectionIds)
+        .limit(1)
+        .maybeSingle()
+    : { data: null }
+  const { data: owner } = destination?.recipient_email || snapshot.business?.email
+    ? { data: null }
+    : await supabase.auth.admin.getUserById(website.user_id)
 
   return {
     supabase,
@@ -126,7 +143,7 @@ export async function resolvePublicBookingContext(input: {
     settings: settings as ServiceBookingSettings,
     locale: liveLocale?.locale ?? DEFAULT_WEBSITE_LOCALE,
     serviceTitle: localizedService?.title || service.title,
-    recipientEmail: snapshot.business?.email || snapshot.ownerEmail || "",
+    recipientEmail: destination?.recipient_email || snapshot.business?.email || owner?.user?.email || "",
   }
 }
 

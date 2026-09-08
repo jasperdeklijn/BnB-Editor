@@ -105,56 +105,19 @@ export async function createCroppedImagePreview(file: File): Promise<Blob> {
 }
 
 export async function uploadUserImage(
-  supabase: SupabaseClient,
-  userId: string,
+  _supabase: SupabaseClient,
+  _userId: string,
   file: File,
 ): Promise<UserImageAsset> {
   if (!file.type.startsWith("image/")) throw new Error("Kies een geldig afbeeldingsbestand.")
   if (file.size > MAX_USER_IMAGE_SIZE) throw new Error("De afbeelding mag maximaal 5 MB zijn.")
 
   const preview = await createCroppedImagePreview(file)
-  const imageId = crypto.randomUUID()
-  const extension = file.name.split(".").pop()?.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || "bin"
-  const originalPath = `${userId}/originals/${imageId}.${extension}`
-  const thumbnailPath = `${userId}/thumbnails/${imageId}.webp`
-
-  const { error: originalError } = await supabase.storage
-    .from(USER_IMAGES_BUCKET)
-    .upload(originalPath, file, { cacheControl: "31536000", upsert: false })
-  if (originalError) throw originalError
-
-  const { error: thumbnailError } = await supabase.storage
-    .from(USER_IMAGES_BUCKET)
-    .upload(thumbnailPath, preview, { contentType: "image/webp", cacheControl: "31536000", upsert: false })
-  if (thumbnailError) {
-    await supabase.storage.from(USER_IMAGES_BUCKET).remove([originalPath])
-    throw thumbnailError
-  }
-
-  const { error: metadataError } = await supabase.from("user_images").insert({
-    id: imageId,
-    user_id: userId,
-    display_name: file.name,
-    original_path: originalPath,
-    thumbnail_path: thumbnailPath,
-    original_size: file.size,
-    thumbnail_size: preview.size,
-  })
-  if (metadataError) {
-    await supabase.storage.from(USER_IMAGES_BUCKET).remove([originalPath, thumbnailPath])
-    throw metadataError
-  }
-
-  const url = publicUrl(supabase, originalPath)
-  return {
-    id: imageId,
-    name: file.name,
-    originalPath,
-    thumbnailPath,
-    url,
-    previewUrl: publicUrl(supabase, thumbnailPath),
-    size: file.size,
-    storageSize: file.size + preview.size,
-    createdAt: new Date().toISOString(),
-  }
+  const form = new FormData()
+  form.set("original", file)
+  form.set("preview", new File([preview], "preview.webp", { type: "image/webp" }))
+  const response = await fetch("/api/images/upload", { method: "POST", body: form })
+  const payload = await response.json().catch(() => null) as (UserImageAsset & { error?: string }) | null
+  if (!response.ok || !payload) throw new Error(payload?.error || "Uploaden is mislukt.")
+  return payload
 }

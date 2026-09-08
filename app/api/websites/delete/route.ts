@@ -12,7 +12,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const rateLimit = checkRateLimit(getRateLimitKey(request, `website_delete:${user.id}`), 5, 60 * 60 * 1000)
+  const rateLimit = await checkRateLimit(getRateLimitKey(request, `website_delete:${user.id}`), 5, 60 * 60 * 1000)
   if (!rateLimit.allowed) {
     return NextResponse.json({ error: "Te veel verwijderpogingen. Probeer het later opnieuw." }, { status: 429 })
   }

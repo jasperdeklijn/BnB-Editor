@@ -1,39 +1,62 @@
-type RateLimitEntry = {
-  count: number
+import { createHash } from "node:crypto"
+
+type RateLimitEntry = { count: number; resetAt: number }
+
+export interface RateLimitResult {
+  allowed: boolean
+  remaining: number
   resetAt: number
 }
 
-const buckets = new Map<string, RateLimitEntry>()
-let lastCleanupAt = 0
+const developmentBuckets = new Map<string, RateLimitEntry>()
 
-// TODO: Replace this per-process MVP limiter with a shared store such as
-// Upstash/Redis before horizontally scaling. Serverless instances do not share
-// this Map, so it reduces abuse but is not a global enforcement boundary.
-function cleanupExpiredBuckets(now: number) {
-  if (now - lastCleanupAt < 60_000) return
-
-  for (const [key, entry] of buckets) {
-    if (entry.resetAt <= now) buckets.delete(key)
-  }
-  lastCleanupAt = now
-}
-
-export function checkRateLimit(key: string, limit: number, windowMs: number) {
+function checkDevelopmentFallback(key: string, limit: number, windowMs: number): RateLimitResult {
   const now = Date.now()
-  cleanupExpiredBuckets(now)
-  const current = buckets.get(key)
-
+  const current = developmentBuckets.get(key)
   if (!current || current.resetAt <= now) {
-    buckets.set(key, { count: 1, resetAt: now + windowMs })
-    return { allowed: true, remaining: Math.max(0, limit - 1), resetAt: now + windowMs }
+    const resetAt = now + windowMs
+    developmentBuckets.set(key, { count: 1, resetAt })
+    return { allowed: true, remaining: Math.max(0, limit - 1), resetAt }
   }
-
-  if (current.count >= limit) {
-    return { allowed: false, remaining: 0, resetAt: current.resetAt }
-  }
-
+  if (current.count >= limit) return { allowed: false, remaining: 0, resetAt: current.resetAt }
   current.count += 1
   return { allowed: true, remaining: Math.max(0, limit - current.count), resetAt: current.resetAt }
+}
+
+export async function checkRateLimit(key: string, limit: number, windowMs: number): Promise<RateLimitResult> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "")
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const normalizedLimit = Math.max(1, Math.min(1_000, Math.floor(limit)))
+  const windowSeconds = Math.max(1, Math.min(86_400, Math.ceil(windowMs / 1_000)))
+  const keyHash = createHash("sha256").update(key).digest("hex")
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    if (process.env.NODE_ENV !== "production") return checkDevelopmentFallback(keyHash, normalizedLimit, windowMs)
+    console.error("[rate-limit] Supabase configuration is missing; request denied.")
+    return { allowed: false, remaining: 0, resetAt: Date.now() + windowMs }
+  }
+
+  try {
+    const response = await fetch(`${supabaseUrl}/rest/v1/rpc/check_rate_limit`, {
+      method: "POST",
+      headers: { apikey: serviceRoleKey, authorization: `Bearer ${serviceRoleKey}`, "content-type": "application/json" },
+      body: JSON.stringify({ p_key_hash: keyHash, p_limit: normalizedLimit, p_window_seconds: windowSeconds }),
+      cache: "no-store",
+    })
+    if (!response.ok) throw new Error(`rate-limit RPC returned ${response.status}`)
+    const rows = await response.json() as Array<{ allowed: boolean; remaining: number; reset_at: string }>
+    const result = rows[0]
+    if (!result) throw new Error("rate-limit RPC returned no result")
+    return {
+      allowed: result.allowed,
+      remaining: Math.max(0, Number(result.remaining) || 0),
+      resetAt: new Date(result.reset_at).getTime(),
+    }
+  } catch (error) {
+    console.error("[rate-limit] Shared limiter unavailable", error)
+    if (process.env.NODE_ENV !== "production") return checkDevelopmentFallback(keyHash, normalizedLimit, windowMs)
+    return { allowed: false, remaining: 0, resetAt: Date.now() + windowMs }
+  }
 }
 
 export function getRateLimitKey(request: Request, action: string) {
