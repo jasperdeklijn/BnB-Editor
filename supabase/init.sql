@@ -4589,7 +4589,8 @@ $$;
 
 revoke all on function public.get_public_website(text, text) from public;
 grant execute on function public.get_public_website(text, text) to anon, authenticated;
-\n+-- ------------------------------------------------------------
+
+-- ------------------------------------------------------------
 -- Pre-administration production readiness hardening
 -- ------------------------------------------------------------
 -- Code-level production hardening that does not depend on paid providers.
@@ -4617,7 +4618,7 @@ security definer
 set search_path = public
 as $$
 declare
-  current_time timestamptz := clock_timestamp();
+  v_now timestamptz := clock_timestamp();
   bucket public.rate_limit_buckets%rowtype;
 begin
   if p_key_hash !~ '^[0-9a-f]{64}$'
@@ -4627,17 +4628,17 @@ begin
   end if;
 
   insert into public.rate_limit_buckets (key_hash, request_count, reset_at, updated_at)
-  values (p_key_hash, 1, current_time + make_interval(secs => p_window_seconds), current_time)
+  values (p_key_hash, 1, v_now + make_interval(secs => p_window_seconds), v_now)
   on conflict (key_hash) do update
   set request_count = case
-        when rate_limit_buckets.reset_at <= current_time then 1
+        when rate_limit_buckets.reset_at <= v_now then 1
         else rate_limit_buckets.request_count + 1
       end,
       reset_at = case
-        when rate_limit_buckets.reset_at <= current_time then current_time + make_interval(secs => p_window_seconds)
+        when rate_limit_buckets.reset_at <= v_now then v_now + make_interval(secs => p_window_seconds)
         else rate_limit_buckets.reset_at
       end,
-      updated_at = current_time
+      updated_at = v_now
   returning * into bucket;
 
   return query select

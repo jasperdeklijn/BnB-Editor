@@ -8,10 +8,16 @@ const LOGIN_ERROR = "Inloggen is niet gelukt. Controleer uw gegevens en probeer 
 
 export async function POST(request: Request) {
   const rateLimit = await checkRateLimit(getRateLimitKey(request, "login"), 8, 15 * 60 * 1000)
+  if (rateLimit.reason === "unavailable") {
+    return NextResponse.json(
+      { error: "Inloggen is tijdelijk niet beschikbaar. Probeer het later opnieuw." },
+      { status: 503, headers: { "Retry-After": "30" } },
+    )
+  }
   if (!rateLimit.allowed) {
     return NextResponse.json(
       { error: "Te veel inlogpogingen. Probeer het later opnieuw." },
-      { status: 429 },
+      { status: 429, headers: { "Retry-After": String(Math.max(1, Math.ceil((rateLimit.resetAt - Date.now()) / 1_000))) } },
     )
   }
 

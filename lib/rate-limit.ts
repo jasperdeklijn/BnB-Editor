@@ -6,6 +6,7 @@ export interface RateLimitResult {
   allowed: boolean
   remaining: number
   resetAt: number
+  reason?: "unavailable"
 }
 
 const developmentBuckets = new Map<string, RateLimitEntry>()
@@ -33,7 +34,7 @@ export async function checkRateLimit(key: string, limit: number, windowMs: numbe
   if (!supabaseUrl || !serviceRoleKey) {
     if (process.env.NODE_ENV !== "production") return checkDevelopmentFallback(keyHash, normalizedLimit, windowMs)
     console.error("[rate-limit] Supabase configuration is missing; request denied.")
-    return { allowed: false, remaining: 0, resetAt: Date.now() + windowMs }
+    return { allowed: false, remaining: 0, resetAt: Date.now() + windowMs, reason: "unavailable" }
   }
 
   try {
@@ -42,11 +43,15 @@ export async function checkRateLimit(key: string, limit: number, windowMs: numbe
       headers: { apikey: serviceRoleKey, authorization: `Bearer ${serviceRoleKey}`, "content-type": "application/json" },
       body: JSON.stringify({ p_key_hash: keyHash, p_limit: normalizedLimit, p_window_seconds: windowSeconds }),
       cache: "no-store",
+      signal: AbortSignal.timeout(5_000),
     })
     if (!response.ok) throw new Error(`rate-limit RPC returned ${response.status}`)
     const rows = await response.json() as Array<{ allowed: boolean; remaining: number; reset_at: string }>
     const result = rows[0]
-    if (!result) throw new Error("rate-limit RPC returned no result")
+    if (!result || typeof result.allowed !== "boolean" || !Number.isFinite(result.remaining)
+      || !Number.isFinite(new Date(result.reset_at).getTime())) {
+      throw new Error("rate-limit RPC returned an invalid result")
+    }
     return {
       allowed: result.allowed,
       remaining: Math.max(0, Number(result.remaining) || 0),
@@ -55,7 +60,7 @@ export async function checkRateLimit(key: string, limit: number, windowMs: numbe
   } catch (error) {
     console.error("[rate-limit] Shared limiter unavailable", error)
     if (process.env.NODE_ENV !== "production") return checkDevelopmentFallback(keyHash, normalizedLimit, windowMs)
-    return { allowed: false, remaining: 0, resetAt: Date.now() + windowMs }
+    return { allowed: false, remaining: 0, resetAt: Date.now() + windowMs, reason: "unavailable" }
   }
 }
 
