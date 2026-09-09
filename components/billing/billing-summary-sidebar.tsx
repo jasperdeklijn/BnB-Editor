@@ -30,7 +30,7 @@ export function BillingSummarySidebar({
   const totalCharge = monthlyCharge + addonsPrice
 
   return (
-    <Card className="sticky top-24 rounded-xl border border-border bg-card p-8 shadow-sm">
+    <Card className="min-w-0 rounded-xl border border-border bg-card p-4 shadow-sm sm:p-6 xl:sticky xl:top-24">
       {/* Plan header */}
       <div className="mb-8">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
@@ -43,7 +43,7 @@ export function BillingSummarySidebar({
 
       {/* Pricing breakdown */}
       <div className="space-y-3 mb-8 pb-8 border-b border-border">
-        <div className="flex justify-between items-center text-sm">
+        <div className="flex flex-wrap justify-between items-center gap-2 text-sm">
           <span className="text-muted-foreground">
             {currentPlan.name} abonnement
           </span>
@@ -53,7 +53,7 @@ export function BillingSummarySidebar({
         </div>
 
         {addonsPrice > 0 && (
-          <div className="flex justify-between items-center text-sm">
+          <div className="flex flex-wrap justify-between items-center gap-2 text-sm">
             <span className="text-muted-foreground">Add-ons</span>
             <span className="font-semibold text-foreground">
               +{formatPrice(addonsPrice)}
@@ -62,7 +62,7 @@ export function BillingSummarySidebar({
         )}
 
         {/* Total */}
-        <div className="flex justify-between items-center text-base font-bold pt-2 border-t border-border">
+        <div className="flex flex-wrap justify-between items-center gap-2 text-base font-bold pt-2 border-t border-border">
           <span className="text-foreground">Totaalbedrag</span>
           <span className="text-primary">
             {formatPrice(totalCharge)}/mnd
@@ -76,7 +76,7 @@ export function BillingSummarySidebar({
       {/* Next billing date */}
       <div className="flex items-start gap-3 mb-8 p-4 rounded-lg bg-secondary border border-border">
         <Calendar className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-        <div>
+        <div className="min-w-0">
           <p className="text-xs font-semibold text-secondary-foreground uppercase tracking-wide">
             Volgende facturering
           </p>
@@ -95,20 +95,20 @@ export function BillingSummarySidebar({
         <Button
           onClick={onManageSubscription}
           disabled={!onManageSubscription}
-          className="w-full gap-2"
+          className="h-auto min-h-11 w-full gap-2 whitespace-normal py-2"
         >
           <Settings className="h-4 w-4" />
-          {onManageSubscription ? "Abonnement beheren" : "Abonnement beheren — binnenkort"}
+          <span>{onManageSubscription ? "Abonnement beheren" : "Abonnement beheren — binnenkort"}</span>
         </Button>
 
         <Button
           onClick={onEditPayment}
           disabled={!onEditPayment}
           variant="outline"
-          className="w-full gap-2"
+          className="h-auto min-h-11 w-full gap-2 whitespace-normal py-2"
         >
           <CreditCard className="h-4 w-4" />
-          Betaalmethode wijzigen
+          <span>Betaalmethode wijzigen</span>
         </Button>
       </div>
 

@@ -39,12 +39,12 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
   }
 
   return (
-    <div className="space-y-8 pb-20">
+    <div className="min-w-0 space-y-6 pb-20 [overflow-wrap:anywhere] sm:space-y-8">
       <div className="rounded-xl border border-warning/30 bg-warning/10 px-5 py-4 text-sm text-foreground">
         <span className="font-semibold">Let op:</span> alle vermelde abonnements- en add-onprijzen zijn exclusief btw.
       </div>
 
-      <Card className="rounded-xl border border-border bg-secondary/70 p-8 shadow-sm animate-in fade-in duration-700">
+      <Card className="min-w-0 rounded-xl border border-border bg-secondary/70 p-4 shadow-sm animate-in fade-in duration-700 sm:p-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
@@ -68,8 +68,8 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
         ) : null}
       </Card>
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        <div className="space-y-8 lg:col-span-2">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] xl:gap-8">
+        <div className="min-w-0 space-y-8">
           <div className="animate-in fade-in duration-700 delay-200">
             <h3 className="mb-4 text-xl font-semibold text-foreground">
               Abonnementen vergelijken
@@ -117,7 +117,7 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
           </div>
         </div>
 
-        <div className="animate-in fade-in duration-700 delay-300 lg:col-span-1">
+        <div className="min-w-0 animate-in fade-in duration-700 delay-300">
           <BillingSummarySidebar
             currentPlan={currentPlan}
             nextBillingDate={billingData.nextBillingDate}

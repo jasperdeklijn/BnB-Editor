@@ -73,14 +73,14 @@ export function AddonToggleCard({
 
   return (
     <>
-      <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
+      <div className="min-w-0 rounded-xl border border-border bg-card p-4 shadow-sm sm:p-6">
         {/* Header */}
-        <div className="flex items-start justify-between mb-6">
-          <div className="flex items-start gap-4 flex-1">
-            <div className="p-2 bg-primary/10 rounded-lg">
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-1 items-start gap-3">
+            <div className="shrink-0 p-2 bg-primary/10 rounded-lg">
               <Zap className="h-6 w-6 text-primary" />
             </div>
-            <div>
+            <div className="min-w-0 [overflow-wrap:anywhere]">
               <h3 className="text-xl font-bold text-foreground mb-1">
                 {addonName}
               </h3>
@@ -97,7 +97,8 @@ export function AddonToggleCard({
             checked={included || isEnabled}
             onCheckedChange={handleToggleClick}
             disabled={isLoading || included || !changesEnabled}
-            className="ml-4"
+            aria-label={`${addonName} activeren`}
+            className="shrink-0"
           />
         </div>
 
