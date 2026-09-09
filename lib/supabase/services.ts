@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { assertCurrentUserRuntimeEntitlement } from "@/lib/runtime-entitlements"
 
 export interface Service {
   id: string
@@ -80,6 +81,7 @@ export async function createService(
   service: ServiceInput,
 ): Promise<Service> {
   const supabase = await createClient()
+  await assertCurrentUserRuntimeEntitlement(supabase, "service_management")
 
   const payload = {
     business_id: businessId,
@@ -107,6 +109,7 @@ export async function updateService(
   updates: Partial<ServiceInput>,
 ): Promise<Service> {
   const supabase = await createClient()
+  await assertCurrentUserRuntimeEntitlement(supabase, "service_management")
 
   const { data, error } = await supabase
     .from("services")
@@ -121,6 +124,7 @@ export async function updateService(
 
 export async function deleteService(serviceId: string): Promise<void> {
   const supabase = await createClient()
+  await assertCurrentUserRuntimeEntitlement(supabase, "service_management")
 
   const { error } = await supabase.from("services").delete().eq("id", serviceId)
   if (error) throw error
@@ -130,6 +134,7 @@ export async function reorderServices(
   serviceOrders: { id: string; position: number }[],
 ): Promise<void> {
   const supabase = await createClient()
+  await assertCurrentUserRuntimeEntitlement(supabase, "service_management")
 
   for (const { id, position } of serviceOrders) {
     const { error } = await supabase

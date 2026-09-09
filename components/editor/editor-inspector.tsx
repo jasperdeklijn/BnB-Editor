@@ -49,6 +49,7 @@ interface EditorInspectorProps {
   businessId: string | null
   businessCategory?: BusinessCategory | null
   currentPlan: PlanId
+  hasBookingAccess?: boolean
   currentTheme?: ThemeConfig | null
   onThemeChange: (config: ThemeConfig) => void
   onTemplateApplied: (websiteId?: string | null) => Promise<void> | void
@@ -72,6 +73,7 @@ export function EditorInspector({
   businessId,
   businessCategory,
   currentPlan,
+  hasBookingAccess = false,
   currentTheme,
   onThemeChange,
   onTemplateApplied,
@@ -115,6 +117,7 @@ export function EditorInspector({
       businessId={businessId}
       businessCategory={businessCategory}
       currentPlan={currentPlan}
+      hasBookingAccess={hasBookingAccess}
       currentTheme={currentTheme}
       showHeader={false}
       userId={userId}

@@ -2,6 +2,7 @@ import Link from "next/link"
 import { ArrowLeft, ArrowRight, CheckCircle2, ShieldCheck, X } from "lucide-react"
 
 import { PricingCard } from "@/components/pricing/pricing-card"
+import { PricingAddons } from "@/components/pricing/pricing-addons"
 import { PricingFaq } from "@/components/pricing/pricing-faq"
 import { SharedFooter } from "@/components/layout/shared-footer"
 import { FEATURE_COMPARISON, formatPrice, getMainPlans } from "@/lib/pricing"
@@ -88,7 +89,7 @@ export default function PricingPage() {
                 Duidelijke abonnementen voor elke groeifase
               </h1>
               <p className="mt-5 text-lg leading-relaxed text-[var(--landing-muted)]">
-                Bronze zet je bedrijf online, Silver helpt meer aanvragen binnen te krijgen en Gold voegt online afspraken en boekingsbeheer toe.
+                Bronze zet je bedrijf professioneel online, Silver biedt meer mogelijkheden en Gold voegt onbeperkte secties, dienstenbeheer, meertaligheid en priority support toe. Booking & Facturatie voeg je aan elk plan toe.
               </p>
               <p className="mt-3 text-sm font-semibold text-[var(--landing-primary)]">
                 Alle vermelde prijzen zijn exclusief btw.
@@ -100,9 +101,7 @@ export default function PricingPage() {
                 <PricingCard key={plan.id} plan={plan} isPopular={plan.isPopular} />
               ))}
             </div>
-            <p className="mt-8 text-center text-sm font-semibold text-[var(--landing-primary-dark)]">
-              Meertaligheid is inbegrepen bij Gold en beschikbaar als add-on van € 2,99 per maand bij Bronze en Silver.
-            </p>
+            <PricingAddons />
           </div>
         </section>
 
@@ -116,7 +115,7 @@ export default function PricingPage() {
                 Bekijk wat elk plan toevoegt
               </h2>
               <p className="mt-4 text-lg leading-relaxed text-[var(--landing-muted)]">
-                De pakketten zijn opgebouwd rond functionaliteit: eerst online staan, daarna aanvragen ontvangen en vervolgens boekingen beheren.
+                Vergelijk de websitepakketten en breid je gekozen plan uit met Booking & Facturatie of meertaligheid.
               </p>
             </div>
 

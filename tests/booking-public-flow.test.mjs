@@ -37,7 +37,7 @@ test("public context requires a published calendar section, service membership, 
   assert.match(context, /website\?\.published && isWebsiteLiveSnapshot/)
   assert.match(context, /bookingSpaceEnabled !== true \|\| data\.bookingSpaceMode !== "calendar"/)
   assert.match(context, /selected\.length === 0 \|\| selected\.includes\(serviceId\)/)
-  assert.match(context, /getMinimumPlanForCapability\("booking_system"\)/)
+  assert.match(context, /!hasBookingAddonAccess\(subscription\)/)
   assert.match(context, /shouldEnforcePlanEntitlements\(\)/)
   assert.match(context, /booking_holds/)
 })

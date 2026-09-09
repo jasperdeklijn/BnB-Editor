@@ -9,8 +9,6 @@ import { Label } from "@/components/ui/label"
 import { createClient } from "@/lib/supabase/client"
 import { getOfferingCopy, type BusinessCategory } from "@/lib/business/categories"
 import type { SectionEditorProps } from "@/components/editor/section-editor-types"
-import { TierBadge } from "@/components/editor/tier-badge"
-import { planMeetsRequirement } from "@/lib/entitlements"
 
 interface AvailableService {
   id: string
@@ -46,7 +44,7 @@ export function ServicesSectionEditor({
   sectionTargetOptions,
   updateField,
   updateFields,
-  currentPlan,
+  hasBookingAccess = false,
 }: SectionEditorProps) {
   const [availableServices, setAvailableServices] = useState<AvailableService[]>([])
   const [loadingServices, setLoadingServices] = useState(false)
@@ -350,7 +348,7 @@ export function ServicesSectionEditor({
           <Label className="flex items-center gap-2">
             <CalendarDays className="h-3.5 w-3.5" />
             Boekingsruimte
-            <TierBadge plan="gold" />
+            <span className="text-xs font-semibold text-primary">Booking & Facturatie</span>
           </Label>
           <button
             type="button"
@@ -374,9 +372,9 @@ export function ServicesSectionEditor({
         <p className="text-xs text-muted-foreground">
           Voeg een compacte aanvraag- of boekingsruimte toe onder deze {offeringCopy.title.toLowerCase()} sectie.
         </p>
-        {(section.data as any).bookingSpaceEnabled && !planMeetsRequirement(currentPlan, "gold") ? (
+        {(section.data as any).bookingSpaceEnabled && !hasBookingAccess ? (
           <p className="rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-900">
-            De boekingsruimte vereist Gold. Je kunt haar instellen en testen, maar deze versie nog niet live zetten.
+            De boekingsruimte vereist de Booking & Facturatie (€ 14,95 per maand). Je kunt haar instellen en testen, maar deze versie nog niet live zetten.
           </p>
         ) : null}
 

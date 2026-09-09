@@ -8,7 +8,7 @@ import { BillingSummarySidebar } from "@/components/billing/billing-summary-side
 import { InvoiceHistoryTable } from "@/components/billing/invoice-history-table"
 import { PlanComparisonTable } from "@/components/billing/plan-comparison-table"
 import { Card } from "@/components/ui/card"
-import { getPlanById, MULTILINGUAL_ADDON_MONTHLY_PRICE } from "@/lib/pricing"
+import { getPlanById, BOOKING_ADDON_NAME, BOOKING_ADDON_FEATURES, BOOKING_ADDON_MONTHLY_PRICE, MULTILINGUAL_ADDON_MONTHLY_PRICE, formatPrice } from "@/lib/pricing"
 import type { UserBillingData } from "@/lib/types/pricing"
 
 interface BillingClientProps {
@@ -24,6 +24,7 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
   }, [])
 
   const currentPlan = getPlanById(billingData.currentPlan)
+  const bookingAddonPrice = billingData.addons.bookingAddon ? BOOKING_ADDON_MONTHLY_PRICE : 0
   const multilingualAddonPrice = currentPlan.id !== "gold" && billingData.addons.multilingualAddon
     ? MULTILINGUAL_ADDON_MONTHLY_PRICE
     : 0
@@ -81,11 +82,21 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
 
           <div className="animate-in fade-in duration-700 delay-300">
             <h3 className="mb-4 text-xl font-semibold text-foreground">
-              Talenpakket
+              Add-ons
             </h3>
+            <div className="mb-4">
+              <AddonToggleCard
+                addonId="bookingAddon"
+                addonName={BOOKING_ADDON_NAME}
+                isEnabled={billingData.addons.bookingAddon}
+                changesEnabled={false}
+                monthlyPrice={BOOKING_ADDON_MONTHLY_PRICE}
+                features={BOOKING_ADDON_FEATURES}
+              />
+            </div>
             <AddonToggleCard
               addonId="multilingualAddon"
-              addonName="Meertalige website"
+              addonName="Meertaligheid"
               isEnabled={billingData.addons.multilingualAddon}
               included={currentPlan.id === "gold"}
               changesEnabled={false}
@@ -111,7 +122,7 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
             currentPlan={currentPlan}
             nextBillingDate={billingData.nextBillingDate}
             monthlyCharge={billingData.currentPrice}
-            addonsPrice={multilingualAddonPrice}
+            addonsPrice={bookingAddonPrice + multilingualAddonPrice}
           />
         </div>
       </div>
@@ -124,7 +135,7 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
           <li>Alle vermelde abonnements- en add-onprijzen zijn exclusief btw.</li>
           <li>U kunt op elk moment van abonnement wisselen.</li>
           <li>Uw abonnement wordt automatisch maandelijks verlengd.</li>
-          <li>Gold bevat online afspraken, beschikbaarheid en boekingsbeheer.</li>
+          <li>{BOOKING_ADDON_NAME} kost bij elk abonnement {formatPrice(BOOKING_ADDON_MONTHLY_PRICE)} per maand extra en bevat boekingen, beschikbaarheid, bevestigingen, klantgegevens en facturen vanuit boekingen, inclusief PDF en historie.</li>
           <li>Meertaligheid is inbegrepen bij Gold en kost bij Bronze of Silver € 2,99 per maand extra.</li>
           <li>Priority support is inbegrepen bij Gold.</li>
         </ul>

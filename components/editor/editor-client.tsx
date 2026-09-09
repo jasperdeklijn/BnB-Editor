@@ -169,6 +169,7 @@ interface EditorClientProps {
   initialBusinessCategory?: BusinessCategory | null
   currentPlan: PlanId
   hasMultilingualAccess: boolean
+  hasBookingAccess: boolean
   subscriptionNotice?: string | null
   enforcementMode: PlanEnforcementMode
 }
@@ -179,6 +180,7 @@ export function EditorClient({
   initialBusinessCategory = null,
   currentPlan,
   hasMultilingualAccess,
+  hasBookingAccess,
   subscriptionNotice,
   enforcementMode,
 }: EditorClientProps) {
@@ -260,12 +262,13 @@ export function EditorClient({
   }, [])
 
   const entitlementResult = useMemo(() => inspectWebsiteEntitlements(currentPlan, {
+    hasBookingAccess,
     sections,
     enabledCapabilities: multilingualEnabled && websiteLocales.some(
       (locale) => !locale.is_default && locale.is_enabled,
     ) ? ["multilingual_websites"] : [],
     capabilityOverrides: hasMultilingualAccess ? ["multilingual_websites"] : [],
-  }), [currentPlan, hasMultilingualAccess, multilingualEnabled, sections, websiteLocales])
+  }), [currentPlan, hasBookingAccess, hasMultilingualAccess, multilingualEnabled, sections, websiteLocales])
   const publishEnforcementActive = enforcementMode === "enforce"
   const canPublishDraft = !publishEnforcementActive || entitlementResult.allowed
   const activePreflightViolations = serverPublishViolations.length > 0
@@ -278,7 +281,7 @@ export function EditorClient({
       (violation) => violation.code === "feature.requires_plan" && violation.capability !== "booking_system",
     ),
     booking: activePreflightViolations.filter(
-      (violation) => violation.code === "feature.requires_plan" && violation.capability === "booking_system",
+      (violation) => violation.code === "feature.requires_addon",
     ),
   }), [activePreflightViolations])
   const preflightGroupEntries = useMemo(() => [
@@ -312,8 +315,10 @@ export function EditorClient({
       violationCodes: addedViolations.map((violation) => violation.code),
     })
 
-    toast.warning(`${getPlanDisplayName(requiredPlan)}-functie toegevoegd`, {
-      description: `${affectedLabel}. Je kunt dit blijven instellen en bekijken, maar deze versie kan pas live na een upgrade of wanneer je de functie verwijdert.`,
+    toast.warning(addedViolations.some((violation) => violation.requiredAddon === "bookingAddon")
+      ? "Booking & Facturatie vereist"
+      : `${getPlanDisplayName(requiredPlan)}-functie toegevoegd`, {
+      description: `${affectedLabel}. Je kunt dit blijven instellen en bekijken. Voor publicatie is het vereiste abonnement of de add-on nodig, of kun je de functie verwijderen.`,
       duration: 8000,
       action: {
         label: "Bekijk abonnementen",
@@ -331,7 +336,7 @@ export function EditorClient({
 
   useEffect(() => {
     setServerPublishViolations([])
-  }, [currentPlan, sections])
+  }, [currentPlan, hasBookingAccess, hasMultilingualAccess, sections])
 
   useEffect(() => {
     if (activePreflightViolations.length === 0) setPublishPreflightOpen(false)
@@ -1878,7 +1883,7 @@ export function EditorClient({
               {entitlementResult.violations.map((violation) => (
                 <li key={getViolationKey(violation)} className="flex items-center justify-between gap-3 rounded-md bg-amber-500/5 px-3 py-2">
                   <span className="min-w-0 truncate">{violation.label}</span>
-                  <TierBadge plan={violation.requiredPlan} prefix="Vereist" />
+                  <span>{violation.requiredAddon === "bookingAddon" ? <span className="text-xs font-semibold text-primary">Booking & Facturatie · € 14,95/mnd</span> : <TierBadge plan={violation.requiredPlan} prefix="Vereist" />}</span>
                 </li>
               ))}
             </ul>
@@ -1958,6 +1963,7 @@ export function EditorClient({
             businessId={businessId}
             businessCategory={businessCategory}
             currentPlan={currentPlan}
+            hasBookingAccess={hasBookingAccess}
             currentTheme={themeConfig}
             onThemeChange={setThemeConfig}
             onTemplateApplied={handleTemplateApplied}
@@ -2028,6 +2034,7 @@ export function EditorClient({
               businessId={businessId}
               businessCategory={businessCategory}
               currentPlan={currentPlan}
+              hasBookingAccess={hasBookingAccess}
               currentTheme={themeConfig}
               onThemeChange={setThemeConfig}
               onTemplateApplied={handleTemplateApplied}
@@ -2052,6 +2059,7 @@ export function EditorClient({
               businessId={businessId}
               businessCategory={businessCategory}
               currentPlan={currentPlan}
+              hasBookingAccess={hasBookingAccess}
               currentTheme={themeConfig}
               onThemeChange={setThemeConfig}
               onTemplateApplied={handleTemplateApplied}
@@ -2232,7 +2240,7 @@ export function EditorClient({
                               </p>
                             ) : null}
                           </div>
-                          <TierBadge plan={violation.requiredPlan} prefix="Vereist" />
+                          <span>{violation.requiredAddon === "bookingAddon" ? <span className="text-xs font-semibold text-primary">Booking & Facturatie · € 14,95/mnd</span> : <TierBadge plan={violation.requiredPlan} prefix="Vereist" />}</span>
                         </div>
                         <div className="mt-3 flex flex-wrap gap-2">
                           <Button type="button" variant="outline" size="xs" onClick={() => handlePreflightLocation(violation)}>

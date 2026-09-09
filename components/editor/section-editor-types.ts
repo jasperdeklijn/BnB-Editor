@@ -16,6 +16,7 @@ export interface SectionEditorProps {
   businessId?: string | null
   businessCategory?: BusinessCategory | null
   currentPlan: PlanId
+  hasBookingAccess?: boolean
   sectionTargetOptions: SectionTargetOption[]
   updateField: (field: string, value: any) => void
   updateFields: (values: Record<string, unknown>) => void

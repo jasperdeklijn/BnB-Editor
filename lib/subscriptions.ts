@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 
 import { getPlanById } from "@/lib/pricing"
+import { getMinimumPlanForCapability, isBookingCapability, planMeetsRequirement, type EntitlementCapability } from "@/lib/entitlements"
 import type {
   PlanId,
   SubscriptionStatus,
@@ -24,6 +25,7 @@ export interface SubscriptionRecord {
   stripe_customer_id: string | null
   stripe_subscription_id: string | null
   stripe_price_id: string | null
+  booking_addon_active: boolean
   multilingual_addon_active: boolean
   multilingual_addon_price: number
   stripe_multilingual_addon_item_id: string | null
@@ -52,6 +54,7 @@ const SUBSCRIPTION_COLUMNS = [
   "stripe_customer_id",
   "stripe_subscription_id",
   "stripe_price_id",
+  "booking_addon_active",
   "multilingual_addon_active",
   "multilingual_addon_price",
   "stripe_multilingual_addon_item_id",
@@ -105,11 +108,28 @@ export async function getUserSubscription(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<ResolvedSubscription> {
-  const { data, error } = await supabase
+  const querySubscription = (columns: string) => supabase
     .from("subscriptions")
-    .select(SUBSCRIPTION_COLUMNS)
+    .select(columns)
     .eq("user_id", userId)
     .maybeSingle()
+
+  let { data, error } = await querySubscription(SUBSCRIPTION_COLUMNS)
+
+  // Allow the editor to load during a rolling schema deployment. Only retry
+  // this specific missing column; unrelated database/auth failures still throw.
+  const bookingColumnMissing = error && (
+    (error.code === "42703" && /column (?:subscriptions\.)?booking_addon_active does not exist/i.test(error.message))
+    || (error.code === "PGRST204" && /'booking_addon_active' column of 'subscriptions'/i.test(error.message))
+  )
+  if (bookingColumnMissing) {
+    const legacyColumns = SUBSCRIPTION_COLUMNS.split(", ")
+      .filter((column) => column !== "booking_addon_active")
+      .join(", ")
+    const legacyResult = await querySubscription(legacyColumns)
+    data = legacyResult.data
+    error = legacyResult.error
+  }
 
   if (error) {
     throw new Error(`Could not resolve subscription: ${error.message}`)
@@ -117,6 +137,7 @@ export async function getUserSubscription(
 
   const record = data ? {
     ...(data as unknown as SubscriptionRecord),
+    booking_addon_active: (data as unknown as Record<string, unknown>).booking_addon_active === true,
     multilingual_addon_active: Boolean(
       (data as unknown as Record<string, unknown>).multilingual_addon_active,
     ),
@@ -164,6 +185,17 @@ export function hasMultilingualWebsiteAccess(resolved: ResolvedSubscription): bo
   return resolved.source === "subscription" && resolved.record?.multilingual_addon_active === true
 }
 
+export function hasBookingAddonAccess(resolved: ResolvedSubscription): boolean {
+  return resolved.source === "subscription" && resolved.record?.booking_addon_active === true
+}
+
+export function hasSubscriptionCapability(resolved: ResolvedSubscription, capability: EntitlementCapability): boolean {
+  if (isBookingCapability(capability)) return hasBookingAddonAccess(resolved)
+  if (capability === "service_management") return resolved.planId === "gold" || hasBookingAddonAccess(resolved)
+  if (capability === "multilingual_websites") return hasMultilingualWebsiteAccess(resolved)
+  return planMeetsRequirement(resolved.planId, getMinimumPlanForCapability(capability))
+}
+
 export function toUserBillingData(resolved: ResolvedSubscription): UserBillingData {
   const plan = getPlanById(resolved.planId)
   const record = resolved.record
@@ -181,7 +213,7 @@ export function toUserBillingData(resolved: ResolvedSubscription): UserBillingDa
         : plan.monthlyPrice,
     nextBillingDate: record?.current_period_end ? new Date(record.current_period_end) : null,
     addons: {
-      bookingAddon: false,
+      bookingAddon: hasBookingAddonAccess(resolved),
       multilingualAddon:
         resolved.source === "subscription" && record?.multilingual_addon_active === true,
     },

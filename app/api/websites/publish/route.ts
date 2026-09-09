@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { logAuditEvent } from "@/lib/audit-log"
 import { createClient } from "@/lib/supabase/server"
-import { getUserSubscription, hasMultilingualWebsiteAccess } from "@/lib/subscriptions"
+import { getUserSubscription, hasMultilingualWebsiteAccess, hasBookingAddonAccess } from "@/lib/subscriptions"
 import { buildWebsiteLiveSnapshot } from "@/lib/website-snapshot"
 import { inspectWebsiteEntitlements } from "@/lib/entitlements"
 import { getPlanEnforcementMode, shouldEnforcePlanEntitlements } from "@/lib/plan-enforcement"
@@ -171,6 +171,7 @@ export async function POST(request: Request) {
   }
 
   const entitlementResult = inspectWebsiteEntitlements(currentPlan, {
+    hasBookingAccess: hasBookingAddonAccess(subscription),
     sections: liveSnapshot.sections,
     enabledCapabilities: liveSnapshot.locales && liveSnapshot.locales.length > 1
       ? ["multilingual_websites"]

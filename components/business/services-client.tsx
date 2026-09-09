@@ -294,7 +294,7 @@ function BookingSettingsPanel({
                 : preview?.appointment_slots.map((slot) => <li key={slot.start_at}>{formatAppointmentSlot(slot.start_at, slot.timezone)}</li>)}
             </ul>
           ) : <p className="mt-1 text-xs text-muted-foreground">Geen vrije momenten in de komende 14 dagen. Controleer beschikbaarheidsvensters, blokkades en boekregels.</p>}
-          <p className="mt-2 text-[10px] text-muted-foreground">Alleen-lezen voorbeeld. De live kalender gebruikt deze regels; publiek boeken blijft Gold.</p>
+          <p className="mt-2 text-[10px] text-muted-foreground">Alleen-lezen voorbeeld. De live kalender gebruikt deze regels; publiek boeken vereist de Booking & Facturatie.</p>
         </div>
         {draft.booking_enabled ? (
           <div className="rounded-md border border-emerald-500/25 bg-emerald-500/5 p-2.5 text-xs text-emerald-950">

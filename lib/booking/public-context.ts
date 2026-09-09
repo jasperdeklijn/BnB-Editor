@@ -2,10 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 
 import type { BusyCalendarEntryInput } from "@/lib/booking/availability"
 import type { ServiceBookingSettings } from "@/lib/booking/types"
-import { getMinimumPlanForCapability, planMeetsRequirement } from "@/lib/entitlements"
 import { DEFAULT_WEBSITE_LOCALE, isSupportedWebsiteLocale } from "@/lib/i18n/locales"
 import { shouldEnforcePlanEntitlements } from "@/lib/plan-enforcement"
-import { getUserSubscription } from "@/lib/subscriptions"
+import { getUserSubscription, hasBookingAddonAccess } from "@/lib/subscriptions"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { isWebsiteLiveSnapshot, type SnapshotService, type WebsiteLiveSnapshot } from "@/lib/website-snapshot"
 
@@ -91,8 +90,7 @@ export async function resolvePublicBookingContext(input: {
   }
 
   const subscription = await getUserSubscription(supabase, website.user_id)
-  const requiredPlan = getMinimumPlanForCapability("booking_system")
-  if (shouldEnforcePlanEntitlements() && !planMeetsRequirement(subscription.planId, requiredPlan)) {
+  if (shouldEnforcePlanEntitlements() && !hasBookingAddonAccess(subscription)) {
     throw new PublicBookingError(
       "Online boeken is niet beschikbaar binnen het huidige abonnement van deze website.",
       403,

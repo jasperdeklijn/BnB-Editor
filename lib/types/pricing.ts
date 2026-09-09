@@ -39,7 +39,7 @@ export interface Subscription {
   nextBillingDate: Date
   createdAt: Date
   updatedAt: Date
-  // Kept for existing billing records while pricing is plan-based.
+  // Optional features billed separately from the base plan.
   addons: {
     bookingAddon: boolean
     multilingualAddon: boolean

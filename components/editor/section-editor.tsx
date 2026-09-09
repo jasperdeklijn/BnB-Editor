@@ -60,6 +60,7 @@ interface SelectionEditorProps {
   businessId?: string | null
   businessCategory?: BusinessCategory | null
   currentPlan: PlanId
+  hasBookingAccess?: boolean
   currentTheme?: ThemeConfig | null
   showHeader?: boolean
 }
@@ -218,6 +219,7 @@ export function SelectionEditor({
   businessId,
   businessCategory,
   currentPlan,
+  hasBookingAccess = false,
   currentTheme,
   showHeader = true,
 }: SelectionEditorProps) {
@@ -464,6 +466,7 @@ export function SelectionEditor({
               businessId={businessId}
               businessCategory={businessCategory}
               currentPlan={currentPlan}
+              hasBookingAccess={hasBookingAccess}
               sectionTargetOptions={sectionTargetOptions}
               updateField={updateField}
               updateFields={updateFields}

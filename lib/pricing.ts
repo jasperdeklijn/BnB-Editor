@@ -5,22 +5,34 @@
 import { FeatureComparison, PlanId, PricingPlan } from "@/lib/types/pricing"
 
 export const PLAN_ORDER: PlanId[] = ["bronze", "silver", "gold"]
+export const BOOKING_ADDON_MONTHLY_PRICE = 14.95
+export const BOOKING_ADDON_NAME = "Booking & Facturatie"
+export const BOOKING_ADDON_FEATURES = [
+  "Online boekingen",
+  "Beschikbaarheid",
+  "Boekingsbeheer",
+  "Automatische bevestigingen",
+  "Factuur vanuit boeking",
+  "PDF-facturen",
+  "Klantgegevens",
+  "Factuurhistorie",
+]
 export const MULTILINGUAL_ADDON_MONTHLY_PRICE = 2.99
 
 export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
   bronze: {
     id: "bronze",
     name: "Bronze",
-    description: "Alles wat u nodig heeft om uw bedrijf professioneel online te zetten.",
+    description: "Voor ondernemers die vooral professioneel online willen staan.",
     monthlyPrice: 7.95,
     currency: "EUR",
     features: [
-      "Responsive website",
-      "Eigen domein met SSL",
-      "SEO-vriendelijke pagina's",
-      "Mobiel geoptimaliseerd",
-      "Contactformulier",
-      "Tot 6 secties",
+      "Website",
+      "Eigen domein",
+      "SSL",
+      "SEO-basis",
+      "Contact",
+      "Maximaal 6 secties",
     ],
     isAddon: false,
     isPopular: false,
@@ -29,16 +41,19 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
   silver: {
     id: "silver",
     name: "Silver",
-    description: "Voor bedrijven die meer aanvragen en contactmomenten uit hun website willen halen.",
+    description: "Voor ondernemers die meer uit hun website willen halen.",
     monthlyPrice: 14.95,
     currency: "EUR",
     features: [
       "Alles uit Bronze",
-      "Tot 10 secties",
-      "Galerij, reviews, FAQ en openingstijden",
-      "Prijs- en CTA-secties",
-      "Aanvragen per e-mail",
-      "WhatsApp contactknop",
+      "Maximaal 10 secties",
+      "Galerie",
+      "Reviews",
+      "FAQ",
+      "Openingstijden",
+      "Prijssecties",
+      "CTA",
+      "Aanvragen",
     ],
     badge: "MEEST GEKOZEN",
     isAddon: false,
@@ -48,18 +63,15 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
   gold: {
     id: "gold",
     name: "Gold",
-    description: "Voor bedrijven die afspraken, beschikbaarheid en boekingen online willen beheren.",
+    description: "Voor ondernemers die een uitgebreide website en extra ondersteuning willen.",
     monthlyPrice: 24.95,
     currency: "EUR",
     features: [
       "Alles uit Silver",
       "Onbeperkte secties",
-      "Online afspraken boeken",
-      "Boekingskalender",
-      "Beschikbaarheid beheren",
-      "Automatische bevestigingen",
-      "Boekingsdashboard",
-      "Meertalige website",
+      "Uitgebreide functies",
+      "Diensten beheren",
+      "Meertaligheid",
       "Priority support",
     ],
     isAddon: false,
@@ -69,6 +81,12 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
 }
 
 export const FEATURE_COMPARISON: FeatureComparison[] = [
+  {
+    feature: "SEO-basis",
+    bronze: true,
+    silver: true,
+    gold: true,
+  },
   {
     feature: "Professionele website",
     bronze: true,
@@ -94,7 +112,7 @@ export const FEATURE_COMPARISON: FeatureComparison[] = [
     gold: "Onbeperkt",
   },
   {
-    feature: "Galerij, reviews, FAQ en openingstijden",
+    feature: "Galerie, reviews, FAQ en openingstijden",
     bronze: false,
     silver: true,
     gold: true,
@@ -124,28 +142,46 @@ export const FEATURE_COMPARISON: FeatureComparison[] = [
     gold: true,
   },
   {
-    feature: "Online boekingssysteem",
-    bronze: false,
-    silver: false,
+    feature: "Diensten beheren",
+    bronze: "Via Booking & Facturatie",
+    silver: "Via Booking & Facturatie",
     gold: true,
+  },
+  {
+    feature: "Online boekingssysteem",
+    bronze: "Booking & Facturatie",
+    silver: "Booking & Facturatie",
+    gold: "Booking & Facturatie",
   },
   {
     feature: "Beschikbaarheidskalender",
-    bronze: false,
-    silver: false,
-    gold: true,
+    bronze: "Booking & Facturatie",
+    silver: "Booking & Facturatie",
+    gold: "Booking & Facturatie",
   },
   {
     feature: "Automatische boekingsbevestigingen",
-    bronze: false,
-    silver: false,
-    gold: true,
+    bronze: "Booking & Facturatie",
+    silver: "Booking & Facturatie",
+    gold: "Booking & Facturatie",
   },
   {
     feature: "Boekingsbeheer",
-    bronze: false,
-    silver: false,
-    gold: true,
+    bronze: "Booking & Facturatie",
+    silver: "Booking & Facturatie",
+    gold: "Booking & Facturatie",
+  },
+  {
+    feature: "Factuur vanuit boeking en PDF-facturen",
+    bronze: BOOKING_ADDON_NAME,
+    silver: BOOKING_ADDON_NAME,
+    gold: BOOKING_ADDON_NAME,
+  },
+  {
+    feature: "Klantgegevens en factuurhistorie",
+    bronze: BOOKING_ADDON_NAME,
+    silver: BOOKING_ADDON_NAME,
+    gold: BOOKING_ADDON_NAME,
   },
   {
     feature: "Meertalige website",
@@ -162,6 +198,11 @@ export const FEATURE_COMPARISON: FeatureComparison[] = [
 ]
 
 export const PRICING_FAQ = [
+  {
+    question: "Wat zit er in Booking & Facturatie?",
+    answer:
+      `${BOOKING_ADDON_NAME} kost ${formatPrice(BOOKING_ADDON_MONTHLY_PRICE)} per maand exclusief btw en is beschikbaar bij Bronze, Silver en Gold. De add-on bevat online boekingen, beschikbaarheid, boekingsbeheer, automatische bevestigingen, facturen vanuit boekingen, PDF-facturen, klantgegevens en factuurhistorie. Ook het beheer van de boekbare diensten is inbegrepen.`,
+  },
   {
     question: "Kan ik een meertalige website maken?",
     answer:
@@ -180,7 +221,7 @@ export const PRICING_FAQ = [
   {
     question: "Wanneer heb ik Gold nodig?",
     answer:
-      "Gold past bij bedrijven die werken op afspraak, zoals salons, B&B's, coaches, therapeuten, consultants en andere dienstverleners.",
+      "Gold biedt onbeperkte secties, uitgebreide functies, dienstenbeheer, meertaligheid en priority support. Online boeken en facturen vanuit boekingen zijn bij elk abonnement beschikbaar met Booking & Facturatie.",
   },
   {
     question: "Zijn domein en SSL inbegrepen?",
@@ -216,14 +257,15 @@ export function calculateMonthlyPrice(
   const multilingualAddonPrice = planId !== "gold" && addons.multilingualAddon
     ? MULTILINGUAL_ADDON_MONTHLY_PRICE
     : 0
-  return getPlanById(planId).monthlyPrice + multilingualAddonPrice
+  const bookingAddonPrice = addons.bookingAddon ? BOOKING_ADDON_MONTHLY_PRICE : 0
+  return Math.round((getPlanById(planId).monthlyPrice + multilingualAddonPrice + bookingAddonPrice) * 100) / 100
 }
 
 export function formatPrice(amount: number, currency: "EUR" = "EUR"): string {
   return new Intl.NumberFormat("nl-NL", {
     style: "currency",
     currency,
-    minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount)
 }

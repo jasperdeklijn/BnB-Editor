@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { PricingCard } from "@/components/pricing/pricing-card"
+import { PricingAddons } from "@/components/pricing/pricing-addons"
 import { getMainPlans } from "@/lib/pricing"
 import { ArrowRight } from "lucide-react"
 
@@ -20,7 +21,7 @@ export function PricingSection() {
             Kies het plan dat past bij je bedrijf
           </h2>
           <p className="mt-4 text-lg leading-relaxed text-[var(--landing-muted)]">
-            Start met een professionele website, breid uit met aanvragen en ga door naar online boekingen wanneer je daar klaar voor bent.
+            Kies je websitepakket en breid uit met Booking & Facturatie of meertaligheid wanneer je daar klaar voor bent.
           </p>
           <p className="mt-3 text-sm font-semibold text-[var(--landing-primary)]">
             Alle vermelde prijzen zijn exclusief btw.
@@ -33,9 +34,7 @@ export function PricingSection() {
           ))}
         </div>
 
-        <p className="mb-10 text-center text-sm font-semibold text-[var(--landing-primary-dark)]">
-          Meertaligheid is inbegrepen bij Gold en kost als add-on € 2,99 per maand bij Bronze en Silver.
-        </p>
+        <div className="mb-10"><PricingAddons /></div>
 
         <div className="text-center animate-in fade-in duration-700 delay-300">
           <Button

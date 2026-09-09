@@ -6,9 +6,9 @@ import {
   getMinimumPlanForCapability,
   getRequestEmailCapability,
   getRequestSubmissionCapability,
-  planMeetsRequirement,
+  isBookingCapability,
 } from "@/lib/entitlements"
-import { getUserSubscription } from "@/lib/subscriptions"
+import { getUserSubscription, hasSubscriptionCapability } from "@/lib/subscriptions"
 import { getPlanEnforcementMode, shouldEnforcePlanEntitlements } from "@/lib/plan-enforcement"
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
 import { PLATFORM_EMAILS } from "@/lib/platform"
@@ -362,7 +362,7 @@ export async function POST(request: NextRequest) {
     const enforcementMode = getPlanEnforcementMode()
     const submissionCapability = getRequestSubmissionCapability(requestType)
     const submissionRequiredPlan = getMinimumPlanForCapability(submissionCapability)
-    if (!planMeetsRequirement(subscription.planId, submissionRequiredPlan) && shouldEnforcePlanEntitlements(enforcementMode)) {
+    if (!hasSubscriptionCapability(subscription, submissionCapability) && shouldEnforcePlanEntitlements(enforcementMode)) {
       logRejectedRequest("runtime_entitlement_required", request, {
         websiteId,
         requestType,
@@ -377,6 +377,7 @@ export async function POST(request: NextRequest) {
           capability: submissionCapability,
           currentPlan: subscription.planId,
           requiredPlan: submissionRequiredPlan,
+          requiredAddon: isBookingCapability(submissionCapability) ? "bookingAddon" : undefined,
         },
         { status: 403 },
       )
@@ -384,12 +385,9 @@ export async function POST(request: NextRequest) {
 
     const emailCapability = getRequestEmailCapability(requestType)
     const canSendEmail = emailCapability
-      ? !shouldEnforcePlanEntitlements(enforcementMode) || planMeetsRequirement(subscription.planId, getMinimumPlanForCapability(emailCapability))
+      ? !shouldEnforcePlanEntitlements(enforcementMode) || hasSubscriptionCapability(subscription, emailCapability)
       : false
-    const canCreateCalendarEntry = !shouldEnforcePlanEntitlements(enforcementMode) || planMeetsRequirement(
-        subscription.planId,
-        getMinimumPlanForCapability("booking_management"),
-      )
+    const canCreateCalendarEntry = !shouldEnforcePlanEntitlements(enforcementMode) || hasSubscriptionCapability(subscription, "booking_management")
 
     let calendarServiceId: string | null = null
 

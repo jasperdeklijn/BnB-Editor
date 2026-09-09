@@ -186,7 +186,7 @@ export function ReservationsClient({
       {schemaError ? <StatusMessage tone="error">{schemaError}</StatusMessage> : null}
       {!canManage ? (
         <StatusMessage tone="warning">
-          U kunt reserveringen bekijken. Status-, prijs- en factuurwijzigingen vereisen het Gold-abonnement.
+          U kunt reserveringen bekijken. Status-, prijs- en factuurwijzigingen vereisen Booking & Facturatie.
         </StatusMessage>
       ) : null}
       {overview.financeUnavailable ? (

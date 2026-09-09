@@ -13,6 +13,8 @@ This runbook enables the Bronze, Silver, and Gold entitlement system after the s
 - [ ] Confirm existing published websites have a non-null `live_snapshot`, `live_published_at`, and `draft_version`.
 - [ ] Confirm `promote_website_live_snapshot` is executable by `authenticated`, but not `public`/anonymous users.
 - [ ] Confirm each existing customer has the intended subscription row or intentionally receives the temporary Gold default.
+- [ ] Apply `20260908140000_add_booking_subscription_addon.sql` before deploying the separate Booking & Facturatie model. Review existing Gold customers: booking defaults to disabled and requires an explicit entitlement; the temporary Gold fallback does not grant booking.
+- [ ] Apply `20260909120000_service_management_entitlements.sql`: services can be managed with Gold or Booking & Facturatie (€14.95/month). Verify both server mutations and direct authenticated database writes; tenant ownership remains required.
 
 ## Enforcement modes
 
@@ -25,6 +27,8 @@ Set the server-only `PLAN_ENFORCEMENT_MODE` environment variable:
 | `enforce` | Yes | Yes | Final production state |
 
 Invalid or missing values default to `enforce`. This prevents a spelling mistake from silently disabling protection.
+
+Service mutation RLS policies added in September 2026 are always enforced by the database, independently of this application switch. See `docs/pricing.md` for the current plans and migration compatibility behavior.
 
 Recommended rollout:
 
@@ -57,12 +61,13 @@ Run each row at desktop width and at approximately 390px mobile width.
 | Bronze | Quote/appointment/WhatsApp request mode | Silver control warning | Blocked |
 | Silver | 10 allowed sections | All tools visible | Allowed |
 | Silver | 11 sections | Gold count warning | Blocked |
-| Silver | Services booking space | Gold warning; remains editable | Blocked |
-| Gold | More than 10 sections and booking | All tools visible | Allowed |
+| Any plan without Booking & Facturatie | Services booking space | Booking & Facturatie warning; remains editable | Blocked |
+| Bronze/Silver with Booking & Facturatie | Booking within section limits | Booking available | Allowed |
+| Gold with Booking & Facturatie | More than 10 sections and booking | All tools visible | Allowed |
 
 For every blocked row:
 
-- [ ] The toast names the required tier.
+- [ ] The toast names the required tier or Booking & Facturatie.
 - [ ] The persistent summary remains after dismissing the toast.
 - [ ] `Ga naar sectie`, `Functie uitschakelen`, and billing links work where applicable.
 - [ ] Editor publishing and the domain-dashboard toggle show equivalent structured blockers.
@@ -72,10 +77,9 @@ For every blocked row:
 
 - [ ] Submit a Bronze contact form: request is stored without Silver email delivery.
 - [ ] Attempt quote, appointment, and WhatsApp request APIs on Bronze: server returns `RUNTIME_ENTITLEMENT_REQUIRED`.
-- [ ] Submit a Silver appointment request: notification is allowed but no Gold calendar entry is created.
-- [ ] Attempt a booking request on Silver: server returns `RUNTIME_ENTITLEMENT_REQUIRED`.
-- [ ] Call calendar-entry and availability mutations directly on Bronze/Silver: server rejects them.
-- [ ] Repeat booking and calendar mutations on Gold: server permits authorized operations.
+- [ ] Submit a Silver appointment request without Booking & Facturatie: notification is allowed but no calendar entry is created.
+- [ ] Attempt booking requests or calendar-entry/availability mutations on any plan without Booking & Facturatie: server returns `RUNTIME_ENTITLEMENT_REQUIRED`.
+- [ ] Repeat booking and calendar mutations on each plan with an active Booking & Facturatie: server permits authorized operations.
 - [ ] Submit contact/request/booking forms in editor preview: success is simulated and no database/email/calendar side effect occurs.
 - [ ] Call `/api/websites/publish` directly with a forged `plan`, forged sections, or omitted client preflight: the server ignores them and validates authenticated database state.
 - [ ] Change a section or subscription during publish: API returns `PUBLISH_STATE_CHANGED` and the previous live snapshot remains intact.

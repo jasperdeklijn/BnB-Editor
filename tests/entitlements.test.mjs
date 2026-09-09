@@ -93,7 +93,7 @@ test("mixed-tier section settings are inspected independently", () => {
     sections: [section("booking", "services", { bookingSpaceEnabled: true })],
   })
   assert.equal(silverResult.allowed, false)
-  assert.equal(silverResult.requiredPlan, "gold")
+  assert.equal(silverResult.violations[0].requiredAddon, "bookingAddon")
   assert.equal(silverResult.violations[0].capability, "booking_system")
 })
 
@@ -110,6 +110,7 @@ test("all standalone capability tiers are represented", () => {
     "booking_management",
     "multilingual_websites",
     "priority_support",
+    "service_management",
   ]) {
     assert.ok(getMinimumPlanForCapability(capability))
   }
@@ -118,7 +119,7 @@ test("all standalone capability tiers are represented", () => {
     sections: [],
     enabledCapabilities: ["whatsapp_integration", "availability_calendar"],
   })
-  assert.equal(result.requiredPlan, "gold")
+  assert.equal(result.requiredPlan, "silver")
   assert.equal(result.violations.length, 2)
 })
 
@@ -147,4 +148,31 @@ test("public request types map to the correct runtime capability", () => {
   assert.equal(getRequestSubmissionCapability("booking_request"), "booking_system")
   assert.equal(getRequestEmailCapability("contact"), "email_contact_requests")
   assert.equal(getRequestEmailCapability("whatsapp"), null)
+})
+
+test("booking requires the add-on on every plan and preserves section limits", () => {
+  for (const plan of ["bronze", "silver", "gold"]) {
+    const input = {
+      sections: [section("booking", "services", { bookingSpaceEnabled: true })],
+      enabledCapabilities: ["availability_calendar", "automatic_booking_confirmations", "booking_management"],
+    }
+    const blocked = inspectWebsiteEntitlements(plan, input)
+    assert.equal(blocked.allowed, false)
+    assert.equal(blocked.violations.length, 4)
+    assert.ok(blocked.violations.every((violation) => violation.requiredAddon === "bookingAddon"))
+    assert.equal(inspectWebsiteEntitlements(plan, { ...input, hasBookingAccess: true }).allowed, true)
+  }
+  const bronze = inspectWebsiteEntitlements("bronze", {
+    hasBookingAccess: true,
+    sections: Array.from({ length: 7 }, (_, index) => section(String(index), "services", { bookingSpaceEnabled: true })),
+  })
+  assert.deepEqual(bronze.violations.map((violation) => violation.code), ["section.limit_exceeded"])
+})
+
+test("service management is included in Gold and available through Booking & Facturatie", () => {
+  for (const plan of ["bronze", "silver", "gold"]) {
+    const input = { sections: [], enabledCapabilities: ["service_management"] }
+    assert.equal(inspectWebsiteEntitlements(plan, input).allowed, plan === "gold")
+    assert.equal(inspectWebsiteEntitlements(plan, { ...input, hasBookingAccess: true }).allowed, true)
+  }
 })

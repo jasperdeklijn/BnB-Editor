@@ -15,17 +15,20 @@ export type EntitlementCapability =
   | "booking_management"
   | "multilingual_websites"
   | "priority_support"
+  | "service_management"
 
 export type EntitlementViolationCode =
   | "section.requires_plan"
   | "section.limit_exceeded"
   | "feature.requires_plan"
+  | "feature.requires_addon"
 
 export interface EntitlementViolation {
   code: EntitlementViolationCode
   label: string
   currentPlan: PlanId
   requiredPlan: PlanId
+  requiredAddon?: "bookingAddon"
   sectionId?: string
   sectionType?: SectionType
   capability?: EntitlementCapability
@@ -37,6 +40,7 @@ export interface WebsiteEntitlementInput {
   sections: readonly Pick<Section, "id" | "type" | "data">[]
   enabledCapabilities?: readonly EntitlementCapability[]
   capabilityOverrides?: readonly EntitlementCapability[]
+  hasBookingAccess?: boolean
 }
 
 export interface WebsiteEntitlementResult {
@@ -77,12 +81,13 @@ export const CAPABILITY_MINIMUM_PLAN = {
   email_quote_requests: "silver",
   email_appointment_requests: "silver",
   whatsapp_integration: "silver",
-  booking_system: "gold",
-  availability_calendar: "gold",
-  automatic_booking_confirmations: "gold",
-  booking_management: "gold",
+  booking_system: "bronze",
+  availability_calendar: "bronze",
+  automatic_booking_confirmations: "bronze",
+  booking_management: "bronze",
   multilingual_websites: "gold",
   priority_support: "gold",
+  service_management: "gold",
 } as const satisfies Record<EntitlementCapability, PlanId>
 
 const CAPABILITY_LABELS = {
@@ -97,6 +102,7 @@ const CAPABILITY_LABELS = {
   booking_management: "Boekingsbeheer",
   multilingual_websites: "Meertalige website",
   priority_support: "Priority support",
+  service_management: "Diensten beheren",
 } as const satisfies Record<EntitlementCapability, string>
 
 const SECTION_LABELS = {
@@ -139,6 +145,11 @@ export function getMinimumPlanForSection(sectionType: SectionType): PlanId {
 
 export function getMinimumPlanForCapability(capability: EntitlementCapability): PlanId {
   return CAPABILITY_MINIMUM_PLAN[capability]
+}
+
+export function isBookingCapability(capability: EntitlementCapability): boolean {
+  return capability === "booking_system" || capability === "availability_calendar"
+    || capability === "automatic_booking_confirmations" || capability === "booking_management"
 }
 
 export function getRequestSubmissionCapability(requestType: string): EntitlementCapability {
@@ -234,6 +245,22 @@ export function inspectWebsiteEntitlements(
 
   for (const { capability, section } of capabilities.values()) {
     const requiredPlan = getMinimumPlanForCapability(capability)
+    if (capability === "service_management" && input.hasBookingAccess) continue
+    if (isBookingCapability(capability)) {
+      if (!input.hasBookingAccess) {
+        violations.push({
+          code: "feature.requires_addon",
+          label: CAPABILITY_LABELS[capability],
+          currentPlan,
+          requiredPlan: currentPlan,
+          requiredAddon: "bookingAddon",
+          capability,
+          sectionId: section?.id,
+          sectionType: section?.type,
+        })
+      }
+      continue
+    }
     requiredPlans.push(requiredPlan)
     if (capabilityOverrides.has(capability)) continue
     if (planMeetsRequirement(currentPlan, requiredPlan)) continue
