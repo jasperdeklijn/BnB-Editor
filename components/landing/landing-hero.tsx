@@ -65,7 +65,7 @@ export function LandingHero() {
           </div>
         </div>
 
-        <div className="w-full" id="voorbeeld">
+        <div className="w-full">
           <div className="relative overflow-hidden rounded-3xl border border-[var(--landing-border)] bg-white shadow-[0_24px_60px_rgba(31,41,51,0.14)]">
             <div className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[var(--landing-gold-light)] blur-2xl" aria-hidden="true" />
             <div className="flex items-center gap-2 border-b border-[var(--landing-border)] bg-[var(--landing-surface)] px-4 py-3">

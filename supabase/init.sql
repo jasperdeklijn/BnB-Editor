@@ -18,6 +18,18 @@ create extension if not exists "pgcrypto";
 -- Reset application schema objects
 -- ------------------------------------------------------------
 
+-- Keep this list in sync with every application table created below.
+-- CASCADE removes dependent foreign keys, not the referencing tables.
+drop table if exists public.agent_audit_logs cascade;
+drop table if exists public.agent_executions cascade;
+drop table if exists public.agent_approvals cascade;
+drop table if exists public.agent_artifacts cascade;
+drop table if exists public.agent_runs cascade;
+drop table if exists public.agent_job_dependencies cascade;
+drop table if exists public.agent_jobs cascade;
+drop table if exists public.agent_settings cascade;
+drop table if exists public.rate_limit_buckets cascade;
+drop table if exists public.website_form_destinations cascade;
 drop table if exists public.booking_holds cascade;
 drop table if exists public.profiles cascade;
 drop table if exists public.booking_notifications cascade;
@@ -31,6 +43,9 @@ drop table if exists public.booking_status_history cascade;
 drop table if exists public.booking_customer_access cascade;
 drop table if exists public.calendar_export_feeds cascade;
 drop table if exists public.calendar_import_sources cascade;
+drop table if exists public.contact_request_messages cascade;
+drop table if exists public.contact_request_activities cascade;
+drop table if exists public.contact_request_reply_templates cascade;
 drop table if exists public.contact_requests cascade;
 drop table if exists public.audit_logs cascade;
 drop table if exists public.website_section_translations cascade;

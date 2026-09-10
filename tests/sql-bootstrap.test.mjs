@@ -42,11 +42,20 @@ async function checkWindow(db) {
   }
 }
 
-test("full init.sql executes in PostgreSQL and the shared limiter works", async () => {
+test("full init.sql can rebuild an existing schema and the shared limiter works", async () => {
   const db = new PGlite({ extensions: { pgcrypto } })
   try {
     await db.exec(roles + supabaseFixture)
     await db.exec(read("supabase/init.sql"))
+    const foreignKeys = async () => (await db.query(`
+      select conrelid::regclass::text as table_name, conname, pg_get_constraintdef(oid) as definition
+      from pg_constraint
+      where contype = 'f' and connamespace = 'public'::regnamespace
+      order by table_name, conname
+    `)).rows
+    const initialForeignKeys = await foreignKeys()
+    await db.exec(read("supabase/init.sql"))
+    assert.deepEqual(await foreignKeys(), initialForeignKeys, "rebuild must restore all foreign keys")
     await checkWindow(db)
     const before = (await db.query("select * from public.rate_limit_buckets")).rows
     await db.exec(repair)

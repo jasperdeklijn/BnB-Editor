@@ -1,5 +1,6 @@
 import { LandingNav } from "@/components/landing/landing-nav"
 import { LandingHero } from "@/components/landing/landing-hero"
+import { LandingDemo } from "@/components/landing/landing-demo"
 import { LandingFeatures } from "@/components/landing/landing-features"
 import { LandingHowItWorks } from "@/components/landing/landing-how-it-works"
 import { PricingSection } from "@/components/landing/pricing-section"
@@ -92,6 +93,7 @@ export default async function HomePage() {
       />
       <LandingNav />
       <LandingHero />
+      <LandingDemo />
       <LandingFeatures />
       <LandingAudience />
       <LandingHowItWorks />
