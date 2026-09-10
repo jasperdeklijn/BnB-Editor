@@ -39,8 +39,11 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
 
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
-  const [activeIndex, setActiveIndex] = useState(0)
-  const [currentIndex, setCurrentIndex] = useState(0)
+  const [selectedActiveIndex, setActiveIndex] = useState(0)
+  const [selectedCurrentIndex, setCurrentIndex] = useState(0)
+  const lastImageIndex = Math.max(0, images.length - 1)
+  const activeIndex = Math.min(selectedActiveIndex, lastImageIndex)
+  const currentIndex = Math.min(selectedCurrentIndex, lastImageIndex)
 
   const sectionStyle: React.CSSProperties = {
     ...getSectionColorVars(styles),
@@ -435,13 +438,13 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
           </div>
           {/* Navigation */}
           <button
-            onClick={() => setCurrentIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1))}
+            onClick={() => setCurrentIndex(currentIndex > 0 ? currentIndex - 1 : lastImageIndex)}
             className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-[var(--section-accent)] p-2 text-[var(--section-accent-foreground)] backdrop-blur-sm transition-all hover:brightness-90"
           >
             ‹
           </button>
           <button
-            onClick={() => setCurrentIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0))}
+            onClick={() => setCurrentIndex(currentIndex < lastImageIndex ? currentIndex + 1 : 0)}
             className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-[var(--section-accent)] p-2 text-[var(--section-accent-foreground)] backdrop-blur-sm transition-all hover:brightness-90"
           >
             ›
