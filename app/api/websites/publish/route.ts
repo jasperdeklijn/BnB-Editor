@@ -6,6 +6,7 @@ import { buildWebsiteLiveSnapshot } from "@/lib/website-snapshot"
 import { inspectWebsiteEntitlements } from "@/lib/entitlements"
 import { getPlanEnforcementMode, shouldEnforcePlanEntitlements } from "@/lib/plan-enforcement"
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
+import { hasReviewCollectionAccess, googleReviewUrl } from "@/lib/reviews/shared"
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -170,7 +171,15 @@ export async function POST(request: Request) {
     }, { status: 409 })
   }
 
+  const reviewSections = [liveSnapshot.sections, ...liveSnapshot.locales.map((locale) => locale.sections)].flat().filter((section) => section.type === "testimonials")
+  if (reviewSections.some((section) => section.data.reviewMode === "collection") && !hasReviewCollectionAccess(subscription)) {
+    return NextResponse.json({ error: "Recensies verzamelen vereist Gold.", requiredPlan: "gold" }, { status: 403 })
+  }
+  if (reviewSections.some((section) => section.data.googleReviewUrl && !googleReviewUrl(section.data.googleReviewUrl))) {
+    return NextResponse.json({ error: "Controleer de Google-recensielink in de sectie-instellingen." }, { status: 422 })
+  }
   const entitlementResult = inspectWebsiteEntitlements(currentPlan, {
+    hasReviewAccess: hasReviewCollectionAccess(subscription),
     hasBookingAccess: hasBookingAddonAccess(subscription),
     sections: liveSnapshot.sections,
     enabledCapabilities: liveSnapshot.locales && liveSnapshot.locales.length > 1

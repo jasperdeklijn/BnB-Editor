@@ -169,6 +169,7 @@ interface EditorClientProps {
   initialBusinessCategory?: BusinessCategory | null
   currentPlan: PlanId
   hasMultilingualAccess: boolean
+  hasReviewAccess: boolean
   hasBookingAccess: boolean
   subscriptionNotice?: string | null
   enforcementMode: PlanEnforcementMode
@@ -180,6 +181,7 @@ export function EditorClient({
   initialBusinessCategory = null,
   currentPlan,
   hasMultilingualAccess,
+  hasReviewAccess,
   hasBookingAccess,
   subscriptionNotice,
   enforcementMode,
@@ -262,13 +264,14 @@ export function EditorClient({
   }, [])
 
   const entitlementResult = useMemo(() => inspectWebsiteEntitlements(currentPlan, {
+    hasReviewAccess,
     hasBookingAccess,
     sections,
     enabledCapabilities: multilingualEnabled && websiteLocales.some(
       (locale) => !locale.is_default && locale.is_enabled,
     ) ? ["multilingual_websites"] : [],
     capabilityOverrides: hasMultilingualAccess ? ["multilingual_websites"] : [],
-  }), [currentPlan, hasBookingAccess, hasMultilingualAccess, multilingualEnabled, sections, websiteLocales])
+  }), [currentPlan, hasReviewAccess, hasBookingAccess, hasMultilingualAccess, multilingualEnabled, sections, websiteLocales])
   const publishEnforcementActive = enforcementMode === "enforce"
   const canPublishDraft = !publishEnforcementActive || entitlementResult.allowed
   const activePreflightViolations = serverPublishViolations.length > 0
@@ -1963,7 +1966,7 @@ export function EditorClient({
             businessId={businessId}
             businessCategory={businessCategory}
             currentPlan={currentPlan}
-            hasBookingAccess={hasBookingAccess}
+            hasReviewAccess={hasReviewAccess} hasBookingAccess={hasBookingAccess}
             currentTheme={themeConfig}
             onThemeChange={setThemeConfig}
             onTemplateApplied={handleTemplateApplied}
@@ -2034,7 +2037,7 @@ export function EditorClient({
               businessId={businessId}
               businessCategory={businessCategory}
               currentPlan={currentPlan}
-              hasBookingAccess={hasBookingAccess}
+              hasReviewAccess={hasReviewAccess} hasBookingAccess={hasBookingAccess}
               currentTheme={themeConfig}
               onThemeChange={setThemeConfig}
               onTemplateApplied={handleTemplateApplied}
@@ -2059,7 +2062,7 @@ export function EditorClient({
               businessId={businessId}
               businessCategory={businessCategory}
               currentPlan={currentPlan}
-              hasBookingAccess={hasBookingAccess}
+              hasReviewAccess={hasReviewAccess} hasBookingAccess={hasBookingAccess}
               currentTheme={themeConfig}
               onThemeChange={setThemeConfig}
               onTemplateApplied={handleTemplateApplied}

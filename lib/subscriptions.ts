@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { hasReviewCollectionAccess } from "@/lib/reviews/shared"
 
 import { getPlanById } from "@/lib/pricing"
 import { getMinimumPlanForCapability, isBookingCapability, planMeetsRequirement, type EntitlementCapability } from "@/lib/entitlements"
@@ -190,6 +191,7 @@ export function hasBookingAddonAccess(resolved: ResolvedSubscription): boolean {
 }
 
 export function hasSubscriptionCapability(resolved: ResolvedSubscription, capability: EntitlementCapability): boolean {
+  if (capability === "review_collection") return hasReviewCollectionAccess(resolved)
   if (isBookingCapability(capability)) return hasBookingAddonAccess(resolved)
   if (capability === "service_management") return resolved.planId === "gold" || hasBookingAddonAccess(resolved)
   if (capability === "multilingual_websites") return hasMultilingualWebsiteAccess(resolved)

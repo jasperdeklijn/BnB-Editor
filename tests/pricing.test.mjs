@@ -41,7 +41,7 @@ test("service mutations require entitlements in server actions and restrictive R
   }
   const migration = fs.readFileSync("supabase/migrations/20260909120000_service_management_entitlements.sql", "utf8")
   const bootstrap = fs.readFileSync("supabase/init.sql", "utf8")
-  assert.ok(bootstrap.includes(migration))
+  assert.ok(bootstrap.replace(/\r\n/g, "\n").includes(migration.replace(/\r\n/g, "\n")))
   for (const operation of ["insert", "update", "delete"]) assert.ok(migration.includes(`as restrictive for ${operation} to authenticated`))
   assert.match(migration, /where user_id = auth.uid\(\)/)
   assert.match(migration, /if auth.uid\(\) is null then return false/)

@@ -254,11 +254,9 @@ export const sectionDefinitions = {
     defaultData: () => ({
       title: SECTION_COPY.testimonials.defaultTitle,
       subtitle: "Lees wat onze klanten over ons zeggen.",
-      items: [
-        { id: "testimonial-1", name: "Anna de Vries", role: "Vaste klant", quote: "Uitstekende service! Ik ben heel tevreden met het resultaat en de persoonlijke aanpak.", rating: 5 },
-        { id: "testimonial-2", name: "Mark Janssen", role: "Ondernemer", quote: "Professioneel, betrouwbaar en snel. Ik zou het iedereen aanraden.", rating: 5 },
-        { id: "testimonial-3", name: "Sophie Bakker", role: "Particuliere klant", quote: "Fijn contact en top vakwerk. We zijn meer dan tevreden met het eindresultaat.", rating: 5 },
-      ],
+      reviewMode: "google",
+      googleReviewUrl: "",
+      reviewLimit: 6,
       layout: getDefaultLayoutForSection("testimonials"),
     }),
     Renderer: TestimonialsSection,

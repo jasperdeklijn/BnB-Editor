@@ -116,7 +116,7 @@ export const SECTION_TRANSLATABLE_FIELDS = {
   testimonials: [
     { key: "title", label: "Titel", required: true },
     { key: "subtitle", label: "Ondertitel", required: true },
-    { key: "items", label: "Recensies", required: true },
+    { key: "googleButtonText", label: "Google-knoptekst" },
   ],
   faq: [
     { key: "title", label: "Titel", required: true },

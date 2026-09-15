@@ -48,7 +48,7 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
       "Alles uit Bronze",
       "Maximaal 10 secties",
       "Galerie",
-      "Reviews",
+      "Google-recensielink",
       "FAQ",
       "Openingstijden",
       "Prijssecties",
@@ -69,6 +69,7 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
     features: [
       "Alles uit Silver",
       "Onbeperkte secties",
+      "Recensies verzamelen en beheren",
       "Uitgebreide functies",
       "Diensten beheren",
       "Meertaligheid",
@@ -81,6 +82,7 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
 }
 
 export const FEATURE_COMPARISON: FeatureComparison[] = [
+  { feature: "Recensies verzamelen en beheren", bronze: false, silver: false, gold: true },
   {
     feature: "SEO-basis",
     bronze: true,
@@ -112,7 +114,7 @@ export const FEATURE_COMPARISON: FeatureComparison[] = [
     gold: "Onbeperkt",
   },
   {
-    feature: "Galerie, reviews, FAQ en openingstijden",
+    feature: "Galerie, Google-recensielink, FAQ en openingstijden",
     bronze: false,
     silver: true,
     gold: true,
@@ -221,7 +223,7 @@ export const PRICING_FAQ = [
   {
     question: "Wanneer heb ik Gold nodig?",
     answer:
-      "Gold biedt onbeperkte secties, uitgebreide functies, dienstenbeheer, meertaligheid en priority support. Online boeken en facturen vanuit boekingen zijn bij elk abonnement beschikbaar met Booking & Facturatie.",
+      "Gold biedt onbeperkte secties, recensies verzamelen en beheren, dienstenbeheer, meertaligheid en priority support. Online boeken en facturen vanuit boekingen zijn bij elk abonnement beschikbaar met Booking & Facturatie.",
   },
   {
     question: "Zijn domein en SSL inbegrepen?",

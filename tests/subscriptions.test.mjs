@@ -15,9 +15,9 @@ Function("module", "exports", "require", compiled.outputText)(module, module.exp
   if (specifier === "@/lib/pricing") {
     return { getPlanById: (planId) => ({ monthlyPrice: { bronze: 7.95, silver: 14.95, gold: 24.95 }[planId] }) }
   }
-  if (specifier === "@/lib/entitlements") {
+  if (specifier === "@/lib/entitlements" || specifier === "@/lib/reviews/shared") {
     const dependency = { exports: {} }
-    const output = ts.transpileModule(fs.readFileSync(path.resolve("lib/entitlements.ts"), "utf8"), {
+    const output = ts.transpileModule(fs.readFileSync(path.resolve(specifier.replace("@/", "") + ".ts"), "utf8"), {
       compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
     })
     Function("module", "exports", output.outputText)(dependency, dependency.exports)
@@ -56,6 +56,21 @@ test("missing subscriptions receive the temporary Gold default", () => {
     status: "none",
     source: "default_fallback",
   })
+})
+
+test("review collection agrees with billing's effective Gold across subscription states", () => {
+  const records = [null]
+  for (const plan_id of ["bronze", "silver", "gold"]) {
+    for (const status of ["active", "trial", "canceled", "past_due", "expired"]) {
+      for (const current_period_end of [null, "2026-07-01T00:00:00Z", "2026-08-01T00:00:00Z"]) {
+        records.push(record(status, { plan_id, current_period_end }))
+      }
+    }
+  }
+  for (const subscription of records) {
+    const resolved = { userId: "user-1", record: subscription, ...resolveEffectivePlan(subscription, now) }
+    assert.equal(hasSubscriptionCapability(resolved, "review_collection"), resolved.planId === "gold", JSON.stringify(subscription))
+  }
 })
 
 test("active and trial subscriptions use the stored plan", () => {

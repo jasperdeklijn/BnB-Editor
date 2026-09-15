@@ -1,8 +1,7 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
+import { AppAnalytics } from '@/components/app-analytics'
 import { Toaster } from 'sonner'
-import { SpeedInsights } from "@vercel/speed-insights/next"
 import { PLATFORM_BRAND_NAME } from "@/lib/platform"
 import { PLATFORM_BASE_URL } from "@/lib/platform"
 import { headers } from "next/headers"
@@ -51,8 +50,7 @@ export default async function RootLayout({
     <html lang={websiteLocale}>
       <body className={`font-sans antialiased`}>
         {children}
-        <Analytics />
-        <SpeedInsights/>
+        <AppAnalytics />
         <Toaster
           toastOptions={{
             classNames: {

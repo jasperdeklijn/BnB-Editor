@@ -202,6 +202,10 @@ export function EditorHeader({
                 {offeringLabel}
               </Link>
 
+              <Link href="/editor/reviews" role="menuitem" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 border-b border-border px-3 py-2 text-xs text-foreground transition-colors hover:bg-secondary md:text-sm">
+                <MessageSquareText className="h-3.5 w-3.5 flex-shrink-0 text-primary md:h-4 md:w-4" />
+                Recensies
+              </Link>
               {/* Reservations link */}
               <Link
                 href="/editor/requests"

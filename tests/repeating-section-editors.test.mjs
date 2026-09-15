@@ -18,7 +18,6 @@ test("shared repeating item actions expose accessible reorder, duplicate, and de
 test("rich repeating section editors use the shared controls", () => {
   for (const file of [
     "faq-section.editor.tsx",
-    "testimonials-section.editor.tsx",
     "features-section.editor.tsx",
     "pricing-section.editor.tsx",
     "team-section.editor.tsx",
@@ -28,12 +27,11 @@ test("rich repeating section editors use the shared controls", () => {
   }
 })
 
-test("FAQ and testimonial editors can add entries and reviews expose rating and image fields", () => {
+test("FAQ entries remain editable while reviews expose the two sourced modes", () => {
   const faq = read("components/sections/faq-section.editor.tsx")
   const testimonials = read("components/sections/testimonials-section.editor.tsx")
   assert.match(faq, /Vraag toevoegen/)
-  assert.match(testimonials, /Review toevoegen/)
-  assert.match(testimonials, /"rating"/)
-  assert.match(testimonials, /"image"/)
+  assert.match(testimonials, /Link naar Google-recensies/)
+  assert.match(testimonials, /Recensies verzamelen/)
+  assert.doesNotMatch(testimonials, /Review toevoegen|duplicateItem|fallbackItems/)
 })
-

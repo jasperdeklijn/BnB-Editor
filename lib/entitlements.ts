@@ -4,6 +4,7 @@ import type { PlanId } from "@/lib/types/pricing"
 export const ENTITLEMENT_PLAN_ORDER = ["bronze", "silver", "gold"] as const satisfies readonly PlanId[]
 
 export type EntitlementCapability =
+  | "review_collection"
   | "contact_form"
   | "email_contact_requests"
   | "email_quote_requests"
@@ -41,6 +42,7 @@ export interface WebsiteEntitlementInput {
   enabledCapabilities?: readonly EntitlementCapability[]
   capabilityOverrides?: readonly EntitlementCapability[]
   hasBookingAccess?: boolean
+  hasReviewAccess?: boolean
 }
 
 export interface WebsiteEntitlementResult {
@@ -76,6 +78,7 @@ export const SECTION_LIMIT_BY_PLAN = {
 } as const satisfies Record<PlanId, number | null>
 
 export const CAPABILITY_MINIMUM_PLAN = {
+  review_collection: "gold",
   contact_form: "bronze",
   email_contact_requests: "silver",
   email_quote_requests: "silver",
@@ -91,6 +94,7 @@ export const CAPABILITY_MINIMUM_PLAN = {
 } as const satisfies Record<EntitlementCapability, PlanId>
 
 const CAPABILITY_LABELS = {
+  review_collection: "Recensies verzamelen en beheren",
   contact_form: "Contactformulier",
   email_contact_requests: "Contactaanvragen per e-mail",
   email_quote_requests: "Offerteaanvragen per e-mail",
@@ -175,6 +179,7 @@ export function getSectionLimit(plan: PlanId): number | null {
 export function getSectionCapabilities(
   section: Pick<Section, "type" | "data">,
 ): EntitlementCapability[] {
+  if (section.type === "testimonials" && section.data.reviewMode === "collection") return ["review_collection"]
   if (section.type === "contact") {
     return ["contact_form"]
   }
@@ -262,8 +267,9 @@ export function inspectWebsiteEntitlements(
       continue
     }
     requiredPlans.push(requiredPlan)
-    if (capabilityOverrides.has(capability)) continue
-    if (planMeetsRequirement(currentPlan, requiredPlan)) continue
+    const reviewAccessDenied = capability === "review_collection" && input.hasReviewAccess === false
+    if (!reviewAccessDenied && capabilityOverrides.has(capability)) continue
+    if (!reviewAccessDenied && planMeetsRequirement(currentPlan, requiredPlan)) continue
 
     violations.push({
       code: "feature.requires_plan",
