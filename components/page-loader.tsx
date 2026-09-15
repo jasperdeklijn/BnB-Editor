@@ -315,6 +315,7 @@ export async function loadPublicWebsitePage({
           <SectionRenderer
             key={section.id}
             section={section}
+            websiteId={website.id}
             isPreview={isPreview}
             wrapTransition={false}
             allSections={sections}
@@ -338,6 +339,7 @@ export async function loadPublicWebsitePage({
             <div id={anchorId}>
               <SectionRenderer
                 section={section}
+                websiteId={website.id}
                 isPreview={isPreview}
                 wrapTransition={false}
                 allSections={sections}
@@ -363,6 +365,7 @@ export async function loadPublicWebsitePage({
             <div id={anchorId}>
               <SectionRenderer
                 section={section}
+                websiteId={website.id}
                 isPreview={isPreview}
                 wrapTransition={false}
                 allSections={sections}
@@ -376,6 +379,7 @@ export async function loadPublicWebsitePage({
           <div key={section.id} id={anchorId} className="relative">
             <SectionRenderer
               section={section}
+              websiteId={website.id}
               isPreview={isPreview}
               wrapTransition={false}
               allSections={sections}

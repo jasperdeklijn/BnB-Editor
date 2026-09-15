@@ -12,6 +12,7 @@ function compile(file, imports = {}, env = {}) {
   return m.exports
 }
 const shared = compile("lib/reviews/shared.ts")
+const presentation = compile("lib/reviews/presentation.ts")
 function fixture() {
   const state = { rows: [], messages: [], collection: true, mailFails: false, authenticated: false, rate: { allowed: true }, dbFails: false }
   const website = { id: websiteId, business_id: "business", user_id: "owner", title: "PRIVATE DRAFT TITLE", live_snapshot: { website: { title: "Published title" } } }
@@ -38,7 +39,7 @@ function fixture() {
   }
   const client = { from: query, auth: { getUser: async () => ({ data: { user: state.authenticated ? { id: "owner" } : null } }) }, rpc: async (name) => ({ data: name === "review_collection_live" ? state.collection : null, error: null }) }
   const server = compile("lib/reviews/server.ts", {
-    "server-only": {}, "./shared": shared,
+    "server-only": {}, "./shared": shared, "./presentation": presentation,
     "@/lib/supabase/admin": { createAdminClient: async () => client },
     "@/lib/supabase/server": { createClient: async () => client },
     "@/lib/subscriptions": { getUserSubscription: async () => ({ planId: "gold", source: "subscription", record: { plan_id: "gold", status: "active", current_period_end: null } }) },

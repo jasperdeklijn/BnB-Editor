@@ -75,12 +75,12 @@ const sectionLayoutLabels: Partial<Record<SectionType, Record<SectionLayout, str
     banner: "Intro band",
   },
   testimonials: {
-    classic: "Review grid",
-    split: "Two columns",
-    showcase: "Large reviews",
-    compact: "Compact reviews",
-    card: "Review cards",
-    banner: "Review band",
+    classic: "Recensies met formulier",
+    split: "Recensies naast formulier",
+    showcase: "Uitgelichte recensie",
+    compact: "Compacte recensies",
+    card: "Formulier bovenaan",
+    banner: "Brede recensierij",
   },
   faq: {
     classic: "FAQ list",
@@ -149,6 +149,14 @@ const sectionLayoutLabels: Partial<Record<SectionType, Record<SectionLayout, str
 }
 
 const sectionLayoutDescriptions: Partial<Record<SectionType, Record<SectionLayout, string>>> = {
+  testimonials: {
+    classic: "Recensies in een raster met het formulier eronder",
+    split: "Recensies links en het formulier rechts op brede schermen",
+    showcase: "De nieuwste recensie groot in beeld, met het formulier eronder",
+    compact: "Een smalle lijst en een compact formulier",
+    card: "Begin met het formulier en toon daarna de recensies",
+    banner: "Een breed raster met maximaal vier recensies naast elkaar",
+  },
   hero: {
     classic: "Tekst en actieknop centraal in beeld",
     split: "Grote afbeelding links, tekst rechts",

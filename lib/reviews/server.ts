@@ -7,6 +7,7 @@ import { getUserSubscription } from "@/lib/subscriptions"
 import { PLATFORM_BASE_URL, PLATFORM_EMAILS } from "@/lib/platform"
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
 import { hasReviewCollectionAccess, reviewLimit, validateReview } from "./shared"
+import { getPublishedReviewPresentation } from "./presentation"
 
 export class ReviewError extends Error { constructor(message: string, public status = 400) { super(message) } }
 export const hashReviewToken = (token: string) => createHash("sha256").update(token).digest("hex")
@@ -32,7 +33,7 @@ export async function collectionContext(websiteId: string) {
   const { data: website, error: websiteError } = await admin.from("websites").select("id,business_id,live_snapshot").eq("id", websiteId).single()
   if (websiteError || !website?.business_id) throw new ReviewError("Website niet beschikbaar.", 404)
   const title = typeof website.live_snapshot?.website?.title === "string" ? website.live_snapshot.website.title : "de website"
-  return { admin, website: { id: website.id, business_id: website.business_id, title } }
+  return { admin, website: { id: website.id, business_id: website.business_id, title }, presentation: getPublishedReviewPresentation(website.live_snapshot) }
 }
 export async function publicReviews(websiteId: string, limit: unknown) {
   const { admin, website } = await collectionContext(websiteId)

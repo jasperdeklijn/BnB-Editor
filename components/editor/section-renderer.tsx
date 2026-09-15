@@ -198,7 +198,7 @@ function SectionRendererComponent({
     <Renderer {...commonProps} allSections={allSections} device={device} />
   ) : null
   const styleType = normalizeSectionStyleType(section.data.styleType)
-  const rendererHandlesStyleType = section.type === "hero" || section.type === "nav"
+  const rendererHandlesStyleType = section.type === "hero" || section.type === "nav" || section.type === "testimonials"
   const styledInner = inner && !rendererHandlesStyleType ? (
     <div className="section-style-shell" data-section-style-type={styleType}>
       {inner}
