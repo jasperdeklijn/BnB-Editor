@@ -1,3 +1,11 @@
+import type { SectionStyles } from "@/lib/types"
+
+export function getReviewInvitationMailto(websiteTitle: string, collectionUrl: string): string {
+  const subject = `Deel je ervaring met ${websiteTitle}`
+  const body = `Hallo,\n\nWil je jouw ervaring met ${websiteTitle} delen? Je kunt een recensie achterlaten via deze link:\n\n${collectionUrl}\n\nNa het versturen ontvang je een e-mail om je recensie te bevestigen.\n\nBedankt voor je feedback!`
+  return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+}
+
 export const REVIEW_FORM_FIELDS = [
   { key: "reviewFormTitle", label: "Formuliertitel", defaultValue: "Deel je ervaring", maxLength: 120 },
   { key: "reviewFormIntro", label: "Introductie formulier", defaultValue: "Hoe heb je onze dienstverlening ervaren? Laat een recensie achter.", maxLength: 500 },
@@ -37,4 +45,3 @@ export function getPublishedReviewPresentation(snapshot: unknown) {
   }
   return { data: { ...getReviewFormSettings(source), layout: typeof source.layout === "string" ? source.layout : "classic", styleType: typeof source.styleType === "string" ? source.styleType : "clean" }, styles }
 }
-import type { SectionStyles } from "@/lib/types"

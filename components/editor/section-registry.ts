@@ -255,6 +255,7 @@ export const sectionDefinitions = {
       title: SECTION_COPY.testimonials.defaultTitle,
       subtitle: "Lees wat onze klanten over ons zeggen.",
       reviewMode: "google",
+      reviewFormOnWebsite: true,
       googleReviewUrl: "",
       reviewLimit: 6,
       layout: getDefaultLayoutForSection("testimonials"),

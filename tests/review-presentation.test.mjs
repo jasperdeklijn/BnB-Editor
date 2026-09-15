@@ -27,6 +27,29 @@ function load(file) {
 }
 const presentation = load("lib/reviews/presentation.ts")
 const { ReviewForm } = load("components/reviews/review-form.tsx")
+const { TestimonialsSection } = load("components/sections/testimonials-section.tsx")
+
+test("hiding the embedded form preserves the review section and standalone form", () => {
+  const data = { reviewMode: "collection", reviewFormOnWebsite: false, title: "Onze recensies", layout: "split" }
+  const hidden = renderToStaticMarkup(React.createElement(TestimonialsSection, { data, isPreview: true, websiteId: "test" }))
+  assert.match(hidden, /Onze recensies/)
+  assert.doesNotMatch(hidden, /type="radio"|lg:grid-cols-2/)
+  const shown = renderToStaticMarkup(React.createElement(TestimonialsSection, { data: { ...data, reviewFormOnWebsite: true }, isPreview: true, websiteId: "test" }))
+  assert.equal((shown.match(/type="radio"/g) ?? []).length, 5)
+  const standalone = presentation.getPublishedReviewPresentation({ sections: [{ type: "testimonials", data }] })
+  const html = renderToStaticMarkup(React.createElement(ReviewForm, { websiteId: "test", available: true, data: standalone.data }))
+  assert.equal((html.match(/type="radio"/g) ?? []).length, 5)
+})
+
+test("email invitation opens a recipient-free draft with an encoded review link", () => {
+  const link = "https://flexpagina.nl/reviews/test"
+  const mailto = new URL(presentation.getReviewInvitationMailto("A & B", link))
+  assert.equal(mailto.protocol, "mailto:")
+  assert.equal(mailto.pathname, "")
+  assert.equal(mailto.searchParams.get("subject"), "Deel je ervaring met A & B")
+  assert.ok(mailto.searchParams.get("body").includes(link))
+  assert.deepEqual([...mailto.searchParams.keys()], ["subject", "body"])
+})
 
 test("review form settings have safe defaults and bound editable copy", () => {
   const result = presentation.getReviewFormSettings({ reviewFormTitle: "  Mijn formulier  ", reviewNameLabel: {}, reviewFormIntro: "x".repeat(900), reviewSubmitLabel: " " })

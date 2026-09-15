@@ -4,6 +4,10 @@ Select the Recensies section and choose Recensies verzamelen. Under Inhoud → R
 
 The section now contains the form directly on the website. The separate `/reviews/<websiteId>` page uses settings from the first published collection section. Draft settings do not leak to that page. Consent, confirmation and moderation requirements remain fixed.
 
+Turn off **Formulier op website tonen** to show only published reviews on the website. Keep collection mode enabled and publish the change. The standalone page stays available with the same editable form settings; this is a visibility preference, not an access restriction. In the editor, expand the standalone-page preview to inspect the hidden form.
+
+Under **Beheer recensies → Klanten uitnodigen → Uitnodigen per e-mail**, the owner's email app opens with a prepared invitation and review link. The owner chooses the recipient and sends it. Copying the collection link remains available as an alternative. FlexPagina does not send an invitation automatically when this button is clicked.
+
 Ratings use required native radio buttons rendered as yellow stars, with mouse, touch and arrow-key support. FlexPagina attribution appears below the form. The editor and layout previews display an interactive example with submission and email actions disabled.
 
 ## Visibility repair

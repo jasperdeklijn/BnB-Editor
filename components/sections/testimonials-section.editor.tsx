@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import type { SectionEditorProps } from "@/components/editor/section-editor-types"
 import { googleReviewUrl, reviewLimit, reviewMode } from "@/lib/reviews/shared"
 import { getReviewFormSettings, REVIEW_FORM_FIELDS } from "@/lib/reviews/presentation"
@@ -31,6 +32,13 @@ export function TestimonialsSectionEditor({ section, websiteId, hasReviewAccess 
       </div>
       <div className="space-y-1.5"><Label htmlFor={`${prefix}-button`}>Knoptekst</Label><Input id={`${prefix}-button`} value={String(data.googleButtonText ?? "")} onChange={(event) => updateField("googleButtonText", event.target.value)} placeholder="Lees onze recensies op Google" /></div>
     </> : <>
+      <div className="space-y-2 rounded-lg border border-border p-3">
+        <div className="flex items-center justify-between gap-3">
+          <Label htmlFor={`${prefix}-show-form`}>Formulier op website tonen</Label>
+          <Switch id={`${prefix}-show-form`} checked={data.reviewFormOnWebsite !== false} onCheckedChange={(checked) => updateField("reviewFormOnWebsite", checked)} />
+        </div>
+        <p className="text-xs text-muted-foreground">Zet dit uit om alleen gepubliceerde recensies te tonen. De losse recensiepagina blijft beschikbaar via een link die je per e-mail kunt delen.</p>
+      </div>
       <div className="space-y-1.5"><Label htmlFor={`${prefix}-limit`}>Aantal zichtbare recensies</Label><Input id={`${prefix}-limit`} type="number" min={1} max={12} value={reviewLimit(data.reviewLimit)} disabled={!hasReviewAccess} onChange={(event) => { if (Number.isInteger(event.target.valueAsNumber)) updateField("reviewLimit", reviewLimit(event.target.valueAsNumber)) }} /></div>
       <fieldset className="space-y-3 border-t border-border pt-4">
         <legend className="px-1 text-sm font-semibold">Recensieformulier bewerken</legend>
@@ -38,7 +46,7 @@ export function TestimonialsSectionEditor({ section, websiteId, hasReviewAccess 
           <Label htmlFor={`${prefix}-${key}`}>{label}</Label>
           <Input id={`${prefix}-${key}`} value={typeof data[key] === "string" ? data[key] : formSettings[key]} maxLength={maxLength} onChange={(event) => updateField(key, event.target.value)} />
         </div>)}
-        <p className="text-xs text-muted-foreground">De website en de losse recensiepagina gebruiken deze teksten. Kies onder Indeling de layout en het stijltype. Je ziet het formulier direct op het doek.</p>
+        <p className="text-xs text-muted-foreground">De website en de losse recensiepagina gebruiken deze teksten. Kies onder Indeling de layout en het stijltype. Ook als het formulier verborgen is, kun je hieronder op het doek een voorbeeld van de losse recensiepagina openen.</p>
       </fieldset>
       <p className="text-xs text-muted-foreground">Publiceer deze modus om recensies te ontvangen. Klanten bevestigen hun e-mailadres; jij beoordeelt daarna de originele inzending.</p>
     </>}

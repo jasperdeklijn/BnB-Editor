@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { getActiveWebsiteId, setActiveWebsiteId } from "@/lib/active-website"
 import { REVIEW_STATUS_LABELS, type PublicReview, type ReviewStatus } from "@/lib/reviews/shared"
 import { postReview } from "./review-form"
+import { getReviewInvitationMailto } from "@/lib/reviews/presentation"
 type OwnerReview = PublicReview & { email: string; status: ReviewStatus; delivery_status: string }
 interface Overview { reviews: OwnerReview[]; total: number; pending: number; canCollect: boolean; hasLegacy: boolean; collectionUrl: string; events: { id: number; review_id: string | null; action: string; reason: string; created_at: string }[] }
 export function ReviewsClient({ websites, initialWebsiteId }: { websites: { id: string; title: string }[]; initialWebsiteId?: string }) {
@@ -38,6 +39,12 @@ export function ReviewsClient({ websites, initialWebsiteId }: { websites: { id: 
       <Card className="space-y-3 p-4"><h2 className="font-semibold">{current.pending} te beoordelen</h2><p className="text-sm text-muted-foreground">Beoordeel op spam, relevantie, misbruik of privégegevens. Een lage beoordeling is geen afwijzingsreden. Tekst en sterren blijven ongewijzigd.</p>
         <div className="flex flex-wrap gap-2">{current.canCollect && <Button variant="outline" onClick={async () => { try { await navigator.clipboard.writeText(current.collectionUrl); setMessage("Verzamellink gekopieerd. Publiceer de verzamelmodus voordat je de link deelt.") } catch { setError("Kopiëren mislukt. Open de verzamellink en kopieer de URL.") } }}>Verzamellink kopiëren</Button>}<a className="inline-flex items-center rounded-md border border-input px-3 py-2 text-sm" href={current.collectionUrl} target="_blank" rel="noopener noreferrer">Verzamellink openen</a><a className="inline-flex items-center rounded-md border border-input px-3 py-2 text-sm" href={`/api/reviews?view=export&websiteId=${websiteId}`}>Gegevens exporteren</a></div>
       </Card>
+      {current.canCollect && <Card className="space-y-3 p-4">
+        <h2 className="font-semibold">Klanten uitnodigen</h2>
+        <p className="text-sm text-muted-foreground">De verzamellink werkt ook als het formulier verborgen is op je website. Laat de modus Recensies verzamelen aanstaan en publiceer je website.</p>
+        <a className="inline-flex min-h-11 items-center rounded-md border border-input px-3 py-2 text-sm font-medium hover:bg-muted" href={getReviewInvitationMailto(websites.find((site) => site.id === websiteId)?.title || "ons bedrijf", current.collectionUrl)}>Uitnodigen per e-mail</a>
+        <p className="text-xs text-muted-foreground">Opent je e-mailprogramma met een uitnodiging en de recensielink. Kies zelf de ontvanger en verstuur de e-mail. Je kunt de verzamellink hierboven ook kopiëren.</p>
+      </Card>}
     </>}
     {loading ? <p role="status" className="text-sm text-muted-foreground">Recensies laden…</p> : current && <>
       {!current.reviews.length && <Card className="p-6 text-sm text-muted-foreground">Nog geen inzendingen. Deel de verzamellink zodra deze modus live staat.</Card>}

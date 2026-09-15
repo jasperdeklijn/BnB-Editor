@@ -12,6 +12,7 @@ import { googleReviewUrl, reviewMode, reviewLimit, type PublicReview } from "@/l
 export function TestimonialsSection({ data, isPreview, styles, onUpdate, websiteId }: SectionRenderProps) {
   const mode = reviewMode(data), url = googleReviewUrl(data.googleReviewUrl), limit = reviewLimit(data.reviewLimit)
   const preview = isPreview || Boolean(onUpdate) || !websiteId
+  const showWebsiteForm = data.reviewFormOnWebsite !== false
   const [result, setResult] = useState<{ key: string; reviews: PublicReview[]; failed: boolean } | null>(null)
   const [attempt, setAttempt] = useState(0)
   const requestKey = `${websiteId}:${limit}:${attempt}`
@@ -29,6 +30,9 @@ export function TestimonialsSection({ data, isPreview, styles, onUpdate, website
   const sectionStyle = { ...getSectionColorVars(styles, { accent: "#385344", surface: "#ffffff" }), backgroundColor: styles?.backgroundColor, color: styles?.textColor }
   const reviews = collection?.reviews ?? []
   const formFirst = layout.layout === "card"
+  const emptyText = !showWebsiteForm && !String(data.reviewEmptyText ?? "").trim()
+    ? "Er zijn nog geen gepubliceerde recensies."
+    : settings.reviewEmptyText
   const reviewList = <div className={`min-w-0 ${formFirst ? "order-2" : ""}`}>
     {reviews.length > 0 ? <>
       <p className="mb-4 text-sm opacity-75">Gepubliceerde klantervaringen. De nieuwste recensies staan bovenaan.</p>
@@ -40,7 +44,7 @@ export function TestimonialsSection({ data, isPreview, styles, onUpdate, website
         </article>)}
       </div>
     </> : <p role="status" className={`${getReviewPanelClass(data.styleType)} text-sm`}>
-      {preview ? settings.reviewEmptyText : !collection ? "Recensies laden…" : collection.failed ? "Recensies zijn momenteel niet beschikbaar. Probeer het later opnieuw." : settings.reviewEmptyText}
+      {preview ? emptyText : !collection ? "Recensies laden…" : collection.failed ? "Recensies zijn momenteel niet beschikbaar. Probeer het later opnieuw." : emptyText}
     </p>}
     {collection?.failed && !preview && <button type="button" className="mt-3 min-h-11 text-sm underline underline-offset-4" onClick={() => setAttempt((value) => value + 1)}>Opnieuw proberen</button>}
   </div>
@@ -51,12 +55,16 @@ export function TestimonialsSection({ data, isPreview, styles, onUpdate, website
         {Boolean(data.subtitle) && <EditableText as="p" data={data} path={["subtitle"]} value={String(data.subtitle)} isPreview={isPreview} onUpdate={onUpdate} className="mt-3 text-sm opacity-75" />}
       </div>
       {mode === "google" ? <div className={layout.heading}>{url ? <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full rounded-lg bg-[var(--section-accent)] px-5 py-3 text-center text-sm font-semibold text-[var(--section-accent-foreground)]">{String(data.googleButtonText || "Lees onze recensies op Google")}</a> : <p className="rounded-lg border border-dashed border-current/20 p-5 text-sm">{preview ? "Voeg een Google-recensielink toe in de sectie-instellingen." : "Recensies volgen binnenkort."}</p>}</div>
-        : <div className={`grid items-start gap-8 ${layout.layout === "split" ? "lg:grid-cols-2" : "grid-cols-1"}`}>
+        : <div className={`grid items-start gap-8 ${layout.layout === "split" && showWebsiteForm ? "lg:grid-cols-2" : "grid-cols-1"}`}>
           {reviewList}
-          {(preview || collection) && <div className={`min-w-0 w-full ${layout.layout === "split" ? "" : "mx-auto max-w-2xl"} ${formFirst ? "order-1" : ""}`}>
+          {showWebsiteForm && (preview || collection) && <div className={`min-w-0 w-full ${layout.layout === "split" ? "" : "mx-auto max-w-2xl"} ${formFirst ? "order-1" : ""}`}>
             <ReviewForm websiteId={websiteId ?? ""} available={preview || !collection?.failed} preview={preview} data={data} styles={styles} />
           </div>}
         </div>}
+      {mode === "collection" && !showWebsiteForm && Boolean(onUpdate) && <details className="mt-6 rounded-lg border border-dashed border-current/25 p-4">
+        <summary className="cursor-pointer text-sm font-medium">Formulier verborgen op website · voorbeeld losse recensiepagina</summary>
+        <div className="mx-auto mt-4 max-w-2xl"><ReviewForm websiteId={websiteId ?? ""} available preview data={data} styles={styles} /></div>
+      </details>}
     </div>
   </section>
 }
