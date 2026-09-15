@@ -93,6 +93,7 @@ export interface UpdateSubscriptionResponse {
 
 export interface UserBillingData {
   userId: string
+  defaultFeaturesIncluded: boolean
   currentPlan: PlanId
   storedPlan: PlanId | null
   status: SubscriptionStatus

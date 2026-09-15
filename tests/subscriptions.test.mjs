@@ -73,8 +73,9 @@ test("review collection agrees with billing's effective Gold across subscription
   }
 })
 
-test("active and trial subscriptions use the stored plan", () => {
-  assert.equal(resolveEffectivePlan(record("active"), now).planId, "silver")
+test("active and trial subscriptions receive Gold while preserving their stored plan", () => {
+  assert.equal(resolveEffectivePlan(record("active"), now).planId, "gold")
+  assert.equal(resolveEffectivePlan(record("active"), now).storedPlanId, "silver")
   assert.equal(resolveEffectivePlan(record("trial", { plan_id: "gold" }), now).planId, "gold")
 })
 
@@ -83,8 +84,8 @@ test("past-due and expired subscriptions use the temporary Gold default", () => 
   assert.equal(resolveEffectivePlan(record("expired", { plan_id: "silver" }), now).planId, "gold")
 })
 
-test("canceled subscriptions retain access only through their paid-through date", () => {
-  assert.equal(resolveEffectivePlan(record("canceled"), now).planId, "silver")
+test("canceled subscriptions receive Gold before and after their paid-through date", () => {
+  assert.equal(resolveEffectivePlan(record("canceled"), now).planId, "gold")
   assert.equal(
     resolveEffectivePlan(record("canceled", { current_period_end: "2026-07-01T00:00:00.000Z" }), now).planId,
     "gold",
@@ -98,10 +99,10 @@ test("inactive states explain the temporary Gold default", () => {
     ...resolveEffectivePlan(record("past_due"), now),
   }
   const notice = getSubscriptionAccessNotice(resolved)
-  assert.match(notice, /standaardabonnement Gold/)
+  assert.match(notice, /tijdelijk gratis/)
 })
 
-test("multilingual access is included in Gold and add-on based for paid Bronze or Silver", () => {
+test("multilingual access is temporarily included regardless of paid add-ons", () => {
   const silver = record("active")
   const silverWithAddon = record("active", { multilingual_addon_active: true })
 
@@ -109,7 +110,7 @@ test("multilingual access is included in Gold and add-on based for paid Bronze o
     userId: "user-1",
     record: silver,
     ...resolveEffectivePlan(silver, now),
-  }), false)
+  }), true)
   assert.equal(hasMultilingualWebsiteAccess({
     userId: "user-1",
     record: silverWithAddon,
@@ -122,26 +123,33 @@ test("multilingual access is included in Gold and add-on based for paid Bronze o
   }), true)
 })
 
-test("booking access and billing follow the active add-on on every plan", () => {
+test("all features are free across stored plans and statuses without changing billing records", () => {
   for (const plan_id of ["bronze", "silver", "gold"]) {
     for (const status of ["active", "trial", "canceled", "past_due", "expired"]) {
       for (const booking_addon_active of [false, true]) {
         const row = record(status, { plan_id, booking_addon_active })
         const resolved = { userId: "user-1", record: row, ...resolveEffectivePlan(row, now) }
-        const expected = booking_addon_active && ["active", "trial", "canceled"].includes(status)
-        assert.equal(hasBookingAddonAccess(resolved), expected)
-        for (const capability of ["booking_system", "availability_calendar", "automatic_booking_confirmations", "booking_management"]) {
-          assert.equal(hasSubscriptionCapability(resolved, capability), expected)
+        const paidAddon = booking_addon_active && ["active", "trial", "canceled"].includes(status)
+        assert.equal(hasBookingAddonAccess(resolved), true)
+        for (const capability of ["booking_system", "availability_calendar", "automatic_booking_confirmations", "booking_management", "review_collection", "contact_form", "email_contact_requests", "email_quote_requests", "email_appointment_requests", "whatsapp_integration", "multilingual_websites", "priority_support", "service_management"]) {
+          assert.equal(hasSubscriptionCapability(resolved, capability), true, `${plan_id}/${status}/${capability}`)
         }
-        assert.equal(toUserBillingData(resolved).addons.bookingAddon, expected)
-        assert.equal(hasSubscriptionCapability(resolved, "service_management"), resolved.planId === "gold" || expected)
+        const billing = toUserBillingData(resolved)
+        assert.equal(billing.addons.bookingAddon, paidAddon)
+        assert.equal(billing.currentPrice, 0)
+        assert.equal(billing.nextBillingDate, null)
+        assert.equal(billing.defaultFeaturesIncluded, true)
+        assert.equal(row.plan_id, plan_id)
+        assert.equal(row.booking_addon_active, booking_addon_active)
+        assert.equal(row.current_price, 14.95)
       }
     }
   }
   const missing = { userId: "user-1", record: null, ...resolveEffectivePlan(null, now) }
-  assert.equal(hasBookingAddonAccess(missing), false)
+  assert.equal(hasBookingAddonAccess(missing), true)
+  assert.equal(toUserBillingData(missing).currentPrice, 0)
   const expired = record("canceled", { booking_addon_active: true, current_period_end: "2026-07-01T00:00:00.000Z" })
-  assert.equal(hasBookingAddonAccess({ userId: "user-1", record: expired, ...resolveEffectivePlan(expired, now) }), false)
+  assert.equal(hasBookingAddonAccess({ userId: "user-1", record: expired, ...resolveEffectivePlan(expired, now) }), true)
 })
 
 function subscriptionClient(responses) {
@@ -166,7 +174,7 @@ function subscriptionClient(responses) {
   }
 }
 
-test("subscription loading supports the pre-migration database without granting booking", async () => {
+test("subscription loading grants temporary booking access even before the add-on column exists", async () => {
   for (const error of [
     { code: "42703", message: "column subscriptions.booking_addon_active does not exist" },
     { code: "PGRST204", message: "Could not find the 'booking_addon_active' column of 'subscriptions' in the schema cache" },
@@ -178,7 +186,7 @@ test("subscription loading supports the pre-migration database without granting 
     assert.equal(resolved.planId, "gold")
     assert.equal(resolved.source, "subscription")
     assert.equal(hasMultilingualWebsiteAccess(resolved), true)
-    assert.equal(hasBookingAddonAccess(resolved), false)
+    assert.equal(hasBookingAddonAccess(resolved), true)
     assert.equal(toUserBillingData(resolved).addons.bookingAddon, false)
     assert.equal(client.calls.length, 2)
     assert.ok(client.calls[0].includes("booking_addon_active"))

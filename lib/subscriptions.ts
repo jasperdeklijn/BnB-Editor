@@ -9,8 +9,10 @@ import type {
   UserBillingData,
 } from "@/lib/types/pricing"
 
-// Temporary product default: accounts without a valid subscription receive Gold.
+// Temporary product default: every account receives Gold and all add-on features.
+// Stored subscriptions remain the source of truth for billing, not feature access.
 export const DEFAULT_PLAN_ID: PlanId = "gold"
+export const DEFAULT_ALL_FEATURES_INCLUDED = true
 
 export type SubscriptionSource = "subscription" | "default_fallback"
 
@@ -90,7 +92,7 @@ export function resolveEffectivePlan(
 
   if (record.status === "active" || record.status === "trial" || canceledStillPaid) {
     return {
-      planId: storedPlanId,
+      planId: DEFAULT_ALL_FEATURES_INCLUDED ? DEFAULT_PLAN_ID : storedPlanId,
       storedPlanId,
       status: record.status,
       source: "subscription",
@@ -158,6 +160,7 @@ export async function getUserSubscription(
 }
 
 export function getSubscriptionAccessNotice(resolved: ResolvedSubscription): string | null {
+  if (DEFAULT_ALL_FEATURES_INCLUDED) return "Alle functies zijn tijdelijk gratis beschikbaar voor iedereen."
   const paidThrough = resolved.record?.current_period_end
     ? new Date(resolved.record.current_period_end)
     : null
@@ -187,7 +190,7 @@ export function hasMultilingualWebsiteAccess(resolved: ResolvedSubscription): bo
 }
 
 export function hasBookingAddonAccess(resolved: ResolvedSubscription): boolean {
-  return resolved.source === "subscription" && resolved.record?.booking_addon_active === true
+  return DEFAULT_ALL_FEATURES_INCLUDED || (resolved.source === "subscription" && resolved.record?.booking_addon_active === true)
 }
 
 export function hasSubscriptionCapability(resolved: ResolvedSubscription, capability: EntitlementCapability): boolean {
@@ -205,17 +208,18 @@ export function toUserBillingData(resolved: ResolvedSubscription): UserBillingDa
   return {
     userId: resolved.userId,
     currentPlan: resolved.planId,
+    defaultFeaturesIncluded: DEFAULT_ALL_FEATURES_INCLUDED,
     storedPlan: resolved.storedPlanId,
     status: resolved.status,
     source: resolved.source,
     accessNotice: getSubscriptionAccessNotice(resolved),
     currentPrice:
-      resolved.source === "subscription" && record
+      DEFAULT_ALL_FEATURES_INCLUDED ? 0 : resolved.source === "subscription" && record
         ? Number(record.current_price)
         : plan.monthlyPrice,
-    nextBillingDate: record?.current_period_end ? new Date(record.current_period_end) : null,
+    nextBillingDate: !DEFAULT_ALL_FEATURES_INCLUDED && record?.current_period_end ? new Date(record.current_period_end) : null,
     addons: {
-      bookingAddon: hasBookingAddonAccess(resolved),
+      bookingAddon: resolved.source === "subscription" && record?.booking_addon_active === true,
       multilingualAddon:
         resolved.source === "subscription" && record?.multilingual_addon_active === true,
     },

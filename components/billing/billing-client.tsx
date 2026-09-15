@@ -24,8 +24,8 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
   }, [])
 
   const currentPlan = getPlanById(billingData.currentPlan)
-  const bookingAddonPrice = billingData.addons.bookingAddon ? BOOKING_ADDON_MONTHLY_PRICE : 0
-  const multilingualAddonPrice = currentPlan.id !== "gold" && billingData.addons.multilingualAddon
+  const bookingAddonPrice = !billingData.defaultFeaturesIncluded && billingData.addons.bookingAddon ? BOOKING_ADDON_MONTHLY_PRICE : 0
+  const multilingualAddonPrice = !billingData.defaultFeaturesIncluded && currentPlan.id !== "gold" && billingData.addons.multilingualAddon
     ? MULTILINGUAL_ADDON_MONTHLY_PRICE
     : 0
 
@@ -45,6 +45,11 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
       </div>
 
       <Card className="min-w-0 rounded-xl border border-border bg-secondary/70 p-4 shadow-sm animate-in fade-in duration-700 sm:p-8">
+        {billingData.defaultFeaturesIncluded ? (
+          <p className="mb-4 rounded-md border border-success/30 bg-success/10 p-3 text-sm text-foreground">
+            Alle functies zijn tijdelijk gratis beschikbaar voor iedereen, inclusief Gold, Booking &amp; Facturatie en meertaligheid.
+          </p>
+        ) : null}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
@@ -56,12 +61,12 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
 
           <BillingStatusBadge status={billingData.status} />
         </div>
-        {billingData.source === "default_fallback" ? (
+        {!billingData.defaultFeaturesIncluded && billingData.source === "default_fallback" ? (
           <p className="mt-4 text-sm text-muted-foreground">
             Er is geen actief betaald abonnement gevonden. Daarom geldt voorlopig het standaardabonnement Gold.
           </p>
         ) : null}
-        {billingData.accessNotice ? (
+        {!billingData.defaultFeaturesIncluded && billingData.accessNotice ? (
           <p className="mt-4 rounded-md border border-warning/30 bg-warning/10 p-3 text-sm text-foreground">
             {billingData.accessNotice}
           </p>
@@ -89,6 +94,8 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
                 addonId="bookingAddon"
                 addonName={BOOKING_ADDON_NAME}
                 isEnabled={billingData.addons.bookingAddon}
+                included={billingData.defaultFeaturesIncluded}
+                includedLabel="Tijdelijk gratis inbegrepen"
                 changesEnabled={false}
                 monthlyPrice={BOOKING_ADDON_MONTHLY_PRICE}
                 features={BOOKING_ADDON_FEATURES}
@@ -98,7 +105,8 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
               addonId="multilingualAddon"
               addonName="Meertaligheid"
               isEnabled={billingData.addons.multilingualAddon}
-              included={currentPlan.id === "gold"}
+              included={currentPlan.id === "gold" || billingData.defaultFeaturesIncluded}
+              includedLabel={billingData.defaultFeaturesIncluded ? "Tijdelijk gratis inbegrepen" : "Inbegrepen bij Gold"}
               changesEnabled={false}
               monthlyPrice={MULTILINGUAL_ADDON_MONTHLY_PRICE}
               features={[
@@ -123,6 +131,7 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
             nextBillingDate={billingData.nextBillingDate}
             monthlyCharge={billingData.currentPrice}
             addonsPrice={bookingAddonPrice + multilingualAddonPrice}
+            complimentary={billingData.defaultFeaturesIncluded}
           />
         </div>
       </div>
@@ -133,10 +142,13 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
         </h4>
         <ul className="space-y-2 text-sm text-muted-foreground">
           <li>Alle vermelde abonnements- en add-onprijzen zijn exclusief btw.</li>
-          <li>U kunt op elk moment van abonnement wisselen.</li>
-          <li>Uw abonnement wordt automatisch maandelijks verlengd.</li>
-          <li>{BOOKING_ADDON_NAME} kost bij elk abonnement {formatPrice(BOOKING_ADDON_MONTHLY_PRICE)} per maand extra en bevat boekingen, beschikbaarheid, bevestigingen, klantgegevens en facturen vanuit boekingen, inclusief PDF en historie.</li>
-          <li>Meertaligheid is inbegrepen bij Gold en kost bij Bronze of Silver € 2,99 per maand extra.</li>
+          {billingData.defaultFeaturesIncluded ? (
+            <li>U kunt alle functies gratis gebruiken. Betaalde abonnementen zijn nog niet beschikbaar.</li>
+          ) : (
+            <li>Uw abonnement wordt automatisch maandelijks verlengd. U kunt op elk moment van abonnement wisselen.</li>
+          )}
+          <li>{BOOKING_ADDON_NAME} bevat boekingen, beschikbaarheid, bevestigingen, klantgegevens en facturen vanuit boekingen, inclusief PDF en historie. {billingData.defaultFeaturesIncluded ? "Deze functies zijn voorlopig standaard beschikbaar." : `De add-on kost ${formatPrice(BOOKING_ADDON_MONTHLY_PRICE)} per maand extra.`}</li>
+          <li>{billingData.defaultFeaturesIncluded ? "Meertaligheid is voorlopig standaard beschikbaar voor iedereen." : "Meertaligheid is inbegrepen bij Gold en kost bij Bronze of Silver € 2,99 per maand extra."}</li>
           <li>Priority support is inbegrepen bij Gold.</li>
         </ul>
       </div>

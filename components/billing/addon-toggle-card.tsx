@@ -23,6 +23,7 @@ interface AddonToggleCardProps {
   monthlyPrice: number
   features: string[]
   included?: boolean
+  includedLabel?: string
   changesEnabled?: boolean
   onToggle?: (enabled: boolean) => void
 }
@@ -37,6 +38,7 @@ export function AddonToggleCard({
   monthlyPrice,
   features,
   included = false,
+  includedLabel = "Inbegrepen bij Gold",
   changesEnabled = false,
   onToggle,
 }: AddonToggleCardProps) {
@@ -85,7 +87,7 @@ export function AddonToggleCard({
                 {addonName}
               </h3>
               <p className="text-sm text-muted-foreground">
-                {included ? "Inbegrepen bij Gold" : `${formatPrice(monthlyPrice)}/maand`}
+                {included ? includedLabel : `${formatPrice(monthlyPrice)}/maand`}
               </p>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 Exclusief btw
@@ -114,7 +116,7 @@ export function AddonToggleCard({
         {included ? (
           <div className="mt-6 flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 p-3 text-success">
             <CheckCircle2 className="h-4 w-4" />
-            <p className="text-sm font-medium">Inbegrepen bij uw Gold-abonnement</p>
+            <p className="text-sm font-medium">{includedLabel}</p>
           </div>
         ) : isEnabled ? (
           <div className="mt-6 rounded-lg border border-success/30 bg-success/10 p-3">

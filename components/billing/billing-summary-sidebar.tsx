@@ -11,6 +11,7 @@ interface BillingSummarySidebarProps {
   nextBillingDate: Date | null
   monthlyCharge: number
   addonsPrice?: number
+  complimentary?: boolean
   onManageSubscription?: () => void
   onEditPayment?: () => void
 }
@@ -24,6 +25,7 @@ export function BillingSummarySidebar({
   nextBillingDate,
   monthlyCharge,
   addonsPrice = 0,
+  complimentary = false,
   onManageSubscription,
   onEditPayment,
 }: BillingSummarySidebarProps) {
@@ -114,7 +116,7 @@ export function BillingSummarySidebar({
 
       {/* Info text */}
       <p className="text-xs text-muted-foreground mt-6 text-center leading-relaxed">
-        Je abonnement wordt automatisch verlengd. Je kunt altijd opzeggen.
+        {complimentary ? "Alle functies zijn tijdelijk gratis beschikbaar." : "Je abonnement wordt automatisch verlengd. Je kunt altijd opzeggen."}
       </p>
     </Card>
   )
