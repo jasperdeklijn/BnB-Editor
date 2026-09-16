@@ -46,7 +46,7 @@ export function TestimonialsSectionEditor({ section, websiteId, hasReviewAccess 
           <Label htmlFor={`${prefix}-${key}`}>{label}</Label>
           <Input id={`${prefix}-${key}`} value={typeof data[key] === "string" ? data[key] : formSettings[key]} maxLength={maxLength} onChange={(event) => updateField(key, event.target.value)} />
         </div>)}
-        <p className="text-xs text-muted-foreground">De website en de losse recensiepagina gebruiken deze teksten. Kies onder Indeling de layout en het stijltype. Ook als het formulier verborgen is, kun je hieronder op het doek een voorbeeld van de losse recensiepagina openen.</p>
+        <p className="text-xs text-muted-foreground">Klik op de teksten op het doek of bewerk ze hier. De website en de losse recensiepagina gebruiken dezelfde teksten. Kies onder Indeling de layout en het stijltype. Is het formulier verborgen? Open dan op het doek het voorbeeld van de losse recensiepagina om het te bewerken.</p>
       </fieldset>
       <p className="text-xs text-muted-foreground">Publiceer deze modus om recensies te ontvangen. Klanten bevestigen hun e-mailadres; jij beoordeelt daarna de originele inzending.</p>
     </>}

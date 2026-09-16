@@ -25,12 +25,12 @@ export function getReviewFormSettings(data: Record<string, unknown> = {}): Revie
 export function getReviewPanelClass(styleType: unknown): string {
   const base = "min-w-0 border p-5 sm:p-6"
   switch (styleType) {
-    case "bold": return `${base} rounded-lg border-current/30 bg-[var(--section-surface)] text-[var(--section-surface-foreground)] shadow-md [&_h2]:font-extrabold`
-    case "elegant": return `${base} rounded-sm border-current/20 bg-[var(--section-surface)] text-[var(--section-surface-foreground)] [&_h2]:font-serif`
+    case "bold": return `${base} rounded-lg border-current/30 bg-[var(--section-surface)] text-[var(--section-surface-foreground)] shadow-md [&_h3]:font-extrabold`
+    case "elegant": return `${base} rounded-sm border-current/20 bg-[var(--section-surface)] text-[var(--section-surface-foreground)] [&_h3]:font-serif`
     case "soft": return `${base} rounded-3xl border-transparent bg-[var(--section-surface)] text-[var(--section-surface-foreground)] shadow-sm`
     case "dark": return `${base} rounded-2xl border-slate-700 bg-slate-950 text-white`
     case "outline": return `${base} rounded-xl border-2 border-current/30 bg-transparent text-inherit`
-    default: return `${base} rounded-xl border-current/15 bg-[var(--section-surface)] text-[var(--section-surface-foreground)] shadow-sm`
+    default: return `${base} rounded-2xl border-border bg-[var(--section-surface)] text-[var(--section-surface-foreground)] shadow-sm`
   }
 }
 

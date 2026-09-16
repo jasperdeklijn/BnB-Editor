@@ -12,6 +12,8 @@ import { googleReviewUrl, reviewMode, reviewLimit, type PublicReview } from "@/l
 export function TestimonialsSection({ data, isPreview, styles, onUpdate, websiteId }: SectionRenderProps) {
   const mode = reviewMode(data), url = googleReviewUrl(data.googleReviewUrl), limit = reviewLimit(data.reviewLimit)
   const preview = isPreview || Boolean(onUpdate) || !websiteId
+  const editing = !isPreview && Boolean(onUpdate)
+  const formUpdate = editing ? onUpdate : undefined
   const showWebsiteForm = data.reviewFormOnWebsite !== false
   const [result, setResult] = useState<{ key: string; reviews: PublicReview[]; failed: boolean } | null>(null)
   const [attempt, setAttempt] = useState(0)
@@ -27,7 +29,14 @@ export function TestimonialsSection({ data, isPreview, styles, onUpdate, website
   }, [mode, websiteId, limit, preview, requestKey])
   const collection = result?.key === requestKey ? result : null
   const layout = getLayoutClasses(data.layout), settings = getReviewFormSettings(data)
-  const sectionStyle = { ...getSectionColorVars(styles, { accent: "#385344", surface: "#ffffff" }), backgroundColor: styles?.backgroundColor, color: styles?.textColor }
+  const sectionStyle = {
+    ...getSectionColorVars(styles),
+    backgroundColor: styles?.backgroundColor,
+    backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
+    backgroundSize: "cover",
+    backgroundPosition: styles?.backgroundPosition || "center",
+    color: styles?.textColor,
+  }
   const reviews = collection?.reviews ?? []
   const formFirst = layout.layout === "card"
   const emptyText = !showWebsiteForm && !String(data.reviewEmptyText ?? "").trim()
@@ -43,27 +52,28 @@ export function TestimonialsSection({ data, isPreview, styles, onUpdate, website
           <div className="mt-auto border-t border-current/15 pt-3"><p className="break-words text-sm font-semibold">{review.display_name}</p><time className="text-xs opacity-75" dateTime={review.created_at}>{new Date(review.created_at).toLocaleDateString("nl-NL", { timeZone: "Europe/Amsterdam" })}</time></div>
         </article>)}
       </div>
-    </> : <p role="status" className={`${getReviewPanelClass(data.styleType)} text-sm`}>
-      {preview ? emptyText : !collection ? "Recensies laden…" : collection.failed ? "Recensies zijn momenteel niet beschikbaar. Probeer het later opnieuw." : emptyText}
-    </p>}
+    </> : <div role="status" className={`${getReviewPanelClass(data.styleType)} text-sm`}>
+      {editing ? <EditableText as="p" data={data} path={["reviewEmptyText"]} value={emptyText} isPreview={false} onUpdate={onUpdate} multiline />
+        : preview ? emptyText : !collection ? "Recensies laden…" : collection.failed ? "Recensies zijn momenteel niet beschikbaar. Probeer het later opnieuw." : emptyText}
+    </div>}
     {collection?.failed && !preview && <button type="button" className="mt-3 min-h-11 text-sm underline underline-offset-4" onClick={() => setAttempt((value) => value + 1)}>Opnieuw proberen</button>}
   </div>
   return <section className={`px-4 sm:px-6 ${layout.section} ${styles?.fontFamily ?? ""}`} style={sectionStyle}>
     <div className={`mx-auto ${layout.container}`}>
-      <div className={`mb-8 ${layout.heading}`}>
-        <EditableText as="h2" data={data} path={["title"]} value={String(data.title || "Ervaringen van klanten")} isPreview={isPreview} onUpdate={onUpdate} className="text-2xl font-bold sm:text-3xl" />
-        {Boolean(data.subtitle) && <EditableText as="p" data={data} path={["subtitle"]} value={String(data.subtitle)} isPreview={isPreview} onUpdate={onUpdate} className="mt-3 text-sm opacity-75" />}
+      <div className={`mb-10 ${layout.heading}`}>
+        <EditableText as="h2" data={data} path={["title"]} value={String(data.title || "Ervaringen van klanten")} isPreview={isPreview} onUpdate={onUpdate} className="mb-3 text-balance text-3xl font-bold md:text-4xl" />
+        {(Boolean(data.subtitle) || editing) && <EditableText as="p" data={data} path={["subtitle"]} value={String(data.subtitle || "")} fallback="" isPreview={isPreview} onUpdate={onUpdate} className={`opacity-75 ${editing && !data.subtitle ? "min-h-6" : ""}`} multiline />}
       </div>
-      {mode === "google" ? <div className={layout.heading}>{url ? <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full rounded-lg bg-[var(--section-accent)] px-5 py-3 text-center text-sm font-semibold text-[var(--section-accent-foreground)]">{String(data.googleButtonText || "Lees onze recensies op Google")}</a> : <p className="rounded-lg border border-dashed border-current/20 p-5 text-sm">{preview ? "Voeg een Google-recensielink toe in de sectie-instellingen." : "Recensies volgen binnenkort."}</p>}</div>
+      {mode === "google" ? <div className={layout.heading}>{(url || editing) && <a href={url || "#"} target="_blank" rel="noopener noreferrer" onClick={preview ? (event) => event.preventDefault() : undefined} className="inline-flex max-w-full rounded-xl bg-[var(--section-accent)] px-6 py-3 text-center text-sm font-semibold text-[var(--section-accent-foreground)] shadow-sm"><EditableText data={data} path={["googleButtonText"]} value={String(data.googleButtonText || "Lees onze recensies op Google")} isPreview={isPreview} onUpdate={onUpdate} /></a>}{!url && <p className="mt-4 rounded-lg border border-dashed border-current/20 p-5 text-sm">{preview ? "Voeg een Google-recensielink toe in de sectie-instellingen." : "Recensies volgen binnenkort."}</p>}</div>
         : <div className={`grid items-start gap-8 ${layout.layout === "split" && showWebsiteForm ? "lg:grid-cols-2" : "grid-cols-1"}`}>
           {reviewList}
           {showWebsiteForm && (preview || collection) && <div className={`min-w-0 w-full ${layout.layout === "split" ? "" : "mx-auto max-w-2xl"} ${formFirst ? "order-1" : ""}`}>
-            <ReviewForm websiteId={websiteId ?? ""} available={preview || !collection?.failed} preview={preview} data={data} styles={styles} />
+            <ReviewForm websiteId={websiteId ?? ""} available={preview || !collection?.failed} preview={preview} data={data} styles={styles} onUpdate={formUpdate} />
           </div>}
         </div>}
-      {mode === "collection" && !showWebsiteForm && Boolean(onUpdate) && <details className="mt-6 rounded-lg border border-dashed border-current/25 p-4">
+      {mode === "collection" && !showWebsiteForm && editing && <details className="mt-6 rounded-lg border border-dashed border-current/25 p-4">
         <summary className="cursor-pointer text-sm font-medium">Formulier verborgen op website · voorbeeld losse recensiepagina</summary>
-        <div className="mx-auto mt-4 max-w-2xl"><ReviewForm websiteId={websiteId ?? ""} available preview data={data} styles={styles} /></div>
+        <div className="mx-auto mt-4 max-w-2xl"><ReviewForm websiteId={websiteId ?? ""} available preview data={data} styles={styles} onUpdate={formUpdate} /></div>
       </details>}
     </div>
   </section>
