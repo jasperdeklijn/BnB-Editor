@@ -79,15 +79,15 @@ export function LandingNav() {
         </div>
 
         {/* Desktop nav */}
-        <nav className="hidden items-center gap-8 md:flex" aria-label="Hoofdnavigatie">
+        <nav className="hidden items-center gap-5 lg:flex" aria-label="Hoofdnavigatie">
           <Link href="#voorbeeld" onClick={handleNavClick} className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
-            Voorbeeld
+            Bekijk demo
           </Link>
           <Link href="#functies" onClick={handleNavClick} className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
             Functies
           </Link>
-          <Link href="#hoe-het-werkt" onClick={handleNavClick} className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
-            Hoe het werkt
+          <Link href="#voorbeelden" onClick={handleNavClick} className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
+            Voorbeeldsites
           </Link>
           <Link href="#prijzen" onClick={handleNavClick} className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
             Prijzen
@@ -98,12 +98,12 @@ export function LandingNav() {
         </nav>
 
         {/* CTA */}
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden items-center gap-3 lg:flex">
           {!isLoading && (
             <>
               {isLoggedIn ? (
                 <>
-                
+
                   <Button
                     onClick={handleLogout}
                     variant="ghost"
@@ -121,7 +121,7 @@ export function LandingNav() {
                     <Link href="/auth/login">Inloggen</Link>
                   </Button>
                   <Button asChild className="rounded-full bg-[var(--landing-primary)] text-white shadow-sm hover:bg-[var(--landing-primary-dark)]">
-                    <Link href="/auth/sign-up">Gratis proberen</Link>
+                    <Link href="/auth/sign-up">Gratis starten</Link>
                   </Button>
                 </>
               )}
@@ -131,7 +131,9 @@ export function LandingNav() {
 
         {/* Mobile hamburger */}
         <button
-          className="flex items-center justify-center rounded-md p-2 text-[var(--landing-secondary)] hover:bg-[var(--landing-primary-light)] md:hidden"
+          className="flex items-center justify-center rounded-md p-2 text-[var(--landing-secondary)] hover:bg-[var(--landing-primary-light)] lg:hidden"
+          aria-expanded={menuOpen}
+          aria-controls="landing-mobile-menu"
           aria-label={menuOpen ? "Menu sluiten" : "Menu openen"}
           onClick={() => setMenuOpen((v) => !v)}
         >
@@ -149,12 +151,12 @@ export function LandingNav() {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="border-t border-[var(--landing-border)] bg-white px-6 py-4 md:hidden">
-          <nav className="flex flex-col gap-4" aria-label="Mobiele navigatie">
+        <div className="border-t border-[var(--landing-border)] bg-white px-6 py-4 lg:hidden">
+          <nav id="landing-mobile-menu" className="flex flex-col gap-4" aria-label="Mobiele navigatie">
             <Link href="#functies" onClick={handleNavClick} className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">Functies</Link>
-            <Link href="#hoe-het-werkt" onClick={handleNavClick} className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">Hoe het werkt</Link>
-            <Link href="#voorbeeld" onClick={handleNavClick} className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">Voorbeeld</Link>
-            <Link href="/pricing" className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">Prijzen</Link>
+            <Link href="#voorbeelden" onClick={handleNavClick} className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">Voorbeeldsites</Link>
+            <Link href="#voorbeeld" onClick={handleNavClick} className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">Bekijk demo</Link>
+            <Link href="#prijzen" onClick={handleNavClick} className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">Prijzen</Link>
             <Link href="#faq" onClick={handleNavClick} className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">FAQ</Link>
             <div className="flex gap-3 pt-2">
               {!isLoading && (
@@ -178,7 +180,7 @@ export function LandingNav() {
                         <Link href="/auth/login">Inloggen</Link>
                       </Button>
                       <Button asChild className="flex-1 rounded-full bg-[var(--landing-primary)] text-white hover:bg-[var(--landing-primary-dark)]">
-                        <Link href="/auth/sign-up">Gratis proberen</Link>
+                        <Link href="/auth/sign-up">Gratis starten</Link>
                       </Button>
                     </>
                   )}
@@ -191,4 +193,3 @@ export function LandingNav() {
     </header>
   )
 }
-

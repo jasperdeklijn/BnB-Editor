@@ -23,7 +23,7 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
   bronze: {
     id: "bronze",
     name: "Bronze",
-    description: "Voor ondernemers die vooral professioneel online willen staan.",
+    description: "Voor een eenvoudige, professionele bedrijfswebsite.",
     monthlyPrice: 7.95,
     currency: "EUR",
     features: [
@@ -41,7 +41,7 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
   silver: {
     id: "silver",
     name: "Silver",
-    description: "Voor ondernemers die meer uit hun website willen halen.",
+    description: "Voor ondernemers die aanvragen willen binnenhalen.",
     monthlyPrice: 14.95,
     currency: "EUR",
     features: [
@@ -55,7 +55,7 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
       "CTA",
       "Aanvragen",
     ],
-    badge: "MEEST GEKOZEN",
+    badge: "AANBEVOLEN",
     isAddon: false,
     isPopular: true,
     cta: "Kies Silver",
@@ -63,14 +63,13 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
   gold: {
     id: "gold",
     name: "Gold",
-    description: "Voor ondernemers die een uitgebreide website en extra ondersteuning willen.",
+    description: "Voor ondernemers die meer klanten willen bereiken en hun diensten en recensies op één plek willen beheren.",
     monthlyPrice: 24.95,
     currency: "EUR",
     features: [
       "Alles uit Silver",
       "Onbeperkte secties",
       "Recensies verzamelen en beheren",
-      "Uitgebreide functies",
       "Diensten beheren",
       "Meertaligheid",
       "Priority support",

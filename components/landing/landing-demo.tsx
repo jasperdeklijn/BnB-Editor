@@ -6,18 +6,15 @@ export function LandingDemo() {
     <section
       id="voorbeeld"
       aria-labelledby="demo-heading"
-      className="scroll-mt-24 bg-white px-6 py-20 sm:py-24"
+      className="scroll-mt-24 bg-[var(--landing-surface)] px-6 pb-16 sm:pb-20"
     >
       <div className="mx-auto max-w-6xl">
-        <div className="mb-10 max-w-2xl">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-[var(--landing-primary)]">
-            Interactieve demo
-          </p>
-          <h2 id="demo-heading" className="text-balance text-3xl font-bold text-[var(--landing-secondary)] sm:text-4xl md:text-5xl">
-            Ontdek zelf hoe {PLATFORM_BRAND_NAME} werkt
+        <div className="mb-6 text-center">
+          <h2 id="demo-heading" className="text-balance text-xl font-bold text-[var(--landing-secondary)] sm:text-2xl">
+            Aanpassen → publiceren → klaar.
           </h2>
-          <p className="mt-4 text-pretty text-lg leading-relaxed text-[var(--landing-muted)]">
-            Klik door de demo en bekijk stap voor stap hoe je jouw website maakt en aanpast.
+          <p className="mt-2 text-pretty text-sm leading-relaxed text-[var(--landing-muted)]">
+            Klik door de demo en ontdek hoe je jouw website maakt en aanpast.
           </p>
         </div>
 
@@ -26,7 +23,7 @@ export function LandingDemo() {
             <iframe
               src="https://app.supademo.com/embed/cmtvo85wf04nlqm7xofmf8sax"
               title={`Interactieve demo van ${PLATFORM_BRAND_NAME}`}
-              loading="lazy"
+              loading="eager"
               allow="clipboard-write; fullscreen"
               allowFullScreen
               referrerPolicy="strict-origin-when-cross-origin"

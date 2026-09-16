@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { LandingNav } from "@/components/landing/landing-nav"
 import { LandingHero } from "@/components/landing/landing-hero"
 import { LandingDemo } from "@/components/landing/landing-demo"
@@ -6,7 +7,8 @@ import { LandingHowItWorks } from "@/components/landing/landing-how-it-works"
 import { PricingSection } from "@/components/landing/pricing-section"
 import { LandingCta } from "@/components/landing/landing-cta"
 import { SharedFooter } from "@/components/layout/shared-footer"
-import { LandingAudience } from "@/components/landing/landing-audience"
+import { LandingExamples } from "@/components/landing/landing-examples"
+import { LandingBooking } from "@/components/landing/landing-booking"
 import { LandingTrust } from "@/components/landing/landing-trust"
 import { LandingFaq, homepageFaqItems } from "@/components/landing/landing-faq"
 import { PLATFORM_BASE_URL, PLATFORM_BRAND_NAME } from "@/lib/platform"
@@ -16,7 +18,7 @@ export const metadata: Metadata = {
     absolute: `Website maken voor je bedrijf | ${PLATFORM_BRAND_NAME}`,
   },
   description:
-    "Maak zelf een professionele website voor je bedrijf. Kies kant-en-klare secties, pas alles visueel aan en publiceer zonder code.",
+    "Je website, aanvragen en boekingen op één plek. Maak zonder technische kennis een bedrijfswebsite en breid uit met boekingen en facturatie.",
   alternates: {
     canonical: "/",
   },
@@ -24,7 +26,7 @@ export const metadata: Metadata = {
     url: "/",
     title: `Website maken voor je bedrijf | ${PLATFORM_BRAND_NAME}`,
     description:
-      "Maak zelf een professionele bedrijfswebsite met kant-en-klare secties en een eenvoudige visuele editor.",
+      "Maak zonder technische kennis een bedrijfswebsite. Beheer je website, aanvragen en boekingen op één plek met FlexPagina.",
     images: [
       {
         url: "/logo_klein.png",
@@ -37,7 +39,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: `Website maken voor je bedrijf | ${PLATFORM_BRAND_NAME}`,
-    description: "Maak zelf een professionele bedrijfswebsite zonder code.",
+    description: "Je website, aanvragen en boekingen. Alles op één plek. Begin gratis met FlexPagina.",
     images: ["/logo_klein.png"],
   },
 }
@@ -60,7 +62,7 @@ export default async function HomePage() {
       operatingSystem: "Web",
       url: PLATFORM_BASE_URL,
       description:
-        "Nederlandse websitebouwer waarmee kleine ondernemers zonder code een professionele bedrijfswebsite maken en beheren.",
+        "Nederlands platform voor kleine ondernemers: maak en beheer je bedrijfswebsite, ontvang aanvragen en breid uit met boekingen en facturatie.",
       offers: {
         "@type": "AggregateOffer",
         priceCurrency: "EUR",
@@ -95,8 +97,9 @@ export default async function HomePage() {
       <LandingHero />
       <LandingDemo />
       <LandingFeatures />
-      <LandingAudience />
+      <LandingExamples />
       <LandingHowItWorks />
+      <LandingBooking />
       <LandingTrust />
       <PricingSection />
       <LandingFaq />
@@ -105,4 +108,3 @@ export default async function HomePage() {
     </main>
   )
 }
-import type { Metadata } from "next"

@@ -1,4 +1,5 @@
 import { ChevronDown } from "lucide-react"
+import { PLATFORM_EMAILS } from "@/lib/platform"
 
 export const homepageFaqItems = [
   {
@@ -7,9 +8,9 @@ export const homepageFaqItems = [
       "Ja. Je kiest kant-en-klare secties en past tekst, afbeeldingen, kleuren en contactgegevens aan in een visuele editor. Je hoeft geen code te schrijven.",
   },
   {
-    question: "Voor welke bedrijven is FlexPagina.nl bedoeld?",
+    question: "Wat kan ik gratis doen?",
     answer:
-      "FlexPagina.nl is ontwikkeld voor zelfstandigen en kleine bedrijven, zoals vakmensen, salons, adviseurs, lokale winkels, dienstverleners en kleinschalige verblijven.",
+      "Je kunt zonder creditcard een account aanmaken en beginnen met je website. Om je website te publiceren kies je een betaald websitepakket. Je vindt de prijzen en extra mogelijkheden bij de pakketten op deze pagina.",
   },
   {
     question: "Kan ik mijn eigen domeinnaam gebruiken?",
@@ -17,19 +18,27 @@ export const homepageFaqItems = [
       "Ja. Je kunt een eigen domeinnaam koppelen en vanuit het dashboard controleren of de technische instellingen correct staan.",
   },
   {
-    question: "Kan ik later van abonnement veranderen?",
+    question: "Kan ik later opzeggen of van pakket veranderen?",
     answer:
-      "Ja. Je kunt upgraden of downgraden wanneer je website of bedrijf andere functies nodig heeft.",
+      "Ja. De websitepakketten worden maandelijks gefactureerd. Je kunt van pakket veranderen en opzeggen via de mogelijkheden in je account of via support. Opzeggen stopt toekomstige verlengingen; een al begonnen periode wordt niet automatisch terugbetaald.",
   },
   {
-    question: "Is mijn website geschikt voor mobiele telefoons?",
+    question: "Kan ik mijn huidige website vervangen?",
     answer:
-      "Ja. De websites zijn responsive opgebouwd, zodat pagina's zich aanpassen aan mobiele telefoons, tablets en grotere schermen.",
+      "Ja. Bouw je nieuwe website eerst op in FlexPagina en neem je eigen teksten en afbeeldingen over. Als je klaar bent, kun je je domein aan de nieuwe website koppelen. Er is geen automatische import van je bestaande website.",
   },
   {
-    question: "Kan ik mijn website later zelf blijven bijwerken?",
+    question: "Wat gebeurt er als ik stop?",
     answer:
-      "Ja. De editor is juist bedoeld om teksten, foto's, diensten, prijzen en andere onderdelen zelf actueel te houden.",
+      "Een opzegging stopt toekomstige abonnementsverlengingen. Bewaar voor vertrek je eigen teksten, afbeeldingen en benodigde facturen. Wil je ook je account en gegevens laten verwijderen, neem dan contact op met support. Opzeggen en je account verwijderen zijn verschillende acties.",
+  },
+  {
+    question: "Kan ik hulp krijgen met instellen?",
+    answer: `Ja. Mail je vraag naar ${PLATFORM_EMAILS.support}, bijvoorbeeld over de editor of het koppelen van je domein. Gold bevat ondersteuning met voorrang.`,
+  },
+  {
+    question: "Zitten boekingen en facturen in mijn websitepakket?",
+    answer: "Booking & Facturatie is een aparte, betaalde uitbreiding voor Bronze, Silver en Gold. Je krijgt online boekingen, beschikbaarheid, boekingsbeheer en facturen vanuit boekingen. Een gewone aanvraag is nog geen bevestigde reservering.",
   },
 ]
 

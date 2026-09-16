@@ -49,11 +49,11 @@ export function PricingCard({
     >
       {isPopular && (
         <div className="absolute left-0 right-0 top-0 bg-[var(--landing-primary)] py-2 text-center text-xs font-bold text-white">
-          MEEST GEKOZEN
+          {plan.badge || "AANBEVOLEN"}
         </div>
       )}
 
-      <div className="flex h-full flex-col p-8 pt-10 lg:p-10">
+      <div className="flex h-full flex-col p-6 pt-12 sm:p-8 sm:pt-12 lg:p-8 lg:pt-12">
         <div className="mb-6">
           <h3 className="mb-2 text-2xl font-bold text-[var(--landing-secondary)]">
             {plan.name}
@@ -64,7 +64,7 @@ export function PricingCard({
         </div>
 
         <div className="mb-8">
-          <div className="flex items-baseline gap-1">
+          <div className="flex flex-wrap items-baseline gap-1">
             <span className="text-4xl font-bold text-[var(--landing-secondary)]">
               {formatPrice(plan.monthlyPrice)}
             </span>
@@ -76,6 +76,11 @@ export function PricingCard({
         </div>
 
         <div className="mb-8 flex-1">
+          {plan.id === "gold" && (
+            <p className="mb-5 rounded-xl bg-[var(--landing-primary-light)] p-4 text-sm leading-relaxed text-[var(--landing-primary-dark)]">
+              Bereik klanten in meerdere talen, presenteer al je diensten en verzamel recensies. Met ruimte voor onbeperkte secties en ondersteuning met voorrang.
+            </p>
+          )}
           <ul className="space-y-3">
             {plan.features.map((feature, index) => (
               <li key={`${plan.id}-feature-${index}`} className="flex items-start gap-3">
@@ -94,7 +99,7 @@ export function PricingCard({
         ) : (
           <Button asChild className={buttonClasses}>
             <Link href={`/auth/sign-up?plan=${plan.id}`}>
-              {plan.cta}
+              Gratis starten
               <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
             </Link>
           </Button>

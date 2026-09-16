@@ -36,7 +36,7 @@ export function SharedFooter() {
             <h3 className="mb-3 text-sm font-semibold">Product</h3>
             <nav className="flex flex-col gap-2">
               <Link href="/auth/sign-up" className="text-xs text-white/60 transition-colors hover:text-white">
-                Website maken
+                Gratis starten
               </Link>
               <Link href="/auth/login" className="text-xs text-white/60 transition-colors hover:text-white">
                 Inloggen

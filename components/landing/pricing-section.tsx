@@ -11,7 +11,7 @@ export function PricingSection() {
   const plans = getMainPlans()
 
   return (
-    <section id="prijzen" className="bg-[var(--landing-warm)] px-6 py-24">
+    <section id="prijzen" className="scroll-mt-24 bg-[var(--landing-warm)] px-6 py-24">
       <div className="mx-auto max-w-6xl">
         <div className="mx-auto mb-14 max-w-2xl text-center animate-in fade-in duration-700">
           <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-[var(--landing-primary)]">

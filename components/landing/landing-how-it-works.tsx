@@ -17,13 +17,13 @@ const steps = [
   {
     step: "04",
     title: "Publiceer online",
-    description: "Zet je website live en werk hem later eenvoudig bij.",
+    description: "Kies je websitepakket, zet je website live en werk hem later eenvoudig bij.",
   },
 ]
 
 export function LandingHowItWorks() {
   return (
-    <section id="hoe-het-werkt" className="bg-[var(--landing-surface)] px-6 py-24">
+    <section id="hoe-het-werkt" className="scroll-mt-24 bg-white px-6 py-24">
       <div className="mx-auto max-w-6xl">
         <div className="mb-14 max-w-2xl">
           <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-[var(--landing-primary)]">
