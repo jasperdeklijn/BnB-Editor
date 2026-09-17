@@ -16,6 +16,7 @@ const pages = [
   legalDocuments.processorAgreement,
   legalDocuments.acceptableUse,
   legalDocuments.disclaimer,
+  legalDocuments.takedown,
   {
     title: "Status",
     description: `Status en incidentinformatie van ${PLATFORM_BRAND_NAME}.`,

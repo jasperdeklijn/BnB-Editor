@@ -9,7 +9,7 @@ export async function GET() {
     return Response.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const [profileResult, businessResult, websiteResult, requestResult, subscriptionResult, imageMetadataResult, storageResult] = await Promise.all([
+  const [profileResult, businessResult, websiteResult, requestResult, subscriptionResult, imageMetadataResult, storageResult, termsAcceptanceResult] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
     supabase.from("businesses").select("*").eq("user_id", user.id),
     supabase.from("websites").select("*").eq("user_id", user.id),
@@ -17,9 +17,10 @@ export async function GET() {
     supabase.from("subscriptions").select("*").eq("user_id", user.id).maybeSingle(),
     supabase.from("user_images").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
     supabase.storage.from("user-images").list(user.id, { limit: 1000, sortBy: { column: "name", order: "asc" } }),
+    supabase.from("user_terms_acceptances").select("terms_version, accepted_at, source").eq("user_id", user.id).maybeSingle(),
   ])
 
-  const primaryError = profileResult.error || businessResult.error || websiteResult.error || requestResult.error || subscriptionResult.error || imageMetadataResult.error || storageResult.error
+  const primaryError = profileResult.error || businessResult.error || websiteResult.error || requestResult.error || subscriptionResult.error || imageMetadataResult.error || storageResult.error || termsAcceptanceResult.error
   if (primaryError) {
     console.warn("[account-export] Primary export query failed", { message: primaryError.message })
     return Response.json({ error: "De gegevens konden niet worden geëxporteerd." }, { status: 500 })
@@ -79,6 +80,7 @@ export async function GET() {
       metadata: user.user_metadata,
     },
     profile: profileResult.data,
+    termsAcceptance: termsAcceptanceResult.data,
     businesses,
     websites,
     websiteSections: sectionsResult.data ?? [],

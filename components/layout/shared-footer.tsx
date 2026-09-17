@@ -8,6 +8,7 @@ const legalLinks = [
   { href: "/cookies", label: "Cookiebeleid" },
   { href: "/processor-agreement", label: "Verwerkersovereenkomst" },
   { href: "/acceptable-use", label: "Acceptable Use" },
+  { href: "/melding-onrechtmatige-content", label: "Onrechtmatige content melden" },
   { href: "/disclaimer", label: "Disclaimer" },
   { href: "/status", label: "Status" },
 ]

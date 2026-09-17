@@ -9,17 +9,23 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { PLATFORM_BRAND_INITIALS, PLATFORM_BRAND_NAME } from "@/lib/platform"
+import { TERMS_DOWNLOAD_PATH, TERMS_VERSION } from "@/lib/legal/terms-version"
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [repeatPassword, setRepeatPassword] = useState("")
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!acceptedTerms) {
+      setError("Ga akkoord met de algemene voorwaarden om een account aan te maken.")
+      return
+    }
     const supabase = createClient()
     setIsLoading(true)
     setError(null)
@@ -35,6 +41,10 @@ export default function SignUpPage() {
         email,
         password,
         options: {
+          data: {
+            terms_accepted: true,
+            terms_version: TERMS_VERSION,
+          },
           emailRedirectTo:
             process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL ||
             `${window.location.origin}/onboarding`,
@@ -43,7 +53,9 @@ export default function SignUpPage() {
       if (error) throw error
       router.push("/auth/sign-up-success")
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "Er is een fout opgetreden")
+      setError(error instanceof Error && error.message.includes("Database error")
+        ? "Registreren is tijdelijk niet mogelijk. Vernieuw de pagina en probeer het opnieuw. Neem contact op met support als dit blijft gebeuren."
+        : error instanceof Error ? error.message : "Er is een fout opgetreden")
     } finally {
       setIsLoading(false)
     }
@@ -176,8 +188,35 @@ export default function SignUpPage() {
                 />
               </div>
 
+              <div className="space-y-2">
+                <div className="flex items-start gap-3">
+                  <input
+                    id="accept-terms"
+                    name="acceptTerms"
+                    type="checkbox"
+                    required
+                    checked={acceptedTerms}
+                    onChange={(event) => setAcceptedTerms(event.target.checked)}
+                    disabled={isLoading}
+                    aria-describedby="terms-download"
+                    className="mt-1 h-4 w-4 shrink-0 accent-[#B7D1C2] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#B7D1C2]"
+                  />
+                  <label htmlFor="accept-terms" className="text-sm leading-6 text-white/80">
+                    Ik ga akkoord met de{" "}
+                    <Link href="/terms" target="_blank" rel="noopener noreferrer" className="text-[#B7D1C2] underline underline-offset-4 hover:text-white">
+                      algemene voorwaarden<span className="sr-only"> (opent in een nieuw tabblad)</span>
+                    </Link>.
+                  </label>
+                </div>
+                <p id="terms-download" className="pl-7 text-xs leading-5 text-white/60">
+                  <a href={TERMS_DOWNLOAD_PATH} download className="text-[#B7D1C2] underline underline-offset-4 hover:text-white">
+                    Download de voorwaarden (tekstbestand)
+                  </a>
+                </p>
+              </div>
+
               {error && (
-                <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
+                <p role="alert" className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-400">
                   {error}
                 </p>
               )}

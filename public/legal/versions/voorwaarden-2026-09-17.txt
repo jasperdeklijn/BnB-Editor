@@ -1,0 +1,98 @@
+Algemene voorwaarden
+
+Versie: 2026-09-17
+
+Laatst bijgewerkt: 17 september 2026
+
+Let op: dit is een template en moet juridisch gecontroleerd worden voordat het definitief gebruikt wordt.
+
+1. Identiteit en toepasselijkheid
+
+Aanbieder: [Bedrijfsnaam], handelend onder de naam FlexPagina.nl. KvK-nummer: [KvK-nummer]. Adres: [Adres]. E-mail: [E-mailadres]. Laatst bijgewerkt: [Laatst bijgewerkt].
+
+Deze algemene voorwaarden gelden voor het gebruik van FlexPagina.nl, een SaaS website builder waarmee kleine ondernemers, zzp'ers en organisaties websites kunnen maken, beheren en publiceren.
+
+Door een account aan te maken, een abonnement af te sluiten of de dienst te gebruiken, gaat de klant akkoord met deze voorwaarden.
+
+2. Gebruik van de dienst
+
+FlexPagina.nl levert toegang tot software, hostingfunctionaliteit, publicatiefuncties, formulieren, domeinkoppelingen en andere onderdelen die nodig zijn om websites te beheren.
+
+De klant zorgt zelf voor een veilige accounttoegang, correcte gegevens en normaal gebruik van de dienst.
+
+- De klant mag de dienst niet gebruiken op een manier die de werking, veiligheid of beschikbaarheid van het platform schaadt.
+
+- De klant moet alle toepasselijke wet- en regelgeving naleven, waaronder regels over consumentenrecht, privacy, intellectueel eigendom en reclame.
+
+- Wij mogen functies wijzigen, vervangen of verwijderen wanneer dit nodig is voor veiligheid, onderhoud, wettelijke naleving of productverbetering.
+
+3. Abonnementen, betaling en opzegging
+
+Betaalde abonnementen worden gefactureerd volgens de gekozen abonnementsvorm en de prijzen die tijdens het afsluiten worden getoond.
+
+Wanneer Stripe of een andere betaalprovider wordt gebruikt, verloopt de betaalverwerking via die externe provider. De klant moet zorgen voor juiste betaalgegevens en tijdige betaling.
+
+De klant kan het abonnement opzeggen volgens de opzegmogelijkheden in het account of via support. Opzegging stopt toekomstige verlengingen, maar geeft niet automatisch recht op terugbetaling van al begonnen periodes, tenzij wettelijk verplicht of uitdrukkelijk anders vermeld.
+
+4. Beschikbaarheid, onderhoud en externe partijen
+
+Wij spannen ons in om de dienst betrouwbaar beschikbaar te houden, maar geven geen garantie op 100% uptime of ononderbroken toegang.
+
+De dienst is afhankelijk van externe partijen zoals Vercel, Supabase, Stripe, SMTP/mailproviders, domeinregistrars, DNS-providers en eventuele analytics- of infrastructuurdiensten.
+
+- Onderhoud, updates, beveiligingsmaatregelen en storingen kunnen tijdelijke beperkingen of downtime veroorzaken.
+
+- Storingen bij externe partijen vallen buiten onze directe controle.
+
+- Wij mogen noodmaatregelen nemen wanneer dat nodig is voor veiligheid, misbruikbestrijding of continuiteit van de dienst.
+
+5. Content, rechten en verantwoordelijkheid van de klant
+
+De klant is verantwoordelijk voor de eigen website, alle gegevens die via de website worden verzameld en alle teksten, afbeeldingen, foto's, video's, logo's, handelsmerken, bestanden en overige content die door of namens de klant via de dienst wordt geüpload, opgeslagen of gepubliceerd.
+
+De klant garandeert te beschikken over alle rechten, licenties en toestemmingen die nodig zijn voor het gebruik en de openbaarmaking van deze content. De content mag geen inbreuk maken op auteursrechten, merkrechten, portretrechten of andere rechten van derden.
+
+- De klant is verantwoordelijk voor privacyverklaringen, cookie-informatie, consumenteninformatie en andere wettelijke informatie op de eigen website.
+
+- Voor zover wettelijk toegestaan vrijwaart de klant ons tegen aanspraken van derden die voortvloeien uit de eigen website-inhoud, producten, diensten, communicatie of content die door of namens de klant is geplaatst.
+
+- Wij controleren klantcontent niet vooraf op auteursrechten of andere rechten van derden. Dit laat onze eigen wettelijke verplichtingen bij meldingen van onrechtmatige content onverlet.
+
+6. Misbruik, blokkering en verwijdering
+
+Bij misbruik, veiligheidsrisico's, betalingsachterstand, illegale content of overtreding van deze voorwaarden kunnen wij passende maatregelen nemen. Een klacht van een derde leidt tot beoordeling en niet automatisch tot verwijdering.
+
+Afhankelijk van de aard, ernst en herhaling van de overtreding kunnen wij specifieke content tijdelijk of permanent verwijderen of ontoegankelijk maken. Wanneer een beperktere maatregel niet volstaat, kunnen wij een website, formulier of domeinkoppeling blokkeren of een account opschorten of beëindigen. Wij wegen de betrokken belangen en grondrechten en beperken de maatregel tot wat nodig is.
+
+Bij een beperking wegens illegale content of overtreding van de contentregels ontvangt de klant uiterlijk bij het ingaan van de maatregel een concrete motivering, wanneer diens elektronische contactgegevens bekend zijn en behoudens wettelijke uitzonderingen. Die vermeldt de feiten, wettelijke of contractuele grond, omvang en eventuele duur, eventueel gebruik van automatisering en mogelijkheden om bezwaar te maken. Bij urgente risico's kunnen wij handelen zonder voorafgaande waarschuwing.
+
+Meldprocedure en bezwaar tegen een maatregel: /melding-onrechtmatige-content
+
+6a. Meldingen van onrechtmatige content
+
+Iedereen kan vermeend onrechtmatige content op een door FlexPagina.nl gehoste website melden via abuse@FlexPagina.nl, zonder account. De meldpagina beschrijft welke informatie nodig is, hoe wij de melding beoordelen en hoe melder en klant bezwaar kunnen maken.
+
+Vermeld de exacte URL of URL's, licht toe waarom de content volgens u onrechtmatig is, geef uw naam en e-mailadres en verklaar dat u te goeder trouw meent dat de informatie en beweringen juist en volledig zijn. Bij een melding over rechten van derden helpt informatie over het oorspronkelijke werk en uw rechten of bevoegdheid. U hoeft niet zelf rechthebbende te zijn om illegale content te melden. Voor meldingen over seksueel misbruik of seksuele uitbuiting van kinderen zijn naam en e-mailadres niet vereist.
+
+Als elektronische contactgegevens beschikbaar zijn, bevestigen wij de ontvangst zonder onnodige vertraging. Wij behandelen meldingen tijdig, zorgvuldig, objectief en zonder willekeur en vragen zo nodig aanvullende informatie. Wij informeren de melder zonder onnodige vertraging over het besluit, eventueel gebruik van automatisering en de mogelijkheden om daartegen op te komen.
+
+Onrechtmatige content melden: /melding-onrechtmatige-content
+
+7. Aansprakelijkheid
+
+Voor zover wettelijk toegestaan is onze aansprakelijkheid beperkt tot directe schade die aantoonbaar het gevolg is van een toerekenbare tekortkoming van onze kant.
+
+Wij zijn niet aansprakelijk voor indirecte schade, gevolgschade, omzetverlies, winstderving, reputatieschade, gemiste boekingen, verlies van klanten, verlies van data of schade door websites of content van klanten.
+
+De totale aansprakelijkheid is, voor zover wettelijk toegestaan, beperkt tot het bedrag dat de klant in de twaalf maanden voorafgaand aan de schadeveroorzakende gebeurtenis voor de betreffende dienst heeft betaald.
+
+8. Overmacht
+
+Wij zijn niet aansprakelijk voor vertragingen of tekortkomingen door overmacht. Daaronder vallen onder meer storingen bij hostingproviders, internetproviders, betaalproviders, DNS-providers, stroomuitval, cyberaanvallen, overheidsmaatregelen, oorlog, stakingen en andere omstandigheden buiten onze redelijke controle.
+
+9. Wijzigingen en toepasselijk recht
+
+Wij mogen deze voorwaarden aanpassen. Bij wezenlijke wijzigingen informeren wij klanten via de dienst, per e-mail of via de website.
+
+Op deze voorwaarden is Nederlands recht van toepassing. Geschillen worden voorgelegd aan de bevoegde rechter in Nederland, tenzij dwingend recht een andere rechter aanwijst.
+

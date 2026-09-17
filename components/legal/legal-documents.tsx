@@ -1,4 +1,7 @@
+import { termsDocument } from "@/lib/legal/terms"
+import Link from "next/link"
 import { PLATFORM_BRAND_NAME, PLATFORM_EMAILS } from "@/lib/platform"
+import { TERMS_DOWNLOAD_PATH, TERMS_VERSION } from "@/lib/legal/terms-version"
 
 export type LegalDocumentKey =
   | "terms"
@@ -7,11 +10,13 @@ export type LegalDocumentKey =
   | "processorAgreement"
   | "acceptableUse"
   | "disclaimer"
+  | "takedown"
 
 type LegalSection = {
   title: string
   paragraphs?: string[]
   bullets?: string[]
+  links?: { href: string; label: string }[]
 }
 
 type LegalDocument = {
@@ -19,98 +24,14 @@ type LegalDocument = {
   description: string
   path: string
   sections: LegalSection[]
+  isTemplate?: boolean
+  updatedAt?: string
 }
 
 const providerLine = `Aanbieder: [Bedrijfsnaam], handelend onder de naam ${PLATFORM_BRAND_NAME}. KvK-nummer: [KvK-nummer]. Adres: [Adres]. E-mail: [E-mailadres]. Laatst bijgewerkt: [Laatst bijgewerkt].`
 
 export const legalDocuments: Record<LegalDocumentKey, LegalDocument> = {
-  terms: {
-    title: "Algemene voorwaarden",
-    description: `Voorwaarden voor het gebruik van ${PLATFORM_BRAND_NAME}.`,
-    path: "/terms",
-    sections: [
-      {
-        title: "1. Identiteit en toepasselijkheid",
-        paragraphs: [
-          providerLine,
-          `Deze algemene voorwaarden gelden voor het gebruik van ${PLATFORM_BRAND_NAME}, een SaaS website builder waarmee kleine ondernemers, zzp'ers en organisaties websites kunnen maken, beheren en publiceren.`,
-          "Door een account aan te maken, een abonnement af te sluiten of de dienst te gebruiken, gaat de klant akkoord met deze voorwaarden."
-        ]
-      },
-      {
-        title: "2. Gebruik van de dienst",
-        paragraphs: [
-          `${PLATFORM_BRAND_NAME} levert toegang tot software, hostingfunctionaliteit, publicatiefuncties, formulieren, domeinkoppelingen en andere onderdelen die nodig zijn om websites te beheren.`,
-          "De klant zorgt zelf voor een veilige accounttoegang, correcte gegevens en normaal gebruik van de dienst."
-        ],
-        bullets: [
-          "De klant mag de dienst niet gebruiken op een manier die de werking, veiligheid of beschikbaarheid van het platform schaadt.",
-          "De klant moet alle toepasselijke wet- en regelgeving naleven, waaronder regels over consumentenrecht, privacy, intellectueel eigendom en reclame.",
-          "Wij mogen functies wijzigen, vervangen of verwijderen wanneer dit nodig is voor veiligheid, onderhoud, wettelijke naleving of productverbetering."
-        ]
-      },
-      {
-        title: "3. Abonnementen, betaling en opzegging",
-        paragraphs: [
-          "Betaalde abonnementen worden gefactureerd volgens de gekozen abonnementsvorm en de prijzen die tijdens het afsluiten worden getoond.",
-          "Wanneer Stripe of een andere betaalprovider wordt gebruikt, verloopt de betaalverwerking via die externe provider. De klant moet zorgen voor juiste betaalgegevens en tijdige betaling.",
-          "De klant kan het abonnement opzeggen volgens de opzegmogelijkheden in het account of via support. Opzegging stopt toekomstige verlengingen, maar geeft niet automatisch recht op terugbetaling van al begonnen periodes, tenzij wettelijk verplicht of uitdrukkelijk anders vermeld."
-        ]
-      },
-      {
-        title: "4. Beschikbaarheid, onderhoud en externe partijen",
-        paragraphs: [
-          "Wij spannen ons in om de dienst betrouwbaar beschikbaar te houden, maar geven geen garantie op 100% uptime of ononderbroken toegang.",
-          "De dienst is afhankelijk van externe partijen zoals Vercel, Supabase, Stripe, SMTP/mailproviders, domeinregistrars, DNS-providers en eventuele analytics- of infrastructuurdiensten."
-        ],
-        bullets: [
-          "Onderhoud, updates, beveiligingsmaatregelen en storingen kunnen tijdelijke beperkingen of downtime veroorzaken.",
-          "Storingen bij externe partijen vallen buiten onze directe controle.",
-          "Wij mogen noodmaatregelen nemen wanneer dat nodig is voor veiligheid, misbruikbestrijding of continuiteit van de dienst."
-        ]
-      },
-      {
-        title: "5. Content, rechten en verantwoordelijkheid van de klant",
-        paragraphs: [
-          "De klant is volledig verantwoordelijk voor de eigen website, eigen inhoud en alle gegevens die via de website worden verzameld.",
-          "De klant garandeert dat hij of zij voldoende rechten heeft op teksten, foto's, logo's, handelsnamen, merken, uploads, databestanden en overige materialen die via de dienst worden geplaatst."
-        ],
-        bullets: [
-          "De klant is verantwoordelijk voor privacyverklaringen, cookie-informatie, consumenteninformatie en andere wettelijke informatie op de eigen website.",
-          "De klant vrijwaart ons tegen claims die voortkomen uit de eigen website-inhoud, producten, diensten, communicatie of uploads.",
-          "Wij controleren klantcontent niet vooraf en treden in beginsel op als technische dienstverlener."
-        ]
-      },
-      {
-        title: "6. Misbruik, blokkering en verwijdering",
-        paragraphs: [
-          "Wij mogen accounts, websites, formulieren, domeinkoppelingen of content tijdelijk of permanent blokkeren wanneer sprake is van misbruik, veiligheidsrisico's, betalingsachterstand, illegale content, klachten van derden of overtreding van deze voorwaarden.",
-          "Waar redelijk mogelijk informeren wij de klant, maar bij urgente risico's mogen wij direct handelen."
-        ]
-      },
-      {
-        title: "7. Aansprakelijkheid",
-        paragraphs: [
-          "Voor zover wettelijk toegestaan is onze aansprakelijkheid beperkt tot directe schade die aantoonbaar het gevolg is van een toerekenbare tekortkoming van onze kant.",
-          "Wij zijn niet aansprakelijk voor indirecte schade, gevolgschade, omzetverlies, winstderving, reputatieschade, gemiste boekingen, verlies van klanten, verlies van data of schade door websites of content van klanten.",
-          "De totale aansprakelijkheid is, voor zover wettelijk toegestaan, beperkt tot het bedrag dat de klant in de twaalf maanden voorafgaand aan de schadeveroorzakende gebeurtenis voor de betreffende dienst heeft betaald."
-        ]
-      },
-      {
-        title: "8. Overmacht",
-        paragraphs: [
-          "Wij zijn niet aansprakelijk voor vertragingen of tekortkomingen door overmacht. Daaronder vallen onder meer storingen bij hostingproviders, internetproviders, betaalproviders, DNS-providers, stroomuitval, cyberaanvallen, overheidsmaatregelen, oorlog, stakingen en andere omstandigheden buiten onze redelijke controle."
-        ]
-      },
-      {
-        title: "9. Wijzigingen en toepasselijk recht",
-        paragraphs: [
-          "Wij mogen deze voorwaarden aanpassen. Bij wezenlijke wijzigingen informeren wij klanten via de dienst, per e-mail of via de website.",
-          "Op deze voorwaarden is Nederlands recht van toepassing. Geschillen worden voorgelegd aan de bevoegde rechter in Nederland, tenzij dwingend recht een andere rechter aanwijst."
-        ]
-      }
-    ]
-  },
+  terms: termsDocument,
   privacy: {
     title: "Privacyverklaring",
     description: `Privacytemplate voor ${PLATFORM_BRAND_NAME}.`,
@@ -128,7 +49,9 @@ export const legalDocuments: Record<LegalDocumentKey, LegalDocument> = {
         title: "2. Welke persoonsgegevens wij verwerken",
         bullets: [
           "Accountgegevens: naam, e-mailadres, wachtwoordhash, bedrijfsnaam, rol en accountinstellingen.",
+          "Akkoord met de voorwaarden: gebruikers-ID, geaccepteerde versie en het tijdstip van registratie, om vast te leggen welke afspraken zijn aanvaard.",
           "Contact- en supportgegevens: e-mails, berichten, supportvragen en administratieve correspondentie.",
+          "Contentmeldingen en bezwaren: contactgegevens van de melder, gemelde URL's, toelichting, bewijs, correspondentie en besluiten over de melding.",
           "Websitegegevens: website-inhoud, uploads, domeinnamen, instellingen, formulieren en publicatiegegevens.",
           "Technische gegevens: IP-adres, browser, apparaat, loggegevens, sessiegegevens en beveiligingsinformatie.",
           "Betalings- en factuurgegevens: abonnementsstatus, factuurgegevens, transactiegegevens en betaalstatus via Stripe of een vergelijkbare betaalprovider.",
@@ -140,6 +63,7 @@ export const legalDocuments: Record<LegalDocumentKey, LegalDocument> = {
         bullets: [
           "Uitvoering van de overeenkomst: accountbeheer, websitebouw, hosting, publicatie, support en abonnementen.",
           "Wettelijke verplichting: administratie, fiscale bewaarplichten, beveiligingsmeldingen en medewerking aan bevoegde autoriteiten.",
+          "Wettelijke verplichting: meldingen van onrechtmatige content beoordelen, besluiten motiveren en betrokkenen informeren volgens de Digital Services Act. Voor aanvullende geschilafhandeling gebruiken wij waar nodig ons gerechtvaardigd belang bij rechtsbescherming.",
           "Gerechtvaardigd belang: beveiliging, fraudepreventie, misbruikbestrijding, productverbetering, logging en continuiteit.",
           "Toestemming: optionele marketingcookies, nieuwsbrieven of andere verwerkingen waarvoor toestemming nodig is."
         ]
@@ -153,6 +77,7 @@ export const legalDocuments: Record<LegalDocumentKey, LegalDocument> = {
           "Account- en websitegegevens: zolang het account actief is en daarna voor een redelijke herstel-, bewijs- of administratieve periode.",
           "Factuur- en administratiegegevens: in beginsel zeven jaar voor fiscale administratie.",
           "Supportcommunicatie: zolang nodig voor afhandeling en kwaliteitsbewaking.",
+          "Contentmeldingen en bezwaren: zolang nodig voor beoordeling, communicatie, geschilafhandeling en toepasselijke wettelijke verplichtingen. Wij delen met betrokkenen alleen noodzakelijke informatie en de identiteit van de melder alleen als dat strikt noodzakelijk is.",
           "Technische logs: zo kort mogelijk, met een redelijke termijn voor beveiliging, foutanalyse en misbruikbestrijding.",
           "Back-ups: volgens het backupbeleid; verwijdering kan vertraagd zichtbaar zijn in back-upkopieen."
         ]
@@ -362,19 +287,87 @@ export const legalDocuments: Record<LegalDocumentKey, LegalDocument> = {
         title: "3. Maatregelen",
         paragraphs: [
           "Bij overtreding mogen wij content verwijderen, websites offline halen, formulieren blokkeren, domeinen ontkoppelen, accounts opschorten of verwijderen, technische maatregelen nemen en bevoegde autoriteiten informeren wanneer dat nodig is.",
-          "Wij mogen ook optreden bij duidelijke risico's, klachten van derden, vermoedens van fraude of wettelijke verzoeken."
+          "Wij beoordelen klachten en risico's zorgvuldig en nemen evenredige maatregelen volgens artikel 6 van de algemene voorwaarden. Een klacht leidt niet automatisch tot verwijdering. Bij beperkingen wegens content informeren wij de betrokken klant met een concrete motivering en mogelijkheden voor bezwaar, zoals beschreven in de meldprocedure."
         ]
       },
       {
         title: "4. Meldingen",
         paragraphs: [
-          `Misbruik kan worden gemeld via ${PLATFORM_EMAILS.abuse} of [E-mailadres]. Vermeld de URL, een beschrijving van de overtreding, bewijsstukken en uw contactgegevens.`
-        ]
+          `Misbruik en vermeend onrechtmatige content kunnen zonder account worden gemeld via ${PLATFORM_EMAILS.abuse}. De meldprocedure beschrijft de benodigde informatie, de uitzondering voor contactgegevens bij meldingen over seksueel misbruik van kinderen, de beoordeling en de mogelijkheden voor bezwaar.`
+        ],
+        links: [{ href: "/melding-onrechtmatige-content", label: "Bekijk de meldprocedure" }]
       },
       {
         title: "5. Verantwoordelijkheid van de klant",
         paragraphs: [
           "De klant blijft verantwoordelijk voor de eigen website, eigen gebruikers, eigen formulieren, eigen domeinen en eigen communicatie. De klant moet misbruik actief voorkomen en snel reageren op verzoeken om schadelijke of illegale content te verwijderen."
+        ]
+      }
+    ]
+  },
+  takedown: {
+    title: "Onrechtmatige content melden",
+    description: `Meld vermeend onrechtmatige content op websites die door ${PLATFORM_BRAND_NAME} worden gehost.`,
+    path: "/melding-onrechtmatige-content",
+    isTemplate: false,
+    updatedAt: "17 september 2026",
+    sections: [
+      {
+        title: "Een melding indienen",
+        paragraphs: [
+          `Ziet u mogelijk onrechtmatige content op een website die door ${PLATFORM_BRAND_NAME} wordt gehost? Iedereen kan dit per e-mail melden. U heeft geen account nodig en hoeft niet zelf rechthebbende te zijn. Denk aan auteursrechtinbreuk, merkinbreuk, privacyschending, fraude, phishing of andere illegale content.`,
+          `Stuur uw melding naar ${PLATFORM_EMAILS.abuse} met als onderwerp ‘Melding onrechtmatige content’. De e-maillink opent uw eigen mailprogramma; verstuur de melding daar zelf. U kunt het adres ook kopiëren en in uw webmail gebruiken.`
+        ],
+        links: [{ href: `mailto:${PLATFORM_EMAILS.abuse}?subject=${encodeURIComponent("Melding onrechtmatige content")}`, label: `Melden via ${PLATFORM_EMAILS.abuse}` }]
+      },
+      {
+        title: "Wat vermeldt u in de melding?",
+        bullets: [
+          "De exacte URL of URL's van de content. Benoem bij meerdere afbeeldingen of teksten welk onderdeel u bedoelt.",
+          "Een onderbouwde uitleg waarom de content volgens u onrechtmatig is, met relevante informatie of bewijs waarover u beschikt.",
+          "Uw naam en e-mailadres, zodat wij ontvangst kunnen bevestigen, vragen kunnen stellen en ons besluit kunnen toesturen.",
+          "Bij een melding over intellectuele eigendom: beschrijf het oorspronkelijke werk of recht en voeg waar mogelijk een bronlink toe. Als u namens een rechthebbende optreedt, licht dan uw bevoegdheid toe.",
+          "Neem deze verklaring op: ‘Ik meen te goeder trouw dat de informatie en beweringen in deze melding juist en volledig zijn.’"
+        ],
+        paragraphs: [
+          "Voor meldingen over seksueel misbruik of seksuele uitbuiting van kinderen hoeft u geen naam of e-mailadres op te geven. Gebruik desgewenst een e-mailadres dat uw identiteit niet prijsgeeft. Zonder bruikbare contactgegevens kunnen wij u geen ontvangstbevestiging of besluit sturen. Stuur geen kopieën van strafbaar beeldmateriaal mee; vermeld de vindplaats.",
+          "Een telefoonnummer, woonadres, auteursrechtregistratie, identiteitsbewijs of handtekening is niet standaard nodig. Deel alleen persoonsgegevens die nodig zijn voor de beoordeling."
+        ]
+      },
+      {
+        title: "Wat gebeurt er na uw melding?",
+        paragraphs: [
+          "Als uw elektronische contactgegevens beschikbaar zijn, bevestigen wij de ontvangst zonder onnodige vertraging. Wij beoordelen de melding tijdig, zorgvuldig, objectief en zonder willekeur. Bij ontbrekende informatie vragen wij zo nodig om aanvulling; een onvolledige melding wordt niet automatisch genegeerd.",
+          "Wij onderzoeken de betreffende content en wegen de rechten en belangen van de melder, de klant en andere betrokkenen. Waar nodig vragen wij de klant om een reactie. Ernst en urgentie bepalen hoe snel actie nodig is; bij acute risico's kan direct ingrijpen nodig zijn.",
+          "Een melding leidt niet automatisch tot verwijdering. Wij kunnen besluiten geen maatregel te nemen, specifieke content tijdelijk of permanent te verwijderen of ontoegankelijk te maken. Als een beperktere maatregel niet volstaat, kan bij ernstige of herhaalde overtredingen ook een website of account worden geschorst of beëindigd.",
+          "Wij informeren de melder zonder onnodige vertraging over het besluit en de mogelijkheden om daartegen op te komen. Als geautomatiseerde middelen zijn gebruikt voor de verwerking of besluitvorming, vermelden wij dat."
+        ]
+      },
+      {
+        title: "Informatie voor de betrokken klant",
+        paragraphs: [
+          "Bij een beperking wegens illegale content of overtreding van onze contentregels krijgt de klant uiterlijk bij het ingaan van de maatregel een duidelijke motivering, wanneer diens elektronische contactgegevens bekend zijn en behoudens wettelijke uitzonderingen.",
+          "De motivering beschrijft de maatregel, de feiten, de wettelijke of contractuele grond, de omvang en eventuele duur, eventueel gebruik van automatisering en de beschikbare mogelijkheden voor bezwaar. De identiteit van de melder wordt alleen gedeeld als dat strikt noodzakelijk is."
+        ]
+      },
+      {
+        title: "Niet eens met het besluit?",
+        paragraphs: [
+          `Zowel de melder als de betrokken klant kan kosteloos om herbeoordeling vragen via ${PLATFORM_EMAILS.appeals}. Vermeld het betreffende besluit, de URL's, waarom u het niet eens bent en eventuele aanvullende informatie.`,
+          "Wij beoordelen het bezwaar zorgvuldig en informeren u zonder onnodige vertraging over de uitkomst. Een onjuiste beperking wordt waar mogelijk opgeheven. U kunt zich ook tot de bevoegde rechter wenden en, voor zover van toepassing, gebruikmaken van buitengerechtelijke geschillenbeslechting. Een verzoek aan ons is daarvoor geen voorwaarde."
+        ],
+        links: [{ href: `mailto:${PLATFORM_EMAILS.appeals}?subject=${encodeURIComponent("Bezwaar tegen contentbesluit")}`, label: `Bezwaar via ${PLATFORM_EMAILS.appeals}` }]
+      },
+      {
+        title: "Uw gegevens en de toepasselijke regels",
+        paragraphs: [
+          "Wij gebruiken de gegevens uit uw melding om de melding te beoordelen, daarover te communiceren en aan wettelijke verplichtingen te voldoen. Wij delen alleen noodzakelijke informatie met betrokkenen of bevoegde autoriteiten en bewaren gegevens niet langer dan nodig voor de afhandeling, geschillen en wettelijke verplichtingen."
+        ],
+        links: [
+          { href: "/privacy", label: "Privacyverklaring" },
+          { href: "/terms", label: "Algemene voorwaarden" },
+          { href: "/acceptable-use", label: "Regels voor toegestaan gebruik" },
+          { href: "https://eur-lex.europa.eu/eli/reg/2022/2065/oj?locale=nl", label: "Digital Services Act (artikelen 16 en 17)" }
         ]
       }
     ]
@@ -443,12 +436,25 @@ export function LegalDocumentPage({ documentKey }: { documentKey: LegalDocumentK
 
   return (
     <div className="space-y-8 text-white/90">
-      <section className="rounded-lg border border-amber-300/30 bg-amber-300/10 p-4 text-sm text-amber-50">
-        <p className="font-semibold">Let op: dit is een template en moet juridisch gecontroleerd worden voordat het definitief gebruikt wordt.</p>
-        <p className="mt-2 text-amber-50/85">
-          Vul alle placeholders in, controleer de feitelijke dienstverleners en laat de tekst aanpassen aan de definitieve bedrijfsstructuur van {PLATFORM_BRAND_NAME}.
+      {document.isTemplate !== false ? (
+        <section className="rounded-lg border border-amber-300/30 bg-amber-300/10 p-4 text-sm text-amber-50">
+          <p className="font-semibold">Let op: dit is een template en moet juridisch gecontroleerd worden voordat het definitief gebruikt wordt.</p>
+          <p className="mt-2 text-amber-50/85">
+            Vul alle placeholders in, controleer de feitelijke dienstverleners en laat de tekst aanpassen aan de definitieve bedrijfsstructuur van {PLATFORM_BRAND_NAME}.
+          </p>
+        </section>
+      ) : null}
+
+      {document.updatedAt ? <p className="text-sm text-white/70">Laatst bijgewerkt: {document.updatedAt}</p> : null}
+
+      {documentKey === "terms" ? (
+        <p className="text-sm text-white/80">
+          Versie {TERMS_VERSION}.{" "}
+          <a href={TERMS_DOWNLOAD_PATH} download className="text-[var(--brand-blue)] underline underline-offset-4 hover:text-white">
+            Download de algemene voorwaarden (tekstbestand)
+          </a>
         </p>
-      </section>
+      ) : null}
 
       {document.sections.map((section) => (
         <section key={section.title}>
@@ -462,6 +468,17 @@ export function LegalDocumentPage({ documentKey }: { documentKey: LegalDocumentK
             <ul className="list-disc space-y-2 pl-6 leading-7">
               {section.bullets.map((bullet) => (
                 <li key={bullet}>{bullet}</li>
+              ))}
+            </ul>
+          ) : null}
+          {section.links ? (
+            <ul className="mt-4 space-y-2">
+              {section.links.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className="break-words text-[var(--brand-blue)] underline underline-offset-4 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">
+                    {link.label}
+                  </Link>
+                </li>
               ))}
             </ul>
           ) : null}
