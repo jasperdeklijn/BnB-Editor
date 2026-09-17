@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { PLATFORM_BRAND_INITIALS, PLATFORM_BRAND_NAME } from "@/lib/platform"
@@ -82,13 +83,14 @@ export default function LoginPage() {
             Bouw prachtige websites voor jouw kleine bedrijf. Bewerk, publiceer en beheer alles vanuit één plek.
           </p>
 
-          <div className="mt-10 rounded-xl border border-[var(--brand-blue)]/20 overflow-hidden shadow-2xl shadow-[var(--brand-blue)]/10">
-            <img
-              src="/placeholder.svg?height=300&width=500"
-              alt={`${PLATFORM_BRAND_NAME} voorbeeld dashboard`}
-              className="w-full"
-              width={500}
-              height={300}
+          <div className="mt-10 overflow-hidden rounded-xl border border-[#B7D1C2]/20 shadow-xl shadow-black/10">
+            <Image
+              src="/auth/login-visual.webp"
+              alt="Illustratie van een laptop met een website-editor op een rustige werkplek"
+              className="h-auto w-full"
+              width={1536}
+              height={1024}
+              sizes="(min-width: 1280px) 448px, 40vw"
             />
           </div>
         </div>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { PLATFORM_BRAND_INITIALS, PLATFORM_BRAND_NAME } from "@/lib/platform"
@@ -96,25 +97,15 @@ export default function SignUpPage() {
             Maak een gratis account aan en ontdek hoe makkelijk het is om een professionele website voor jouw kleine bedrijf te maken.
           </p>
 
-          <div className="mt-10 grid grid-cols-2 gap-4">
-            <div className="rounded-xl border border-[var(--brand-purple)]/20 overflow-hidden shadow-lg shadow-[var(--brand-purple)]/5">
-              <img
-                src="/placeholder.svg?height=200&width=250"
-                alt="Voorbeeld website template"
-                className="w-full"
-                width={250}
-                height={200}
-              />
-            </div>
-            <div className="rounded-xl border border-[var(--brand-blue)]/20 overflow-hidden shadow-lg shadow-[var(--brand-blue)]/5">
-              <img
-                src="/placeholder.svg?height=200&width=250"
-                alt="Voorbeeld bedrijf boekingsmodule"
-                className="w-full"
-                width={250}
-                height={200}
-              />
-            </div>
+          <div className="mt-10 overflow-hidden rounded-xl border border-[#B7D1C2]/20 shadow-xl shadow-black/10">
+            <Image
+              src="/auth/signup-visual.webp"
+              alt="Illustratie van een bedrijfswebsite op desktop en mobiel, in warme groene tinten"
+              className="h-auto w-full"
+              width={1536}
+              height={1024}
+              sizes="(min-width: 1280px) 448px, 40vw"
+            />
           </div>
         </div>
       </div>
