@@ -29,7 +29,9 @@
     "test:inquiries": "node --test tests/inquiries.test.mjs",
     "test:calendar-ux": "node --test tests/calendar-ux-current.test.mjs",
     "test:reservations": "node --test tests/reservations-overview.test.mjs",
-    "start": "next start"
+    "start": "next start",
+    "validate-import": "node scripts/validate-import.cjs",
+    "test:import": "node --test tests/import-*.test.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -87,6 +89,7 @@
     "react-hook-form": "^7.60.0",
     "react-resizable-panels": "^2.1.7",
     "recharts": "2.15.4",
+    "sharp": "0.35.3",
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",

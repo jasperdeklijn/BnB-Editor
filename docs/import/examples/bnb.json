@@ -1,0 +1,109 @@
+{
+  "format": "flexpagina",
+  "version": 1,
+  "title": "B&B De Groene Hof",
+  "theme": {
+    "paletteId": "forest-green",
+    "fontPairId": "playfair-lato",
+    "spacing": "comfortable",
+    "radius": "large"
+  },
+  "sections": [
+    {
+      "key": "menu",
+      "type": "nav",
+      "content": {
+        "brandName": "De Groene Hof",
+        "navLinks": [
+          {
+            "sectionKey": "welkom",
+            "label": "Welkom"
+          },
+          {
+            "sectionKey": "over",
+            "label": "Over ons"
+          },
+          {
+            "sectionKey": "vragen",
+            "label": "Vragen"
+          },
+          {
+            "sectionKey": "contact",
+            "label": "Contact"
+          }
+        ]
+      }
+    },
+    {
+      "key": "welkom",
+      "type": "hero",
+      "content": {
+        "layout": "classic",
+        "title": "Even helemaal tot rust komen",
+        "subtitle": "Een kleinschalig, fictief B&B aan de rand van het dorp.",
+        "ctaText": "Ontdek ons verhaal",
+        "ctaEnabled": true,
+        "ctaHref": "#over"
+      },
+      "styles": {
+        "backgroundColor": "#EAF1ED",
+        "textColor": "#24382D"
+      }
+    },
+    {
+      "key": "over",
+      "type": "about",
+      "content": {
+        "layout": "split",
+        "title": "Welkom bij De Groene Hof",
+        "description": "Begin de dag met een rustig ontbijt en ontdek de wandelpaden in de omgeving. Dit is originele voorbeeldtekst voor een fictief bedrijf."
+      }
+    },
+    {
+      "key": "comfort",
+      "type": "features",
+      "content": {
+        "title": "Een fijn verblijf",
+        "features": [
+          {
+            "text": "Vers ontbijt aan tafel"
+          },
+          {
+            "text": "Rustige tuin"
+          },
+          {
+            "text": "Wandelroutes in de buurt"
+          }
+        ]
+      }
+    },
+    {
+      "key": "vragen",
+      "type": "faq",
+      "content": {
+        "title": "Goed om te weten",
+        "items": [
+          {
+            "question": "Vanaf hoe laat kan ik aankomen?",
+            "answer": "Aankomst is mogelijk vanaf 15.00 uur, na overleg."
+          },
+          {
+            "question": "Kan ik mijn fiets meenemen?",
+            "answer": "Ja, er is een overdekte plek voor fietsen."
+          }
+        ]
+      }
+    },
+    {
+      "key": "contact",
+      "type": "cta",
+      "content": {
+        "title": "Plan je verblijf",
+        "subtitle": "Bespreek je wensen met ons.",
+        "primaryCtaText": "Naar de contactpagina",
+        "primaryCtaHref": "https://example.com/contact",
+        "primaryCtaEnabled": true
+      }
+    }
+  ]
+}

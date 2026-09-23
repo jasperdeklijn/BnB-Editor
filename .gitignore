@@ -31,3 +31,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env
+
+# Local URL-to-JSON deliverables (may contain authorized third-party content)
+/imports/
+
+# Supabase CLI local metadata
+/supabase/.temp/

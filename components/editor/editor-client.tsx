@@ -545,6 +545,12 @@ export function EditorClient({
     router.replace(`/editor?websiteId=${nextWebsiteId}`)
   }
 
+  const handleOpenImport = async () => {
+    try { await saveQueueRef.current?.flush() }
+    catch { toast.error("Sla de huidige wijzigingen eerst opnieuw op."); return }
+    router.push("/editor/import")
+  }
+
   const handleCreateWebsite = async () => {
     try {
       await saveQueueRef.current?.flush()
@@ -1601,6 +1607,7 @@ export function EditorClient({
               <Redo2 className="h-3.5 w-3.5" />
             </Button>
           </div>
+          <Button type="button" variant="outline" size="sm" onClick={handleOpenImport} disabled={isCreatingWebsite || isDeletingWebsite}>Import JSON</Button>
           <Button
             type="button"
             variant="outline"
@@ -1799,6 +1806,7 @@ export function EditorClient({
                 >
                   {isRenamingWebsite ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 </Button>
+                <Button type="button" variant="outline" size="sm" onClick={handleOpenImport} disabled={isCreatingWebsite || isDeletingWebsite}>Import JSON</Button>
                 <Button
                   type="button"
                   variant="outline"

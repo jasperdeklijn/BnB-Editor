@@ -1,0 +1,60 @@
+{
+  "format": "flexpagina",
+  "version": 1,
+  "title": "Studio Helder",
+  "theme": {
+    "paletteId": "pure-minimal",
+    "fontPairId": "inter-system"
+  },
+  "sections": [
+    {
+      "key": "intro",
+      "type": "hero",
+      "content": {
+        "layout": "card",
+        "title": "Heldere plannen voor je bedrijf",
+        "subtitle": "Een fictieve ontwerpstudio voor kleine ondernemingen.",
+        "ctaText": "Onze aanpak",
+        "ctaHref": "#aanpak",
+        "ctaEnabled": true
+      }
+    },
+    {
+      "key": "aanpak",
+      "type": "about",
+      "content": {
+        "title": "Van idee naar een bruikbaar ontwerp",
+        "description": "We luisteren, tekenen en verbeteren samen. Alle teksten in dit voorbeeld zijn speciaal voor deze documentatie geschreven."
+      }
+    },
+    {
+      "key": "voordelen",
+      "type": "features",
+      "content": {
+        "layout": "split",
+        "title": "Zo werken wij",
+        "features": [
+          {
+            "text": "Een vast aanspreekpunt"
+          },
+          {
+            "text": "Duidelijke afspraken"
+          },
+          {
+            "text": "Ruimte voor feedback"
+          }
+        ]
+      }
+    },
+    {
+      "key": "actie",
+      "type": "cta",
+      "content": {
+        "title": "Vertel ons je idee",
+        "primaryCtaText": "Contact",
+        "primaryCtaHref": "https://example.com/contact",
+        "primaryCtaEnabled": true
+      }
+    }
+  ]
+}
