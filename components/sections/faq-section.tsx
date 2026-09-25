@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionIcon } from "./section-icon"
+
 import { useState } from "react"
 import { ChevronDown } from "lucide-react"
 import { EditableText } from "@/components/editor/inline-editable-text"
@@ -9,6 +11,7 @@ import { getSectionColorVars } from "@/lib/section-colors"
 
 export interface FaqItem {
   id?: string
+  icon?: string | null
   question: string
   answer: string
 }
@@ -71,7 +74,7 @@ function FaqRow({
         onClick={() => setOpen((s) => !s)}
         className="flex w-full items-center justify-between gap-4 py-5 text-left"
       >
-        <EditableText data={data} path={["items", index, "question"]} value={item.question} isPreview={isPreview} onUpdate={onUpdate} className="text-sm font-medium md:text-base" style={textStyle} />
+        <SectionIcon icon={item.icon ?? null} className="h-5 w-5 text-[var(--section-accent)]" /><EditableText data={data} path={["items", index, "question"]} value={item.question} isPreview={isPreview} onUpdate={onUpdate} className="flex-1 text-sm font-medium md:text-base" style={textStyle} />
         <ChevronDown
           className={`h-4 w-4 flex-shrink-0 text-[var(--section-accent)] transition-transform duration-200 ${
             open ? "rotate-180" : ""

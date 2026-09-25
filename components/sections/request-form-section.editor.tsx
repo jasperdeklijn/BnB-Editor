@@ -1,5 +1,8 @@
 "use client"
 
+import { SectionIconSettings } from "@/components/editor/section-icon-settings"
+import { requestFormIcon } from "@/lib/request-form-icons"
+
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -31,6 +34,7 @@ export function RequestFormSectionEditor({ section, updateField, currentPlan, ha
 
   return (
     <Card className="p-4 space-y-3">
+      <SectionIconSettings data={section.data} updateField={updateField} fields={[["headingIcon", "Formulierkop", requestFormIcon(requestType)]]} />
       <Label className="flex items-center gap-2">
         <Type className="h-3.5 w-3.5" />
         Inhoud

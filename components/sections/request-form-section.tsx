@@ -1,14 +1,13 @@
 "use client"
 
+import { requestFormIcon } from "@/lib/request-form-icons"
+import { SectionIcon } from "./section-icon"
+
 import { useState } from "react"
 import {
   Send,
   CheckCircle,
   AlertCircle,
-  MessageSquare,
-  CalendarDays,
-  FileText,
-  Phone as PhoneIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -29,23 +28,6 @@ interface RequestFormSectionProps {
   onUpdate?: (newData: Record<string, unknown>) => void
 }
 
-const REQUEST_TYPE_CONFIG: Record<
-  RequestType,
-  { label: string; icon: React.ComponentType<{ className?: string }>; buttonLabel: string }
-> = {
-  contact: { label: "Stuur een bericht", icon: MessageSquare, buttonLabel: "Verstuur bericht" },
-  appointment: {
-    label: "Plan een afspraak",
-    icon: CalendarDays,
-    buttonLabel: "Afspraak aanvragen",
-  },
-  quote: { label: "Vraag een offerte aan", icon: FileText, buttonLabel: "Offerte aanvragen" },
-  whatsapp: {
-    label: "WhatsApp ons",
-    icon: PhoneIcon,
-    buttonLabel: "Open WhatsApp",
-  },
-}
 
 interface FormState {
   name: string
@@ -122,10 +104,9 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
   const fields = (data.fields as VisibleFieldKey[]) || ["name", "email", "phone", "message"]
   const layout = getLayoutClasses(data.layout)
 
-  const config = REQUEST_TYPE_CONFIG[requestType] ?? REQUEST_TYPE_CONFIG.contact
   const localizedLabel = requestType === "appointment" ? messages.planAppointment : requestType === "quote" ? messages.quoteRequest : requestType === "whatsapp" ? messages.whatsappUs : messages.sendMessage
   const localizedButton = requestType === "appointment" ? messages.requestAppointment : requestType === "quote" ? messages.quoteRequest : requestType === "whatsapp" ? messages.openWhatsApp : messages.submit
-  const Icon = config.icon
+
 
   const { form, update, submit, status, errorMsg } = useRequestForm(formDestinationKey, requestType, businessId, websiteId, locale, isPreview, messages.error)
 
@@ -149,7 +130,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
       >
         <div className={`mx-auto ${layout.container} text-center`}>
           <div className="mb-4 inline-flex items-center justify-center gap-2 rounded-full bg-green-100 px-4 py-2 text-sm font-medium text-green-800">
-            <PhoneIcon className="h-4 w-4" />
+            <SectionIcon icon={data.headingIcon} fallback="tabler:phone" className="h-4 w-4" />
             WhatsApp
           </div>
           <EditableText as="h2" data={data} path={["title"]} value={title} isPreview={isPreview} onUpdate={onUpdate} className="mb-3 text-balance text-3xl font-bold text-amber-950 md:text-4xl" style={textStyle} />
@@ -165,7 +146,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
             }}
             className="inline-flex items-center gap-3 rounded-xl bg-green-500 px-8 py-4 text-base font-semibold text-white shadow hover:bg-green-600 transition-all hover:scale-[1.02]"
           >
-            <PhoneIcon className="h-5 w-5" />
+            <SectionIcon icon={data.headingIcon} fallback="tabler:phone" className="h-5 w-5" />
             App ons op WhatsApp
           </a>
           {isPreview ? <p className="mt-3 text-xs font-medium text-amber-800">{messages.whatsappPreview}</p> : null}
@@ -187,7 +168,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
       <div className={`mx-auto ${layout.layout === "split" || layout.layout === "showcase" ? "grid max-w-6xl gap-8 md:grid-cols-[0.8fr_1.2fr] md:items-start" : layout.container}`}>
         <div className={`mb-10 ${layout.layout === "split" || layout.layout === "showcase" ? "md:mb-0 md:text-left" : layout.heading}`}>
           <div className="mb-3 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--section-accent)] px-4 py-2 text-sm font-medium text-[var(--section-accent-foreground)]">
-            <Icon className="h-4 w-4" />
+            <SectionIcon icon={data.headingIcon} fallback={requestFormIcon(requestType)} className="h-4 w-4" />
             {localizedLabel}
           </div>
           <EditableText

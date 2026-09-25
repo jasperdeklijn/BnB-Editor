@@ -1,8 +1,10 @@
 "use client"
 
+import { SectionIcon } from "./section-icon"
+
 import type React from "react"
 import Link from "next/link"
-import { Building2, Mail, MapPin, Phone } from "lucide-react"
+
 import { EditableText } from "@/components/editor/inline-editable-text"
 import type { Section, SectionStyles, SectionType } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
@@ -55,10 +57,10 @@ export function FooterSection({ data, isPreview, styles, onUpdate, allSections }
           {hasCompanyInfo ? <div>
             <h4 className="mb-4 text-sm font-semibold">{messages.companyDetails}</h4>
             <ul className="space-y-2.5 text-sm opacity-80">
-              {address ? <li className="flex items-start gap-2"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[var(--section-accent)]" /><EditableText data={data} path={["address"]} value={address} isPreview={isPreview} onUpdate={onUpdate} multiline /></li> : null}
-              {phone ? <li><a href={`tel:${phone}`} className="flex items-center gap-2 hover:opacity-100"><Phone className="h-4 w-4 shrink-0 text-[var(--section-accent)]" /><EditableText data={data} path={["phone"]} value={phone} isPreview={isPreview} onUpdate={onUpdate} /></a></li> : null}
-              {email ? <li><a href={`mailto:${email}`} className="flex items-center gap-2 hover:opacity-100"><Mail className="h-4 w-4 shrink-0 text-[var(--section-accent)]" /><EditableText data={data} path={["email"]} value={email} isPreview={isPreview} onUpdate={onUpdate} /></a></li> : null}
-              {registrationNumber ? <li className="flex items-center gap-2"><Building2 className="h-4 w-4 shrink-0 text-[var(--section-accent)]" /><span>{messages.registrationNumber}: <EditableText data={data} path={["registrationNumber"]} value={registrationNumber} isPreview={isPreview} onUpdate={onUpdate} /></span></li> : null}
+              {address ? <li className="flex items-start gap-2"><SectionIcon icon={data.addressIcon} fallback="tabler:map-pin" className="mt-0.5 h-4 w-4 shrink-0 text-[var(--section-accent)]" /><EditableText data={data} path={["address"]} value={address} isPreview={isPreview} onUpdate={onUpdate} multiline /></li> : null}
+              {phone ? <li><a href={`tel:${phone}`} className="flex items-center gap-2 hover:opacity-100"><SectionIcon icon={data.phoneIcon} fallback="tabler:phone" className="h-4 w-4 shrink-0 text-[var(--section-accent)]" /><EditableText data={data} path={["phone"]} value={phone} isPreview={isPreview} onUpdate={onUpdate} /></a></li> : null}
+              {email ? <li><a href={`mailto:${email}`} className="flex items-center gap-2 hover:opacity-100"><SectionIcon icon={data.emailIcon} fallback="tabler:mail" className="h-4 w-4 shrink-0 text-[var(--section-accent)]" /><EditableText data={data} path={["email"]} value={email} isPreview={isPreview} onUpdate={onUpdate} /></a></li> : null}
+              {registrationNumber ? <li className="flex items-center gap-2"><SectionIcon icon={data.registrationIcon} fallback="tabler:briefcase" className="h-4 w-4 shrink-0 text-[var(--section-accent)]" /><span>{messages.registrationNumber}: <EditableText data={data} path={["registrationNumber"]} value={registrationNumber} isPreview={isPreview} onUpdate={onUpdate} /></span></li> : null}
               {vatNumber ? <li className="pl-6">{messages.vatNumber}: <EditableText data={data} path={["vatNumber"]} value={vatNumber} isPreview={isPreview} onUpdate={onUpdate} /></li> : null}
             </ul>
           </div> : null}

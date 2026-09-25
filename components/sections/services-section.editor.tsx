@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionIconPicker } from "@/components/editor/section-icon-picker"
+
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Briefcase, CalendarDays, Check, ExternalLink, Eye, EyeOff, Loader2 } from "lucide-react"
@@ -50,6 +52,7 @@ export function ServicesSectionEditor({
   const [loadingServices, setLoadingServices] = useState(false)
   const offeringCopy = getOfferingCopy(businessCategory)
   const bookingDefaults = getBookingSpaceDefaults(businessCategory)
+  const serviceIcons = (section.data.serviceIcons ?? {}) as Record<string, unknown>
   const moreInfoButtonEnabled = section.data.infoPopupButtonEnabled !== false
   const selectedPopupTarget = ((section.data as any).infoPopupCtaHref as string | undefined) || ""
   const hasSelectedPopupTarget =
@@ -216,6 +219,16 @@ export function ServicesSectionEditor({
 
   return (
     <>
+      <Card className="p-4 space-y-3">
+        <p className="text-sm font-semibold">Iconen per dienst</p>
+        <p className="text-xs text-muted-foreground">Kies een icoon bij de dienstnaam. Zonder foto wordt het ook als afbeelding gebruikt.</p>
+        {loadingServices ? <p className="text-xs text-muted-foreground">Diensten laden…</p> : availableServices.length === 0 ? <p className="text-xs text-muted-foreground">Voeg eerst een dienst toe om een icoon te kiezen.</p> : availableServices.map(service => (
+          <div key={service.id} className="flex items-center gap-3">
+            <SectionIconPicker label={service.name} value={serviceIcons[service.id]} defaultIcon={null} onChange={icon => updateField("serviceIcons", { ...serviceIcons, [service.id]: icon })} />
+            <span className="min-w-0 text-sm">{service.name}</span>
+          </div>
+        ))}
+      </Card>
       <Card className="p-4 space-y-3">
         <Label className="flex items-center gap-2">
           <Briefcase className="h-3.5 w-3.5" />

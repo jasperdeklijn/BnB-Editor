@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionIconSettings } from "@/components/editor/section-icon-settings"
+
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -9,6 +11,7 @@ import { Mail, MapPin, Phone } from "lucide-react"
 export function MapSectionEditor({ section, updateField }: SectionEditorProps) {
   return (
     <Card className="p-4 space-y-3">
+      <SectionIconSettings data={section.data} updateField={updateField} fields={[["addressIcon","Adres","tabler:map-pin"],["phoneIcon","Telefoon","tabler:phone"],["emailIcon","E-mail","tabler:mail"]]} />
       <Label className="flex items-center gap-2">
         <MapPin className="h-3.5 w-3.5" />
         Locatiegegevens

@@ -3,7 +3,8 @@
 import type React from "react"
 
 import { EditableText } from "@/components/editor/inline-editable-text"
-import { Check } from "lucide-react"
+import { SectionIcon } from "./section-icon"
+import type { IconFeature } from "@/lib/section-icons"
 import type { SectionStyles } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
 import { getSectionColorVars } from "@/lib/section-colors"
@@ -17,7 +18,7 @@ interface FeaturesSectionProps {
 
 export function FeaturesSection({ data, isPreview, styles, onUpdate }: FeaturesSectionProps) {
   const title = data.title as string
-  const features = (data.features as Array<string | { id?: string; text?: string }>) || []
+  const features = (data.features as IconFeature[]) || []
   const layout = getLayoutClasses(data.layout)
 
   const sectionStyle: React.CSSProperties = {
@@ -47,14 +48,12 @@ export function FeaturesSection({ data, isPreview, styles, onUpdate }: FeaturesS
         />
         <div className={`grid gap-3 sm:gap-4 ${layout.grid}`}>
           {features.map((feature, index) => (
-            <div key={typeof feature === "string" ? `${feature}-${index}` : feature.id ?? index} className={`flex items-center gap-3 ${layout.layout === "card" || layout.layout === "showcase" ? "rounded-2xl border border-border bg-[var(--section-surface)] p-5 text-[var(--section-surface-foreground)] shadow-sm backdrop-blur" : ""}`}>
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[var(--section-accent)]">
-                <Check className="h-5 w-5 text-[var(--section-accent-foreground)]" />
-              </div>
+            <div key={feature.id} className={`flex items-center gap-3 ${layout.layout === "card" || layout.layout === "showcase" ? "rounded-2xl border border-border bg-[var(--section-surface)] p-5 text-[var(--section-surface-foreground)] shadow-sm backdrop-blur" : ""}`}>
+              <SectionIcon icon={feature.icon} badgeClassName="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--section-accent)]" className="h-5 w-5 text-[var(--section-accent-foreground)]" />
               <EditableText
                 data={data}
-                path={typeof feature === "string" ? ["features", index] : ["features", index, "text"]}
-                value={typeof feature === "string" ? feature : feature.text ?? ""}
+                path={["features", index, "text"]}
+                value={feature.text}
                 isPreview={isPreview}
                 onUpdate={onUpdate}
                 className="text-amber-800"

@@ -1,6 +1,8 @@
 "use client"
 
-import { MapPin, Phone, Mail, ExternalLink } from "lucide-react"
+import { SectionIcon } from "./section-icon"
+
+import { ExternalLink } from "lucide-react"
 import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
@@ -80,7 +82,7 @@ export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProp
 
               {address && (
                 <div className="flex items-start gap-3">
-                  <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 opacity-80" />
+                  <SectionIcon icon={data.addressIcon} fallback="tabler:map-pin" className="mt-0.5 h-4 w-4 flex-shrink-0 opacity-80" />
                   <div>
                     <EditableText as="p" data={data} path={["address"]} value={address} isPreview={isPreview} onUpdate={onUpdate} className="text-sm opacity-90" multiline />
                     {mapsHref && (
@@ -100,7 +102,7 @@ export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProp
 
               {phone && (
                 <div className="flex items-center gap-3">
-                  <Phone className="h-4 w-4 flex-shrink-0 opacity-80" />
+                  <SectionIcon icon={data.phoneIcon} fallback="tabler:phone" className="h-4 w-4 flex-shrink-0 opacity-80" />
                   <a
                     href={`tel:${phone}`}
                     className="text-sm opacity-90 transition-opacity hover:opacity-100"
@@ -112,7 +114,7 @@ export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProp
 
               {email && (
                 <div className="flex items-center gap-3">
-                  <Mail className="h-4 w-4 flex-shrink-0 opacity-80" />
+                  <SectionIcon icon={data.emailIcon} fallback="tabler:mail" className="h-4 w-4 flex-shrink-0 opacity-80" />
                   <a
                     href={`mailto:${email}`}
                     className="text-sm opacity-90 transition-opacity hover:opacity-100"
@@ -146,7 +148,7 @@ export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProp
               ) : (
                 <div className="flex h-full min-h-64 items-center justify-center bg-[var(--section-surface)] text-[var(--section-surface-foreground)] md:min-h-80">
                   <div className="text-center text-muted-foreground">
-                    <MapPin className="mx-auto mb-2 h-8 w-8 text-[var(--section-accent)]" />
+                    <SectionIcon icon={data.addressIcon} fallback="tabler:map-pin" className="mx-auto mb-2 h-8 w-8 text-[var(--section-accent)]" />
                     <p className="text-sm">
                       {address ? (
                         <EditableText data={data} path={["address"]} value={address} isPreview={isPreview} onUpdate={onUpdate} />

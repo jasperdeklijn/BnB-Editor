@@ -1,19 +1,20 @@
 "use client"
 
-import { Check } from "lucide-react"
+import { SectionIcon } from "./section-icon"
+import type { IconFeature } from "@/lib/section-icons"
 import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
 import { useWebsiteLocale } from "@/lib/site-i18n/provider"
 import { getSectionColorVars } from "@/lib/section-colors"
 
-export interface PricingFeature { id?: string; text: string }
-export interface PricingPlan { id?: string; name: string; price: string; period?: string; description?: string; features: Array<string | PricingFeature>; highlighted?: boolean; showButton?: boolean; ctaText?: string; ctaHref?: string }
+export type PricingFeature = IconFeature
+export interface PricingPlan { id?: string; name: string; price: string; period?: string; description?: string; features: PricingFeature[]; highlighted?: boolean; showButton?: boolean; ctaText?: string; ctaHref?: string }
 export interface TariffItem { id?: string; name: string; description?: string; price: string; category?: string }
 
 const DEFAULT_PLANS: PricingPlan[] = [
-  { id: "plan-1", name: "Basis", price: "€ 49", period: "per keer", description: "Ideaal om kennis te maken.", features: [{ id: "plan-1-feature-1", text: "Persoonlijk advies" }, { id: "plan-1-feature-2", text: "Heldere afspraken" }], showButton: true, ctaText: "Kies basis" },
-  { id: "plan-2", name: "Compleet", price: "€ 99", period: "per maand", description: "Voor klanten die meer ondersteuning willen.", features: [{ id: "plan-2-feature-1", text: "Alles uit Basis" }, { id: "plan-2-feature-2", text: "Snellere service" }], highlighted: true, showButton: true, ctaText: "Kies compleet" },
+  { id: "plan-1", name: "Basis", price: "€ 49", period: "per keer", description: "Ideaal om kennis te maken.", features: [{ id: "plan-1-feature-1", text: "Persoonlijk advies", icon: "tabler:check" }, { id: "plan-1-feature-2", text: "Heldere afspraken", icon: "tabler:check" }], showButton: true, ctaText: "Kies basis" },
+  { id: "plan-2", name: "Compleet", price: "€ 99", period: "per maand", description: "Voor klanten die meer ondersteuning willen.", features: [{ id: "plan-2-feature-1", text: "Alles uit Basis", icon: "tabler:check" }, { id: "plan-2-feature-2", text: "Snellere service", icon: "tabler:check" }], highlighted: true, showButton: true, ctaText: "Kies compleet" },
 ]
 const DEFAULT_TARIFFS: TariffItem[] = [
   { id: "tariff-1", name: "Kennismakingsgesprek", description: "Vrijblijvend gesprek van 30 minuten", price: "Gratis" },
@@ -47,7 +48,7 @@ export function PricingSection({ data, isPreview, styles, onUpdate }: { data: Re
             <EditableText data={editableData} path={["plans", index, "name"]} value={plan.name} isPreview={isPreview} onUpdate={onUpdate} className="text-sm font-semibold uppercase tracking-wide" />
             <div className="mt-2 flex items-baseline gap-1"><EditableText as="span" data={editableData} path={["plans", index, "price"]} value={plan.price} isPreview={isPreview} onUpdate={onUpdate} className="text-4xl font-bold" />{plan.period ? <EditableText as="span" data={editableData} path={["plans", index, "period"]} value={plan.period} isPreview={isPreview} onUpdate={onUpdate} className="text-sm opacity-75" /> : null}</div>
             {plan.description ? <EditableText as="p" data={editableData} path={["plans", index, "description"]} value={plan.description} isPreview={isPreview} onUpdate={onUpdate} multiline className="mt-3 text-sm opacity-80" /> : null}
-            <ul className="my-6 flex-1 space-y-3">{(plan.features || []).map((feature, featureIndex) => <li key={typeof feature === "string" ? `${feature}-${featureIndex}` : feature.id ?? featureIndex} className="flex gap-2 text-sm"><Check className="mt-0.5 h-4 w-4 shrink-0" /><EditableText data={editableData} path={typeof feature === "string" ? ["plans", index, "features", featureIndex] : ["plans", index, "features", featureIndex, "text"]} value={typeof feature === "string" ? feature : feature.text} isPreview={isPreview} onUpdate={onUpdate} /></li>)}</ul>
+            <ul className="my-6 flex-1 space-y-3">{(plan.features || []).map((feature, featureIndex) => <li key={feature.id} className="flex gap-2 text-sm"><SectionIcon icon={feature.icon} className="mt-0.5 h-4 w-4 shrink-0" /><EditableText data={editableData} path={["plans", index, "features", featureIndex, "text"]} value={feature.text} isPreview={isPreview} onUpdate={onUpdate} /></li>)}</ul>
             {plan.showButton !== false && plan.ctaText ? <a href={plan.ctaHref || "#contact"} className="rounded-xl px-5 py-3 text-center text-sm font-semibold" style={{ backgroundColor: plan.highlighted ? surface : accent, color: plan.highlighted ? surfaceForeground : accentForeground }}><EditableText data={editableData} path={["plans", index, "ctaText"]} value={plan.ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a> : null}
           </article>)}
         </div> : null}

@@ -1,7 +1,8 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useRef } from "react"
+import { SectionIcon } from "./section-icon"
+import { createContext, useContext, useState, useEffect, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { EditableText } from "@/components/editor/inline-editable-text"
@@ -34,6 +35,24 @@ interface ServicesSectionProps {
   businessId?: string | null
   businessCategory?: BusinessCategory | null
   activeLocale?: string
+}
+
+const ServiceIconsContext = createContext<Record<string, unknown>>({})
+
+function ServicePlaceholderIcon({ serviceId }: { serviceId: string }) {
+  const icons = useContext(ServiceIconsContext)
+  return <SectionIcon icon={icons[serviceId]} fallback="tabler:briefcase" className="h-10 w-10 text-[var(--section-accent)]" />
+}
+
+function ServiceTitle({ service }: { service: ServiceDisplay }) {
+  const icons = useContext(ServiceIconsContext)
+  return <span className="inline-flex items-center gap-2"><SectionIcon icon={icons[service.id] ?? null} className="h-5 w-5 text-[var(--section-accent)]" />{service.name}</span>
+}
+
+export function ServicesSection(props: ServicesSectionProps) {
+  const value = props.data.serviceIcons
+  const icons = value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}
+  return <ServiceIconsContext.Provider value={icons}><ServicesSectionContent {...props} /></ServiceIconsContext.Provider>
 }
 
 interface ServiceDisplay {
@@ -334,14 +353,17 @@ function handleSectionAnchorClick(
 }
 
 function ServiceImage({
+  serviceId,
   images,
   name,
   className,
 }: {
+  serviceId: string
   images: string[]
   name: string
   className?: string
 }) {
+  const icons = useContext(ServiceIconsContext)
   if (images.length > 0) {
     return (
       <img
@@ -355,7 +377,7 @@ function ServiceImage({
     <div
       className={`flex items-center justify-center bg-secondary ${className ?? "w-full h-full"}`}
     >
-      <Briefcase className="h-10 w-10 text-primary/45" />
+      <SectionIcon icon={icons[serviceId]} fallback="tabler:briefcase" className="h-10 w-10 text-[var(--section-accent)]" />
     </div>
   )
 }
@@ -380,7 +402,7 @@ function GridLayout({
         >
           <div className="relative h-52 overflow-hidden">
             <ServiceImage
-              images={service.images}
+              serviceId={service.id} images={service.images}
               name={service.name}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
@@ -392,7 +414,7 @@ function GridLayout({
           </div>
           <div className="p-5">
             <h3 className="mb-1 text-lg font-bold text-foreground" style={textStyle}>
-              {service.name}
+              <ServiceTitle service={service} />
             </h3>
             {service.description && (
               <p className="mb-4 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
@@ -445,7 +467,7 @@ function ListLayout({
         >
           <div className="relative w-2/5 flex-shrink-0 min-h-[180px] overflow-hidden">
             <ServiceImage
-              images={service.images}
+              serviceId={service.id} images={service.images}
               name={service.name}
               className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
@@ -453,7 +475,7 @@ function ListLayout({
           <div className="flex-1 p-6 flex flex-col justify-between">
             <div>
               <h3 className="mb-2 text-xl font-bold text-foreground" style={textStyle}>
-                {service.name}
+                <ServiceTitle service={service} />
               </h3>
               {service.description && (
                 <p className="line-clamp-3 text-sm leading-relaxed text-muted-foreground">
@@ -513,7 +535,7 @@ function FeaturedLayout({
       <div className="group relative flex min-h-[380px] overflow-hidden rounded-3xl border border-border bg-[var(--section-surface)] shadow-md transition-shadow hover:shadow-xl">
         <div className="relative w-1/2 overflow-hidden">
           <ServiceImage
-            images={featured.images}
+            serviceId={featured.id} images={featured.images}
             name={featured.name}
             className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
@@ -527,7 +549,7 @@ function FeaturedLayout({
               className="mb-3 text-balance text-3xl font-bold text-foreground"
               style={textStyle}
             >
-              {featured.name}
+              <ServiceTitle service={featured} />
             </h3>
             {featured.description && (
               <p className="leading-relaxed text-muted-foreground">{featured.description}</p>
@@ -570,14 +592,14 @@ function FeaturedLayout({
             >
               <div className="relative h-44 overflow-hidden">
                 <ServiceImage
-                  images={service.images}
+                  serviceId={service.id} images={service.images}
                   name={service.name}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
               </div>
               <div className="p-4">
                 <h3 className="mb-1 font-bold text-foreground" style={textStyle}>
-                  {service.name}
+                  <ServiceTitle service={service} />
                 </h3>
                 {service.description && (
                   <p className="mb-3 line-clamp-2 text-xs text-muted-foreground">{service.description}</p>
@@ -631,7 +653,7 @@ function MagazineLayout({
           >
             <div className="relative h-64 sm:h-auto sm:w-1/2 overflow-hidden">
               <ServiceImage
-                images={service.images}
+                serviceId={service.id} images={service.images}
                 name={service.name}
                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
@@ -644,7 +666,7 @@ function MagazineLayout({
                 className="mb-3 text-balance text-2xl font-bold text-foreground"
                 style={textStyle}
               >
-                {service.name}
+                <ServiceTitle service={service} />
               </h3>
               {service.description && (
                 <p className="mb-6 leading-relaxed text-muted-foreground">{service.description}</p>
@@ -696,14 +718,14 @@ function MinimalLayout({
         <div key={service.id} className="flex items-center justify-between py-6 group">
           <div className="flex items-center gap-5">
             <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl">
-              <ServiceImage images={service.images} name={service.name} />
+              <ServiceImage serviceId={service.id} images={service.images} name={service.name} />
             </div>
             <div>
               <h3
                 className="font-bold text-foreground transition-colors group-hover:text-[var(--section-accent)]"
                 style={textStyle}
               >
-                {service.name}
+                <ServiceTitle service={service} />
               </h3>
               {service.description && (
                 <p className="mt-0.5 line-clamp-1 max-w-md text-sm text-muted-foreground">
@@ -787,7 +809,7 @@ function CarouselLayout({
           >
             <div className="relative h-48 overflow-hidden">
               <ServiceImage
-                images={service.images}
+                serviceId={service.id} images={service.images}
                 name={service.name}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
@@ -799,7 +821,7 @@ function CarouselLayout({
             </div>
             <div className="p-4">
               <h3 className="mb-1 truncate font-bold text-foreground" style={textStyle}>
-                {service.name}
+                <ServiceTitle service={service} />
               </h3>
               {service.description && (
                 <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
@@ -1186,14 +1208,14 @@ function ServiceInfoPopup({
                 </div>
               ) : (
                 <div className="flex h-64 items-center justify-center rounded-xl bg-secondary md:h-80">
-                  <Briefcase className="h-10 w-10 text-primary/45" />
+                  <ServicePlaceholderIcon serviceId={service.id} />
                 </div>
               )}
             </div>
           ) : null}
           <div className={`p-5 sm:p-6 ${settings.showImage ? "" : "md:col-span-2"}`}>
             {service.name !== title ? (
-              <p className="mb-2 text-sm font-semibold text-primary">{service.name}</p>
+              <p className="mb-2 text-sm font-semibold text-primary"><ServiceTitle service={service} /></p>
             ) : null}
             {intro ? (
               <p className="text-sm leading-7 text-muted-foreground">{intro}</p>
@@ -1851,7 +1873,7 @@ function ServicesBookingSpace({
 
 // ---- Main section component ----
 
-export function ServicesSection({
+function ServicesSectionContent({
   data,
   styles,
   isPreview,

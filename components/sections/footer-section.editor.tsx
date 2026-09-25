@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionIconSettings } from "@/components/editor/section-icon-settings"
+
 import { Building2, Eye, EyeOff, Plus, Type } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -48,6 +50,7 @@ export function FooterSectionEditor({ section, updateField, sectionTargetOptions
   return (
     <div className="space-y-4">
       <Card className="space-y-3 p-4">
+      <SectionIconSettings data={section.data} updateField={updateField} fields={[["addressIcon","Adres","tabler:map-pin"],["phoneIcon","Telefoon","tabler:phone"],["emailIcon","E-mail","tabler:mail"],["registrationIcon","KvK-nummer","tabler:briefcase"]]} />
         <Label className="flex items-center gap-2"><Type className="h-3.5 w-3.5" />Footertekst</Label>
         <div><Label className="mb-1.5 block text-xs">Bedrijfsnaam</Label><Input value={(section.data.companyName as string) || (section.data.brandName as string) || ""} onChange={(event) => updateField("companyName", event.target.value)} placeholder="Mijn bedrijf" /></div>
         <div><Label className="mb-1.5 block text-xs">Korte beschrijving</Label><textarea value={(section.data.companyDescription as string) || ""} onChange={(event) => updateField("companyDescription", event.target.value)} placeholder="Waar staat je bedrijf voor?" className="min-h-16 w-full resize-none rounded-lg border border-input bg-background p-2 text-sm" /></div>

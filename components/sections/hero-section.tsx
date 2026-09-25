@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionIcon } from "./section-icon"
+
 import type React from "react"
 
 import { Button } from "@/components/ui/button"
@@ -149,7 +151,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             style={textStyle}
           />
           {ctaEnabled ? <Button asChild size="lg" className={`bg-[var(--section-accent)] text-[var(--section-accent-foreground)] hover:brightness-90 ${styleTypeButtonClass}`}>
-            <a href={ctaHref}><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a>
+            <a href={ctaHref} className="inline-flex items-center justify-center gap-2"><SectionIcon icon={data.ctaIcon ?? null} /><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a>
           </Button> : null}
         </div>
       </section>
@@ -205,7 +207,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
               className={`mb-6 text-pretty text-base text-amber-800 sm:text-lg md:text-xl ${styleTypeBodyClass}`}
               style={textStyle}
             />
-            {ctaEnabled ? <div><Button asChild size="lg" className={`bg-[var(--section-accent)] text-[var(--section-accent-foreground)] hover:brightness-90 ${styleTypeButtonClass}`}><a href={ctaHref}><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button></div> : null}
+            {ctaEnabled ? <div><Button asChild size="lg" className={`bg-[var(--section-accent)] text-[var(--section-accent-foreground)] hover:brightness-90 ${styleTypeButtonClass}`}><a href={ctaHref} className="inline-flex items-center justify-center gap-2"><SectionIcon icon={data.ctaIcon ?? null} /><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button></div> : null}
           </div>
         </div>
       </section>
@@ -252,7 +254,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             className={`mb-8 text-pretty text-lg text-white/90 drop-shadow-md sm:text-xl md:text-2xl ${styleTypeBodyClass}`}
             style={textStyle}
           />
-          {ctaEnabled ? <Button asChild size="lg" className={`bg-[var(--section-accent)] text-[var(--section-accent-foreground)] shadow-lg transition-all hover:brightness-90 hover:shadow-xl ${styleTypeButtonClass}`}><a href={ctaHref}><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button> : null}
+          {ctaEnabled ? <Button asChild size="lg" className={`bg-[var(--section-accent)] text-[var(--section-accent-foreground)] shadow-lg transition-all hover:brightness-90 hover:shadow-xl ${styleTypeButtonClass}`}><a href={ctaHref} className="inline-flex items-center justify-center gap-2"><SectionIcon icon={data.ctaIcon ?? null} /><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button> : null}
         </div>
       </section>
     )
@@ -290,7 +292,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             className={`mb-6 text-pretty text-base sm:mb-8 sm:text-lg md:text-xl ${styleTypeBodyClass}`}
             style={textStyle}
           />
-          {ctaEnabled ? <Button asChild size="lg" className={`bg-[var(--section-accent)] text-[var(--section-accent-foreground)] hover:brightness-90 ${styleTypeButtonClass}`}><a href={ctaHref}><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button> : null}
+          {ctaEnabled ? <Button asChild size="lg" className={`bg-[var(--section-accent)] text-[var(--section-accent-foreground)] hover:brightness-90 ${styleTypeButtonClass}`}><a href={ctaHref} className="inline-flex items-center justify-center gap-2"><SectionIcon icon={data.ctaIcon ?? null} /><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button> : null}
         </div>
       </section>
     )
@@ -336,7 +338,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             className={`mb-6 text-pretty text-sm text-amber-800 sm:text-base ${styleTypeBodyClass}`}
             style={textStyle}
           />
-          {ctaEnabled ? <Button asChild size="lg" className={`w-full bg-[var(--section-accent)] text-[var(--section-accent-foreground)] hover:brightness-90 ${styleTypeButtonClass}`}><a href={ctaHref}><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button> : null}
+          {ctaEnabled ? <Button asChild size="lg" className={`w-full bg-[var(--section-accent)] text-[var(--section-accent-foreground)] hover:brightness-90 ${styleTypeButtonClass}`}><a href={ctaHref} className="inline-flex items-center justify-center gap-2"><SectionIcon icon={data.ctaIcon ?? null} /><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button> : null}
         </div>
       </section>
     )
@@ -376,7 +378,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
               className={`mb-6 text-pretty text-base text-amber-800 sm:text-lg md:text-xl ${styleTypeBodyClass}`}
               style={textStyle}
             />
-            {ctaEnabled ? <div><Button asChild size="lg" className={`bg-[var(--section-accent)] text-[var(--section-accent-foreground)] hover:brightness-90 ${styleTypeButtonClass}`}><a href={ctaHref}><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button></div> : null}
+            {ctaEnabled ? <div><Button asChild size="lg" className={`bg-[var(--section-accent)] text-[var(--section-accent-foreground)] hover:brightness-90 ${styleTypeButtonClass}`}><a href={ctaHref} className="inline-flex items-center justify-center gap-2"><SectionIcon icon={data.ctaIcon ?? null} /><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a></Button></div> : null}
           </div>
 
           {/* Image Side - Full right half */}

@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionIconSettings } from "@/components/editor/section-icon-settings"
+
 import { Eye, EyeOff, Type } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,6 +14,7 @@ export function HeroSectionEditor({ section, updateField, sectionTargetOptions }
 
   return (
     <Card className="space-y-3 p-4">
+      <SectionIconSettings data={section.data} updateField={updateField} fields={[["ctaIcon","Hoofdknop",null]]} />
       <Label className="flex items-center gap-2"><Type className="h-3.5 w-3.5" />Inhoud</Label>
       <div><Label className="mb-1.5 block text-xs">Titel</Label><Input placeholder="bijv., Welkom bij ons bedrijf" value={(section.data.title as string) || ""} onChange={(event) => updateField("title", event.target.value)} /></div>
       <div><Label className="mb-1.5 block text-xs">Ondertitel</Label><Input placeholder="bijv., Professionele service, persoonlijk contact" value={(section.data.subtitle as string) || ""} onChange={(event) => updateField("subtitle", event.target.value)} /></div>

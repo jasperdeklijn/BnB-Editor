@@ -89,10 +89,10 @@ export const SECTION_COPY: Record<
 }
 
 export const DEFAULT_FEATURES = [
-  { id: "feature-1", text: "Persoonlijke service" },
-  { id: "feature-2", text: "Heldere afspraken" },
-  { id: "feature-3", text: "Vakmanschap" },
-  { id: "feature-4", text: "Snelle reactie" },
+  { id: "feature-1", text: "Persoonlijke service", icon: "tabler:check" },
+  { id: "feature-2", text: "Heldere afspraken", icon: "tabler:check" },
+  { id: "feature-3", text: "Vakmanschap", icon: "tabler:check" },
+  { id: "feature-4", text: "Snelle reactie", icon: "tabler:check" },
 ]
 
 export const DEFAULT_GALLERY_IMAGES = Array.from(

@@ -204,6 +204,9 @@ export const sectionDefinitions = {
       title: SECTION_COPY.contact.defaultTitle,
       subtitle: "Neem gerust contact met ons op. We helpen je graag verder.",
       address: "Straatnaam 1, 1234 AB Plaats",
+      addressIcon: "tabler:map-pin",
+      phoneIcon: "tabler:phone",
+      emailIcon: "tabler:mail",
       phone: "+31 6 00000000",
       email: DEFAULT_BUSINESS_EMAIL,
       layout: getDefaultLayoutForSection("contact"),
@@ -304,8 +307,8 @@ export const sectionDefinitions = {
       subtitle: "Transparante tarieven zonder verrassingen.",
       displayMode: "packages",
       plans: [
-        { id: "plan-1", name: "Basis", price: "€ 49", period: "per keer", description: "Ideaal om kennis te maken.", features: [{ id: "plan-1-feature-1", text: "Persoonlijk advies" }, { id: "plan-1-feature-2", text: "Heldere afspraken" }], showButton: true, ctaText: "Kies basis" },
-        { id: "plan-2", name: "Compleet", price: "€ 99", period: "per maand", description: "Voor klanten die meer ondersteuning willen.", features: [{ id: "plan-2-feature-1", text: "Alles uit Basis" }, { id: "plan-2-feature-2", text: "Snellere service" }], highlighted: true, showButton: true, ctaText: "Kies compleet" },
+        { id: "plan-1", name: "Basis", price: "€ 49", period: "per keer", description: "Ideaal om kennis te maken.", features: [{ id: "plan-1-feature-1", text: "Persoonlijk advies", icon: "tabler:check" }, { id: "plan-1-feature-2", text: "Heldere afspraken", icon: "tabler:check" }], showButton: true, ctaText: "Kies basis" },
+        { id: "plan-2", name: "Compleet", price: "€ 99", period: "per maand", description: "Voor klanten die meer ondersteuning willen.", features: [{ id: "plan-2-feature-1", text: "Alles uit Basis", icon: "tabler:check" }, { id: "plan-2-feature-2", text: "Snellere service", icon: "tabler:check" }], highlighted: true, showButton: true, ctaText: "Kies compleet" },
       ],
       tariffs: [
         { id: "tariff-1", name: "Kennismakingsgesprek", description: "Vrijblijvend gesprek van 30 minuten", price: "Gratis" },

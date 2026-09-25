@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionIconSettings } from "@/components/editor/section-icon-settings"
+
 import { Eye, EyeOff, Phone, Type } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -17,6 +19,7 @@ export function CtaSectionEditor({ section, updateField, sectionTargetOptions }:
 
   return (
     <Card className="space-y-3 p-4">
+      <SectionIconSettings data={section.data} updateField={updateField} fields={[["primaryCtaIcon","Primaire knop","tabler:arrow-right"],["secondaryCtaIcon","Secundaire knop",null],["phoneIcon","Telefoon","tabler:phone"]]} />
       <Label className="flex items-center gap-2"><Type className="h-3.5 w-3.5" />Inhoud</Label>
       <div><Label className="mb-1.5 block text-xs">Titel</Label><Input placeholder="Klaar om te beginnen?" value={(section.data.title as string) || ""} onChange={(event) => updateField("title", event.target.value)} /></div>
       <div><Label className="mb-1.5 block text-xs">Ondertitel</Label><Input placeholder="Neem vandaag nog contact op" value={(section.data.subtitle as string) || ""} onChange={(event) => updateField("subtitle", event.target.value)} /></div>

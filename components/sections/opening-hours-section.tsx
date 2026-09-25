@@ -1,6 +1,8 @@
 "use client"
 
-import { Clock } from "lucide-react"
+import { SectionIcon } from "./section-icon"
+
+
 import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { getLayoutClasses } from "@/lib/section-layouts"
@@ -118,7 +120,7 @@ export function OpeningHoursSection({ data, isPreview, styles, onUpdate }: Openi
       <div className={`mx-auto ${layout.layout === "split" || layout.layout === "showcase" ? "max-w-4xl" : layout.container}`}>
         <div className={`mb-10 ${layout.heading}`}>
           <div className="mb-3 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--section-accent)] px-4 py-2 text-sm font-medium text-[var(--section-accent-foreground)]">
-            <Clock className="h-4 w-4" />
+            <SectionIcon icon={data.headingIcon} fallback="tabler:clock" className="h-4 w-4" />
             {messages.openingHours}
           </div>
           <EditableText

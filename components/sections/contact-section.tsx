@@ -2,7 +2,9 @@
 
 import type React from "react"
 import { useState } from "react"
-import { Mail, MapPin, Phone, Send, CheckCircle, AlertCircle, MessageSquare, Clock } from "lucide-react"
+import { Send, CheckCircle, AlertCircle, MessageSquare, Clock } from "lucide-react"
+import { SectionIcon } from "./section-icon"
+import { CONTACT_ICON_DEFAULTS } from "@/lib/section-icons"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -211,15 +213,13 @@ function ContactForm({ formDestinationKey, businessId, websiteId, locale, accent
 
 // ─── Info Block ───────────────────────────────────────────────────────────────
 
-function InfoBlock({ address, phone, email, textStyle }: { address?: string; phone?: string; email?: string; textStyle?: React.CSSProperties }) {
+function InfoBlock({ data, address, phone, email, textStyle }: { data: Record<string, unknown>; address?: string; phone?: string; email?: string; textStyle?: React.CSSProperties }) {
   const { messages } = useWebsiteLocale()
   return (
     <div className="space-y-5">
       {address && (
         <div className="flex items-start gap-3">
-          <div className="mt-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[var(--section-accent)]">
-            <MapPin className="h-4 w-4 text-[var(--section-accent-foreground)]" />
-          </div>
+          <SectionIcon icon={data.addressIcon} fallback={CONTACT_ICON_DEFAULTS.address} className="h-4 w-4 text-[var(--section-accent-foreground)]" badgeClassName="mt-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[var(--section-accent)]" />
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--section-accent)]">{messages.address}</p>
             <p className="mt-0.5 text-sm" style={textStyle}>{address}</p>
@@ -228,9 +228,7 @@ function InfoBlock({ address, phone, email, textStyle }: { address?: string; pho
       )}
       {phone && (
         <div className="flex items-start gap-3">
-          <div className="mt-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[var(--section-accent)]">
-            <Phone className="h-4 w-4 text-[var(--section-accent-foreground)]" />
-          </div>
+          <SectionIcon icon={data.phoneIcon} fallback={CONTACT_ICON_DEFAULTS.phone} className="h-4 w-4 text-[var(--section-accent-foreground)]" badgeClassName="mt-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[var(--section-accent)]" />
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--section-accent)]">{messages.phone}</p>
             <p className="mt-0.5 text-sm" style={textStyle}>{phone}</p>
@@ -239,9 +237,7 @@ function InfoBlock({ address, phone, email, textStyle }: { address?: string; pho
       )}
       {email && (
         <div className="flex items-start gap-3">
-          <div className="mt-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[var(--section-accent)]">
-            <Mail className="h-4 w-4 text-[var(--section-accent-foreground)]" />
-          </div>
+          <SectionIcon icon={data.emailIcon} fallback={CONTACT_ICON_DEFAULTS.email} className="h-4 w-4 text-[var(--section-accent-foreground)]" badgeClassName="mt-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[var(--section-accent)]" />
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--section-accent)]">{messages.email}</p>
             <p className="mt-0.5 text-sm" style={textStyle}>{email}</p>
@@ -271,7 +267,7 @@ function ClassicLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps
         <div className="grid gap-10 md:grid-cols-2 md:gap-16">
           <div>
             <EditableText as="p" data={data} path={["subtitle"]} value={(data.subtitle as string) || "Neem gerust contact met ons op. We helpen je graag verder."} isPreview={isPreview} onUpdate={onUpdate} className="mb-6 text-muted-foreground" style={textStyle} multiline />
-            <InfoBlock address={data.address as string} phone={data.phone as string} email={data.email as string} textStyle={textStyle} />
+            <InfoBlock data={data} address={data.address as string} phone={data.phone as string} email={data.email as string} textStyle={textStyle} />
           </div>
           <ContactForm formDestinationKey={data.formDestinationKey as string} businessId={data.businessId as string} websiteId={data.websiteId as string} locale={data.activeLocale as string} isPreview={isPreview} />
         </div>
@@ -297,19 +293,19 @@ function SplitLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps) 
           <div className="space-y-5">
             {(data.address as string) && (
               <div className="flex items-center gap-3 text-white/80">
-                <MapPin className="h-4 w-4 flex-shrink-0 text-[var(--section-accent)]" />
+                <SectionIcon icon={data.addressIcon} fallback={CONTACT_ICON_DEFAULTS.address} className="h-4 w-4 flex-shrink-0 text-[var(--section-accent)]" />
                 <EditableText data={data} path={["address"]} value={data.address as string} isPreview={isPreview} onUpdate={onUpdate} className="text-sm" multiline />
               </div>
             )}
             {(data.phone as string) && (
               <div className="flex items-center gap-3 text-white/80">
-                <Phone className="h-4 w-4 flex-shrink-0 text-[var(--section-accent)]" />
+                <SectionIcon icon={data.phoneIcon} fallback={CONTACT_ICON_DEFAULTS.phone} className="h-4 w-4 flex-shrink-0 text-[var(--section-accent)]" />
                 <EditableText data={data} path={["phone"]} value={data.phone as string} isPreview={isPreview} onUpdate={onUpdate} className="text-sm" />
               </div>
             )}
             {(data.email as string) && (
               <div className="flex items-center gap-3 text-white/80">
-                <Mail className="h-4 w-4 flex-shrink-0 text-[var(--section-accent)]" />
+                <SectionIcon icon={data.emailIcon} fallback={CONTACT_ICON_DEFAULTS.email} className="h-4 w-4 flex-shrink-0 text-[var(--section-accent)]" />
                 <EditableText data={data} path={["email"]} value={data.email as string} isPreview={isPreview} onUpdate={onUpdate} className="text-sm" />
               </div>
             )}
@@ -347,19 +343,19 @@ function MinimalLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps
         <div className="mb-10 flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
           {(data.phone as string) && (
             <a href={`tel:${data.phone}`} className="flex items-center gap-1.5 transition-colors hover:text-[var(--section-accent)]">
-              <Phone className="h-3.5 w-3.5" />
+              <SectionIcon icon={data.phoneIcon} fallback={CONTACT_ICON_DEFAULTS.phone} className="h-3.5 w-3.5" />
               <EditableText data={data} path={["phone"]} value={data.phone as string} isPreview={isPreview} onUpdate={onUpdate} />
             </a>
           )}
           {(data.email as string) && (
             <a href={`mailto:${data.email}`} className="flex items-center gap-1.5 transition-colors hover:text-[var(--section-accent)]">
-              <Mail className="h-3.5 w-3.5" />
+              <SectionIcon icon={data.emailIcon} fallback={CONTACT_ICON_DEFAULTS.email} className="h-3.5 w-3.5" />
               <EditableText data={data} path={["email"]} value={data.email as string} isPreview={isPreview} onUpdate={onUpdate} />
             </a>
           )}
           {(data.address as string) && (
             <span className="flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5" />
+              <SectionIcon icon={data.addressIcon} fallback={CONTACT_ICON_DEFAULTS.address} className="h-3.5 w-3.5" />
               <EditableText data={data} path={["address"]} value={data.address as string} isPreview={isPreview} onUpdate={onUpdate} multiline />
             </span>
           )}
@@ -396,19 +392,19 @@ function CardLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps) {
                 <div className="space-y-4">
                   {(data.phone as string) && (
                     <div className="flex items-start gap-3">
-                      <Phone className="mt-0.5 h-4 w-4 flex-shrink-0 opacity-70" />
+                      <SectionIcon icon={data.phoneIcon} fallback={CONTACT_ICON_DEFAULTS.phone} className="mt-0.5 h-4 w-4 flex-shrink-0 opacity-70" />
                       <EditableText data={data} path={["phone"]} value={data.phone as string} isPreview={isPreview} onUpdate={onUpdate} className="text-sm opacity-90" />
                     </div>
                   )}
                   {(data.email as string) && (
                     <div className="flex items-start gap-3">
-                      <Mail className="mt-0.5 h-4 w-4 flex-shrink-0 opacity-70" />
+                      <SectionIcon icon={data.emailIcon} fallback={CONTACT_ICON_DEFAULTS.email} className="mt-0.5 h-4 w-4 flex-shrink-0 opacity-70" />
                       <EditableText data={data} path={["email"]} value={data.email as string} isPreview={isPreview} onUpdate={onUpdate} className="text-sm opacity-90" />
                     </div>
                   )}
                   {(data.address as string) && (
                     <div className="flex items-start gap-3">
-                      <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 opacity-70" />
+                      <SectionIcon icon={data.addressIcon} fallback={CONTACT_ICON_DEFAULTS.address} className="mt-0.5 h-4 w-4 flex-shrink-0 opacity-70" />
                       <EditableText data={data} path={["address"]} value={data.address as string} isPreview={isPreview} onUpdate={onUpdate} className="text-sm opacity-90" multiline />
                     </div>
                   )}
@@ -460,10 +456,10 @@ function FullwidthLayout({ data, isPreview, styles, onUpdate }: ContactLayoutPro
           <EditableText as="p" data={data} path={["subtitle"]} value={(data.subtitle as string) || "We staan voor je klaar."} isPreview={isPreview} onUpdate={onUpdate} className="mx-auto max-w-md opacity-80" multiline />
           <div className="mt-6 flex flex-wrap justify-center gap-6 text-sm opacity-80">
             {(data.phone as string) && (
-              <span className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" /><EditableText data={data} path={["phone"]} value={data.phone as string} isPreview={isPreview} onUpdate={onUpdate} /></span>
+              <span className="flex items-center gap-1.5"><SectionIcon icon={data.phoneIcon} fallback={CONTACT_ICON_DEFAULTS.phone} className="h-3.5 w-3.5" /><EditableText data={data} path={["phone"]} value={data.phone as string} isPreview={isPreview} onUpdate={onUpdate} /></span>
             )}
             {(data.email as string) && (
-              <span className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" /><EditableText data={data} path={["email"]} value={data.email as string} isPreview={isPreview} onUpdate={onUpdate} /></span>
+              <span className="flex items-center gap-1.5"><SectionIcon icon={data.emailIcon} fallback={CONTACT_ICON_DEFAULTS.email} className="h-3.5 w-3.5" /><EditableText data={data} path={["email"]} value={data.email as string} isPreview={isPreview} onUpdate={onUpdate} /></span>
             )}
           </div>
         </div>
@@ -501,20 +497,18 @@ function CenteredLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProp
         {/* 3-col info cards */}
         <div className="mb-12 grid gap-4 sm:grid-cols-3">
           {[
-            { icon: MapPin, label: messages.address, value: data.address as string },
-            { icon: Phone, label: messages.phone, value: data.phone as string },
-            { icon: Mail, label: messages.email, value: data.email as string },
+            { field: "address" as const, label: messages.address, value: data.address as string },
+            { field: "phone" as const, label: messages.phone, value: data.phone as string },
+            { field: "email" as const, label: messages.email, value: data.email as string },
           ]
             .filter((item) => !!item.value)
-            .map(({ icon: Icon, label, value }) => (
+            .map(({ field, label, value }) => (
               <div
                 key={label}
                 className="flex flex-col items-center gap-3 rounded-2xl border border-border p-6 text-center text-[var(--section-surface-foreground)] shadow-sm backdrop-blur"
                 style={{ backgroundColor: "var(--section-surface)" }}
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--section-accent)]">
-                  <Icon className="h-5 w-5 text-[var(--section-accent-foreground)]" />
-                </div>
+                <SectionIcon icon={data[`${field}Icon`]} fallback={CONTACT_ICON_DEFAULTS[field]} badgeClassName="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--section-accent)]" className="h-5 w-5 text-[var(--section-accent-foreground)]" />
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-[var(--section-accent)]">{label}</p>
                   <p className="mt-1 text-sm text-muted-foreground">{value}</p>

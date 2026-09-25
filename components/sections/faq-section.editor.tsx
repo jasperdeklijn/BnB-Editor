@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionIconPicker } from "@/components/editor/section-icon-picker"
+
 import { Plus, Type } from "lucide-react"
 import { RepeatingItemActions, moveRepeatingItem } from "@/components/editor/repeating-item-actions"
 import { Button } from "@/components/ui/button"
@@ -55,6 +57,7 @@ export function FaqSectionEditor({ section, updateField, updateListItemField }: 
             <span className="text-xs font-semibold">Vraag {index + 1}</span>
             <RepeatingItemActions itemLabel={`Vraag ${index + 1}`} index={index} count={items.length} onMove={(direction) => saveItems(moveRepeatingItem(items, index, direction))} onDuplicate={() => duplicateItem(index)} onDelete={() => saveItems(items.filter((_, itemIndex) => itemIndex !== index))} />
           </div>
+          <SectionIconPicker label={`Vraag ${index + 1}`} value={item.icon} defaultIcon={null} onChange={icon => saveItems(items.map((entry, i) => i === index ? { ...entry, icon } : entry))} />
           <Input value={item.question || ""} onChange={(e) => updateListItemField("items", index, "question", e.target.value, fallbackItems)} placeholder="Vraag" />
           <textarea
             value={item.answer || ""}

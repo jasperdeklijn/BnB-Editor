@@ -144,7 +144,7 @@ export function normalizeImport(doc: ImportDocument, makeId: () => string): { ti
       if (typeof data[name] === "string" && data[name].startsWith("#")) data[name] = `#section-${ids.get(data[name].slice(1))}`
     }
     if (section.type === "nav") data.navLinks = section.content.navLinks.map(({ sectionKey, ...link }) => ({ ...link, sectionId: ids.get(sectionKey) }))
-    if (section.type === "features") data.features = section.content.features.map((item) => ({ ...item, id: makeId() }))
+    if (section.type === "features") data.features = section.content.features.map((item) => ({ ...item, id: makeId(), icon: "tabler:check" }))
     if (section.type === "faq") data.items = section.content.items.map((item) => ({ ...item, id: makeId() }))
     return { id: ids.get(section.key)!, type: section.type, data, styles: { ...section.styles } }
   })

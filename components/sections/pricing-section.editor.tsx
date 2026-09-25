@@ -1,5 +1,6 @@
 "use client"
 
+import { IconFeatureEditor } from "@/components/editor/icon-feature-editor"
 import { Plus, Type } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -11,8 +12,8 @@ import type { SectionEditorProps } from "@/components/editor/section-editor-type
 import type { PricingPlan, TariffItem } from "@/components/sections/pricing-section"
 
 const fallbackPlans: PricingPlan[] = [
-  { id: "plan-1", name: "Basis", price: "€ 49", period: "per keer", description: "Ideaal om kennis te maken.", features: [{ id: "plan-1-feature-1", text: "Persoonlijk advies" }, { id: "plan-1-feature-2", text: "Heldere afspraken" }], showButton: true, ctaText: "Kies basis" },
-  { id: "plan-2", name: "Compleet", price: "€ 99", period: "per maand", description: "Voor klanten die meer ondersteuning willen.", features: [{ id: "plan-2-feature-1", text: "Alles uit Basis" }, { id: "plan-2-feature-2", text: "Snellere service" }], highlighted: true, showButton: true, ctaText: "Kies compleet" },
+  { id: "plan-1", name: "Basis", price: "€ 49", period: "per keer", description: "Ideaal om kennis te maken.", features: [{ id: "plan-1-feature-1", text: "Persoonlijk advies", icon: "tabler:check" }, { id: "plan-1-feature-2", text: "Heldere afspraken", icon: "tabler:check" }], showButton: true, ctaText: "Kies basis" },
+  { id: "plan-2", name: "Compleet", price: "€ 99", period: "per maand", description: "Voor klanten die meer ondersteuning willen.", features: [{ id: "plan-2-feature-1", text: "Alles uit Basis", icon: "tabler:check" }, { id: "plan-2-feature-2", text: "Snellere service", icon: "tabler:check" }], highlighted: true, showButton: true, ctaText: "Kies compleet" },
 ]
 
 const fallbackTariffs: TariffItem[] = [
@@ -33,7 +34,7 @@ export function PricingSectionEditor({ section, updateField, sectionTargetOption
     const copy = {
       ...plans[index],
       id: copyId,
-      features: (plans[index].features || []).map((feature, featureIndex) => typeof feature === "string" ? feature : { ...feature, id: `${copyId}-feature-${featureIndex + 1}` }),
+      features: (plans[index].features || []).map((feature, featureIndex) => ({ ...feature, id: `${copyId}-feature-${featureIndex + 1}` })),
     }
     savePlans([...plans.slice(0, index + 1), copy, ...plans.slice(index + 1)])
   }
@@ -65,7 +66,7 @@ export function PricingSectionEditor({ section, updateField, sectionTargetOption
               <Input value={plan.name || ""} onChange={(event) => updatePlan(index, { name: event.target.value })} placeholder="Pakketnaam" />
               <div className="grid grid-cols-2 gap-2"><Input value={plan.price || ""} onChange={(event) => updatePlan(index, { price: event.target.value })} placeholder="Prijs" /><Input value={plan.period || ""} onChange={(event) => updatePlan(index, { period: event.target.value })} placeholder="Periode" /></div>
               <textarea value={plan.description || ""} onChange={(event) => updatePlan(index, { description: event.target.value })} placeholder="Beschrijving" className="min-h-16 w-full resize-none rounded-lg border border-input bg-background p-2 text-sm" />
-              <Input value={(plan.features || []).map((feature) => typeof feature === "string" ? feature : feature.text).join(", ")} onChange={(event) => updatePlan(index, { features: event.target.value.split(",").map((value) => value.trim()).filter(Boolean).map((text, featureIndex) => ({ id: typeof plan.features[featureIndex] === "object" ? plan.features[featureIndex].id : `plan-feature-${Date.now()}-${featureIndex}`, text })) })} placeholder="Voordelen, gescheiden met komma's" />
+              <IconFeatureEditor features={plan.features || []} label={`Pakket ${index + 1}`} onChange={(features) => updatePlan(index, { features })} />
               <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={plan.showButton !== false} onChange={(event) => updatePlan(index, { showButton: event.target.checked })} />Knop tonen</label>
               {plan.showButton !== false ? <div className="space-y-2"><Input value={plan.ctaText || ""} onChange={(event) => updatePlan(index, { ctaText: event.target.value })} placeholder="Knoptekst" /><SectionLinkSelect value={plan.ctaHref || ""} onChange={(value) => updatePlan(index, { ctaHref: value })} options={sectionTargetOptions} ariaLabel={`Knopdoel voor pakket ${index + 1}`} /></div> : null}
               <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={Boolean(plan.highlighted)} onChange={(event) => updatePlan(index, { highlighted: event.target.checked })} />Uitgelicht pakket</label>

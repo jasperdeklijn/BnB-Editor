@@ -10,8 +10,8 @@ export const MARKETING_DEMOS = [
     offerTitle: "Een verblijf dat bij je past", cta: "Bekijk de kamers", layout: "split", styleType: "elegant",
     accent: "#385344", background: "#f2f4ee", image: "/demos/tuinkamer.svg",
     offers: [
-      { name: "De tuinkamer", price: "€ 95", period: "per nacht", description: "Voor twee personen, met uitzicht op de tuin.", features: ["Ontbijt inbegrepen", "Eigen badkamer", "Zitje in de tuin"] },
-      { name: "Een weekend weg", price: "€ 210", period: "per arrangement", description: "Twee nachten om helemaal tot rust te komen.", features: ["Twee overnachtingen", "Elke ochtend ontbijt", "Late check-out"] },
+      { name: "De tuinkamer", price: "€ 95", period: "per nacht", description: "Voor twee personen, met uitzicht op de tuin.", features: ["Ontbijt inbegrepen", "Eigen badkamer", "Zitje in de tuin"].map((text, index) => ({ id: `feature-${index + 1}`, text, icon: "tabler:check" })) },
+      { name: "Een weekend weg", price: "€ 210", period: "per arrangement", description: "Twee nachten om helemaal tot rust te komen.", features: ["Twee overnachtingen", "Elke ochtend ontbijt", "Late check-out"].map((text, index) => ({ id: `feature-${index + 1}`, text, icon: "tabler:check" })) },
     ],
     faq: { question: "Wat kun je in de omgeving doen?", answer: "Maak een wandeling door het groen, ontdek het dorp of neem de fiets mee voor een dag buiten. Dit is voorbeeldinhoud voor een B&B-website." },
   },
@@ -23,8 +23,8 @@ export const MARKETING_DEMOS = [
     offerTitle: "Kies jouw eerste stap", cta: "Ontdek de begeleiding", layout: "banner", styleType: "soft",
     accent: "#755442", background: "#faf4ee", image: "/demos/ruimte.svg",
     offers: [
-      { name: "Kennismaken", price: "Gratis", period: "30 minuten", description: "Ontdek of de begeleiding bij je past.", features: ["Ruimte voor jouw vraag", "Uitleg over de werkwijze", "Vrijblijvend kennismaken"] },
-      { name: "Individuele sessie", price: "€ 85", period: "60 minuten", description: "Aandacht voor wat jij nodig hebt.", features: ["Persoonlijk gesprek", "Concrete vervolgstappen", "Oefeningen voor thuis"] },
+      { name: "Kennismaken", price: "Gratis", period: "30 minuten", description: "Ontdek of de begeleiding bij je past.", features: ["Ruimte voor jouw vraag", "Uitleg over de werkwijze", "Vrijblijvend kennismaken"].map((text, index) => ({ id: `feature-${index + 1}`, text, icon: "tabler:check" })) },
+      { name: "Individuele sessie", price: "€ 85", period: "60 minuten", description: "Aandacht voor wat jij nodig hebt.", features: ["Persoonlijk gesprek", "Concrete vervolgstappen", "Oefeningen voor thuis"].map((text, index) => ({ id: `feature-${index + 1}`, text, icon: "tabler:check" })) },
     ],
     faq: { question: "Hoe verloopt een kennismaking?", answer: "Tijdens een eerste gesprek bespreek je jouw vraag en ontdek je of de aanpak bij je past. Dit is voorbeeldinhoud voor een coachingswebsite." },
   },
@@ -36,8 +36,8 @@ export const MARKETING_DEMOS = [
     offerTitle: "Van idee tot onderhoud", cta: "Bekijk onze diensten", layout: "split", styleType: "modern",
     accent: "#34533b", background: "#edf2e8", image: "/demos/buiten.svg",
     offers: [
-      { name: "Ontwerp & aanleg", price: "Op maat", description: "Een plan voor jouw tuin en de uitvoering ervan.", features: ["Wensen en ruimte bespreken", "Beplantingsplan", "Aanleg in overleg"] },
-      { name: "Tuinonderhoud", price: "€ 75", period: "per uur", description: "Een verzorgde tuin, het hele jaar door.", features: ["Snoeien en bijwerken", "Seizoensonderhoud", "Eenmalig of regelmatig"] },
+      { name: "Ontwerp & aanleg", price: "Op maat", description: "Een plan voor jouw tuin en de uitvoering ervan.", features: ["Wensen en ruimte bespreken", "Beplantingsplan", "Aanleg in overleg"].map((text, index) => ({ id: `feature-${index + 1}`, text, icon: "tabler:check" })) },
+      { name: "Tuinonderhoud", price: "€ 75", period: "per uur", description: "Een verzorgde tuin, het hele jaar door.", features: ["Snoeien en bijwerken", "Seizoensonderhoud", "Eenmalig of regelmatig"].map((text, index) => ({ id: `feature-${index + 1}`, text, icon: "tabler:check" })) },
     ],
     faq: { question: "Kan ik ook alleen onderhoud laten doen?", answer: "Ja, je kunt kiezen voor een losse onderhoudsbeurt of een terugkerende afspraak. Dit is voorbeeldinhoud voor een hovenierswebsite." },
   },

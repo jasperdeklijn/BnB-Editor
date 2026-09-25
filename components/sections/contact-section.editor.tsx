@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionIconPicker } from "@/components/editor/section-icon-picker"
+import { CONTACT_ICON_DEFAULTS } from "@/lib/section-icons"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -63,6 +65,15 @@ export function ContactSectionEditor({ section, updateField }: SectionEditorProp
             onChange={(e) => updateField("email", e.target.value)}
           />
         </div>
+      </Card>
+      <Card className="p-4 space-y-3">
+        <Label>Contacticonen</Label>
+        {([["address", "Adres"], ["phone", "Telefoon"], ["email", "E-mail"]] as const).map(([field, label]) => (
+          <div key={field} className="flex items-center gap-3">
+            <SectionIconPicker label={label} value={section.data[`${field}Icon`]} defaultIcon={CONTACT_ICON_DEFAULTS[field]} onChange={(icon) => updateField(`${field}Icon`, icon)} />
+            <span className="text-sm">{label}</span>
+          </div>
+        ))}
       </Card>
       <Card className="p-4 space-y-3">
         <Label className="flex items-center gap-2">
