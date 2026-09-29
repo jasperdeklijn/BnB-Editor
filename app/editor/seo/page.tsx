@@ -9,7 +9,8 @@ export const metadata = {
   description: "Beheer metadata, social links en analytics voor uw website",
 }
 
-export default async function SeoPage() {
+export default async function SeoPage({ searchParams }: { searchParams: Promise<{ websiteId?: string }> }) {
+  const params = await searchParams
   const supabase = await createClient()
 
   const { data, error } = await supabase.auth.getUser()
@@ -17,10 +18,12 @@ export default async function SeoPage() {
     redirect("/auth/login")
   }
 
-  const { data: website } = await supabase
+  let websiteQuery = supabase
     .from("websites")
     .select("id, business_id, seo, analytics")
     .eq("user_id", data.user.id)
+  if (params.websiteId) websiteQuery = websiteQuery.eq("id", params.websiteId)
+  const { data: website } = await websiteQuery
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle()

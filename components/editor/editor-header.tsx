@@ -170,6 +170,12 @@ export function EditorHeader({
               </Link>
 
               {/* Images link */}
+              <Link href="/editor/flexstart" role="menuitem" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 border-b border-border px-3 py-2 text-xs text-foreground hover:bg-secondary md:text-sm">
+                <Globe className="h-4 w-4 shrink-0 text-primary" />Bestaande website overnemen
+              </Link>
+              <Link href="/editor/flexcheck" role="menuitem" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 border-b border-border px-3 py-2 text-xs text-foreground hover:bg-secondary md:text-sm">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />FlexCheck
+              </Link>
               <Link
                 href="/editor/images"
                 role="menuitem"

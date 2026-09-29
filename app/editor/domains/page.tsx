@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server"
 import { EditorPageShell } from "@/components/editor/editor-page-shell"
 import { DomainDashboard } from "@/components/domain/domain-dashboard"
 
-export default async function DomainsPage() {
+export default async function DomainsPage({ searchParams }: { searchParams: Promise<{ websiteId?: string }> }) {
+  const params = await searchParams
   const supabase = await createClient()
 
   const { data, error } = await supabase.auth.getUser()
@@ -30,6 +31,7 @@ export default async function DomainsPage() {
       maxWidth="2xl"
     >
       <DomainDashboard
+        initialWebsiteId={params.websiteId}
         websites={websites.map((website) => ({
           id: website.id,
           title: website.title,

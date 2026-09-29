@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { EditorHeader } from "./editor-header"
+import { FlexStartReadyNotice } from "@/components/flexstart/ready-notice"
 import { usePathname, useRouter } from "next/navigation"
 import { EditorLayoutProvider, type EditorSaveState } from "./editor-layout-context"
 import { CalendarDays, ImageIcon, Globe, Home, Briefcase, LayoutTemplate, Search, CreditCard, User, ClipboardList, MessageSquareText } from "lucide-react"
@@ -27,6 +28,8 @@ export function EditorLayoutClient({
   const offeringCopy = getOfferingCopy(businessCategory)
 
   const pageTitles: Record<string, string> = {
+    "/editor/flexstart": "FlexStart",
+    "/editor/flexcheck": "FlexCheck",
     "/editor": "Website Maker",
     "/editor/business": "Bedrijfsgegevens",
     "/editor/images": "Afbeeldingen",
@@ -181,6 +184,7 @@ export function EditorLayoutClient({
           offeringLabel={offeringCopy.title}
           calendarLabel={businessCategory === "bnb" ? "Boekingskalender" : "Afsprakenkalender"}
         />
+        <FlexStartReadyNotice />
         <div className={`min-h-0 flex-1 ${pathname === "/editor" ? "overflow-hidden" : "overflow-auto"}`}>
           {children}
         </div>

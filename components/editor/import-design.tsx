@@ -9,7 +9,7 @@ import { ImportPreviewFrame } from "./import-preview-frame"
 import { getImportImages, ImportValidationError, MAX_IMPORT_BYTES, normalizeImport, parseImport, type ImportDocument } from "@/lib/import/schema"
 
 type Selection = { document: ImportDocument; raw: string; design: ReturnType<typeof normalizeImport>; id: string }
-export function ImportDesign({ canCreate = false }: { canCreate?: boolean }) {
+export function ImportDesign({ canCreate = false, transfer }: { canCreate?: boolean; transfer?: { id: string; revision: number; businessName: string } }) {
   const router = useRouter()
   const [selection, setSelection] = useState<Selection | null>(null)
   const [issues, setIssues] = useState<string[]>([])
@@ -66,8 +66,8 @@ export function ImportDesign({ canCreate = false }: { canCreate?: boolean }) {
     submitting.current = true
     setBusy(true); setIssues([])
     try {
-      const response = await fetch("/api/websites/import", {
-        method: "POST", headers: { "Content-Type": "application/json", "X-Import-Permission": "confirmed", "X-Import-Design-Id": selection.id },
+      const response = await fetch(transfer ? `/api/flexstart/${transfer.id}/import` : "/api/websites/import", {
+        method: "POST", headers: { "Content-Type": "application/json", "X-Import-Permission": "confirmed", "X-Import-Design-Id": selection.id, ...(transfer ? { "X-Transfer-Revision": String(transfer.revision) } : {}) },
         body: selection.raw,
       })
       const result = await response.json()
@@ -76,7 +76,8 @@ export function ImportDesign({ canCreate = false }: { canCreate?: boolean }) {
         return
       }
       setCreatedId(result.websiteId)
-      router.push(`/editor?websiteId=${result.websiteId}`)
+      router.push(transfer ? `/admin/flexstart?request=${transfer.id}` : `/editor?websiteId=${result.websiteId}`)
+      router.refresh()
     } catch {
       setIssues(["De verbinding is onderbroken. Probeer opnieuw; dezelfde bevestiging maakt geen tweede ontwerp."])
     } finally { setBusy(false); submitting.current = false }
@@ -84,10 +85,12 @@ export function ImportDesign({ canCreate = false }: { canCreate?: boolean }) {
   const imageCount = selection ? getImportImages(selection.document).length : 0
   const imagePending = imageStates.length !== imageCount || imageStates.includes("loading")
   const imageFailed = imageStates.includes("failed")
-  return <main className="mx-auto w-full max-w-7xl space-y-6 overflow-y-auto p-4 sm:p-8">
+  const Container = transfer ? "section" : "main"
+  const Heading = transfer ? "h2" : "h1"
+  return <Container className="mx-auto w-full max-w-7xl space-y-6 overflow-y-auto p-4 sm:p-8">
     <div className="rounded-2xl border bg-card p-5 sm:p-8">
-      <div className="flex items-center gap-3"><FileJson className="h-7 w-7 text-primary" /><h1 className="text-2xl font-bold">Import JSON</h1></div>
-      <p className="mt-3 max-w-3xl text-muted-foreground">{canCreate
+      <div className="flex items-center gap-3"><FileJson className="h-7 w-7 text-primary" /><Heading className="text-2xl font-bold">{transfer ? `Concept voor ${transfer.businessName}` : "Import JSON"}</Heading></div>
+      <p className="mt-3 max-w-3xl text-muted-foreground">{transfer ? "Importeer het gecontroleerde ontwerp als nieuw concept in het klantaccount." : canCreate
         ? "Importeer je eigen website als nieuw, bewerkbaar concept. Je bestaande ontwerpen en live website blijven behouden."
         : "Controleer een FlexPagina-bestand met de echte websiteweergave. Dit voorbeeld slaat niets op in een account."}</p>
       <label htmlFor="import-file" className="mt-5 block text-sm font-semibold">FlexPagina JSON-bestand (maximaal 2 MB)</label>
@@ -105,10 +108,10 @@ export function ImportDesign({ canCreate = false }: { canCreate?: boolean }) {
         <label className="mt-5 flex items-start gap-3 text-sm">
           <input type="checkbox" checked={permission} disabled={busy || Boolean(createdId)} className="mt-1 h-4 w-4 shrink-0 accent-primary"
             onChange={(event) => setPermission(event.target.checked)} />
-          Ik ben eigenaar van deze website of heb toestemming om de inhoud en afbeeldingen te hergebruiken. Laad het voorbeeld.
+          {transfer ? "Ik heb de toestemming van de aanvrager gecontroleerd. Laad het voorbeeld; na mijn bevestiging wordt dit als nieuw concept in het klantaccount opgeslagen." : "Ik ben eigenaar van deze website of heb toestemming om de inhoud en afbeeldingen te hergebruiken. Laad het voorbeeld."}
         </label>
         {permission && imageCount > 0 && <div className="mt-4 text-sm" aria-live="polite">
-          <p>Afbeeldingen worden bij opslaan veilig naar je eigen afbeeldingsbibliotheek gekopieerd.</p>
+          <p>{transfer ? "Afbeeldingen worden bij opslaan naar de afbeeldingsbibliotheek van de klant gekopieerd." : "Afbeeldingen worden bij opslaan veilig naar je eigen afbeeldingsbibliotheek gekopieerd."}</p>
           <ul className="mt-2 space-y-1">{Array.from({ length: imageCount }, (_, i) => <li key={i}>
             Afbeelding {i + 1}: {imageStates[i] === "loaded" ? "voorbeeld geladen" : imageStates[i] === "failed" ? "niet geladen — controleer de URL of annuleer" : "controleren…"}
           </li>)}</ul>
@@ -117,12 +120,12 @@ export function ImportDesign({ canCreate = false }: { canCreate?: boolean }) {
           {canCreate && !createdId && <Button onClick={() => void createDesign()} disabled={!permission || busy || imagePending || imageFailed}>
             {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Nieuw concept aanmaken
           </Button>}
-          {createdId && <Link href={`/editor?websiteId=${createdId}`} className="font-semibold text-primary">Concept aangemaakt — open de editor</Link>}
+          {createdId && <Link href={transfer ? `/admin/flexstart?request=${transfer.id}` : `/editor?websiteId=${createdId}`} className="font-semibold text-primary">Concept aangemaakt — verder</Link>}
           <Button variant="outline" onClick={cancel} disabled={busy}>Annuleren</Button>
           {busy && <span role="status" className="text-sm text-muted-foreground">Afbeeldingen verwerken en concept opslaan…</span>}
         </div>
       </>}
-      <div className="mt-5 text-sm"><Link href={canCreate ? "/editor" : "/"} className="text-primary underline">{canCreate ? "Terug naar mijn ontwerpen" : "Terug naar FlexPagina"}</Link></div>
+      <div className="mt-5 text-sm"><Link href={transfer ? `/admin/flexstart?request=${transfer.id}` : canCreate ? "/editor" : "/"} className="text-primary underline">{transfer ? "Terug naar de aanvraag" : canCreate ? "Terug naar mijn ontwerpen" : "Terug naar FlexPagina"}</Link></div>
     </div>
     {selection && permission && <section aria-label="Voorbeeld van het nieuwe ontwerp" className="space-y-3">
       <div className="flex items-center gap-2"><h2 className="mr-auto font-semibold">Voorbeeld</h2>
@@ -131,6 +134,6 @@ export function ImportDesign({ canCreate = false }: { canCreate?: boolean }) {
       </div>
       <ImportPreviewFrame key={selection.id} design={selection.design} mobile={mobile} />
     </section>}
-  </main>
+  </Container>
 }
 

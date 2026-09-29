@@ -1608,6 +1608,7 @@ export function EditorClient({
             </Button>
           </div>
           <Button type="button" variant="outline" size="sm" onClick={handleOpenImport} disabled={isCreatingWebsite || isDeletingWebsite}>Import JSON</Button>
+          <Button asChild variant="outline" size="sm"><Link href="/editor/flexstart">Bestaande website overnemen</Link></Button>
           <Button
             type="button"
             variant="outline"

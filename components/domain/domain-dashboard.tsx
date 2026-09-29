@@ -59,6 +59,7 @@ type DomainWebsite = {
 
 interface DomainDashboardProps {
   websites: DomainWebsite[]
+  initialWebsiteId?: string
 }
 
 type VerifyState = { status: "checking" | "connected" | "error"; message: string }
@@ -122,8 +123,8 @@ function domainStatusLabel(status: DomainStatus) {
   return "Verwijderen mislukt"
 }
 
-export function DomainDashboard({ websites }: DomainDashboardProps) {
-  const initialWebsite = websites.find((website) => website.isPublished) || websites[0]
+export function DomainDashboard({ websites, initialWebsiteId }: DomainDashboardProps) {
+  const initialWebsite = websites.find((website) => website.id === initialWebsiteId) || websites.find((website) => website.isPublished) || websites[0]
   const [websiteList, setWebsiteList] = useState(websites)
   const [selectedWebsiteId, setSelectedWebsiteId] = useState(initialWebsite?.id ?? "")
   const [newDomain, setNewDomain] = useState("")
@@ -138,12 +139,15 @@ export function DomainDashboard({ websites }: DomainDashboardProps) {
   useEffect(() => {
     const rememberedWebsiteId = getActiveWebsiteId()
     const rememberedWebsite = websites.find((website) => website.id === rememberedWebsiteId)
-    if (rememberedWebsite) {
+    if (initialWebsiteId && websites.some((website) => website.id === initialWebsiteId)) {
+      setSelectedWebsiteId(initialWebsiteId)
+      setActiveWebsiteId(initialWebsiteId)
+    } else if (rememberedWebsite) {
       setSelectedWebsiteId(rememberedWebsite.id)
     } else if (initialWebsite) {
       setActiveWebsiteId(initialWebsite.id)
     }
-  }, [initialWebsite, websites])
+  }, [initialWebsite, initialWebsiteId, websites])
 
   const selectedWebsite = useMemo(
     () => websiteList.find((website) => website.id === selectedWebsiteId) || websiteList[0],

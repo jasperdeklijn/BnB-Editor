@@ -7,6 +7,8 @@ import { inspectWebsiteEntitlements } from "@/lib/entitlements"
 import { getPlanEnforcementMode, shouldEnforcePlanEntitlements } from "@/lib/plan-enforcement"
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
 import { hasReviewCollectionAccess, googleReviewUrl } from "@/lib/reviews/shared"
+import { loadWebsiteCheck } from "@/lib/flexstart/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -50,6 +52,20 @@ export async function POST(request: Request) {
   }
 
   const hasMultilingualAccess = hasMultilingualWebsiteAccess(subscription)
+
+  if (published) {
+    const { data: transfer, error: transferError } = await supabase.from("website_transfer_requests")
+      .select("status,approved_version,reviewed_version").eq("website_id", websiteId).eq("user_id", user.id).maybeSingle()
+    if (transferError) return NextResponse.json({ error: "De publicatiecontrole is tijdelijk niet beschikbaar." }, { status: 503 })
+    if (transfer) {
+      try {
+        const { check } = await loadWebsiteCheck(await createAdminClient(), websiteId, user.id)
+        if (!["approved", "published"].includes(transfer.status) || transfer.approved_version !== check.version || transfer.reviewed_version !== check.version || !check.canPublish) {
+          return NextResponse.json({ error: "Rond FlexCheck, je conceptgoedkeuring en de persoonlijke FlexReview af via FlexStart.", code: "FLEXSTART_REVIEW_REQUIRED" }, { status: 422 })
+        }
+      } catch { return NextResponse.json({ error: "FlexCheck kon niet worden uitgevoerd. Probeer later opnieuw." }, { status: 503 }) }
+    }
+  }
 
   if (!published) {
     const { error: unpublishError } = await supabase

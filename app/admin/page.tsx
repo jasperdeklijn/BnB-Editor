@@ -234,6 +234,7 @@ export default async function AdminPage() {
                 title="Gepubliceerde websites"
                 description="Bekijk live websites, eigenaren en gekoppelde domeinnamen."
               />
+              <AdminLink href="/admin/flexstart" icon={Globe2} title="FlexStart overstapservice" description="Behandel aanvragen, importeer concepten en begeleid de livegang." />
               <AdminLink
                 href="/admin/mailbox"
                 icon={Mail}

@@ -10,10 +10,11 @@ type Dependencies = {
   userId: string
   designId: string
   document: ImportDocument
+  transfer?: { requestId: string; revision: number }
   download?: typeof fetchRemoteImage
   decode?: typeof decodeImportImage
 }
-export async function createImportedDesign({ db, storage, userId, designId, document, download = fetchRemoteImage, decode = decodeImportImage }: Dependencies) {
+export async function createImportedDesign({ db, storage, userId, designId, document, transfer, download = fetchRemoteImage, decode = decodeImportImage }: Dependencies) {
   const paths: string[] = []
   const assets: Array<Record<string, unknown>> = []
   const urls = new Map<string, string>()
@@ -56,9 +57,10 @@ export async function createImportedDesign({ db, storage, userId, designId, docu
     signal.throwIfAborted()
     const design = normalizeImport(replaceImportImages(document, urls), () => crypto.randomUUID())
     rpcStarted = true
-    const { error } = await db.rpc("create_imported_design", {
+    const { error } = await db.rpc(transfer ? "create_transfer_design" : "create_imported_design", {
       p_design_id: designId, p_title: design.title, p_theme: design.theme,
       p_sections: design.sections, p_assets: assets,
+      ...(transfer ? { p_request_id: transfer.requestId, p_revision: transfer.revision } : {}),
     })
     if (error) {
       // A database error with a SQLSTATE means the transaction was rolled back.

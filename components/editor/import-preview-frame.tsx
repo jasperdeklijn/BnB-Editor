@@ -4,9 +4,9 @@ import { useMemo, useState, type CSSProperties } from "react"
 import { createPortal } from "react-dom"
 import { SectionRenderer } from "./section-renderer"
 import { applyThemeDefaultsToSections, getGoogleFontsUrl, resolveWebsiteTheme } from "@/lib/themes"
-import type { normalizeImport } from "@/lib/import/schema"
+import type { PreviewDesign } from "@/lib/flexstart/shared"
 
-export function ImportPreviewFrame({ design, mobile }: { design: ReturnType<typeof normalizeImport>; mobile: boolean }) {
+export function ImportPreviewFrame({ design, mobile }: { design: PreviewDesign; mobile: boolean }) {
   const [frameDocument, setFrameDocument] = useState<Document | null>(null)
   const theme = useMemo(() => resolveWebsiteTheme(design.theme), [design.theme])
   const sections = useMemo(() => applyThemeDefaultsToSections(design.sections, design.theme), [design])

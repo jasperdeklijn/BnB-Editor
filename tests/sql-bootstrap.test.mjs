@@ -62,7 +62,7 @@ test("full init.sql can rebuild an existing schema and the shared limiter works"
     await db.exec(repair)
     assert.deepEqual((await db.query("select * from public.rate_limit_buckets")).rows, before)
     for (const file of ["supabase/init.sql", "supabase/migrations/20260908120000_pre_administration_readiness.sql"]) {
-      const extract = (sql) => sql.match(/create or replace function public\.check_rate_limit\([\s\S]*?\$\$;/)[0]
+      const extract = (sql) => sql.replace(/\r\n/g, "\n").match(/create or replace function public\.check_rate_limit\([\s\S]*?\$\$;/)[0]
       assert.equal(extract(read(file)), extract(repair))
     }
   } finally {
