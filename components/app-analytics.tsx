@@ -5,6 +5,6 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 export function AppAnalytics() {
   const pathname = usePathname()
   // Private email links must not be observed by optional analytics integrations.
-  if (pathname?.startsWith("/reviews/")) return null
+  if (pathname?.startsWith("/reviews/") || pathname?.startsWith("/aanvraag") || pathname?.startsWith("/booking/")) return null
   return <><Analytics /><SpeedInsights /></>
 }

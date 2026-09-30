@@ -65,6 +65,7 @@ export interface InquiryMessage {
   subject: string
   body: string
   delivery_status: "received" | "queued" | "sent" | "failed"
+  customer_visible?: boolean
   error_message: string | null
   sent_at: string | null
   created_at: string
@@ -165,6 +166,7 @@ function normalizeRecord(row: Record<string, unknown>): InquiryRecord {
 
 function normalizeMessage(row: Record<string, unknown>): InquiryMessage {
   return {
+    customer_visible: row.customer_visible === true,
     id: String(row.id),
     direction: row.direction === "outbound" ? "outbound" : "inbound",
     sender_email: typeof row.sender_email === "string" ? row.sender_email : "",

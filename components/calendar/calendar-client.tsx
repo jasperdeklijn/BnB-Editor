@@ -1,5 +1,7 @@
 "use client"
 
+import { QuoteEntryActions } from "@/components/quotes/quote-entry-actions"
+
 import { Fragment, useEffect, useMemo, useState, useTransition } from "react"
 import { AlertTriangle, Ban, CalendarDays, ChevronLeft, ChevronRight, Clock, Filter, Plus, Save, Trash2, X } from "lucide-react"
 import {
@@ -1003,7 +1005,7 @@ export function CalendarClient({
             />
             {formEntry ? (
               <div className="mt-4">
-                <BookingFinancePanel
+                <QuoteEntryActions entryId={formEntry.id} /><BookingFinancePanel
                   idPrefix="calendar-finance-desktop"
                   entry={formEntry}
                   offering={formOffering}
@@ -1106,7 +1108,7 @@ export function CalendarClient({
             />
             {formEntry ? (
               <div className="p-4 pt-0">
-                <BookingFinancePanel
+                <QuoteEntryActions entryId={formEntry.id} /><BookingFinancePanel
                   idPrefix="calendar-finance-mobile"
                   entry={formEntry}
                   offering={formOffering}

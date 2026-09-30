@@ -186,7 +186,7 @@ export function EditorHeader({
                 Afbeeldingen
               </Link>
 
-              {/* Business details link */}
+              <Link href="/editor/quotes" role="menuitem" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 border-b border-border px-3 py-2 text-xs text-foreground hover:bg-secondary md:text-sm"><MessageSquareText className="h-4 w-4 text-primary" />Offertes</Link>{/* Business details link */}
               <Link
                 href="/editor/business"
                 role="menuitem"

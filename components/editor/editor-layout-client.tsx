@@ -35,7 +35,7 @@ export function EditorLayoutClient({
     "/editor/images": "Afbeeldingen",
     "/editor/services": offeringCopy.title,
     "/editor/reviews": "Recensies",
-    "/editor/requests": "Aanvragen",
+    "/editor/quotes": "Offertes", "/editor/requests": "Aanvragen",
     "/editor/reservations": "Reserveringen",
     "/editor/calendar": businessCategory === "bnb" ? "Boekingskalender" : "Afsprakenkalender",
     "/editor/domains": "Domeininstellingen",

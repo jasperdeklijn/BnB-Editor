@@ -285,7 +285,11 @@ async function ownedBooking(entryId: string) {
   const { data, error } = await supabase.from("calendar_entries").select("*").eq("id", entryId).maybeSingle()
   if (error || !data) throw new Error("Boeking niet gevonden.")
   const entry = data as OwnedBooking
-  if (entry.metadata?.source !== "booking_engine") throw new Error("Facturen zijn alleen beschikbaar voor online boekingen.")
+  if (entry.metadata?.source !== "booking_engine") {
+    const { data: quotedInvoice } = await supabase.from("booking_invoices").select("id")
+      .eq("calendar_entry_id", entry.id).eq("business_id", entry.business_id).not("quote_version_id", "is", null).limit(1)
+    if (!quotedInvoice?.length) throw new Error("Maak voor deze afspraak eerst een factuur vanuit een geaccepteerde offerte.")
+  }
   return { supabase, user, entry }
 }
 

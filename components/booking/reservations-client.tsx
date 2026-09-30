@@ -1,5 +1,7 @@
 "use client"
 
+import { QuoteEntryActions } from "@/components/quotes/quote-entry-actions"
+
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useRef, useState, useTransition } from "react"
@@ -473,7 +475,7 @@ function ReservationDetailDialog({ businessId, detail, error, offering, canManag
                 </section>
               ) : null}
 
-              {entry.metadata?.source === "booking_engine" ? (
+              <QuoteEntryActions entryId={entry.id} />{entry.metadata?.source === "booking_engine" ? (
                 <section className="rounded-xl border border-border bg-card shadow-sm">
                   <details open={pendingChanges.length > 0}>
                     <summary className="cursor-pointer list-none px-4 py-3"><div className="flex items-center justify-between gap-3"><div><h3 className="font-semibold">Boekingsverloop en verzoeken</h3><p className="text-xs text-muted-foreground">{detail?.lifecycle.history.length ?? 0} gebeurtenissen vastgelegd</p></div>{pendingChanges.length ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-900">{pendingChanges.length} open</span> : null}</div></summary>
@@ -486,7 +488,7 @@ function ReservationDetailDialog({ businessId, detail, error, offering, canManag
                 </section>
               ) : null}
 
-              {entry.metadata?.source === "booking_engine" && detail && canManage ? (
+              {(entry.metadata?.source === "booking_engine" || financial) && detail && canManage ? (
                 <BookingFinancePanel
                   idPrefix="reservation-detail-finance"
                   entry={entry}

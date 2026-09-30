@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import nodemailer from "nodemailer"
+import { deliverRequestReceipt } from "@/lib/quotes/receipt"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { isWebsiteLiveSnapshot } from "@/lib/website-snapshot"
 import {
@@ -537,6 +538,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    if (contactRequest?.id && context.businessId) {
+      await deliverRequestReceipt(contactRequest.id, context.businessId)
+    }
     return NextResponse.json({
       success: true,
       emailSent,

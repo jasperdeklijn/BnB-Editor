@@ -233,7 +233,7 @@ export function BookingFinancePanel({
   })
 
   if (unavailable) return <StatusMessage tone="error">Voer eerst de Phase 5-factuurmigratie uit.</StatusMessage>
-  if (!financial) return <StatusMessage tone="error">Het reserveringsnummer wordt aangemaakt zodra deze online boeking is bevestigd.</StatusMessage>
+  if (!financial) return <p className="text-sm text-muted-foreground">Bevestig de online boeking of maak een conceptfactuur vanuit een geaccepteerde offerte.</p>
 
   const invoiceEditor = draft && invoiceEditorOpen && typeof document !== "undefined"
     ? createPortal(
