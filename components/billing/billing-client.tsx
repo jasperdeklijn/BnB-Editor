@@ -8,6 +8,7 @@ import { BillingSummarySidebar } from "@/components/billing/billing-summary-side
 import { InvoiceHistoryTable } from "@/components/billing/invoice-history-table"
 import { PlanComparisonTable } from "@/components/billing/plan-comparison-table"
 import { Card } from "@/components/ui/card"
+import { PageLoadingIndicator } from "@/components/ui/page-loading-indicator"
 import { getPlanById, BOOKING_ADDON_NAME, BOOKING_ADDON_FEATURES, BOOKING_ADDON_MONTHLY_PRICE, MULTILINGUAL_ADDON_MONTHLY_PRICE, formatPrice } from "@/lib/pricing"
 import type { UserBillingData } from "@/lib/types/pricing"
 
@@ -30,12 +31,7 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
     : 0
 
   if (!mounted) {
-    return (
-      <div className="space-y-8 animate-pulse">
-        <div className="h-24 rounded-xl bg-secondary" />
-        <div className="h-96 rounded-xl bg-secondary" />
-      </div>
-    )
+    return <PageLoadingIndicator variant="content" />
   }
 
   return (

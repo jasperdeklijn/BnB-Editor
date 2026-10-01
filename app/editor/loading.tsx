@@ -1,5 +1,5 @@
-import { EditorWorkspaceSkeleton } from "@/components/editor/editor-loading-skeleton"
+import { PageLoadingIndicator } from "@/components/ui/page-loading-indicator"
 
 export default function EditorLoading() {
-  return <EditorWorkspaceSkeleton className="h-full" />
+  return <PageLoadingIndicator variant="workspace" />
 }

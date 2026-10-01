@@ -5,6 +5,7 @@ import { SectionIcon } from "./section-icon"
 import { createContext, useContext, useState, useEffect, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
+import { PageLoadingIndicator } from "@/components/ui/page-loading-indicator"
 import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import Link from "next/link"
@@ -2028,21 +2029,13 @@ function ServicesSectionContent({
 
   const textStyle: React.CSSProperties = { color: styles?.textColor }
 
-  // Loading skeleton
   if (loading) {
     return (
       <section
         className={`bg-secondary/60 px-4 py-16 ${styles?.fontFamily ?? ""}`}
         style={sectionStyle}
       >
-        <div className="mx-auto max-w-6xl">
-          <div className="mx-auto mb-10 h-8 w-48 animate-pulse rounded bg-primary/15" />
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map((n) => (
-              <div key={n} className="h-72 animate-pulse rounded-2xl bg-primary/10" />
-            ))}
-          </div>
-        </div>
+        <PageLoadingIndicator variant="section" />
       </section>
     )
   }

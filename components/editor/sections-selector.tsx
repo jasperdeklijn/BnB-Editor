@@ -19,7 +19,7 @@ import { useTouchDrag } from "@/hooks/use-touch-drag"
 import type { PlanId } from "@/lib/types/pricing"
 import { getMinimumPlanForSection, planMeetsRequirement } from "@/lib/entitlements"
 import { TierBadge } from "@/components/editor/tier-badge"
-import { Skeleton } from "@/components/ui/skeleton"
+import { PageLoadingIndicator } from "@/components/ui/page-loading-indicator"
 
 // ----- Sub-components so each draggable item can call the hook independently -----
 
@@ -378,15 +378,7 @@ export function SectionsSelector({ className = "", userId, onSectionAdded, onSec
             {!collapsed && "Afbeeldingen beheren"}
           </Link>
           {isLoadingImages ? (
-            <div className={`grid ${collapsed ? "grid-cols-1" : "grid-cols-2"} gap-2`} role="status" aria-label="Afbeeldingen laden">
-              {Array.from({ length: collapsed ? 3 : 6 }, (_, index) => (
-                <div key={index} className="rounded-lg border border-border bg-card p-1">
-                  <Skeleton className={`${collapsed ? "h-10" : "h-12"} w-full`} />
-                  {!collapsed ? <Skeleton className="mx-auto mt-1 h-2 w-2/3" /> : null}
-                </div>
-              ))}
-              <span className="sr-only">Afbeeldingen worden geladen</span>
-            </div>
+            <PageLoadingIndicator variant="compact" hideLabel={collapsed} />
           ) : images.length === 0 ? (
             <div className="text-xs text-muted-foreground text-center py-8" title="Geen afbeeldingen gevonden">
               {collapsed ? "0" : "Geen afbeeldingen gevonden"}

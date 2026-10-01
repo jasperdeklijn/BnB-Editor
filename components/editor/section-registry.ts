@@ -31,25 +31,25 @@ import {
   SECTION_COPY,
 } from "@/lib/business-naming"
 import { getDefaultLayoutForSection } from "@/lib/section-layouts"
-import { SectionCanvasSkeleton } from "@/components/editor/editor-loading-skeleton"
+import { SectionLoadingIndicator } from "@/components/ui/page-loading-indicator"
 import { SECTION_TRANSLATABLE_FIELDS, type TranslatableFieldDefinition } from "@/lib/i18n/section-translations"
 
-const AboutSection = dynamic<SectionRenderProps>(() => import("@/components/sections/about-section").then((module) => module.AboutSection), { loading: () => SectionCanvasSkeleton({}) })
-const ContactSection = dynamic<SectionRenderProps>(() => import("@/components/sections/contact-section").then((module) => module.ContactSection), { loading: () => SectionCanvasSkeleton({}) })
-const FeaturesSection = dynamic<SectionRenderProps>(() => import("@/components/sections/features-section").then((module) => module.FeaturesSection), { loading: () => SectionCanvasSkeleton({}) })
-const FooterSection = dynamic<SectionRenderProps>(() => import("@/components/sections/footer-section").then((module) => module.FooterSection), { loading: () => SectionCanvasSkeleton({}) })
-const GallerySection = dynamic<SectionRenderProps>(() => import("@/components/sections/gallery-section").then((module) => module.GallerySection), { loading: () => SectionCanvasSkeleton({}) })
-const HeroSection = dynamic<SectionRenderProps>(() => import("@/components/sections/hero-section").then((module) => module.HeroSection), { loading: () => SectionCanvasSkeleton({}) })
-const NavSection = dynamic<SectionRenderProps>(() => import("@/components/sections/nav-section").then((module) => module.NavSection), { loading: () => SectionCanvasSkeleton({}) })
-const ServicesSection = dynamic<SectionRenderProps>(() => import("@/components/sections/services-section").then((module) => module.ServicesSection), { loading: () => SectionCanvasSkeleton({}) })
-const TestimonialsSection = dynamic<SectionRenderProps>(() => import("@/components/sections/testimonials-section").then((module) => module.TestimonialsSection), { loading: () => SectionCanvasSkeleton({}) })
-const FaqSection = dynamic<SectionRenderProps>(() => import("@/components/sections/faq-section").then((module) => module.FaqSection), { loading: () => SectionCanvasSkeleton({}) })
-const OpeningHoursSection = dynamic<SectionRenderProps>(() => import("@/components/sections/opening-hours-section").then((module) => module.OpeningHoursSection), { loading: () => SectionCanvasSkeleton({}) })
-const PricingSection = dynamic<SectionRenderProps>(() => import("@/components/sections/pricing-section").then((module) => module.PricingSection), { loading: () => SectionCanvasSkeleton({}) })
-const MapSection = dynamic<SectionRenderProps>(() => import("@/components/sections/map-section").then((module) => module.MapSection), { loading: () => SectionCanvasSkeleton({}) })
-const CtaSection = dynamic<SectionRenderProps>(() => import("@/components/sections/cta-section").then((module) => module.CtaSection), { loading: () => SectionCanvasSkeleton({}) })
-const RequestFormSection = dynamic<SectionRenderProps>(() => import("@/components/sections/request-form-section").then((module) => module.RequestFormSection), { loading: () => SectionCanvasSkeleton({}) })
-const TeamSection = dynamic<SectionRenderProps>(() => import("@/components/sections/team-section").then((module) => module.TeamSection), { loading: () => SectionCanvasSkeleton({}) })
+const AboutSection = dynamic<SectionRenderProps>(() => import("@/components/sections/about-section").then((module) => module.AboutSection), { loading: SectionLoadingIndicator })
+const ContactSection = dynamic<SectionRenderProps>(() => import("@/components/sections/contact-section").then((module) => module.ContactSection), { loading: SectionLoadingIndicator })
+const FeaturesSection = dynamic<SectionRenderProps>(() => import("@/components/sections/features-section").then((module) => module.FeaturesSection), { loading: SectionLoadingIndicator })
+const FooterSection = dynamic<SectionRenderProps>(() => import("@/components/sections/footer-section").then((module) => module.FooterSection), { loading: SectionLoadingIndicator })
+const GallerySection = dynamic<SectionRenderProps>(() => import("@/components/sections/gallery-section").then((module) => module.GallerySection), { loading: SectionLoadingIndicator })
+const HeroSection = dynamic<SectionRenderProps>(() => import("@/components/sections/hero-section").then((module) => module.HeroSection), { loading: SectionLoadingIndicator })
+const NavSection = dynamic<SectionRenderProps>(() => import("@/components/sections/nav-section").then((module) => module.NavSection), { loading: SectionLoadingIndicator })
+const ServicesSection = dynamic<SectionRenderProps>(() => import("@/components/sections/services-section").then((module) => module.ServicesSection), { loading: SectionLoadingIndicator })
+const TestimonialsSection = dynamic<SectionRenderProps>(() => import("@/components/sections/testimonials-section").then((module) => module.TestimonialsSection), { loading: SectionLoadingIndicator })
+const FaqSection = dynamic<SectionRenderProps>(() => import("@/components/sections/faq-section").then((module) => module.FaqSection), { loading: SectionLoadingIndicator })
+const OpeningHoursSection = dynamic<SectionRenderProps>(() => import("@/components/sections/opening-hours-section").then((module) => module.OpeningHoursSection), { loading: SectionLoadingIndicator })
+const PricingSection = dynamic<SectionRenderProps>(() => import("@/components/sections/pricing-section").then((module) => module.PricingSection), { loading: SectionLoadingIndicator })
+const MapSection = dynamic<SectionRenderProps>(() => import("@/components/sections/map-section").then((module) => module.MapSection), { loading: SectionLoadingIndicator })
+const CtaSection = dynamic<SectionRenderProps>(() => import("@/components/sections/cta-section").then((module) => module.CtaSection), { loading: SectionLoadingIndicator })
+const RequestFormSection = dynamic<SectionRenderProps>(() => import("@/components/sections/request-form-section").then((module) => module.RequestFormSection), { loading: SectionLoadingIndicator })
+const TeamSection = dynamic<SectionRenderProps>(() => import("@/components/sections/team-section").then((module) => module.TeamSection), { loading: SectionLoadingIndicator })
 
 export interface SectionDefaultContext {
   businessId?: string | null

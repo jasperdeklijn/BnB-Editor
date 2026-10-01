@@ -2,6 +2,7 @@
 
 import { Invoice } from "@/lib/types/pricing"
 import { Button } from "@/components/ui/button"
+import { PageLoadingIndicator } from "@/components/ui/page-loading-indicator"
 import { Download, FileText } from "lucide-react"
 import { formatPrice } from "@/lib/pricing"
 import { toast } from "sonner"
@@ -30,16 +31,7 @@ export function InvoiceHistoryTable({
   }
 
   if (isLoading) {
-    return (
-      <div className="space-y-3">
-        {[...Array(3)].map((_, i) => (
-          <div
-            key={i}
-            className="h-12 bg-secondary rounded animate-pulse"
-          />
-        ))}
-      </div>
-    )
+    return <PageLoadingIndicator variant="section" />
   }
 
   if (!invoices || invoices.length === 0) {

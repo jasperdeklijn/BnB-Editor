@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef, type MouseEvent as R
 import { SectionsSelector } from "./sections-selector"
 import { EditorCanvas } from "./editor-canvas"
 import { EditorInspector } from "./editor-inspector"
-import { EditorWorkspaceSkeleton } from "./editor-loading-skeleton"
+import { PageLoadingIndicator } from "@/components/ui/page-loading-indicator"
 import { SectionTranslationPanel } from "./section-translation-panel"
 import { WebsiteLanguageControl } from "./website-language-control"
 import { EditorWebsiteToolbar } from "./editor-website-toolbar"
@@ -1544,6 +1544,10 @@ export function EditorClient({
     })
   }
 
+  if (isLoadingWebsite) {
+    return <PageLoadingIndicator variant="workspace" />
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col bg-muted" onClickCapture={handleEditorNavigationCapture}>
       <div className="border-b border-border bg-background px-3 py-2 md:px-4">
@@ -1637,9 +1641,8 @@ export function EditorClient({
           </div>
         </details>
       ) : null}
-      {isLoadingWebsite ? <EditorWorkspaceSkeleton /> : null}
       {/* Desktop layout: side-by-side panels */}
-      <div className={`${isLoadingWebsite ? "hidden" : "hidden md:flex"} flex-1 overflow-hidden`}>
+      <div className="hidden flex-1 overflow-hidden md:flex">
         {!isPreview && !isTranslationMode && (
           <SectionsSelector
             userId={userId}
@@ -1704,7 +1707,7 @@ export function EditorClient({
       </div>
 
       {/* Mobile layout: single panel with bottom tab bar */}
-      <div className={`${isLoadingWebsite ? "hidden" : "flex md:hidden"} flex-1 overflow-hidden flex-col`}>
+      <div className="flex flex-1 flex-col overflow-hidden md:hidden">
         {/* Panel content */}
         <div className="relative flex min-h-0 flex-1 overflow-hidden pb-[calc(4.5rem+env(safe-area-inset-bottom))]">
           {mobilePanel === "sections" && !isPreview && !isTranslationMode && (

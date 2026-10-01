@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { StatusMessage } from "@/components/ui/status-message"
 import { BOOKING_STATUS_LABELS, BOOKING_STATUS_STYLES } from "@/lib/booking/status-presentation"
+import { formatReservationUpdated } from "@/lib/booking/date-display"
 import type { BookingFinanceData, BookingInvoice, ReservationFinancial, SettlementStatus } from "@/lib/booking/invoicing"
 import type { BookingLifecycleData } from "@/lib/booking/lifecycle"
 import type {
@@ -95,10 +96,6 @@ function formatReservationRange(entry: CalendarEntry) {
   return sameDay
     ? `${date.format(start)}, ${time.format(start)} – ${time.format(end)}`
     : `${date.format(start)}, ${time.format(start)} – ${date.format(end)}, ${time.format(end)}`
-}
-
-function formatUpdated(value: string) {
-  return new Intl.DateTimeFormat("nl-NL", { dateStyle: "short", timeStyle: "short" }).format(new Date(value))
 }
 
 function formatMoney(amountMinor: number, currency = "EUR") {
@@ -353,7 +350,7 @@ function ReservationTableRow({ item, onOpen }: { item: ReservationOverviewItem; 
       <td className="px-4 py-3"><p className="max-w-44 truncate font-medium">{reservationNumber(item)}</p><p className="max-w-44 truncate text-xs text-muted-foreground">{entry.title || (entry.entry_type === "booking" ? "Boeking" : "Afspraak")}</p></td>
       <td className="px-4 py-3"><p className="max-w-44 truncate font-medium">{entry.customer_name || "Naam onbekend"}</p><p className="max-w-44 truncate text-xs text-muted-foreground">{entry.customer_email || entry.customer_phone || "Geen contactgegevens"}</p></td>
       <td className="px-4 py-3"><span className="block max-w-40 truncate">{item.offering_title || "Niet gekoppeld"}</span></td>
-      <td className="px-4 py-3"><span className="block max-w-56">{formatReservationRange(entry)}</span><span className="text-xs text-muted-foreground">Bijgewerkt {formatUpdated(entry.updated_at)}</span></td>
+      <td className="px-4 py-3"><span className="block max-w-56">{formatReservationRange(entry)}</span><span className="text-xs text-muted-foreground">Bijgewerkt {formatReservationUpdated(entry.updated_at)}</span></td>
       <td className="px-4 py-3"><BookingStatusBadge status={entry.status} /></td>
       <td className="px-4 py-3">{financial ? <><p className="font-medium">{financialAmount(financial)}</p><p className="text-xs text-muted-foreground">{SETTLEMENT_LABELS[financial.settlement_status]}</p></> : <span className="text-xs text-muted-foreground">Niet beschikbaar</span>}</td>
       <td className="px-4 py-3 text-xs text-muted-foreground">{SOURCE_LABELS[entry.source]}</td>
@@ -482,7 +479,7 @@ function ReservationDetailDialog({ businessId, detail, error, offering, canManag
                     <div className="grid gap-3 border-t border-border p-4">
                       {detail?.lifecycleUnavailable ? <StatusMessage tone="warning">Statusgeschiedenis is niet beschikbaar. Pas de lifecycle-migratie toe.</StatusMessage> : null}
                       {pendingChanges.map((request) => <article key={request.id} className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950"><p className="font-semibold">{request.requested_by === "customer" ? "Klantverzoek" : "Alternatief voorstel"}</p><p className="mt-1">{formatReservationRange({ ...entry, start_at: request.proposed_start_at, end_at: request.proposed_end_at })}</p>{request.customer_message ? <p className="mt-1 text-xs">{request.customer_message}</p> : null}<Button asChild variant="outline" size="sm" className="mt-3 bg-white"><Link href={`/editor/calendar?booking=${encodeURIComponent(entry.id)}`}>Verzoek in kalender behandelen</Link></Button></article>)}
-                      {detail?.lifecycle.history.length ? <ol className="grid gap-2">{detail.lifecycle.history.map((item) => <li key={item.id} className="rounded-md bg-muted/60 p-3 text-xs"><div className="flex justify-between gap-3"><span className="font-semibold capitalize">{item.event_type.replaceAll("_", " ")}</span><time className="shrink-0 text-muted-foreground">{formatUpdated(item.created_at)}</time></div>{item.public_message ? <p className="mt-1 text-muted-foreground">Klantbericht: {item.public_message}</p> : null}{item.private_note ? <p className="mt-1 text-muted-foreground">Intern: {item.private_note}</p> : null}</li>)}</ol> : <p className="text-sm text-muted-foreground">Nog geen statusgeschiedenis vastgelegd.</p>}
+                      {detail?.lifecycle.history.length ? <ol className="grid gap-2">{detail.lifecycle.history.map((item) => <li key={item.id} className="rounded-md bg-muted/60 p-3 text-xs"><div className="flex justify-between gap-3"><span className="font-semibold capitalize">{item.event_type.replaceAll("_", " ")}</span><time className="shrink-0 text-muted-foreground">{formatReservationUpdated(item.created_at)}</time></div>{item.public_message ? <p className="mt-1 text-muted-foreground">Klantbericht: {item.public_message}</p> : null}{item.private_note ? <p className="mt-1 text-muted-foreground">Intern: {item.private_note}</p> : null}</li>)}</ol> : <p className="text-sm text-muted-foreground">Nog geen statusgeschiedenis vastgelegd.</p>}
                     </div>
                   </details>
                 </section>
