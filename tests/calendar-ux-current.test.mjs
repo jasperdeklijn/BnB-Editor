@@ -18,7 +18,7 @@ test("calendar range counts and day groups include overlapping multi-day booking
 
 test("mobile month view uses compact indicators and a readable selected-day agenda", () => {
   const calendar = read("components/calendar/calendar-client.tsx")
-  assert.match(calendar, /STATUS_DOT_STYLES/)
+  assert.match(calendar, /CALENDAR_ENTRY_PRESENTATION\[entry.entry_type\]\.dotClassName/)
   assert.match(calendar, /setSelectedDayKey/)
   assert.match(calendar, /sm:min-h-28/)
   assert.match(calendar, /Planning voor/)

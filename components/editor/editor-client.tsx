@@ -7,6 +7,7 @@ import { EditorInspector } from "./editor-inspector"
 import { EditorWorkspaceSkeleton } from "./editor-loading-skeleton"
 import { SectionTranslationPanel } from "./section-translation-panel"
 import { WebsiteLanguageControl } from "./website-language-control"
+import { EditorWebsiteToolbar } from "./editor-website-toolbar"
 import { useEditorLayout } from "./editor-layout-context"
 import type { Section, SectionStyles, SectionType, Transition } from "@/lib/types"
 import { DEFAULT_SITE_TITLE } from "@/lib/business-naming"
@@ -39,7 +40,7 @@ import {
 import { isMultilingualWebsitesEnabled } from "@/lib/i18n/feature"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { AlertCircle, CheckCircle2, ChevronDown, ExternalLink, Eye, Globe2, Layers, LayoutTemplate, Loader2, Paintbrush, Plus, Redo2, Save, Sparkles, Trash2, Undo2 } from "lucide-react"
+import { AlertCircle, Globe2, Layers, LayoutTemplate, Loader2, Paintbrush, Sparkles, Trash2 } from "lucide-react"
 import { getDefaultThemeConfig, type LanguageSwitcherConfig, type ThemeConfig } from "@/lib/themes"
 import type { BusinessCategory } from "@/lib/business/categories"
 import { Button } from "@/components/ui/button"
@@ -49,7 +50,7 @@ import type { PlanId } from "@/lib/types/pricing"
 import { TierBadge } from "@/components/editor/tier-badge"
 import { highestRequiredPlan, inspectWebsiteEntitlements, type EntitlementViolation } from "@/lib/entitlements"
 import { getPlanDisplayName } from "@/lib/pricing"
-import { clearActiveWebsiteId, getActiveWebsiteId, setActiveWebsiteId } from "@/lib/active-website"
+import { clearActiveWebsiteId, getActiveWebsiteId, setActiveWebsiteId, getActiveWebsiteLocale, setActiveWebsiteLocale } from "@/lib/active-website"
 import { toast } from "sonner"
 import type { PlanEnforcementMode } from "@/lib/plan-enforcement"
 import {
@@ -217,7 +218,7 @@ export function EditorClient({
   const [isLoadingWebsite, setIsLoadingWebsite] = useState(true)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { isPreview, isSaving, setIsSaving, saveState, setSaveState, device, setOnPublish, setOnLogout } = useEditorLayout()
+  const { isPreview, isSaving, setIsSaving, saveState, setSaveState, device, setOnPublish, setOnLogout, registerNavigationGuard } = useEditorLayout()
   const requestedWebsiteId = searchParams.get("websiteId")
   const multilingualEnabled = isMultilingualWebsitesEnabled()
   const multilingualAvailable = multilingualEnabled && hasMultilingualAccess
@@ -424,7 +425,7 @@ export function EditorClient({
       const loadedLocales = localeResult.data.length > 0 ? localeResult.data : [fallbackLocale]
       setWebsiteLocales(loadedLocales)
       setSharedLocaleStatuses(await loadSharedLocaleStatuses(website.business_id ?? initialBusinessId, loadedLocales))
-      setActiveLocale(loadedLocales.find((locale) => locale.is_default)?.locale ?? DEFAULT_WEBSITE_LOCALE)
+      setActiveLocale(loadedLocales.find((locale) => locale.locale === getActiveWebsiteLocale(website.id))?.locale ?? loadedLocales.find((locale) => locale.is_default)?.locale ?? DEFAULT_WEBSITE_LOCALE)
       setSectionTranslations(new Map(
         translationResult.data.map((translation) => [
           `${translation.section_id}:${translation.locale}`,
@@ -533,6 +534,10 @@ export function EditorClient({
     loadWebsite(requestedWebsiteId ?? getActiveWebsiteId())
   }, [loadWebsite, requestedWebsiteId])
 
+  useEffect(() => {
+    if (websiteId && !isLoadingWebsite) setActiveWebsiteLocale(websiteId, activeLocale)
+  }, [websiteId, activeLocale, isLoadingWebsite])
+
   const handleWebsiteChange = async (nextWebsiteId: string) => {
     try {
       await saveQueueRef.current?.flush()
@@ -605,8 +610,9 @@ export function EditorClient({
     router.replace(`/editor?websiteId=${newWebsite.id}`)
   }
 
-  const handleSave = async () => {
-    if (!websiteId) return
+  const handleSave = async (nextTitle = title) => {
+    if (!websiteId) return false
+    try {
 
     setIsSaving(true)
     setIsRenamingWebsite(true)
@@ -615,7 +621,7 @@ export function EditorClient({
     const response = await fetch("/api/websites/rename", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ websiteId, title }),
+      body: JSON.stringify({ websiteId, title: nextTitle }),
     })
     const result = await response.json().catch(() => ({}))
 
@@ -631,11 +637,11 @@ export function EditorClient({
           type: "error",
           text: result?.error || "Deze versie bevat onderdelen uit een hoger abonnement.",
         })
-        return
+        return false
       }
       setSaveState("error")
       setWebsiteMessage({ type: "error", text: result?.error || "Websitenaam kon niet worden opgeslagen." })
-      return
+      return false
     }
 
     const updatedWebsite = result.website as {
@@ -667,6 +673,11 @@ export function EditorClient({
         ? `Websitenaam opgeslagen. De live link is bijgewerkt naar ${updatedWebsite.slug}.${PLATFORM_DOMAIN}.`
         : "Websitenaam opgeslagen. Deze website staat nog offline tot u hem live zet.",
     })
+    return true
+    } finally {
+      setIsSaving(false)
+      setIsRenamingWebsite(false)
+    }
   }
 
   const handleDeleteWebsite = async () => {
@@ -759,6 +770,12 @@ export function EditorClient({
       return false
     }
   }, [])
+
+  useEffect(() => registerNavigationGuard(async () => {
+    const saved = await flushPendingSectionSaves()
+    if (!saved) toast.error("Navigeren gestopt", { description: "Niet alle wijzigingen konden worden opgeslagen." })
+    return saved
+  }), [registerNavigationGuard, flushPendingSectionSaves])
 
   useEffect(() => {
     const warnBeforeUnload = (event: BeforeUnloadEvent) => {
@@ -1511,14 +1528,8 @@ export function EditorClient({
   const selectedWebsitePreviewHref = selectedWebsitePreviewUrl
     ? `https://${selectedWebsitePreviewUrl}`
     : ""
-  const liveStatusDescription = selectedWebsite?.published
-    ? "Online: wijzigingen blijven als concept bewaard totdat je opnieuw live zet."
-    : "Offline: wijzigingen zijn alleen zichtbaar in de editor."
   const saveStatusLabel =
     isSaving || saveState === "saving" ? "Wijzigingen opslaan..." : saveState === "error" ? "Niet opgeslagen" : "Wijzigingen opgeslagen"
-  const mobileSaveStatusLabel =
-    isSaving || saveState === "saving" ? "Opslaan..." : saveState === "error" ? "Niet opgeslagen" : "Opgeslagen"
-  const SaveStatusIcon = isSaving || saveState === "saving" ? Loader2 : saveState === "error" ? AlertCircle : CheckCircle2
   const canUndo = historyVersion >= 0 && historyRef.current.undo.length > 0
   const canRedo = historyVersion >= 0 && historyRef.current.redo.length > 0
   const handleEditorNavigationCapture = (event: ReactMouseEvent<HTMLDivElement>) => {
@@ -1535,28 +1546,29 @@ export function EditorClient({
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-muted" onClickCapture={handleEditorNavigationCapture}>
-      <div className="border-b border-border bg-background px-2 py-2 md:px-4">
-        <div className="hidden w-full flex-nowrap items-center gap-2 overflow-hidden md:flex">
-          <label htmlFor="website-selector" className="sr-only">
-            Website
-          </label>
-          <div className="group relative w-36 min-w-0 shrink-0 lg:w-48 xl:w-56">
-            <LayoutTemplate className="pointer-events-none absolute left-2.5 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-primary" />
-            <select
-              id="website-selector"
-              value={websiteId ?? ""}
-              onChange={(event) => handleWebsiteChange(event.target.value)}
-              className="h-8 w-full cursor-pointer appearance-none rounded-lg border border-input bg-gradient-to-b from-background to-muted/30 py-0 pl-8 pr-8 text-xs font-semibold text-foreground shadow-sm outline-none transition-all hover:border-primary/40 hover:shadow-md focus:border-primary focus:ring-2 focus:ring-primary/20"
-            >
-              {websites.map((website, index) => (
-                <option key={website.id} value={website.id}>
-                  {getWebsiteOptionLabel(website, index)}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground transition-transform group-focus-within:rotate-180 group-focus-within:text-primary" />
-          </div>
-          {multilingualAvailable ? <WebsiteLanguageControl
+      <div className="border-b border-border bg-background px-3 py-2 md:px-4">
+        <EditorWebsiteToolbar
+          websites={websites.map((website, index) => ({ id: website.id, label: getWebsiteOptionLabel(website, index) }))}
+          websiteId={websiteId}
+          title={title}
+          busy={isCreatingWebsite || isDeletingWebsite || isRenamingWebsite}
+          saving={isSaving}
+          renaming={isRenamingWebsite}
+          canUndo={canUndo}
+          canRedo={canRedo}
+          canPublish={canPublishDraft}
+          published={Boolean(selectedWebsite?.published)}
+          previewHref={selectedWebsitePreviewHref}
+          liveHref={selectedWebsiteLiveHref}
+          onWebsiteChange={handleWebsiteChange}
+          onCreate={handleCreateWebsite}
+          onDelete={() => setDeleteWebsiteConfirmationOpen(true)}
+          onRename={handleSave}
+          onImport={handleOpenImport}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onPublish={handlePublish}
+          languageControl={multilingualAvailable ? <WebsiteLanguageControl
             locales={websiteLocales}
             activeLocale={activeLocale}
             onLocaleChange={handleLocaleChange}
@@ -1569,306 +1581,13 @@ export function EditorClient({
             onLanguageSwitcherChange={handleLanguageSwitcherChange}
             canSetDefault={!selectedWebsite?.published && sectionTranslations.size === 0}
             statuses={localeStatuses}
-          /> : multilingualEnabled ? (
-            <Link
-              href="/editor/account/billing"
-              className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-amber-300/70 bg-amber-50 px-2.5 text-xs font-semibold text-amber-900 shadow-sm transition-colors hover:bg-amber-100"
-              title="Talen zijn inbegrepen bij Gold of beschikbaar als add-on"
-            >
-              <Globe2 className="h-3.5 w-3.5" />
-              Talen · Gold/add-on
-            </Link>
-          ) : null}
-          <label htmlFor="website-name" className="sr-only">
-            Websitenaam
-          </label>
-          <input
-            id="website-name"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            className="h-8 w-32 min-w-0 shrink rounded-md border border-input bg-background px-2 text-xs text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 lg:w-44 xl:w-56"
-            placeholder="Websitenaam"
-          />
-          <Button
-            type="button"
-            size="icon-sm"
-            onClick={handleSave}
-            disabled={!websiteId || isRenamingWebsite || isDeletingWebsite}
-            aria-label="Websitenaam opslaan"
-            title="Websitenaam opslaan"
-          >
-            {isRenamingWebsite ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-          </Button>
-          <div className="flex items-center rounded-md border border-border bg-background p-0.5">
-            <Button type="button" variant="ghost" size="icon-xs" onClick={handleUndo} disabled={!canUndo} aria-label="Wijziging ongedaan maken" title="Ongedaan maken (Ctrl+Z)">
-              <Undo2 className="h-3.5 w-3.5" />
-            </Button>
-            <Button type="button" variant="ghost" size="icon-xs" onClick={handleRedo} disabled={!canRedo} aria-label="Wijziging opnieuw toepassen" title="Opnieuw toepassen (Ctrl+Shift+Z)">
-              <Redo2 className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-          <Button type="button" variant="outline" size="sm" onClick={handleOpenImport} disabled={isCreatingWebsite || isDeletingWebsite}>Import JSON</Button>
-          <Button asChild variant="outline" size="sm"><Link href="/editor/flexstart">Bestaande website overnemen</Link></Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon-sm"
-            onClick={handleCreateWebsite}
-            disabled={isCreatingWebsite || isDeletingWebsite}
-            aria-label="Nieuwe website"
-            title="Nieuwe website"
-          >
-            {isCreatingWebsite ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
-          </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            size="icon-sm"
-            onClick={() => setDeleteWebsiteConfirmationOpen(true)}
-            disabled={!websiteId || isDeletingWebsite || isCreatingWebsite || isRenamingWebsite}
-            aria-label="Website verwijderen"
-            title="Website verwijderen"
-          >
-            {isDeletingWebsite ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-          </Button>
-          <TierBadge plan={currentPlan} prefix="Actief" className="hidden border-primary/30 bg-primary/10 text-primary 2xl:inline-flex" />
-          {selectedWebsite ? (
-            <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden whitespace-nowrap rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-xs">
-              <a
-                href={selectedWebsitePreviewHref}
-                target="_blank"
-                rel="noreferrer"
-                className="hidden shrink-0 items-center gap-1 rounded border border-border bg-background px-2 py-1 font-medium text-primary transition-colors hover:bg-accent xl:inline-flex"
-                title={`Preview openen: ${selectedWebsitePreviewUrl}`}
-                aria-label={`Preview openen: ${selectedWebsitePreviewUrl}`}
-              >
-                <Eye className="h-3.5 w-3.5" />
-                Preview
-                <ExternalLink className="h-3 w-3" />
-              </a>
-              <span
-                className={`h-2.5 w-2.5 rounded-full ring-2 ${
-                  selectedWebsite.published
-                    ? "bg-emerald-500 ring-emerald-500/20"
-                    : "bg-red-500 ring-red-500/20"
-                }`}
-                aria-hidden="true"
-              />
-              <span className="shrink-0 font-medium text-foreground">{selectedWebsite.published ? "Live" : "Offline"}</span>
-              <span className="hidden text-muted-foreground 2xl:inline">{liveStatusDescription}</span>
-              {selectedWebsite.published ? (
-                <>
-                  <a
-                    href={selectedWebsiteLiveHref}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hidden min-w-0 items-center gap-1 rounded border border-border bg-background px-2 py-1 font-medium text-primary hover:bg-accent lg:inline-flex"
-                    title={selectedWebsiteLiveUrl}
-                  >
-                    <Globe2 className="h-3.5 w-3.5 shrink-0 text-primary" />
-                    <span className="max-w-28 truncate font-mono xl:max-w-[20vw]">
-                      {selectedWebsiteLiveUrl}
-                    </span>
-                    <ExternalLink className="h-3 w-3 shrink-0" />
-                  </a>
-                  <Button type="button" size="xs" onClick={handlePublish} disabled={!websiteId || isSaving}>
-                    {canPublishDraft ? "Nieuwe versie live" : "Bekijk blokkades"}
-                  </Button>
-                </>
-              ) : (
-                <div className="flex items-center gap-1.5">
-                  <Button type="button" size="xs" disabled={!websiteId || isSaving || !canPublishDraft} onClick={handlePublish}>
-                    Live zetten
-                  </Button>
-                  {!canPublishDraft ? (
-                    <Button type="button" variant="outline" size="xs" onClick={() => setPublishPreflightOpen(true)}>
-                      Bekijk blokkades
-                    </Button>
-                  ) : null}
-                </div>
-              )}
-            </div>
-          ) : null}
+          /> : multilingualEnabled ? <Button variant="outline" asChild className="h-11"><Link href="/editor/account/billing"><Globe2 className="h-4 w-4" />Talen · Gold/add-on</Link></Button> : null}
+        />
+        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground" role="status">
+          <span>{selectedWebsite?.published ? "Live · wijzigingen blijven concept tot publicatie" : "Offline · alleen zichtbaar als concept"}</span>
+          <span className="sm:hidden">{saveStatusLabel}</span>
         </div>
-        <div className="mx-auto flex max-w-7xl flex-col gap-2 md:hidden">
-          <div className="flex min-w-0 items-center gap-2">
-            <label htmlFor="website-selector-mobile" className="sr-only">
-              Website
-            </label>
-            <div className="group relative min-w-0 flex-1">
-              <LayoutTemplate className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-primary" />
-              <select
-                id="website-selector-mobile"
-                value={websiteId ?? ""}
-                onChange={(event) => handleWebsiteChange(event.target.value)}
-                className="h-11 w-full cursor-pointer appearance-none rounded-xl border border-input bg-gradient-to-b from-background to-muted/30 py-0 pl-10 pr-10 text-sm font-semibold text-foreground shadow-sm outline-none transition-all hover:border-primary/40 focus:border-primary focus:ring-2 focus:ring-primary/20"
-              >
-                {websites.map((website, index) => (
-                  <option key={website.id} value={website.id}>
-                    {getWebsiteOptionLabel(website, index)}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-transform group-focus-within:rotate-180 group-focus-within:text-primary" />
-            </div>
-            <div
-              className={`flex h-11 max-w-[7.5rem] shrink-0 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium ${
-                saveState === "error"
-                  ? "border-warning/30 bg-warning/10 text-warning"
-                  : "border-emerald-500/20 bg-emerald-500/10 text-emerald-700"
-              }`}
-              aria-live="polite"
-              title={saveStatusLabel}
-            >
-              <SaveStatusIcon className={`h-3.5 w-3.5 ${isSaving || saveState === "saving" ? "animate-spin" : ""}`} />
-              <span className="truncate">{mobileSaveStatusLabel}</span>
-            </div>
-            {selectedWebsite ? (
-              <Button
-                type="button"
-                size="default"
-                variant={canPublishDraft ? "default" : "outline"}
-                className="h-11 shrink-0 px-3 text-xs"
-                onClick={handlePublish}
-                disabled={!websiteId || isSaving}
-                title={liveStatusDescription}
-              >
-                {canPublishDraft
-                  ? selectedWebsite.published
-                    ? "Nieuwe versie live"
-                    : "Live zetten"
-                  : "Blokkades"}
-              </Button>
-            ) : null}
-          </div>
-
-          {(canUndo || canRedo) ? (
-            <div className="grid grid-cols-2 gap-2">
-              <Button type="button" variant="outline" className="h-11" onClick={handleUndo} disabled={!canUndo}>
-                <Undo2 className="h-4 w-4" /> Ongedaan maken
-              </Button>
-              <Button type="button" variant="outline" className="h-11" onClick={handleRedo} disabled={!canRedo}>
-                <Redo2 className="h-4 w-4" /> Opnieuw
-              </Button>
-            </div>
-          ) : null}
-
-          {multilingualAvailable ? <WebsiteLanguageControl
-            locales={websiteLocales}
-            activeLocale={activeLocale}
-            onLocaleChange={handleLocaleChange}
-            onAdd={handleAddLocale}
-            onToggle={handleToggleLocale}
-            onRemove={handleRemoveLocale}
-            onUpdate={handleUpdateLocale}
-            onSetDefault={handleSetDefaultLocale}
-            languageSwitcher={themeConfig?.languageSwitcher}
-            onLanguageSwitcherChange={handleLanguageSwitcherChange}
-            canSetDefault={!selectedWebsite?.published && sectionTranslations.size === 0}
-            statuses={localeStatuses}
-            mobile
-          /> : multilingualEnabled ? (
-            <Link
-              href="/editor/account/billing"
-              className="flex min-h-11 items-center gap-2 rounded-xl border border-amber-300/70 bg-amber-50 px-3 text-sm font-semibold text-amber-900 shadow-sm"
-            >
-              <Globe2 className="h-4 w-4" />
-              Talen ontgrendelen
-              <span className="ml-auto text-xs font-medium">Gold of € 2,99/mnd</span>
-            </Link>
-          ) : null}
-
-          <details className="group rounded-md border border-border bg-muted/30">
-            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 text-sm font-medium text-foreground">
-              <span>Website beheren</span>
-              <span className="text-xs font-normal text-muted-foreground group-open:hidden">Naam, links en websiteacties</span>
-              <span className="hidden text-xs font-normal text-muted-foreground group-open:inline">Sluiten</span>
-            </summary>
-            <div className="space-y-2 border-t border-border p-2">
-              <div className="flex min-w-0 items-center gap-2">
-                <label htmlFor="website-name-mobile" className="sr-only">
-                  Websitenaam
-                </label>
-                <input
-                  id="website-name-mobile"
-                  value={title}
-                  onChange={(event) => setTitle(event.target.value)}
-                  className="h-11 min-w-0 flex-1 rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
-                  placeholder="Websitenaam"
-                />
-                <Button
-                  type="button"
-                  size="icon-lg"
-                  className="h-11 w-11 shrink-0"
-                  onClick={handleSave}
-                  disabled={!websiteId || isRenamingWebsite || isDeletingWebsite}
-                  aria-label="Websitenaam opslaan"
-                  title="Websitenaam opslaan"
-                >
-                  {isRenamingWebsite ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                </Button>
-                <Button type="button" variant="outline" size="sm" onClick={handleOpenImport} disabled={isCreatingWebsite || isDeletingWebsite}>Import JSON</Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-lg"
-                  className="h-11 w-11 shrink-0"
-                  onClick={handleCreateWebsite}
-                  disabled={isCreatingWebsite || isDeletingWebsite}
-                  aria-label="Nieuwe website"
-                  title="Nieuwe website"
-                >
-                  {isCreatingWebsite ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                </Button>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon-lg"
-                  className="h-11 w-11 shrink-0"
-                  onClick={() => setDeleteWebsiteConfirmationOpen(true)}
-                  disabled={!websiteId || isDeletingWebsite || isCreatingWebsite || isRenamingWebsite}
-                  aria-label="Website verwijderen"
-                  title="Website verwijderen"
-                >
-                  {isDeletingWebsite ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                </Button>
-              </div>
-              <div>
-                {selectedWebsite ? (
-                  <a
-                    href={selectedWebsitePreviewHref}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md border border-border bg-background px-3 text-sm font-medium text-primary shadow-sm"
-                    title={`Preview openen: ${selectedWebsitePreviewUrl}`}
-                  >
-                    <Eye className="h-4 w-4" />
-                    Preview
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                ) : null}
-              </div>
-              {selectedWebsite?.published ? (
-                <a
-                  href={selectedWebsiteLiveHref}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex h-11 min-w-0 items-center justify-center gap-2 rounded-md border border-border bg-background px-3 text-sm font-medium text-primary shadow-sm"
-                  title={selectedWebsiteLiveUrl}
-                >
-                  <Globe2 className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{selectedWebsiteLiveUrl}</span>
-                  <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-                </a>
-              ) : null}
-            </div>
-          </details>
-        </div>
-        {websiteMessage ? (
-          <StatusMessage tone={websiteMessage.type} className="mx-auto mt-2 max-w-7xl text-xs">
-            {websiteMessage.text}
-          </StatusMessage>
-        ) : null}
+        {websiteMessage ? <StatusMessage tone={websiteMessage.type} className="mt-2 text-xs">{websiteMessage.text}</StatusMessage> : null}
       </div>
       {subscriptionNotice ? (
         <div className="border-b border-warning/40 bg-warning/10 px-3 py-2 text-center text-xs font-medium text-foreground" role="status">

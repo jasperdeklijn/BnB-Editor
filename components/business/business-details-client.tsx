@@ -5,6 +5,7 @@ import { updateBusiness, type Business } from "@/lib/supabase/business"
 import { BUSINESS_CATEGORIES, type BusinessCategory } from "@/lib/business/categories"
 import { Button } from "@/components/ui/button"
 import { useEditorLayout } from "@/components/editor/editor-layout-context"
+import { useEditorFormNavigation } from "@/components/editor/use-editor-form-navigation"
 import { EditorPageShell } from "@/components/editor/editor-page-shell"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -51,6 +52,9 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
   const [whatsapp, setWhatsapp] = useState(business.whatsapp ?? "")
   const [websiteUrl, setWebsiteUrl] = useState(business.website_url ?? "")
   const [openingNote, setOpeningNote] = useState(business.opening_note ?? "")
+  const formSnapshot = JSON.stringify([name, category, tagline, description, street, city, postal, country, phone, chamberOfCommerceNumber, vatNumber, contactEmail, whatsapp, websiteUrl, openingNote])
+  const [savedSnapshot, setSavedSnapshot] = useState(formSnapshot)
+  useEditorFormNavigation(formSnapshot !== savedSnapshot, isSaving)
 
   const handleCategorySelect = (nextCategory: BusinessCategory) => {
     setCategory(nextCategory)
@@ -85,6 +89,7 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
         opening_note: openingNote,
       })
       setBusiness(updated)
+      setSavedSnapshot(formSnapshot)
       setStatus({ tone: "success", text: "Gegevens opgeslagen." })
     } catch (err) {
       console.error(err)

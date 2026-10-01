@@ -3,6 +3,7 @@
 import { createContext, useContext } from "react"
 
 export type EditorSaveState = "saved" | "saving" | "error"
+export type EditorNavigationGuard = () => boolean | Promise<boolean>
 
 export type EditorHeaderState = {
   title: string
@@ -29,6 +30,7 @@ export type EditorHeaderState = {
   setActionLoading: (value: boolean) => void
   infoText?: string
   setInfoText: (text?: string) => void
+  registerNavigationGuard: (guard: EditorNavigationGuard) => () => void
 }
 
 const EditorLayoutContext = createContext<EditorHeaderState | null>(null)

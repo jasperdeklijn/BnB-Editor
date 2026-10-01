@@ -1,5 +1,5 @@
 "use client"
-import { useState, useTransition } from "react"
+import { useEffect, useRef, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { quoteAction } from "@/app/editor/quotes/actions"
 import { quoteLabels, quoteStatus, type QuoteSnapshot, type QuoteVersion } from "@/lib/quotes/types"
 import { calculateBookingFinancials, formatMinorUnits, type InvoiceParty } from "@/lib/booking/pricing"
+import { useEditorLayout } from "@/components/editor/editor-layout-context"
+import { toast } from "sonner"
 
 export function QuoteEditor({quote,request,versions,initial,deliveries,services,entries}:{quote:{id:string;number:number;request_id:string};request:{name:string;email:string};versions:QuoteVersion[];initial:QuoteSnapshot;deliveries:{version_id:string;status:string;created_at:string}[];services:{id:string;title:string}[];entries:{id:string;status:string;start_at:string}[]}) {
   const draft=versions.find(v=>v.status==="draft")
@@ -17,6 +19,17 @@ export function QuoteEditor({quote,request,versions,initial,deliveries,services,
   const [notice,setNotice]=useState(""),[message,setMessage]=useState(""),[email,setEmail]=useState(request.email),[pending,start]=useTransition()
   const [serviceId,setServiceId]=useState(services[0]?.id||""),[startAt,setStartAt]=useState(""),[endAt,setEndAt]=useState("")
   const router=useRouter()
+  const { registerNavigationGuard } = useEditorLayout()
+  const formState = JSON.stringify({ snapshot: draft ? snapshot : null, until: draft ? until : null, email, message, serviceId, startAt, endAt })
+  const initialFormState = useRef(formState)
+  const hasUnsavedChanges = formState !== initialFormState.current
+  useEffect(() => registerNavigationGuard(() => {
+    if (pending) {
+      toast.info("Wacht tot de offerteactie is afgerond.")
+      return false
+    }
+    return !hasUnsavedChanges || window.confirm("U heeft niet-opgeslagen wijzigingen in deze offerte. De pagina verlaten en deze wijzigingen verliezen?")
+  }), [registerNavigationGuard, pending, hasUnsavedChanges])
   function run(input:Parameters<typeof quoteAction>[0],success="Opgeslagen.") {start(async()=>{setNotice("");const result=await quoteAction(input);if(result.success){setNotice(success);if("href" in result&&result.href)router.push(result.href);else router.refresh()}else setNotice(result.error)})}
   let total:string
   try {total=formatMinorUnits(calculateBookingFinancials(snapshot.lines).totalMinor)}catch{total="Controleer de bedragen"}

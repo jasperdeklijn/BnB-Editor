@@ -26,6 +26,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 import { useEditorLayout } from "@/components/editor/editor-layout-context"
+import { useEditorFormNavigation } from "@/components/editor/use-editor-form-navigation"
 import { useTouchDrag } from "@/hooks/use-touch-drag"
 import { getOfferingCopy, type BusinessCategory, type OfferingCopy } from "@/lib/business/categories"
 import {
@@ -636,6 +637,8 @@ export function ServicesClient({
   const [isLoadingImages, setIsLoadingImages] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [failedServiceIds, setFailedServiceIds] = useState<Set<string>>(() => new Set())
+  useEditorFormNavigation(failedServiceIds.size > 0, isSaving)
   const [draggingImage, setDraggingImage] = useState<string | null>(null)
   const { setIsSaving: setHeaderSaving, setSaveState, setActionLabel, setOnAction, setActionIcon, setActionLoading, setInfoText } =
     useEditorLayout()
@@ -720,10 +723,12 @@ export function ServicesClient({
     try {
       const updated = await apiUpdateService(id, updates)
       setServices((prev) => prev.map((s) => (s.id === id ? updated : s)))
+      setFailedServiceIds((previous) => { const next = new Set(previous); next.delete(id); return next })
     } catch (err) {
       console.error(err)
       failed = true
       toast.error("Bijwerken mislukt")
+      setFailedServiceIds((previous) => new Set(previous).add(id))
     } finally {
       setIsSaving(false)
       if (failed) setSaveState("error")

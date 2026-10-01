@@ -1,4 +1,5 @@
 "use client"
+import { CALENDAR_ENTRY_PRESENTATION } from "@/lib/calendar-entry-presentation"
 
 import { QuoteEntryActions } from "@/components/quotes/quote-entry-actions"
 
@@ -23,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEditorLayout } from "@/components/editor/editor-layout-context"
+import { useEditorFormNavigation } from "@/components/editor/use-editor-form-navigation"
 import type {
   CalendarAvailabilityWindow,
   CalendarEntry,
@@ -37,7 +39,6 @@ import type { CalendarSyncData } from "@/lib/calendar/sync"
 import { CalendarSyncPanel } from "@/components/calendar/calendar-sync-panel"
 import { BookingFinancePanel } from "@/components/calendar/booking-finance-panel"
 import {
-  BOOKING_STATUS_DOT_STYLES as STATUS_DOT_STYLES,
   BOOKING_STATUS_LABELS as STATUS_LABELS,
   BOOKING_STATUS_STYLES as STATUS_STYLES,
 } from "@/lib/booking/status-presentation"
@@ -442,6 +443,9 @@ export function CalendarClient({
   })
   const [statusMessage, setStatusMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null)
   const [isPending, startTransition] = useTransition()
+  const originalEntry = form?.id ? entries.find((entry) => entry.id === form.id) : null
+  const formDirty = Boolean(form && (!originalEntry || JSON.stringify(form) !== JSON.stringify(formStateFromEntry(originalEntry))))
+  useEditorFormNavigation(formDirty, isPending)
   const { setIsSaving: setHeaderSaving, setSaveState, setActionLoading, setInfoText } = useEditorLayout()
 
   const selectedOffering = useMemo(
@@ -921,6 +925,10 @@ export function CalendarClient({
             </div>
           </div>
 
+          <div className="flex flex-wrap gap-x-4 gap-y-2 border-b border-border px-3 py-2 text-xs sm:px-4" aria-label="Kalenderlegenda">
+            {Object.entries(CALENDAR_ENTRY_PRESENTATION).map(([type, presentation]) => <span key={type} className="inline-flex items-center gap-1.5"><span aria-hidden="true" className={`h-2.5 w-2.5 rounded-full ${presentation.dotClassName}`} />{presentation.label}</span>)}
+            <span className="text-muted-foreground">Status staat bij elk item.</span>
+          </div>
           <div className="p-3 sm:p-4">
             {entries.length === 0 ? (
               <CalendarEmptyState
@@ -1409,7 +1417,7 @@ function MonthView({
                 <span>{day.getDate()}</span>
                 {dayEntries.length > 0 ? (
                   <span className="flex max-w-[2rem] items-center gap-0.5" aria-hidden="true">
-                    {dayEntries.slice(0, 2).map((entry) => <span key={entry.id} className={`h-1.5 w-1.5 rounded-full ${isToday ? "bg-white" : STATUS_DOT_STYLES[entry.status]}`} />)}
+                    {dayEntries.slice(0, 2).map((entry) => <span key={entry.id} title={`${CALENDAR_ENTRY_PRESENTATION[entry.entry_type].label} · ${STATUS_LABELS[entry.status]}`} className={`h-1.5 w-1.5 rounded-full ${CALENDAR_ENTRY_PRESENTATION[entry.entry_type].dotClassName} ${isToday ? "ring-1 ring-white" : ""}`} />)}
                     {dayEntries.length > 2 ? <span className="text-[9px]">+{dayEntries.length - 2}</span> : null}
                   </span>
                 ) : <Plus className="h-3.5 w-3.5 shrink-0" />}
@@ -1710,11 +1718,12 @@ function EntryPill({
         event.stopPropagation()
         onClick(entry)
       }}
-      className={`block w-full rounded border px-2 py-1 text-left text-[11px] font-medium ${STATUS_STYLES[entry.status]}`}
+      className={`block w-full rounded border px-2 py-1 text-left text-[11px] font-medium ${CALENDAR_ENTRY_PRESENTATION[entry.entry_type].className}`}
     >
       <span className="block truncate">
-        {dayPhase || formatEntryTime(entry)} / {STATUS_LABELS[entry.status]} / {entry.title || STATUS_LABELS[entry.status]}
+        {dayPhase || formatEntryTime(entry)} / {CALENDAR_ENTRY_PRESENTATION[entry.entry_type].label} / {entry.title || STATUS_LABELS[entry.status]}
       </span>
+      <span className={`mt-1 inline-block rounded border px-1 text-[10px] ${STATUS_STYLES[entry.status]}`}>{STATUS_LABELS[entry.status]}</span>
       {detailText ? <span className="block truncate text-[10px] opacity-80">{detailText}</span> : null}
     </button>
   )
@@ -1730,11 +1739,11 @@ function EntryCard({
   onClick: () => void
 }) {
   return (
-    <button type="button" onClick={onClick} className="w-full rounded-md border border-border bg-background p-3 text-left transition-colors hover:border-primary/50">
+    <button type="button" onClick={onClick} className={`w-full rounded-md border p-3 text-left transition-colors hover:border-primary/50 ${CALENDAR_ENTRY_PRESENTATION[entry.entry_type].className}`}>
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="min-w-0">
           <h3 className="truncate text-sm font-medium text-foreground">{entry.title || STATUS_LABELS[entry.status]}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">{formatEntryRange(entry)}</p>
+          <p className="mt-1 text-xs">{CALENDAR_ENTRY_PRESENTATION[entry.entry_type].label} · {formatEntryRange(entry)}</p>
         </div>
         <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_STYLES[entry.status]}`}>
           {STATUS_LABELS[entry.status]}

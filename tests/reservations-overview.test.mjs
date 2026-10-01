@@ -77,9 +77,10 @@ test("calendar and reservations share status presentation", () => {
 test("editor navigation exposes reservations separately from the calendar", () => {
   const header = read("components/editor/editor-header.tsx")
   const layout = read("components/editor/editor-layout-client.tsx")
-  assert.match(header, /href="\/editor\/reservations"/)
-  assert.match(header, />\s*Reserveringen\s*</)
-  assert.match(header, /href="\/editor\/calendar"/)
+  assert.match(header, /EDITOR_NAVIGATION\.map/)
+  assert.match(read("lib/editor-navigation.ts"), /href: "\/editor\/reservations", label: "Reserveringen"/)
+  assert.match(header, /aria-label="Hoofdnavigatie"/)
+  assert.match(read("lib/editor-navigation.ts"), /href: "\/editor\/calendar", label: "Kalender"/)
   assert.match(layout, /"\/editor\/reservations": "Reserveringen"/)
   assert.match(layout, /"\/editor\/reservations": <ClipboardList/)
 })

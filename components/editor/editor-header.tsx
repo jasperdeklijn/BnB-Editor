@@ -3,29 +3,11 @@
 import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
-import {
-  ArrowLeft,
-  Monitor,
-  Tablet,
-  Smartphone,
-  CalendarDays,
-  ImageIcon,
-  Globe,
-  Home,
-  Briefcase,
-  LayoutTemplate,
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
-  ChevronDown,
-  CreditCard,
-  User,
-  Plus,
-  ClipboardList,
-  MessageSquareText,
-} from "lucide-react"
+import { ArrowLeft, Monitor, Tablet, Smartphone, CheckCircle2, AlertCircle, Loader2, ChevronDown, CreditCard, User, Plus } from "lucide-react"
 import Link from "next/link"
 import { PLATFORM_BRAND_NAME } from "@/lib/platform"
+import { EDITOR_NAVIGATION, getEditorGroup } from "@/lib/editor-navigation"
+import { cn } from "@/lib/utils"
 
 interface EditorHeaderProps {
   isPreview: boolean
@@ -46,253 +28,55 @@ interface EditorHeaderProps {
   onAction?: () => void
   actionLoading?: boolean
   showEditorActions?: boolean
-  showBackButton?: boolean
   offeringLabel?: string
   calendarLabel?: string
+  pathname: string | null
 }
 
-export function EditorHeader({
-  onLogout,
-  isSaving,
-  saveState = isSaving ? "saving" : "saved",
-  device,
-  onDeviceChange,
-  avatarUrl,
-  displayName,
-  pageTitle,
-  titleIcon,
-  infoText,
-  actionLabel,
-  actionIcon,
-  onAction,
-  actionLoading = false,
-  showEditorActions = true,
-  showBackButton = false,
-  offeringLabel = "Aanbod",
-  calendarLabel = "Afsprakenkalender",
-}: EditorHeaderProps) {
-  const [menuOpen, setMenuOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
+export function EditorHeader({ onLogout, isSaving, saveState = isSaving ? "saving" : "saved", device, onDeviceChange, avatarUrl, displayName, infoText, actionLabel, actionIcon, onAction, actionLoading = false, showEditorActions = true, pathname }: EditorHeaderProps) {
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const accountMenuRef = useRef<HTMLDivElement>(null)
-  const deviceLabels: Record<typeof device, string> = {
-    desktop: "Desktop preview",
-    tablet: "Tablet preview",
-    mobile: "Telefoon preview",
-  }
+  const activeGroup = getEditorGroup(pathname)
+  const deviceLabels = { desktop: "Desktop preview", tablet: "Tablet preview", mobile: "Telefoon preview" }
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false)
-      }
-      if (accountMenuRef.current && !accountMenuRef.current.contains(e.target as Node)) {
+    const closeOutside = (event: MouseEvent) => {
+      if (accountMenuRef.current && !accountMenuRef.current.contains(event.target as Node)) setAccountMenuOpen(false)
+    }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && accountMenuOpen) {
         setAccountMenuOpen(false)
+        accountMenuRef.current?.querySelector("button")?.focus()
       }
     }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
+    document.addEventListener("mousedown", closeOutside)
+    document.addEventListener("keydown", closeOnEscape)
+    return () => {
+      document.removeEventListener("mousedown", closeOutside)
+      document.removeEventListener("keydown", closeOnEscape)
+    }
+  }, [accountMenuOpen])
 
   return (
-    <header className="relative flex items-center justify-between border-b border-[var(--editor-header-accent)] bg-[var(--editor-header)] px-2 py-2 md:px-6 md:py-3 gap-1 md:gap-2 shrink-0 z-60">
-      <div className="flex items-center gap-1 md:gap-4 min-w-0 flex-shrink-0">
-        <div className="flex items-center gap-1 md:gap-2">
-          
-       
-        </div>
-        {showBackButton ? (
-          <div className="flex items-center gap-1 md:gap-2">
-          <Image
-            src="/icon.png"
-            alt={PLATFORM_BRAND_NAME}
-            width={1024}
-            height={1024}
-            className="h-7 w-7 md:h-8 md:w-8"
-          />
-          <Link
-            href="/editor"
-            aria-label="Terug naar editor"
-            title="Terug naar editor"
-            className="hidden md:inline-flex items-center gap-2 rounded-full border border-[var(--editor-header-accent)] bg-[var(--editor-header)] px-3 py-2 text-xs md:text-sm font-medium text-[var(--editor-header-fg)] transition-colors hover:bg-[var(--editor-header-accent)]/25"
-          >
-            <ArrowLeft className="h-3 w-3 md:h-4 md:w-4" />
-            <span className="hidden sm:inline">Terug naar editor</span>
+    <header className="relative z-60 flex shrink-0 flex-wrap items-center gap-2 border-b border-[var(--editor-header-accent)] bg-[var(--editor-header)] px-3 py-2 md:px-6">
+      <Link href="/editor" aria-label="Website-editor" className="order-1 shrink-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-white">
+        <Image src="/icon.png" alt={PLATFORM_BRAND_NAME} width={1024} height={1024} className="h-8 w-8 lg:hidden" />
+        <Image src="/logo_klein.png" alt={PLATFORM_BRAND_NAME} width={1536} height={1024} className="hidden h-10 w-auto object-contain lg:block" />
+      </Link>
+      <nav aria-label="Hoofdnavigatie" className="order-3 grid w-full grid-cols-2 gap-1 min-[380px]:grid-cols-4 lg:order-2 lg:flex lg:w-auto lg:flex-1 lg:justify-center">
+        {EDITOR_NAVIGATION.map((group) => (
+          <Link key={group.id} href={group.href} aria-current={activeGroup?.id === group.id ? "true" : undefined}
+            className={cn("inline-flex min-h-11 items-center justify-center rounded-md px-2 text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-white sm:px-3 sm:text-sm",
+              activeGroup?.id === group.id ? "bg-white text-primary shadow-sm" : "text-[var(--editor-header-fg)] hover:bg-[var(--editor-header-accent)]/25")}>
+            {group.label}
           </Link>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <Image
-              src="/icon.png"
-              alt={PLATFORM_BRAND_NAME}
-              width={1024}
-              height={1024}
-              className="h-7 w-7 md:hidden"
-            />
-            <Image
-              src="/logo_klein.png"
-              alt={PLATFORM_BRAND_NAME}
-              width={1536}
-              height={1024}
-              className="hidden md:block h-10 md:h-12 w-auto object-contain"
-            />
-          </div>
-        )}
-        <div className="relative" ref={menuRef}>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-11 min-w-11 rounded-full bg-white px-3 text-xs text-primary shadow-sm hover:bg-secondary md:h-8 md:min-w-0 md:px-3 md:text-sm"
-            onClick={() => setMenuOpen((o) => !o)}
-            aria-haspopup="menu"
-            aria-expanded={menuOpen}
-            aria-label="Mijn website menu openen"
-            title="Mijn website menu"
-          >
-            <Home className="h-3.5 w-3.5 md:h-4 md:w-4" />
-            <span className="hidden sm:inline ml-1.5">Mijn website</span>
-            <ChevronDown className="h-3 w-3 md:h-4 md:w-4 ml-1" />
-          </Button>
-
-          {menuOpen && (
-            <div
-              role="menu"
-              className="absolute left-0 top-full z-50 mt-1 min-w-[12rem] max-w-[calc(100vw-1rem)] md:w-56 rounded-xl border border-border bg-white shadow-lg text-sm"
-            >
-              <Link
-                href="/editor"
-                role="menuitem"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors border-b border-border"
-              >
-                <LayoutTemplate className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                Website bewerken
-              </Link>
-
-              {/* Images link */}
-              <Link href="/editor/flexstart" role="menuitem" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 border-b border-border px-3 py-2 text-xs text-foreground hover:bg-secondary md:text-sm">
-                <Globe className="h-4 w-4 shrink-0 text-primary" />Bestaande website overnemen
-              </Link>
-              <Link href="/editor/flexcheck" role="menuitem" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 border-b border-border px-3 py-2 text-xs text-foreground hover:bg-secondary md:text-sm">
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />FlexCheck
-              </Link>
-              <Link
-                href="/editor/images"
-                role="menuitem"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors border-b border-border"
-              >
-                <ImageIcon className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                Afbeeldingen
-              </Link>
-
-              <Link href="/editor/quotes" role="menuitem" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 border-b border-border px-3 py-2 text-xs text-foreground hover:bg-secondary md:text-sm"><MessageSquareText className="h-4 w-4 text-primary" />Offertes</Link>{/* Business details link */}
-              <Link
-                href="/editor/business"
-                role="menuitem"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors border-b border-border"
-              >
-                <Home className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                Bedrijfsgegevens
-              </Link>
-
-              {/* Services link */}
-              <Link
-                href="/editor/services"
-                role="menuitem"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors border-b border-border"
-              >
-                <Briefcase className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                {offeringLabel}
-              </Link>
-
-              <Link href="/editor/reviews" role="menuitem" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 border-b border-border px-3 py-2 text-xs text-foreground transition-colors hover:bg-secondary md:text-sm">
-                <MessageSquareText className="h-3.5 w-3.5 flex-shrink-0 text-primary md:h-4 md:w-4" />
-                Recensies
-              </Link>
-              {/* Reservations link */}
-              <Link
-                href="/editor/requests"
-                role="menuitem"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors border-b border-border"
-              >
-                <MessageSquareText className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                Aanvragen
-              </Link>
-
-              {/* Reservations link */}
-              <Link
-                href="/editor/reservations"
-                role="menuitem"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors border-b border-border"
-              >
-                <ClipboardList className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                Reserveringen
-              </Link>
-
-              {/* Calendar link */}
-              <Link
-                href="/editor/calendar"
-                role="menuitem"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors border-b border-border"
-              >
-                <CalendarDays className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                {calendarLabel}
-              </Link>
-
-              {/* Domains link */}
-              <Link
-                href="/editor/domains"
-                role="menuitem"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors"
-              >
-                <Globe className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                Domeininstellingen
-              </Link>
-            </div>
-          )}
-        </div>
-
-      </div>
-
-      <div className="flex-1 px-1 md:px-2 text-center flex justify-center gap-1 md:gap-4 min-w-0">
-        {pageTitle ? (
-          <div className="inline-flex items-center justify-center gap-1 md:gap-2 text-xs md:text-sm font-semibold text-[var(--editor-header-fg)] truncate">
-            {titleIcon ? <span className="flex-shrink-0 text-lg">{titleIcon}</span> : null}
-            <span className="truncate">{pageTitle}</span>
-          </div>
-        ) : null}
-        {infoText ? (
-          <span className="hidden md:inline-flex items-center gap-1.5 text-xs text-[var(--editor-header-fg)]/70 whitespace-nowrap">
-            {infoText}
-          </span>
-        ) : null}
-        <span className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--editor-header-fg)]/70 flex-shrink-0">
-          {saveState === "saving" ? (
-            <>
-              <Loader2 className="h-3 w-3 md:h-3.5 md:w-3.5 animate-spin" />
-              <span className="hidden md:inline">Opslaan...</span>
-            </>
-          ) : saveState === "error" ? (
-            <>
-              <AlertCircle className="h-3 w-3 text-warning md:h-3.5 md:w-3.5" />
-              <span className="hidden md:inline">Niet opgeslagen</span>
-            </>
-          ) : (
-            <>
-              <CheckCircle2 className="h-3 w-3 md:h-3.5 md:w-3.5 text-emerald-300" />
-              <span className="hidden md:inline">Opgeslagen</span>
-            </>
-          )}
-        </span>
-      </div>
-
+        ))}
+      </nav>
+      <div className="order-2 ml-auto flex items-center gap-2 lg:order-3">
+        {infoText ? <span className="hidden 2xl:inline text-xs text-[var(--editor-header-fg)]/70">{infoText}</span> : null}
+        {showEditorActions ? <span role="status" className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--editor-header-fg)]/70">
+          {saveState === "saving" ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Opslaan…</> : saveState === "error" ? <><AlertCircle className="h-3.5 w-3.5 text-warning" />Niet opgeslagen</> : <><CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />Opgeslagen</>}
+        </span> : null}
       {/* Right: actions */}
       <div className="flex items-center gap-1 md:gap-2 shrink-0">
         {/* Device toggles — hidden on mobile */}
@@ -395,11 +179,12 @@ export function EditorHeader({
                 className="w-full text-left flex items-center gap-2 px-3 py-2 text-xs md:text-sm text-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors"
               >
                 <ArrowLeft className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary flex-shrink-0" />
-                Logout
+                Uitloggen
               </button>
             </div>
           )}
         </div>
+      </div>
       </div>
     </header>
   )

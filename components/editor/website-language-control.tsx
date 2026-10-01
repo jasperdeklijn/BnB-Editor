@@ -90,7 +90,7 @@ export function WebsiteLanguageControl({
     <>
       <div className={mobile
         ? "flex min-h-11 items-center gap-2 rounded-xl border border-border bg-gradient-to-b from-background to-muted/30 px-3 shadow-sm transition-all hover:border-primary/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20"
-        : "flex h-8 shrink-0 items-center gap-1 rounded-lg border border-input bg-gradient-to-b from-background to-muted/30 px-1.5 text-xs shadow-sm transition-all hover:border-primary/40 hover:shadow-md focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20"}
+        : "flex h-11 shrink-0 items-center gap-1 rounded-lg border border-input bg-gradient-to-b from-background to-muted/30 px-1.5 text-xs shadow-sm transition-all hover:border-primary/40 hover:shadow-md focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20"}
       >
         <Globe2 className="h-4 w-4 shrink-0 text-primary" />
         {mobile ? <span className="shrink-0 text-sm font-medium">Taal van website</span> : null}

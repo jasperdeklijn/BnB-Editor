@@ -29,3 +29,13 @@ export function clearActiveWebsiteId() {
     // The deleted selection is also cleared from in-memory editor state.
   }
 }
+
+export function getActiveWebsiteLocale(websiteId: string) {
+  if (typeof window === "undefined") return null
+  try { return window.localStorage.getItem(`flexpagina:website-locale:${websiteId}`) } catch { return null }
+}
+
+export function setActiveWebsiteLocale(websiteId: string, locale: string) {
+  if (typeof window === "undefined") return
+  try { window.localStorage.setItem(`flexpagina:website-locale:${websiteId}`, locale) } catch { /* Selection still works in memory. */ }
+}

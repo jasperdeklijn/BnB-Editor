@@ -17,6 +17,7 @@ import {
   WifiOff,
 } from "lucide-react"
 import { useEditorLayout } from "@/components/editor/editor-layout-context"
+import { useEditorFormNavigation } from "@/components/editor/use-editor-form-navigation"
 import { TierBadge } from "@/components/editor/tier-badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -134,6 +135,7 @@ export function DomainDashboard({ websites, initialWebsiteId }: DomainDashboardP
   const [message, setMessage] = useState<Message>(null)
   const [isPublishing, setIsPublishing] = useState(false)
   const [publishViolations, setPublishViolations] = useState<EntitlementViolation[]>([])
+  useEditorFormNavigation(Boolean(newDomain.trim()), isAdding || isPublishing || busyDomainId !== null)
   const { setIsSaving, setSaveState } = useEditorLayout()
 
   useEffect(() => {

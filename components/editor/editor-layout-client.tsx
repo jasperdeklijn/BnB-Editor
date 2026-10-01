@@ -1,10 +1,14 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react"
 import { EditorHeader } from "./editor-header"
 import { FlexStartReadyNotice } from "@/components/flexstart/ready-notice"
-import { usePathname, useRouter } from "next/navigation"
-import { EditorLayoutProvider, type EditorSaveState } from "./editor-layout-context"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { EditorLayoutProvider, type EditorSaveState, type EditorNavigationGuard } from "./editor-layout-context"
+import { EditorSubnavigation } from "./editor-subnavigation"
+import { getEditorGroup, withEditorWebsite } from "@/lib/editor-navigation"
+import { getActiveWebsiteId, setActiveWebsiteId } from "@/lib/active-website"
+import { toast } from "sonner"
 import { CalendarDays, ImageIcon, Globe, Home, Briefcase, LayoutTemplate, Search, CreditCard, User, ClipboardList, MessageSquareText } from "lucide-react"
 import { DEFAULT_SITE_TITLE } from "@/lib/business-naming"
 import { getOfferingCopy, type BusinessCategory } from "@/lib/business/categories"
@@ -24,6 +28,42 @@ export function EditorLayoutClient({
 }: EditorLayoutClientProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const requestedWebsiteId = searchParams.get("websiteId")
+  useEffect(() => {
+    if (requestedWebsiteId) setActiveWebsiteId(requestedWebsiteId)
+  }, [requestedWebsiteId])
+  const activeGroup = getEditorGroup(pathname)
+  const navigationGuardRef = useRef<EditorNavigationGuard | null>(null)
+  const navigationPendingRef = useRef(false)
+  const registerNavigationGuard = useCallback((guard: EditorNavigationGuard) => {
+    navigationGuardRef.current = guard
+    return () => {
+      if (navigationGuardRef.current === guard) navigationGuardRef.current = null
+    }
+  }, [])
+  const handleNavigationCapture = (event: MouseEvent<HTMLDivElement>) => {
+    const guard = navigationGuardRef.current
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+    const anchor = (event.target as HTMLElement).closest("a")
+    const href = anchor?.getAttribute("href")
+    const linkPath = href?.split(/[?#]/, 1)[0]
+    if (!href || !linkPath || (linkPath !== "/editor" && !linkPath.startsWith("/editor/")) || anchor?.target === "_blank" || anchor?.hasAttribute("download")) return
+    const destination = withEditorWebsite(href, getActiveWebsiteId())
+    if (!guard && destination === href) return
+    event.preventDefault()
+    if (navigationPendingRef.current) return
+    navigationPendingRef.current = true
+    void (async () => {
+      try {
+        if (!guard || await guard()) router.push(destination)
+      } catch {
+        toast.error("Navigeren gestopt", { description: "Niet alle wijzigingen konden worden opgeslagen." })
+      } finally {
+        navigationPendingRef.current = false
+      }
+    })()
+  }
   const [businessCategory, setBusinessCategory] = useState<BusinessCategory | string | null>(initialBusinessCategory)
   const offeringCopy = getOfferingCopy(businessCategory)
 
@@ -59,10 +99,9 @@ export function EditorLayoutClient({
     "/editor/account/billing": <CreditCard className="h-4 w-4" />,
   }
 
-  const pageTitle = pageTitles[pathname ?? "/editor"] ?? "Editor"
+  const pageTitle = activeGroup?.label ?? pageTitles[pathname ?? "/editor"] ?? "Editor"
   const pageIcon = pageIcons[pathname ?? "/editor"]
   const showEditorActions = pathname === "/editor"
-  const showBackButton = pathname !== "/editor" && pathname?.startsWith("/editor")
 
   const noop = useCallback(() => {}, [])
   const [headerTitle, setHeaderTitle] = useState(DEFAULT_SITE_TITLE)
@@ -140,6 +179,7 @@ export function EditorLayoutClient({
       setActionLoading,
       infoText,
       setInfoText,
+      registerNavigationGuard,
     }),
     [
       actionIcon,
@@ -155,12 +195,13 @@ export function EditorLayoutClient({
       onPublish,
       onLogout,
       setNavbarSaving,
+      registerNavigationGuard,
     ],
   )
 
   return (
     <EditorLayoutProvider value={layoutValue}>
-      <div className="flex h-screen flex-col overflow-hidden">
+      <div className="flex h-screen flex-col overflow-hidden" onClickCapture={handleNavigationCapture}>
         <EditorHeader
           pageTitle={pageTitle}
           titleIcon={pageIcon}
@@ -170,7 +211,6 @@ export function EditorLayoutClient({
           onAction={onAction}
           actionLoading={actionLoading}
           showEditorActions={showEditorActions}
-          showBackButton={showBackButton}
           isPreview={isPreview}
           onPreviewToggle={() => setIsPreview((value) => !value)}
           onPublish={onPublish}
@@ -183,7 +223,9 @@ export function EditorLayoutClient({
           displayName={displayName}
           offeringLabel={offeringCopy.title}
           calendarLabel={businessCategory === "bnb" ? "Boekingskalender" : "Afsprakenkalender"}
+          pathname={pathname}
         />
+        <EditorSubnavigation pathname={pathname} />
         <FlexStartReadyNotice />
         <div className={`min-h-0 flex-1 ${pathname === "/editor" ? "overflow-hidden" : "overflow-auto"}`}>
           {children}
