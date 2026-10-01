@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { ExternalLink, Globe2, Search } from "lucide-react"
 import { notFound, redirect } from "next/navigation"
-import { SharedHeader } from "@/components/layout/shared-header"
 import { PLATFORM_DOMAIN } from "@/lib/platform"
 import { isAdmin } from "@/lib/security"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -166,24 +165,24 @@ export default async function AdminWebsitesPage({
     })
 
   return (
-    <main className="min-h-screen bg-[var(--hero-bg)] text-white">
-      <SharedHeader title="Gepubliceerde websites" />
+    <main className="min-h-full bg-muted text-foreground">
+
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-[var(--brand-blue)]">Alleen beheerders</p>
+            <p className="text-sm font-semibold uppercase tracking-wide text-primary">Alleen beheerders</p>
             <h1 className="mt-2 text-3xl font-bold sm:text-4xl">Gepubliceerde websites</h1>
-            <p className="mt-2 text-sm text-white/60">
+            <p className="mt-2 text-sm text-muted-foreground">
               {rows.length.toLocaleString("nl-NL")} van {websites.length.toLocaleString("nl-NL")} live websites zichtbaar.
             </p>
           </div>
-          <Link href="/admin" className="text-sm font-medium text-[var(--brand-blue)] hover:text-white">
+          <Link href="/admin" className="text-sm font-medium text-primary hover:text-foreground">
             Terug naar adminoverzicht
           </Link>
         </div>
 
         {loadError ? (
-          <div role="alert" className="mb-6 rounded-xl border border-yellow-300/25 bg-yellow-300/10 p-4 text-sm text-yellow-100">
+          <div role="alert" className="mb-6 rounded-xl border border-yellow-300/25 bg-yellow-300/10 p-4 text-sm text-yellow-800">
             {loadError}
           </div>
         ) : null}
@@ -191,59 +190,59 @@ export default async function AdminWebsitesPage({
         <form method="get" className="mb-6 flex flex-col gap-3 sm:flex-row">
           <label className="relative block min-w-0 flex-1">
             <span className="sr-only">Zoek gepubliceerde websites</span>
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/40" aria-hidden="true" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <input
               type="search"
               name="q"
               defaultValue={query}
               placeholder="Zoek op gebruiker, website of domein"
-              className="h-11 w-full rounded-xl border border-white/15 bg-white/5 pl-10 pr-4 text-sm text-white outline-none placeholder:text-white/35 focus:border-[var(--brand-blue)]"
+              className="h-11 w-full rounded-xl border border-border bg-card pl-10 pr-4 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary"
             />
           </label>
-          <button type="submit" className="h-11 rounded-xl bg-[var(--brand-blue)] px-5 text-sm font-semibold text-[var(--hero-bg)] transition hover:brightness-110">
+          <button type="submit" className="h-11 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:brightness-110">
             Zoeken
           </button>
           {query ? (
-            <Link href="/admin/websites" className="flex h-11 items-center justify-center rounded-xl border border-white/15 px-5 text-sm font-medium text-white/70 hover:bg-white/5 hover:text-white">
+            <Link href="/admin/websites" className="flex h-11 items-center justify-center rounded-xl border border-border px-5 text-sm font-medium text-muted-foreground hover:bg-card hover:text-foreground">
               Wissen
             </Link>
           ) : null}
         </form>
 
         {rows.length ? (
-          <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5">
-            <table className="min-w-full divide-y divide-white/10 text-left text-sm">
-              <thead className="bg-white/5 text-xs uppercase tracking-wide text-white/55">
+          <div className="overflow-x-auto rounded-2xl border border-border bg-card">
+            <table className="min-w-full divide-y divide-border text-left text-sm">
+              <thead className="bg-card text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 sm:px-5">Gebruiker</th>
                   <th className="px-4 py-3 sm:px-5">Website</th>
                   <th className="px-4 py-3 sm:px-5">Domeinnaam</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/10">
+              <tbody className="divide-y divide-border">
                 {rows.map((website) => (
-                  <tr key={website.id} className="transition-colors hover:bg-white/[0.04]">
+                  <tr key={website.id} className="transition-colors hover:bg-secondary">
                     <td className="px-4 py-4 sm:px-5">
-                      <p className="font-medium">{website.owner?.name || website.owner?.email || "Onbekende gebruiker"}</p>
-                      <p className="mt-1 break-all text-xs text-white/45">
+                      <Link href={`/admin/customers/${website.user_id}`} className="font-medium text-primary hover:underline">{website.owner?.name || website.owner?.email || "Onbekende gebruiker"}</Link>
+                      <p className="mt-1 break-all text-xs text-muted-foreground">
                         {website.owner?.name && website.owner.email ? website.owner.email : website.user_id}
                       </p>
                     </td>
                     <td className="px-4 py-4 sm:px-5">
-                      <a href={website.publicUrl} target="_blank" rel="noreferrer" className="group inline-flex items-center gap-2 font-medium text-[var(--brand-blue)] hover:text-white">
+                      <a href={website.publicUrl} target="_blank" rel="noreferrer" className="group inline-flex items-center gap-2 font-medium text-primary hover:text-foreground">
                         {website.title || website.slug}
                         <ExternalLink className="size-3.5 opacity-60" aria-hidden="true" />
                       </a>
-                      <p className="mt-1 text-xs text-white/45">{website.slug}.{PLATFORM_DOMAIN}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{website.slug}.{PLATFORM_DOMAIN}</p>
                     </td>
                     <td className="px-4 py-4 sm:px-5">
                       {website.customDomain ? (
-                        <a href={`https://${website.customDomain}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 font-mono text-sm text-white/80 hover:text-[var(--brand-blue)]">
-                          <Globe2 className="size-4 text-[var(--brand-blue)]" aria-hidden="true" />
+                        <a href={`https://${website.customDomain}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 font-mono text-sm text-muted-foreground hover:text-primary">
+                          <Globe2 className="size-4 text-primary" aria-hidden="true" />
                           {website.customDomain}
                         </a>
                       ) : (
-                        <span className="text-white/35">—</span>
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </td>
                   </tr>
@@ -252,10 +251,10 @@ export default async function AdminWebsitesPage({
             </table>
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-10 text-center">
-            <Globe2 className="mx-auto size-7 text-white/35" aria-hidden="true" />
+          <div className="rounded-2xl border border-dashed border-border bg-secondary p-10 text-center">
+            <Globe2 className="mx-auto size-7 text-muted-foreground" aria-hidden="true" />
             <p className="mt-3 font-medium">{query ? "Geen websites gevonden" : "Nog geen gepubliceerde websites"}</p>
-            <p className="mt-1 text-sm text-white/45">
+            <p className="mt-1 text-sm text-muted-foreground">
               {query ? "Pas de zoekopdracht aan of wis het filter." : "Zodra een website live staat, verschijnt die hier."}
             </p>
           </div>

@@ -34,19 +34,19 @@ const ACTIVE_JOB_STATUSES = new Set(["claimed", "running", "waiting_for_dependen
 const BLOCKED_JOB_STATUSES = new Set(["failed", "dead_letter"])
 
 const statusStyles: Record<NetworkStatus, string> = {
-  active: "border-emerald-300/45 bg-emerald-300/10 text-emerald-50",
-  blocked: "border-red-300/40 bg-red-300/10 text-red-50",
-  queued: "border-amber-300/35 bg-amber-300/10 text-amber-50",
-  idle: "border-white/15 bg-[#17271f] text-white",
-  disabled: "border-white/10 bg-black/15 text-white/55",
+  active: "border-primary/40 bg-secondary text-primary",
+  blocked: "border-destructive/40 bg-destructive/10 text-destructive",
+  queued: "border-amber-500/40 bg-amber-500/10 text-amber-800",
+  idle: "border-border bg-secondary text-foreground",
+  disabled: "border-border bg-muted text-muted-foreground",
 }
 
 const statusDotStyles: Record<NetworkStatus, string> = {
   active: "bg-emerald-300",
   blocked: "bg-red-300",
   queued: "bg-amber-300",
-  idle: "bg-white/45",
-  disabled: "bg-white/20",
+  idle: "bg-muted-foreground",
+  disabled: "bg-border",
 }
 
 function newestJob(jobs: AgentNetworkJob[], jobType: string) {
@@ -122,10 +122,10 @@ function AgentNodeButton({ node, selected, className, onSelect }: { node: AgentN
       aria-pressed={selected}
       aria-label={`${node.name}: ${node.statusLabel}. ${node.task}`}
       onClick={onSelect}
-      className={`w-56 rounded-2xl border p-4 text-left shadow-lg shadow-black/10 transition motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 ${statusStyles[node.status]} ${selected ? "ring-2 ring-white/70" : "hover:border-white/35"} ${className ?? ""}`}
+      className={`w-56 rounded-2xl border p-4 text-left shadow-lg shadow-black/10 transition motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 ${statusStyles[node.status]} ${selected ? "ring-2 ring-primary" : "hover:border-border"} ${className ?? ""}`}
     >
       <span className="flex items-start gap-3">
-        <span className="rounded-xl bg-white/10 p-2"><Icon className="size-5" aria-hidden="true" /></span>
+        <span className="rounded-xl bg-card p-2"><Icon className="size-5" aria-hidden="true" /></span>
         <span className="min-w-0">
           <span className="block font-semibold">{node.name}</span>
           <span className="mt-0.5 block text-xs opacity-65">{node.role}</span>
@@ -149,16 +149,16 @@ export function AgentNetwork({ settings, jobs }: { settings: AgentNetworkSetting
   const operations = nodes[3]
 
   return (
-    <section aria-labelledby="agent-network-heading" className="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6">
+    <section aria-labelledby="agent-network-heading" className="rounded-2xl border border-border bg-card p-5 sm:p-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 id="agent-network-heading" className="text-xl font-semibold">Agent-spinnenweb</h2>
-          <p className="mt-1 text-sm text-white/50">Alleen echte lopende overdrachten krijgen een verbindingslijn.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Alleen echte lopende overdrachten krijgen een verbindingslijn.</p>
         </div>
-        <p className="text-xs text-white/45">Selecteer een agent voor de actuele taak.</p>
+        <p className="text-xs text-muted-foreground">Selecteer een agent voor de actuele taak.</p>
       </div>
 
-      <div className="relative mt-5 hidden h-[460px] overflow-hidden rounded-2xl border border-white/10 bg-black/10 md:block">
+      <div className="relative mt-5 hidden h-[460px] overflow-hidden rounded-2xl border border-border bg-muted md:block">
         <svg viewBox="0 0 1000 460" className="absolute inset-0 size-full" role="img" aria-labelledby="agent-network-svg-title agent-network-svg-description">
           <title id="agent-network-svg-title">Actieve overdrachten binnen het AI-agentteam</title>
           <desc id="agent-network-svg-description">De manager staat centraal. Alleen specialisten met een actieve taak zijn met de manager verbonden.</desc>
@@ -176,12 +176,12 @@ export function AgentNetwork({ settings, jobs }: { settings: AgentNetworkSetting
         {nodes.map((node) => <AgentNodeButton key={node.key} node={node} selected={selectedKey === node.key} onSelect={() => setSelectedKey(node.key)} className="w-full" />)}
       </div>
 
-      <div className="mt-4 rounded-xl border border-white/10 bg-black/10 p-4" aria-live="polite">
+      <div className="mt-4 rounded-xl border border-border bg-muted p-4" aria-live="polite">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="font-semibold">{selected.name}</p>
-          <span className="text-xs text-white/50">{selected.statusLabel}</span>
+          <span className="text-xs text-muted-foreground">{selected.statusLabel}</span>
         </div>
-        <p className="mt-1 text-sm text-white/70">{selected.task}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{selected.task}</p>
       </div>
     </section>
   )

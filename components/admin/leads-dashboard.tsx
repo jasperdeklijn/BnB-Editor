@@ -44,15 +44,15 @@ type SearchResult = {
 }
 
 function getScoreStyle(score: number) {
-  if (score >= 81) return "border-red-300/30 bg-red-300/15 text-red-100"
-  if (score >= 61) return "border-orange-300/30 bg-orange-300/15 text-orange-100"
-  if (score >= 31) return "border-yellow-300/30 bg-yellow-300/15 text-yellow-100"
-  return "border-emerald-300/30 bg-emerald-300/15 text-emerald-100"
+  if (score >= 81) return "border-red-300/30 bg-red-300/15 text-red-800"
+  if (score >= 61) return "border-orange-300/30 bg-orange-300/15 text-orange-800"
+  if (score >= 31) return "border-yellow-300/30 bg-yellow-300/15 text-yellow-800"
+  return "border-emerald-300/30 bg-emerald-300/15 text-emerald-800"
 }
 
 function AnalysisBadge({ value, children }: { value: boolean; children: React.ReactNode }) {
   return (
-    <span className={`rounded-full border px-2.5 py-1 text-xs ${value ? "border-emerald-300/25 bg-emerald-300/10 text-emerald-100" : "border-white/10 bg-white/5 text-white/55"}`}>
+    <span className={`rounded-full border px-2.5 py-1 text-xs ${value ? "border-emerald-300/25 bg-emerald-300/10 text-emerald-800" : "border-border bg-card text-muted-foreground"}`}>
       {value ? "Wel" : "Geen"} {children}
     </span>
   )
@@ -155,36 +155,36 @@ export function LeadsDashboard({ initialLeads }: { initialLeads: LeadRecord[] })
 
   return (
     <div className="space-y-8">
-      <section className="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6">
+      <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
         <div className="mb-5">
           <h2 className="text-xl font-semibold">Zoek nieuwe leads</h2>
-          <p className="mt-1 text-sm text-white/60">Openbare bedrijfsgegevens worden geanalyseerd. Outreach wordt alleen als handmatig te controleren concept opgeslagen.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Openbare bedrijfsgegevens worden geanalyseerd. Outreach wordt alleen als handmatig te controleren concept opgeslagen.</p>
         </div>
 
         <form onSubmit={searchLeads} className="grid gap-4 md:grid-cols-[1fr_1fr_120px_auto] md:items-end">
           <label className="space-y-2 text-sm font-medium">
             <span>Plaats</span>
-            <Input value={city} onChange={(event) => setCity(event.target.value)} maxLength={80} required className="border-white/15 bg-black/10 text-white" />
+            <Input value={city} onChange={(event) => setCity(event.target.value)} maxLength={80} required className="border-border bg-muted text-foreground" />
           </label>
           <label className="space-y-2 text-sm font-medium">
             <span>Branche</span>
-            <Input list="lead-branches" value={category} onChange={(event) => setCategory(event.target.value)} maxLength={80} required className="border-white/15 bg-black/10 text-white" />
+            <Input list="lead-branches" value={category} onChange={(event) => setCategory(event.target.value)} maxLength={80} required className="border-border bg-muted text-foreground" />
             <datalist id="lead-branches">{BRANCHES.map((branch) => <option key={branch} value={branch} />)}</datalist>
           </label>
           <label className="space-y-2 text-sm font-medium">
             <span>Aantal</span>
-            <Input type="number" min={1} max={25} value={limit} onChange={(event) => setLimit(Number(event.target.value))} required className="border-white/15 bg-black/10 text-white" />
+            <Input type="number" min={1} max={25} value={limit} onChange={(event) => setLimit(Number(event.target.value))} required className="border-border bg-muted text-foreground" />
           </label>
-          <Button type="submit" disabled={searching} className="bg-[#B7D1C2] text-[var(--hero-bg)] hover:bg-white">
+          <Button type="submit" disabled={searching} className="bg-primary text-primary-foreground hover:bg-primary/90">
             {searching ? <Loader2 className="animate-spin" /> : <Search />}
             {searching ? "Analyseren…" : "Zoek leads"}
           </Button>
         </form>
 
-        {searching && <p className="mt-4 text-sm text-white/60">Bedrijven en websites worden opgehaald en in kleine batches geanalyseerd. Dit kan enkele minuten duren.</p>}
-        {searchError && <p role="alert" className="mt-4 rounded-lg border border-red-300/30 bg-red-300/10 px-4 py-3 text-sm text-red-100">{searchError}</p>}
+        {searching && <p className="mt-4 text-sm text-muted-foreground">Bedrijven en websites worden opgehaald en in kleine batches geanalyseerd. Dit kan enkele minuten duren.</p>}
+        {searchError && <p role="alert" className="mt-4 rounded-lg border border-red-300/30 bg-red-300/10 px-4 py-3 text-sm text-red-800">{searchError}</p>}
         {searchResult && (
-          <p role="status" className="mt-4 rounded-lg border border-emerald-300/30 bg-emerald-300/10 px-4 py-3 text-sm text-emerald-100">
+          <p role="status" className="mt-4 rounded-lg border border-emerald-300/30 bg-emerald-300/10 px-4 py-3 text-sm text-emerald-800">
             {searchResult.found} leads gevonden; {searchResult.created} nieuw opgeslagen en {searchResult.updated} bijgewerkt{searchResult.failed > 0 ? `, ${searchResult.failed} niet verwerkt` : ""}.
           </p>
         )}
@@ -194,7 +194,7 @@ export function LeadsDashboard({ initialLeads }: { initialLeads: LeadRecord[] })
         <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h2 className="text-2xl font-semibold">Leadoverzicht</h2>
-            <p className="mt-1 text-sm text-white/60">{filteredLeads.length} van {leads.length} leads zichtbaar</p>
+            <p className="mt-1 text-sm text-muted-foreground">{filteredLeads.length} van {leads.length} leads zichtbaar</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <FilterSelect label="Status" value={statusFilter} onChange={setStatusFilter} options={LEAD_STATUSES.map((status) => ({ value: status, label: STATUS_LABELS[status] }))} />
@@ -204,16 +204,16 @@ export function LeadsDashboard({ initialLeads }: { initialLeads: LeadRecord[] })
           </div>
         </div>
 
-        {feedback && <p role="status" className="mb-4 text-sm text-white/70">{feedback}</p>}
+        {feedback && <p role="status" className="mb-4 text-sm text-muted-foreground">{feedback}</p>}
 
         {filteredLeads.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-10 text-center text-white/60">
+          <div className="rounded-2xl border border-dashed border-border bg-secondary p-10 text-center text-muted-foreground">
             {leads.length === 0 ? "Er zijn nog geen leads. Start hierboven een handmatige zoekopdracht." : "Geen leads passen bij deze filters."}
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5">
+          <div className="overflow-x-auto rounded-2xl border border-border bg-card">
             <table className="min-w-[980px] w-full text-left text-sm">
-              <thead className="border-b border-white/10 bg-white/5 text-xs uppercase tracking-wide text-white/55">
+              <thead className="border-b border-border bg-card text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3">Bedrijf</th>
                   <th className="px-4 py-3">Branche</th>
@@ -224,7 +224,7 @@ export function LeadsDashboard({ initialLeads }: { initialLeads: LeadRecord[] })
                   <th className="px-4 py-3"><span className="sr-only">Details</span></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/10 align-top">
+              <tbody className="divide-y divide-border align-top">
                 {filteredLeads.map((lead) => {
                   const expanded = expandedLeadId === lead.id
                   return (
@@ -253,9 +253,9 @@ export function LeadsDashboard({ initialLeads }: { initialLeads: LeadRecord[] })
 
 function FilterSelect({ label, value, onChange, options, includeAll = true }: { label: string; value: string; onChange: (value: string) => void; options: { value: string; label: string }[]; includeAll?: boolean }) {
   return (
-    <label className="space-y-1 text-xs font-medium text-white/60">
+    <label className="space-y-1 text-xs font-medium text-muted-foreground">
       <span>{label}</span>
-      <select value={value} onChange={(event) => onChange(event.target.value)} className="h-9 w-full rounded-md border border-white/15 bg-[var(--hero-bg)] px-3 text-sm text-white outline-none focus:ring-2 focus:ring-white/30">
+      <select value={value} onChange={(event) => onChange(event.target.value)} className="h-9 w-full rounded-md border border-border bg-muted px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring">
         {includeAll && <option value="all">Alle</option>}
         {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
       </select>
@@ -266,28 +266,28 @@ function FilterSelect({ label, value, onChange, options, includeAll = true }: { 
 function LeadRows({ lead, expanded, notes, saving, onToggle, onStatus, onNotesChange, onSaveNotes, onCopy }: { lead: LeadRecord; expanded: boolean; notes: string; saving: boolean; onToggle: () => void; onStatus: (status: LeadStatus) => void; onNotesChange: (value: string) => void; onSaveNotes: () => void; onCopy: () => void }) {
   return (
     <>
-      <tr className="hover:bg-white/[0.03]">
+      <tr className="hover:bg-secondary">
         <td className="px-4 py-4">
-          <p className="font-semibold text-white">{lead.company_name}</p>
-          {lead.website ? <a href={lead.website} target="_blank" rel="noreferrer" className="mt-1 block max-w-48 truncate text-xs text-[var(--brand-blue)] hover:underline">{lead.website}</a> : <span className="mt-1 block text-xs text-white/40">Geen website</span>}
+          <p className="font-semibold text-foreground">{lead.company_name}</p>
+          {lead.website ? <a href={lead.website} target="_blank" rel="noreferrer" className="mt-1 block max-w-48 truncate text-xs text-primary hover:underline">{lead.website}</a> : <span className="mt-1 block text-xs text-muted-foreground">Geen website</span>}
         </td>
-        <td className="px-4 py-4 text-white/70">{lead.category || "—"}</td>
-        <td className="px-4 py-4 text-white/70">{lead.city || "—"}</td>
+        <td className="px-4 py-4 text-muted-foreground">{lead.category || "—"}</td>
+        <td className="px-4 py-4 text-muted-foreground">{lead.city || "—"}</td>
         <td className="px-4 py-4"><span className={`inline-flex rounded-full border px-3 py-1 font-bold ${getScoreStyle(lead.lead_score)}`}>{lead.lead_score}</span></td>
-        <td className="max-w-sm px-4 py-4 text-white/65"><p className="line-clamp-3">{lead.reason || "Nog geen reden beschikbaar."}</p></td>
+        <td className="max-w-sm px-4 py-4 text-muted-foreground"><p className="line-clamp-3">{lead.reason || "Nog geen reden beschikbaar."}</p></td>
         <td className="px-4 py-4">
-          <select value={lead.status} disabled={saving} onChange={(event) => onStatus(event.target.value as LeadStatus)} aria-label={`Status van ${lead.company_name}`} className="h-9 rounded-md border border-white/15 bg-[var(--hero-bg)] px-2 text-sm text-white">
+          <select value={lead.status} disabled={saving} onChange={(event) => onStatus(event.target.value as LeadStatus)} aria-label={`Status van ${lead.company_name}`} className="h-9 rounded-md border border-border bg-muted px-2 text-sm text-foreground">
             {LEAD_STATUSES.map((status) => <option key={status} value={status}>{STATUS_LABELS[status]}</option>)}
           </select>
         </td>
         <td className="px-4 py-4 text-right">
-          <Button type="button" variant="ghost" size="icon" onClick={onToggle} className="text-white hover:bg-white/10 hover:text-white" aria-label={`${expanded ? "Sluit" : "Open"} details van ${lead.company_name}`}>
+          <Button type="button" variant="ghost" size="icon" onClick={onToggle} className="text-foreground hover:bg-card hover:text-foreground" aria-label={`${expanded ? "Sluit" : "Open"} details van ${lead.company_name}`}>
             {expanded ? <ChevronUp /> : <ChevronDown />}
           </Button>
         </td>
       </tr>
       {expanded && (
-        <tr className="bg-black/10">
+        <tr className="bg-muted">
           <td colSpan={7} className="px-5 py-6">
             <div className="grid gap-6 lg:grid-cols-2">
               <div className="space-y-5">
@@ -300,18 +300,18 @@ function LeadRows({ lead, expanded, notes, saving, onToggle, onStatus, onNotesCh
                     <AnalysisBadge value={lead.has_contact_form}>contactformulier</AnalysisBadge>
                     <AnalysisBadge value={lead.has_clear_cta}>duidelijke CTA</AnalysisBadge>
                   </div>
-                  <dl className="mt-4 grid gap-2 text-sm text-white/65 sm:grid-cols-2">
-                    <div><dt className="text-white/40">PageSpeed mobiel</dt><dd>{lead.pagespeed_score ?? "Niet beschikbaar"}</dd></div>
-                    <div><dt className="text-white/40">Google-beoordeling</dt><dd>{lead.google_rating ?? "—"} ({lead.google_reviews_count ?? 0} reviews)</dd></div>
-                    <div><dt className="text-white/40">SEO-titel</dt><dd>{lead.seo_title || "Ontbreekt"}</dd></div>
-                    <div><dt className="text-white/40">Meta-omschrijving</dt><dd>{lead.seo_description || "Ontbreekt"}</dd></div>
-                    <div><dt className="text-white/40">Telefoon</dt><dd>{lead.phone || "—"}</dd></div>
+                  <dl className="mt-4 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+                    <div><dt className="text-muted-foreground">PageSpeed mobiel</dt><dd>{lead.pagespeed_score ?? "Niet beschikbaar"}</dd></div>
+                    <div><dt className="text-muted-foreground">Google-beoordeling</dt><dd>{lead.google_rating ?? "—"} ({lead.google_reviews_count ?? 0} reviews)</dd></div>
+                    <div><dt className="text-muted-foreground">SEO-titel</dt><dd>{lead.seo_title || "Ontbreekt"}</dd></div>
+                    <div><dt className="text-muted-foreground">Meta-omschrijving</dt><dd>{lead.seo_description || "Ontbreekt"}</dd></div>
+                    <div><dt className="text-muted-foreground">Telefoon</dt><dd>{lead.phone || "—"}</dd></div>
                   </dl>
                 </div>
                 <div>
                   <label htmlFor={`notes-${lead.id}`} className="text-sm font-semibold">Interne notitie</label>
-                  <Textarea id={`notes-${lead.id}`} value={notes} onChange={(event) => onNotesChange(event.target.value)} maxLength={5_000} placeholder="Voeg een interne notitie toe…" className="mt-2 min-h-28 border-white/15 bg-black/10 text-white" />
-                  <Button type="button" size="sm" disabled={saving} onClick={onSaveNotes} className="mt-2 bg-white/10 text-white hover:bg-white/20">
+                  <Textarea id={`notes-${lead.id}`} value={notes} onChange={(event) => onNotesChange(event.target.value)} maxLength={5_000} placeholder="Voeg een interne notitie toe…" className="mt-2 min-h-28 border-border bg-muted text-foreground" />
+                  <Button type="button" size="sm" disabled={saving} onClick={onSaveNotes} className="mt-2 bg-card text-foreground hover:bg-card">
                     {saving ? <Loader2 className="animate-spin" /> : <Check />}
                     Notitie opslaan
                   </Button>
@@ -319,10 +319,10 @@ function LeadRows({ lead, expanded, notes, saving, onToggle, onStatus, onNotesCh
               </div>
               <div>
                 <h3 className="font-semibold">Outreach-concept</h3>
-                <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap rounded-xl border border-white/10 bg-black/15 p-4 font-sans text-sm leading-6 text-white/70">{lead.outreach_draft || "Nog geen outreach-concept beschikbaar."}</pre>
+                <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap rounded-xl border border-border bg-muted p-4 font-sans text-sm leading-6 text-muted-foreground">{lead.outreach_draft || "Nog geen outreach-concept beschikbaar."}</pre>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <Button type="button" size="sm" disabled={!lead.outreach_draft} onClick={onCopy} className="bg-[#B7D1C2] text-[var(--hero-bg)] hover:bg-white"><Clipboard /> Kopieer outreach tekst</Button>
-                  {lead.website && <Button asChild type="button" variant="outline" size="sm" className="border-white/15 bg-transparent text-white hover:bg-white/10 hover:text-white"><a href={lead.website} target="_blank" rel="noreferrer"><ExternalLink /> Open website</a></Button>}
+                  <Button type="button" size="sm" disabled={!lead.outreach_draft} onClick={onCopy} className="bg-primary text-primary-foreground hover:bg-primary/90"><Clipboard /> Kopieer outreach tekst</Button>
+                  {lead.website && <Button asChild type="button" variant="outline" size="sm" className="border-border bg-transparent text-foreground hover:bg-card hover:text-foreground"><a href={lead.website} target="_blank" rel="noreferrer"><ExternalLink /> Open website</a></Button>}
                 </div>
               </div>
             </div>

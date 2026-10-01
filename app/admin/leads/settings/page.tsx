@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 import { LeadAgentSettingsForm } from "@/components/admin/lead-agent-settings-form"
-import { SharedHeader } from "@/components/layout/shared-header"
 import { getLeadAgentSettings } from "@/lib/leads/settings"
 import { isAdmin } from "@/lib/security"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -19,7 +18,7 @@ export default async function LeadAgentSettingsPage() {
   if (!isAdmin(user)) notFound()
 
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return <main className="min-h-screen bg-[var(--hero-bg)] text-white"><SharedHeader title="Lead-agent instellingen" /><div className="mx-auto max-w-4xl px-6 py-12">Serverconfiguratie ontbreekt.</div></main>
+    return <main className="min-h-full bg-muted text-foreground"><div className="mx-auto max-w-4xl px-6 py-12">Serverconfiguratie ontbreekt.</div></main>
   }
 
   const admin = await createAdminClient()
@@ -27,7 +26,7 @@ export default async function LeadAgentSettingsPage() {
   try {
     settings = await getLeadAgentSettings(admin)
   } catch {
-    return <main className="min-h-screen bg-[var(--hero-bg)] text-white"><SharedHeader title="Lead-agent instellingen" /><div className="mx-auto max-w-4xl px-6 py-12">Instellingen zijn niet beschikbaar. Voer eerst de lead-agent automatiseringsmigratie uit.</div></main>
+    return <main className="min-h-full bg-muted text-foreground"><div className="mx-auto max-w-4xl px-6 py-12">Instellingen zijn niet beschikbaar. Voer eerst de lead-agent automatiseringsmigratie uit.</div></main>
   }
 
   const configuration = [
@@ -38,24 +37,24 @@ export default async function LeadAgentSettingsPage() {
   ]
 
   return (
-    <main className="min-h-screen bg-[var(--hero-bg)] text-white">
-      <SharedHeader title="Lead-agent instellingen" />
+    <main className="min-h-full bg-muted text-foreground">
+
       <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-[var(--brand-blue)]">Automatisering</p>
+            <p className="text-sm font-semibold uppercase tracking-wide text-primary">Automatisering</p>
             <h1 className="mt-2 text-3xl font-bold">Wekelijkse lead-agent</h1>
-            <p className="mt-2 max-w-2xl text-sm text-white/60">Configureer regio’s, branches, de weeklimiet en beheerdersnotificaties.</p>
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">Configureer regio’s, branches, de weeklimiet en beheerdersnotificaties.</p>
           </div>
           <div className="flex gap-4 text-sm font-medium">
-            <Link href="/admin" className="text-[var(--brand-blue)] hover:text-white">Adminoverzicht</Link>
-            <Link href="/admin/leads" className="text-[var(--brand-blue)] hover:text-white">Terug naar leads</Link>
+            <Link href="/admin" className="text-primary hover:text-foreground">Adminoverzicht</Link>
+            <Link href="/admin/leads" className="text-primary hover:text-foreground">Terug naar leads</Link>
           </div>
         </div>
 
         <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {configuration.map((item) => (
-            <div key={item.label} className={`rounded-xl border p-3 text-sm ${item.ready ? "border-emerald-300/25 bg-emerald-300/10 text-emerald-100" : "border-yellow-300/25 bg-yellow-300/10 text-yellow-100"}`}>
+            <div key={item.label} className={`rounded-xl border p-3 text-sm ${item.ready ? "border-emerald-300/25 bg-emerald-300/10 text-emerald-800" : "border-yellow-300/25 bg-yellow-300/10 text-yellow-800"}`}>
               <span className="font-medium">{item.label}</span><span className="ml-2">{item.ready ? "gereed" : "ontbreekt"}</span>
             </div>
           ))}

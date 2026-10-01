@@ -1,6 +1,5 @@
 import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
-import { SharedHeader } from "@/components/layout/shared-header"
 import { TransferDetail } from "@/components/flexstart/transfer-detail"
 import { flexContext, loadTransferDetail, FlexError } from "@/lib/flexstart/server"
 import { TRANSFER_STATUSES, type TransferRequest, type TransferDetail as Detail } from "@/lib/flexstart/shared"
@@ -21,7 +20,7 @@ export default async function AdminFlexStartPage({ searchParams }: { searchParam
     if (cause instanceof FlexError && cause.status === 403) notFound()
     error = "FlexStart kon niet worden geladen. Controleer de serverconfiguratie en FlexStart-migratie."
   }
-  return <div className="min-h-screen bg-muted text-foreground"><SharedHeader title="FlexStart beheer" /><main className="mx-auto max-w-[1600px] space-y-6 p-3 sm:p-6">
+  return <div className="min-h-full bg-muted text-foreground"><main className="mx-auto max-w-[1600px] space-y-6 p-3 sm:p-6">
     <div className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-bold">Overstapverzoeken</h1><p className="mt-2 text-sm text-muted-foreground">Eerste 100 klanten gratis. Bereid het ontwerp voor met de bestaande URL-naar-JSON-procedure.</p></div><Link href="/admin" className="text-sm text-primary underline">Terug naar beheer</Link></div>
     {error ? <p role="alert">{error}</p> : <>
       <nav aria-label="Overstapverzoeken" className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">{requests.map((r) => <Link key={r.id} href={`/admin/flexstart?request=${r.id}`} aria-current={r.id === detail?.request.id ? "page" : undefined} className={`min-w-0 rounded-xl border bg-card p-4 ${r.id === detail?.request.id ? "ring-2 ring-primary" : ""}`}>

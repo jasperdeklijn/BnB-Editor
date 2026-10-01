@@ -60,49 +60,49 @@ export function LeadAgentSettingsForm({ initialSettings }: { initialSettings: Le
 
   return (
     <form onSubmit={save} className="space-y-6">
-      <section className="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6">
+      <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
         <label className="flex items-start justify-between gap-6">
           <span>
             <span className="block font-semibold">Wekelijkse lead-agent</span>
-            <span className="mt-1 block text-sm text-white/60">Voer iedere maandag om 09:00 uur Nederlandse tijd automatisch één zoekronde uit.</span>
+            <span className="mt-1 block text-sm text-muted-foreground">Voer iedere maandag om 09:00 uur Nederlandse tijd automatisch één zoekronde uit.</span>
           </span>
-          <input type="checkbox" checked={enabled} onChange={(event) => setEnabled(event.target.checked)} className="mt-1 h-5 w-5 accent-[#B7D1C2]" />
+          <input type="checkbox" checked={enabled} onChange={(event) => setEnabled(event.target.checked)} className="mt-1 h-5 w-5 accent-primary" />
         </label>
       </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6">
+        <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
           <label htmlFor="lead-cities" className="font-semibold">Plaatsen</label>
-          <p className="mt-1 text-sm text-white/55">Eén plaats per regel, maximaal 25.</p>
-          <Textarea id="lead-cities" value={cities} onChange={(event) => setCities(event.target.value)} required className="mt-3 min-h-52 border-white/15 bg-black/10 text-white" />
+          <p className="mt-1 text-sm text-muted-foreground">Eén plaats per regel, maximaal 25.</p>
+          <Textarea id="lead-cities" value={cities} onChange={(event) => setCities(event.target.value)} required className="mt-3 min-h-52 border-border bg-muted text-foreground" />
         </section>
-        <section className="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6">
+        <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
           <label htmlFor="lead-categories" className="font-semibold">Branches</label>
-          <p className="mt-1 text-sm text-white/55">Eén branche per regel, maximaal 25.</p>
-          <Textarea id="lead-categories" value={categories} onChange={(event) => setCategories(event.target.value)} required className="mt-3 min-h-52 border-white/15 bg-black/10 text-white" />
+          <p className="mt-1 text-sm text-muted-foreground">Eén branche per regel, maximaal 25.</p>
+          <Textarea id="lead-categories" value={categories} onChange={(event) => setCategories(event.target.value)} required className="mt-3 min-h-52 border-border bg-muted text-foreground" />
         </section>
       </div>
 
-      <section className="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6">
+      <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
         <div className="grid gap-6 md:grid-cols-2">
           <label className="space-y-2">
             <span className="font-semibold">Maximaal nieuwe leads per week</span>
-            <span className="block text-sm text-white/55">Instelbaar van 1 tot 25. Handmatig gevonden nieuwe leads tellen mee voor deze weeklimiet.</span>
-            <Input type="number" min={1} max={25} value={weeklyLimit} onChange={(event) => setWeeklyLimit(Number(event.target.value))} className="max-w-32 border-white/15 bg-black/10 text-white" />
+            <span className="block text-sm text-muted-foreground">Instelbaar van 1 tot 25. Handmatig gevonden nieuwe leads tellen mee voor deze weeklimiet.</span>
+            <Input type="number" min={1} max={25} value={weeklyLimit} onChange={(event) => setWeeklyLimit(Number(event.target.value))} className="max-w-32 border-border bg-muted text-foreground" />
           </label>
-          <label className="flex items-start justify-between gap-6 rounded-xl border border-white/10 bg-black/10 p-4">
+          <label className="flex items-start justify-between gap-6 rounded-xl border border-border bg-muted p-4">
             <span>
               <span className="block font-semibold">E-mailnotificatie</span>
-              <span className="mt-1 block text-sm text-white/55">Stuur na de run een samenvatting naar de adressen in <code>ADMIN_EMAILS</code>. Leads ontvangen nooit e-mail.</span>
+              <span className="mt-1 block text-sm text-muted-foreground">Stuur na de run een samenvatting naar de adressen in <code>ADMIN_EMAILS</code>. Leads ontvangen nooit e-mail.</span>
             </span>
-            <input type="checkbox" checked={emailEnabled} onChange={(event) => setEmailEnabled(event.target.checked)} className="mt-1 h-5 w-5 accent-[#B7D1C2]" />
+            <input type="checkbox" checked={emailEnabled} onChange={(event) => setEmailEnabled(event.target.checked)} className="mt-1 h-5 w-5 accent-primary" />
           </label>
         </div>
       </section>
 
-      {error && <p role="alert" className="rounded-lg border border-red-300/30 bg-red-300/10 px-4 py-3 text-sm text-red-100">{error}</p>}
-      {message && <p role="status" className="rounded-lg border border-emerald-300/30 bg-emerald-300/10 px-4 py-3 text-sm text-emerald-100">{message}</p>}
-      <Button type="submit" disabled={saving} className="bg-[#B7D1C2] text-[var(--hero-bg)] hover:bg-white">
+      {error && <p role="alert" className="rounded-lg border border-red-300/30 bg-red-300/10 px-4 py-3 text-sm text-red-800">{error}</p>}
+      {message && <p role="status" className="rounded-lg border border-emerald-300/30 bg-emerald-300/10 px-4 py-3 text-sm text-emerald-800">{message}</p>}
+      <Button type="submit" disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90">
         {saving ? <Loader2 className="animate-spin" /> : <Check />}
         {saving ? "Opslaan…" : "Instellingen opslaan"}
       </Button>

@@ -118,50 +118,50 @@ export function AgentTeamDashboard({ initialSettings, approvals, jobs, runs }: {
           <AlertTriangle className="mt-0.5 size-5 shrink-0" />
           <div>
             <h2 className="font-semibold">{settings.observe_only ? "Observe-only actief" : "Uitvoering na goedkeuring actief"}</h2>
-            <p className="mt-1 text-sm text-white/65">{settings.observe_only ? "Goedkeuren registreert de beslissing, maar verstuurt geen mail." : "Een goedgekeurd supportartefact wordt exact één keer door de executor aangeboden."}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{settings.observe_only ? "Goedkeuren registreert de beslissing, maar verstuurt geen mail." : "Een goedgekeurd supportartefact wordt exact één keer door de executor aangeboden."}</p>
           </div>
         </div>
       </section>
 
-      {notice.error && <p role="alert" className="rounded-xl border border-red-300/30 bg-red-300/10 p-4 text-sm text-red-100">{notice.error}</p>}
-      {notice.success && <p role="status" className="rounded-xl border border-emerald-300/30 bg-emerald-300/10 p-4 text-sm text-emerald-100">{notice.success}</p>}
-      {!online && <p role="status" className="rounded-xl border border-white/15 bg-white/5 p-4 text-sm text-white/65">Offline: gegevens worden niet vernieuwd en acties kunnen mislukken.</p>}
+      {notice.error && <p role="alert" className="rounded-xl border border-red-300/30 bg-red-300/10 p-4 text-sm text-red-800">{notice.error}</p>}
+      {notice.success && <p role="status" className="rounded-xl border border-emerald-300/30 bg-emerald-300/10 p-4 text-sm text-emerald-800">{notice.success}</p>}
+      {!online && <p role="status" className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">Offline: gegevens worden niet vernieuwd en acties kunnen mislukken.</p>}
 
       <AgentNetwork settings={settings} jobs={jobs} />
 
-      <section id="settings" className="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6">
+      <section id="settings" className="rounded-2xl border border-border bg-card p-5 sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div><h2 className="text-xl font-semibold">Besturing en begrenzing</h2><p className="mt-1 text-sm text-white/50">Nieuwe installaties blijven uitgeschakeld en observe-only.</p></div>
+          <div><h2 className="text-xl font-semibold">Besturing en begrenzing</h2><p className="mt-1 text-sm text-muted-foreground">Nieuwe installaties blijven uitgeschakeld en observe-only.</p></div>
           <Button disabled={pending} onClick={saveSettings}><Save className="mr-2 size-4" />Opslaan</Button>
         </div>
         <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {([
             ["agents_enabled", "Agentteam actief"], ["observe_only", "Observe-only"], ["support_enabled", "Supportagent"], ["marketing_enabled", "Marketingagent"],
           ] as const).map(([key, label]) => (
-            <label key={key} className="flex items-center justify-between rounded-xl border border-white/10 bg-black/10 p-4 text-sm">
+            <label key={key} className="flex items-center justify-between rounded-xl border border-border bg-muted p-4 text-sm">
               <span>{label}</span><input type="checkbox" checked={settings[key]} onChange={(event) => setSettings((current) => ({ ...current, [key]: event.target.checked }))} className="size-5 accent-emerald-500" />
             </label>
           ))}
-          <label className="text-sm"><span className="mb-2 block text-white/60">Daglimiet runs</span><Input type="number" min={1} max={10000} value={settings.daily_run_limit} onChange={(event) => setSettings((current) => ({ ...current, daily_run_limit: Number(event.target.value) }))} /></label>
-          <label className="text-sm"><span className="mb-2 block text-white/60">Budget per dag (EUR)</span><Input type="number" min={0} step="0.01" value={settings.daily_budget_eur} onChange={(event) => setSettings((current) => ({ ...current, daily_budget_eur: event.target.value }))} /></label>
-          <label className="text-sm"><span className="mb-2 block text-white/60">Reservering per run (EUR)</span><Input type="number" min={0.01} step="0.01" value={settings.budget_reservation_eur} onChange={(event) => setSettings((current) => ({ ...current, budget_reservation_eur: event.target.value }))} /></label>
-          <label className="text-sm"><span className="mb-2 block text-white/60">Taken per dispatch</span><Input type="number" min={1} max={10} value={settings.max_jobs_per_dispatch} onChange={(event) => setSettings((current) => ({ ...current, max_jobs_per_dispatch: Number(event.target.value) }))} /></label>
-          <label className="text-sm"><span className="mb-2 block text-white/60">Supportmodel</span><select className="h-10 w-full rounded-md border border-white/15 bg-[#132019] px-3" value={settings.support_model} onChange={(event) => setSettings((current) => ({ ...current, support_model: event.target.value }))}>{settings.model_allowlist.map((model) => <option key={model}>{model}</option>)}</select></label>
+          <label className="text-sm"><span className="mb-2 block text-muted-foreground">Daglimiet runs</span><Input type="number" min={1} max={10000} value={settings.daily_run_limit} onChange={(event) => setSettings((current) => ({ ...current, daily_run_limit: Number(event.target.value) }))} /></label>
+          <label className="text-sm"><span className="mb-2 block text-muted-foreground">Budget per dag (EUR)</span><Input type="number" min={0} step="0.01" value={settings.daily_budget_eur} onChange={(event) => setSettings((current) => ({ ...current, daily_budget_eur: event.target.value }))} /></label>
+          <label className="text-sm"><span className="mb-2 block text-muted-foreground">Reservering per run (EUR)</span><Input type="number" min={0.01} step="0.01" value={settings.budget_reservation_eur} onChange={(event) => setSettings((current) => ({ ...current, budget_reservation_eur: event.target.value }))} /></label>
+          <label className="text-sm"><span className="mb-2 block text-muted-foreground">Taken per dispatch</span><Input type="number" min={1} max={10} value={settings.max_jobs_per_dispatch} onChange={(event) => setSettings((current) => ({ ...current, max_jobs_per_dispatch: Number(event.target.value) }))} /></label>
+          <label className="text-sm"><span className="mb-2 block text-muted-foreground">Supportmodel</span><select className="h-10 w-full rounded-md border border-border bg-background px-3" value={settings.support_model} onChange={(event) => setSettings((current) => ({ ...current, support_model: event.target.value }))}>{settings.model_allowlist.map((model) => <option key={model}>{model}</option>)}</select></label>
         </div>
       </section>
 
       <section id="approvals">
-        <div className="mb-4"><h2 className="text-xl font-semibold">Goedkeuringswachtrij</h2><p className="mt-1 text-sm text-white/50">De inhoud en hash van de gekozen versie zijn aan de beslissing gebonden.</p></div>
-        {pendingApprovals.length === 0 ? <p className="rounded-2xl border border-dashed border-white/15 p-8 text-center text-sm text-white/45">Geen openstaande goedkeuringen.</p> : (
+        <div className="mb-4"><h2 className="text-xl font-semibold">Goedkeuringswachtrij</h2><p className="mt-1 text-sm text-muted-foreground">De inhoud en hash van de gekozen versie zijn aan de beslissing gebonden.</p></div>
+        {pendingApprovals.length === 0 ? <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">Geen openstaande goedkeuringen.</p> : (
           <div className="space-y-4">{pendingApprovals.map((approval) => {
             const artifact = approval.artifact
             const draft = drafts[approval.id]
             if (!artifact || !draft) return null
-            return <article key={approval.id} className="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6">
-              <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs uppercase tracking-wide text-white/40">Risico {approval.risk_level} · versie {artifact.version}</p><h3 className="mt-1 font-semibold">{artifact.title}</h3></div><time className="text-xs text-white/45">{formatDate(approval.requested_at)}</time></div>
+            return <article key={approval.id} id={`approval-${approval.id}`} className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs uppercase tracking-wide text-muted-foreground">Risico {approval.risk_level} · versie {artifact.version}</p><h3 className="mt-1 font-semibold">{artifact.title}</h3></div><time className="text-xs text-muted-foreground">{formatDate(approval.requested_at)}</time></div>
               <div className="mt-4 grid gap-3 text-sm lg:grid-cols-2">
-                <div className="rounded-xl border border-white/10 bg-black/10 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-white/40">Bronfragment</p><p className="mt-2 whitespace-pre-wrap text-white/70">{artifact.content.sourceExcerpt || "Bronfragment niet beschikbaar."}</p></div>
-                <div className="rounded-xl border border-white/10 bg-black/10 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-white/40">Onderbouwing</p><p className="mt-2">Confidence: {artifact.content.confidence || "onbekend"}</p><ul className="mt-2 list-disc space-y-1 pl-5 text-white/60">{(artifact.content.confidenceReasons ?? []).map((reason) => <li key={reason}>{reason}</li>)}</ul><p className="mt-2 text-xs text-white/40">Kennisbronnen: {artifact.content.knowledgeAnswerIds?.length ?? 0}</p></div>
+                <div className="rounded-xl border border-border bg-muted p-4"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Bronfragment</p><p className="mt-2 whitespace-pre-wrap text-muted-foreground">{artifact.content.sourceExcerpt || "Bronfragment niet beschikbaar."}</p></div>
+                <div className="rounded-xl border border-border bg-muted p-4"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Onderbouwing</p><p className="mt-2">Confidence: {artifact.content.confidence || "onbekend"}</p><ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">{(artifact.content.confidenceReasons ?? []).map((reason) => <li key={reason}>{reason}</li>)}</ul><p className="mt-2 text-xs text-muted-foreground">Kennisbronnen: {artifact.content.knowledgeAnswerIds?.length ?? 0}</p></div>
               </div>
               <div className="mt-4 space-y-3"><Input aria-label="Onderwerp" value={draft.subject} onChange={(event) => setDrafts((current) => ({ ...current, [approval.id]: { ...draft, subject: event.target.value } }))} /><Textarea aria-label="Antwoord" className="min-h-48" value={draft.body} onChange={(event) => setDrafts((current) => ({ ...current, [approval.id]: { ...draft, body: event.target.value } }))} /></div>
               <div className="mt-4 flex flex-wrap gap-2">
@@ -175,11 +175,11 @@ export function AgentTeamDashboard({ initialSettings, approvals, jobs, runs }: {
       </section>
 
       <section id="history" className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6"><h2 className="text-xl font-semibold">Recente taken</h2><ul className="mt-4 divide-y divide-white/10">{jobs.slice(0, 12).map((job) => <li key={job.id} className="flex items-center justify-between gap-4 py-3 text-sm"><div><p className="font-medium">{job.job_type}</p><p className="text-xs text-white/45">{formatDate(job.created_at)} · poging {job.attempt_count}/{job.max_attempts}</p></div><span className="rounded-full bg-white/10 px-2.5 py-1 text-xs">{job.status}</span></li>)}</ul></div>
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6"><h2 className="text-xl font-semibold">Verbruik</h2><div className="mt-4 grid grid-cols-2 gap-3"><div className="rounded-xl bg-black/10 p-4"><span className="text-xs text-white/45">Runs (24 uur)</span><strong className="mt-1 block text-2xl">{runs.length}</strong></div><div className="rounded-xl bg-black/10 p-4"><span className="text-xs text-white/45">Bekende kosten</span><strong className="mt-1 block text-2xl">€ {knownCost.toFixed(2)}</strong></div></div>{unknownCosts > 0 && <p className="mt-3 text-xs text-amber-100/75">Kosten zijn voor {unknownCosts} run(s) niet beschikbaar; er wordt geen waarde verzonnen.</p>}</div>
+        <div className="rounded-2xl border border-border bg-card p-5 sm:p-6"><h2 className="text-xl font-semibold">Recente taken</h2><ul className="mt-4 divide-y divide-border">{jobs.slice(0, 12).map((job) => <li key={job.id} className="flex items-center justify-between gap-4 py-3 text-sm"><div><p className="font-medium">{job.job_type}</p><p className="text-xs text-muted-foreground">{formatDate(job.created_at)} · poging {job.attempt_count}/{job.max_attempts}</p></div><span className="rounded-full bg-card px-2.5 py-1 text-xs">{job.status}</span></li>)}</ul></div>
+        <div className="rounded-2xl border border-border bg-card p-5 sm:p-6"><h2 className="text-xl font-semibold">Verbruik</h2><div className="mt-4 grid grid-cols-2 gap-3"><div className="rounded-xl bg-muted p-4"><span className="text-xs text-muted-foreground">Runs (24 uur)</span><strong className="mt-1 block text-2xl">{runs.length}</strong></div><div className="rounded-xl bg-muted p-4"><span className="text-xs text-muted-foreground">Bekende kosten</span><strong className="mt-1 block text-2xl">€ {knownCost.toFixed(2)}</strong></div></div>{unknownCosts > 0 && <p className="mt-3 text-xs text-amber-800">Kosten zijn voor {unknownCosts} run(s) niet beschikbaar; er wordt geen waarde verzonnen.</p>}</div>
       </section>
 
-      {failedJobs.length > 0 && <section className="rounded-2xl border border-red-300/20 bg-red-300/5 p-5 sm:p-6"><h2 className="text-xl font-semibold">Herstelbare taken</h2><div className="mt-4 space-y-3">{failedJobs.map((job) => <div key={job.id} className="flex flex-col gap-3 rounded-xl border border-white/10 p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium">{job.job_type} · {job.status}</p><p className="mt-1 text-xs text-white/45">{job.last_error_message || "Geen foutdetail beschikbaar."}</p></div><Button variant="secondary" disabled={pending} onClick={() => action(async () => { await request(`/api/admin/agents/jobs/${job.id}/retry`, { method: "POST", body: JSON.stringify({ confirm: true }) }) })}>{pending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <RefreshCw className="mr-2 size-4" />}Opnieuw proberen</Button></div>)}</div></section>}
+      {failedJobs.length > 0 && <section className="rounded-2xl border border-red-300/20 bg-red-300/5 p-5 sm:p-6"><h2 className="text-xl font-semibold">Herstelbare taken</h2><div className="mt-4 space-y-3">{failedJobs.map((job) => <div key={job.id} id={`job-${job.id}`} className="flex flex-col gap-3 rounded-xl border border-border p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium">{job.job_type} · {job.status}</p><p className="mt-1 text-xs text-muted-foreground">{job.last_error_message || "Geen foutdetail beschikbaar."}</p></div><Button variant="secondary" disabled={pending} onClick={() => action(async () => { await request(`/api/admin/agents/jobs/${job.id}/retry`, { method: "POST", body: JSON.stringify({ confirm: true }) }) })}>{pending ? <Loader2 className="mr-2 size-4 animate-spin" /> : <RefreshCw className="mr-2 size-4" />}Opnieuw proberen</Button></div>)}</div></section>}
     </div>
   )
 }
