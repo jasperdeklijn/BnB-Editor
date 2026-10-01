@@ -1,9 +1,8 @@
 import "server-only"
 import {createAdminClient} from "@/lib/supabase/admin"
-import {quoteWritesEnabled,sendRequestLink} from "./server"
+import {sendRequestLink} from "./server"
 
 export async function deliverRequestReceipt(requestId:string,businessId:string) {
-  if(!quoteWritesEnabled())return
   const admin=await createAdminClient()
   const {data:business}=await admin.from("businesses").select("request_portal_receipt_enabled").eq("id",businessId).single()
   if(!business?.request_portal_receipt_enabled)return

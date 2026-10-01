@@ -25,11 +25,11 @@
 
 1. Gebruik een geïsoleerde Supabase-testomgeving en testmailboxen. Maak vóór productie-upgrade een passende databaseback-up.
 2. Pas `supabase/migrations/20260929120000_quotes_customer_portal.sql` toe. Gebruik hiervoor nooit `supabase/init.sql`; dat is een destructieve bootstrap.
-3. Deploy de applicatie met `QUOTES_ENABLED=false`. Bestaande klanttoegang en downloads blijven leesbaar; nieuwe offerte-/klantmutaties zijn uitgeschakeld. Hiervoor mogen de migratie en bestaande documenttabellen niet worden teruggedraaid.
-4. Stel `CUSTOMER_PORTAL_BASE_URL` in op de canonieke HTTPS-platformhost; lokaal kan `http://localhost:3000`. Gebruik geen tenant-subdomein: de bestaande tenantrouter stuurt dat naar een website.
-5. Configureer de bestaande `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` en eventueel `SMTP_FROM`. De gedeelde rate-limit-RPC moet bereikbaar zijn; fouten blokkeren nieuwe code-/mailpogingen.
-6. Zet `QUOTES_ENABLED=true` in de testomgeving en voer onderstaande acceptatietests uit. Activeer ontvangstbevestigingen afzonderlijk per testbedrijf.
-7. Pas na geautoriseerde productie-uitrol migratie, configuratie en featureflag toe op productie. Test daar alleen met afgesproken testgegevens en ontvangers.
+3. Stel `CUSTOMER_PORTAL_BASE_URL` in op de canonieke HTTPS-platformhost; lokaal kan `http://localhost:3000`. Gebruik geen tenant-subdomein: de bestaande tenantrouter stuurt dat naar een website.
+4. Configureer de bestaande `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` en eventueel `SMTP_FROM`. De gedeelde rate-limit-RPC moet bereikbaar zijn; fouten blokkeren nieuwe code-/mailpogingen.
+5. Deploy de applicatie in de testomgeving. Offertefuncties zijn altijd beschikbaar; bestaande autorisatie en statuscontroles blijven gelden.
+6. Voer onderstaande acceptatietests uit. Activeer ontvangstbevestigingen afzonderlijk per testbedrijf.
+7. Pas bij geautoriseerde productie-uitrol eerst de migratie en configuratie toe en deploy daarna de applicatie. Test daar alleen met afgesproken testgegevens en ontvangers.
 
 De lokaal geïnstalleerde Node 20.9 loopt bij de bestaande `sharp`-dependency vast tijdens de build. De productiebuild is gecontroleerd met de meegeleverde Node 24.19.0. Dit is geen aanpassing van de projectdependencies.
 
@@ -45,7 +45,7 @@ De lokaal geïnstalleerde Node 20.9 loopt bij de bestaande `sharp`-dependency va
 - [ ] Maak conceptfactuur, controleer gegevens/btw, geef uit en verstuur. Controleer PDF, klantweergave, betaalstatus en creditfactuur.
 - [ ] Simuleer SMTP-fout. Aanvraag en offerte blijven opgeslagen; editor toont verzendprobleem; handmatige retry maakt geen nieuwe offerteversie.
 - [ ] Controleer NL/EN/DE/FR, lange klantnamen, 320/390 px en toetsenbordbediening.
-- [ ] Test bestaande boekingslinks en het uitschakelen van de featureflag: gedeelde documenten blijven toegankelijk, nieuwe mutaties stoppen.
+- [ ] Test bestaande boekingslinks en gedeelde documenten. Controleer dat mutaties zonder geldige klanttoegang of eigenaarsrechten worden geweigerd.
 
 ## Beheer
 
@@ -59,7 +59,7 @@ De lokaal geïnstalleerde Node 20.9 loopt bij de bestaande `sharp`-dependency va
 
 **Archiveren/verwijderen:** archiveren in Aanvragen verwijdert geen offertehistorie en trekt klanttoegang niet vanzelf in. Trek toegang expliciet in wanneer een dossier niet langer gedeeld mag worden. Verwijder geen gekoppelde offertes of facturen als reparatiemiddel. Stel operationele bewaartermijnen vast vóór brede uitrol; plan daarna een gecontroleerde opschoning van verlopen sessies/codes en oude mailpogingen. Een accountverwijdering blijft een afzonderlijke bestaande procedure die met de nieuwe relaties in de testomgeving moet worden gecontroleerd.
 
-**Terugdraaien:** zet `QUOTES_ENABLED=false`. Behoud tabellen, documenten, bestaande klanttoegang en audit. Geen destructieve rollback.
+**Terugdraaien:** deploy een eerdere applicatieversie die compatibel is met het huidige databaseschema, of voer een gerichte reparatie uit. Behoud tabellen, documenten, bestaande klanttoegang en audit. Geen destructieve rollback.
 
 ## Lokale bewijslast
 

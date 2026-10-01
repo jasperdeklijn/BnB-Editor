@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { EditorPageShell } from "@/components/editor/editor-page-shell"
-import { ownerContext, versionColumns, quoteWritesEnabled } from "@/lib/quotes/server"
+import { ownerContext, versionColumns } from "@/lib/quotes/server"
 import { quoteLabels, type QuoteSnapshot, type QuoteVersion } from "@/lib/quotes/types"
 import { QuoteEditor } from "@/components/quotes/quote-editor"
 import { ReceiptSetting } from "@/components/quotes/receipt-setting"
@@ -30,7 +30,6 @@ export default async function QuotesPage({searchParams}:{searchParams:Promise<{q
   ])
   const pageHref=(next:number)=>`/editor/quotes?${new URLSearchParams({q:search,status:params.status||"",page:String(next),...(selected?{quote:selected.id}:{})})}`
   return <EditorPageShell title="Offertes" description="Van aanvraag of afspraak naar offerte, klantakkoord en factuur." maxWidth="full">
-    {!quoteWritesEnabled()?<p className="mb-4 rounded-lg bg-muted p-4">Nieuwe offerteacties zijn uitgeschakeld. Bestaande documenten blijven beschikbaar.</p>:null}
     {business?<ReceiptSetting key={business.id} businessId={business.id} initial={business.request_portal_receipt_enabled||false}/>:null}
     <form className="mb-5 flex flex-wrap gap-2"><input className="h-11 min-w-0 rounded-md border bg-background px-3" name="q" aria-label="Zoeken op klant of offertenummer" placeholder="Klant of nummer" defaultValue={params.q}/><select name="status" aria-label="Offertestatus" defaultValue={params.status||""} className="h-11 rounded-md border bg-background px-3"><option value="">Alle statussen</option>{Object.entries(quoteLabels).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select><button className="rounded-md border px-4">Zoeken</button></form>
     <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]"><nav aria-label="Offertes" className="min-w-0 space-y-2">{quotes?.map(q=><Link key={q.id} href={`/editor/quotes?quote=${q.id}`} className={`block break-words rounded-xl border p-4 ${selected?.id===q.id?"border-primary bg-primary/5":"bg-card"}`}><strong>O-{q.number} · {q.customer_name||"Klant"}</strong><p className="text-sm text-muted-foreground">{quoteLabels[q.status as keyof typeof quoteLabels]||"Concept"}</p></Link>)}{!quotes?.length?<p>Geen offertes gevonden. Maak een offerte vanuit Aanvragen of Kalender.</p>:null}<div className="flex justify-between py-3 text-sm">{page>1?<Link href={pageHref(page-1)}>Vorige</Link>:<span/>}<span>{page} / {Math.max(1,Math.ceil((count||0)/25))}</span>{page*25<(count||0)?<Link href={pageHref(page+1)}>Volgende</Link>:<span/>}</div><Link className="block text-sm underline" href="/editor/requests">Naar aanvragen</Link></nav>

@@ -13,12 +13,9 @@ import { portalCopy, portalLocale } from "./i18n"
 import { checkRateLimit } from "@/lib/rate-limit"
 
 export const hashSecret = (value: string) => createHash("sha256").update(value).digest("hex")
-export const quoteWritesEnabled = () => process.env.QUOTES_ENABLED === "true"
-export function requireQuoteWrites() { if (!quoteWritesEnabled()) throw new Error("Offertes zijn nog niet geactiveerd.") }
 export const versionColumns = "id,quote_id,version,revision,status,snapshot,valid_until,offered_at,decided_at,decision_name,decision_note"
 const uuid = z.string().uuid()
 export async function ownerContext(write = false) {
-  if (write) requireQuoteWrites()
   const db = await createClient()
   const { data: { user } } = await db.auth.getUser()
   if (!user) throw new Error("Niet ingelogd.")

@@ -1,7 +1,7 @@
 import { randomInt, randomUUID } from "node:crypto"
 import { z } from "zod"
 import { portalAccess, portalVersion, privateHeaders } from "@/lib/quotes/portal"
-import { hashSecret, requireQuoteWrites, sendPortalMail } from "@/lib/quotes/server"
+import { hashSecret, sendPortalMail } from "@/lib/quotes/server"
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
 import { portalCopy } from "@/lib/quotes/i18n"
 
@@ -13,7 +13,6 @@ const inputSchema = z.discriminatedUnion("action",[
 export async function POST(request:Request) {
   if (request.headers.get("origin")!==new URL(request.url).origin) return Response.json({error:"Ongeldige herkomst."},{status:403,headers:privateHeaders})
   try {
-    requireQuoteWrites()
     const raw = await request.text()
     if (raw.length>12000) return Response.json({error:"Bericht te groot."},{status:413,headers:privateHeaders})
     const input = inputSchema.parse(JSON.parse(raw))
