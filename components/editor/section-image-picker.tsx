@@ -54,8 +54,8 @@ export function SectionImagePicker({ userId, label, value, onSelect }: SectionIm
   const upload = async (file?: File) => {
     if (!file) return
     const currentUsage = images.reduce((total, image) => total + image.storageSize, 0)
-    if (currentUsage + file.size > MAX_USER_IMAGE_TOTAL_SIZE) {
-      toast.error("Je opslaglimiet van 50 MB is bereikt.")
+    if (currentUsage >= MAX_USER_IMAGE_TOTAL_SIZE) {
+      toast.error("Je opslaglimiet van 500 MB is bereikt.")
       return
     }
     setUploading(true)
@@ -83,7 +83,7 @@ export function SectionImagePicker({ userId, label, value, onSelect }: SectionIm
         <AlertDialogContent className="flex max-h-[85vh] flex-col overflow-hidden sm:max-w-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>{label}</AlertDialogTitle>
-            <AlertDialogDescription>Kies een bestaande afbeelding of upload direct een nieuw bestand.</AlertDialogDescription>
+            <AlertDialogDescription>Kies een bestaande afbeelding of upload direct een nieuw bestand. Grote afbeeldingen worden automatisch verkleind tot maximaal 5 MB.</AlertDialogDescription>
           </AlertDialogHeader>
 
           <div className="relative">

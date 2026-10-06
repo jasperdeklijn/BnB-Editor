@@ -8,15 +8,13 @@ import { useEditorLayout } from "@/components/editor/editor-layout-context"
 import { createClient } from "@/lib/supabase/client"
 import {
   loadUserImages,
+  MAX_USER_IMAGE_TOTAL_SIZE,
   USER_IMAGES_BUCKET,
   uploadUserImage,
   type UserImageAsset,
 } from "@/lib/user-images"
 import { ImageGrid } from "./image-grid"
 import { ImageUploadZone } from "./image-upload-zone"
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024
-const MAX_TOTAL_SIZE = 50 * 1024 * 1024
 
 interface ImagesClientProps {
   userId: string
@@ -56,11 +54,6 @@ export function ImagesClient({ userId }: ImagesClientProps) {
 
     try {
       for (const file of files) {
-        if (file.size > MAX_FILE_SIZE) {
-          failed = true
-          toast.error(`${file.name} overschrijdt de limiet van 5 MB`)
-          continue
-        }
         if (!file.type.startsWith("image/")) {
           failed = true
           toast.error(`${file.name} is geen afbeelding`)
@@ -147,7 +140,7 @@ export function ImagesClient({ userId }: ImagesClientProps) {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`
   }
 
-  const usagePercentage = (totalUsage / MAX_TOTAL_SIZE) * 100
+  const usagePercentage = (totalUsage / MAX_USER_IMAGE_TOTAL_SIZE) * 100
 
   return (
     <EditorPageShell title="Afbeeldingen" description="Upload en beheer afbeeldingen voor je website en editorsecties." maxWidth="4xl">
@@ -156,21 +149,21 @@ export function ImagesClient({ userId }: ImagesClientProps) {
           <div className="rounded-md bg-primary/15 p-1.5 text-primary"><HardDrive className="h-4 w-4" /></div>
           <div>
             <h2 className="font-semibold text-foreground">Opslaggebruik</h2>
-            <p className="text-xs text-muted-foreground">{formatBytes(totalUsage)} van {formatBytes(MAX_TOTAL_SIZE)} gebruikt</p>
+            <p className="text-xs text-muted-foreground">{formatBytes(totalUsage)} van {formatBytes(MAX_USER_IMAGE_TOTAL_SIZE)} gebruikt</p>
           </div>
         </div>
         <div className="px-6 py-4">
           <div className="h-2 w-full overflow-hidden rounded-full bg-muted"><div className="h-full bg-primary transition-all duration-300" style={{ width: `${Math.min(usagePercentage, 100)}%` }} /></div>
-          <p className="mt-2 text-xs text-muted-foreground">Max. 5 MB per bestand · 50 MB totaal, inclusief snelle voorbeelden</p>
+          <p className="mt-2 text-xs text-muted-foreground">Automatisch verkleind tot maximaal 5 MB per afbeelding · 500 MB totaal, inclusief snelle voorbeelden</p>
         </div>
       </div>
 
       <div className="rounded-xl border border-border bg-card shadow-sm">
         <div className="flex items-center gap-3 rounded-t-xl border-b border-border bg-secondary/40 px-6 py-4">
           <div className="rounded-md bg-primary/15 p-1.5 text-primary"><UploadIcon className="h-4 w-4" /></div>
-          <div><h2 className="font-semibold text-foreground">Afbeeldingen uploaden</h2><p className="text-xs text-muted-foreground">PNG, JPG, GIF of WEBP tot 5 MB per afbeelding</p></div>
+          <div><h2 className="font-semibold text-foreground">Afbeeldingen uploaden</h2><p className="text-xs text-muted-foreground">PNG, JPG, GIF of WEBP · grote afbeeldingen worden automatisch verkleind</p></div>
         </div>
-        <div className="p-6"><ImageUploadZone onUpload={handleUpload} isUploading={isUploading} disabled={totalUsage >= MAX_TOTAL_SIZE} /></div>
+        <div className="p-6"><ImageUploadZone onUpload={handleUpload} isUploading={isUploading} disabled={totalUsage >= MAX_USER_IMAGE_TOTAL_SIZE} /></div>
       </div>
 
       <div className="rounded-xl border border-border bg-card shadow-sm">

@@ -14,10 +14,10 @@ export function ImageUploadZone({ onUpload, isUploading, disabled }: ImageUpload
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
-    if (!disabled) {
+    if (!disabled && !isUploading) {
       setIsDragging(true)
     }
-  }, [disabled])
+  }, [disabled, isUploading])
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -91,13 +91,13 @@ export function ImageUploadZone({ onUpload, isUploading, disabled }: ImageUpload
           <div className="text-center">
             <p className="text-sm font-medium text-foreground">
               {isUploading
-                ? "Uploading..."
+                ? "Verkleinen en uploaden..."
                 : disabled
-                ? "Storage limit reached"
-                : "Drop images here or click to upload"}
+                ? "Opslaglimiet bereikt"
+                : "Sleep afbeeldingen hierheen of klik om te uploaden"}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              PNG, JPG, GIF, WEBP up to 5MB each
+              PNG, JPG, GIF of WEBP · automatisch verkleind tot maximaal 5 MB
             </p>
           </div>
           <input

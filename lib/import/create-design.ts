@@ -67,7 +67,7 @@ export async function createImportedDesign({ db, storage, userId, designId, docu
       // A database error with a SQLSTATE means the transaction was rolled back.
       if (/^[0-9A-Z]{5}$/.test(error.code ?? "") && !error.code.startsWith("PGRST")) rpcStarted = false
       throw new Error(error.message.includes("USER_IMAGE_QUOTA_EXCEEDED")
-        ? "Je opslaglimiet van 50 MB is bereikt."
+        ? "Je opslaglimiet van 500 MB is bereikt."
         : "Het ontwerp kon niet worden aangemaakt. Controleer of de importmigratie is toegepast en probeer opnieuw.")
     }
     return designId

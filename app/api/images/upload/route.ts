@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       await storage.storage.from(USER_IMAGES_BUCKET).remove([originalPath, thumbnailPath])
       const quotaExceeded = metadataError.message.includes("USER_IMAGE_QUOTA_EXCEEDED")
       return NextResponse.json(
-        { error: quotaExceeded ? "Je opslaglimiet van 50 MB is bereikt." : "Afbeelding kon niet worden geregistreerd." },
+        { error: quotaExceeded ? "Je opslaglimiet van 500 MB is bereikt." : "Afbeelding kon niet worden geregistreerd." },
         { status: quotaExceeded ? 413 : 500 },
       )
     }

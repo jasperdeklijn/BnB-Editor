@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { BUSINESS_CATEGORIES } from "@/lib/business/categories"
-import { createCroppedImagePreview, MAX_USER_IMAGE_SIZE } from "@/lib/user-images"
+import { createCroppedImagePreview, prepareUserImage } from "@/lib/user-images"
 
 export function TransferRequestForm({ remaining }: { remaining: number }) {
   const [busy, setBusy] = useState(false)
@@ -21,9 +21,9 @@ export function TransferRequestForm({ remaining }: { remaining: number }) {
       let imageId = logoId
       const file = form.get("logo")
       if (file instanceof File && file.size && !imageId) {
-        if (file.size > MAX_USER_IMAGE_SIZE) throw new Error("Het logo mag maximaal 5 MB zijn.")
-        const preview = await createCroppedImagePreview(file)
-        const upload = new FormData(); upload.set("original", file); upload.set("preview", new File([preview], "preview.webp", { type: "image/webp" }))
+        const original = await prepareUserImage(file)
+        const preview = await createCroppedImagePreview(original)
+        const upload = new FormData(); upload.set("original", original); upload.set("preview", new File([preview], "preview.webp", { type: "image/webp" }))
         const response = await fetch("/api/images/upload", { method: "POST", body: upload })
         const result = await response.json()
         if (!response.ok) throw new Error(result.error || "Logo uploaden is mislukt.")
@@ -53,7 +53,7 @@ export function TransferRequestForm({ remaining }: { remaining: number }) {
       <label className="space-y-2 text-sm font-medium">Belangrijkste doel<select name="primary_goal" className="h-10 w-full rounded-md border bg-background px-3"><option value="requests">Aanvragen ontvangen</option><option value="calls">Gebeld worden</option><option value="bookings">Boekingen ontvangen</option></select></label>
       <label className="space-y-2 text-sm font-medium">Gewenste kleuren (optioneel)<Input name="preferred_colors" maxLength={500} placeholder="Bijvoorbeeld donkergroen en crème" /></label>
       <label className="space-y-2 text-sm font-medium">Gewenste uitstraling (optioneel)<Textarea name="appearance" maxLength={2000} placeholder="Rustig, persoonlijk, zakelijk…" /></label>
-      <label className="space-y-2 text-sm font-medium">Logo (optioneel, maximaal 5 MB)<Input name="logo" type="file" accept="image/png,image/jpeg,image/webp" onChange={() => setLogoId(null)} /></label>
+      <label className="space-y-2 text-sm font-medium">Logo (optioneel, automatisch verkleind tot maximaal 5 MB)<Input name="logo" type="file" accept="image/png,image/jpeg,image/webp" onChange={() => setLogoId(null)} /></label>
       <label className="space-y-2 text-sm font-medium sm:col-span-2">Wat moet behouden blijven? (optioneel)<Textarea name="preserve_notes" maxLength={3000} /></label>
       <label className="space-y-2 text-sm font-medium sm:col-span-2">Opmerkingen (optioneel)<Textarea name="customer_notes" maxLength={4000} /></label>
       <label className="flex items-start gap-3 text-sm sm:col-span-2"><input name="permission" type="checkbox" required className="mt-1 h-4 w-4 shrink-0" />Ik ben eigenaar of heb toestemming om de teksten en afbeeldingen van deze website over te nemen.</label>

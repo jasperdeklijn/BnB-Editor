@@ -45,7 +45,7 @@ test("download and partial upload failures never create a design and clean alloc
 })
 test("transaction failure cleans assets; lost response preserves a committed draft", async () => {
   const failed = fixture({ rpcError: { code: "23514", message: "USER_IMAGE_QUOTA_EXCEEDED" } })
-  await assert.rejects(createImportedDesign(failed.args), /50 MB/)
+  await assert.rejects(createImportedDesign(failed.args), /500 MB/)
   assert.deepEqual(failed.removed, failed.uploaded)
   const committed = fixture({ rpcError: { code: "", message: "fetch failed" }, committed: true })
   assert.equal(await createImportedDesign(committed.args), "new-design")
