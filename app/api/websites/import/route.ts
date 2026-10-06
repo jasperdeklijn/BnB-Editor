@@ -43,6 +43,10 @@ export async function POST(request: Request) {
     if (lookupError) throw new Error("Je ontwerpen konden niet worden gecontroleerd.")
     // Repeating a confirmed request after a lost response opens the same new draft.
     if (existing) return NextResponse.json({ websiteId: existing.id })
+    if (document.version === 2) {
+      const contract = await db.rpc("multipage_contract_version")
+      if (contract.error || contract.data !== 3) return NextResponse.json({ error: "Het voorbeeld is klaar. Installeer eerst de multipage-migratie om dit ontwerp op te slaan.", code: "MULTIPAGE_MIGRATION_REQUIRED" }, { status: 503 })
+    }
     const websiteId = await createImportedDesign({
       db, storage: await createAdminClient(), userId: user.id, designId: id.data, document,
     })

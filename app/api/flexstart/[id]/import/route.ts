@@ -9,7 +9,7 @@ export const maxDuration = 60
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
     sameOrigin(request)
-    const { user, db } = await flexContext(true)
+    const { user, db, client } = await flexContext(true)
     const { id } = await context.params
     if (!z.string().uuid().safeParse(id).success) throw new FlexError("Ongeldige aanvraag.")
     const designId = z.string().uuid().parse(request.headers.get("x-import-design-id"))
@@ -23,6 +23,10 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     if (limit.reason === "unavailable") throw new FlexError("De beveiligingscontrole is tijdelijk niet beschikbaar. Probeer later opnieuw.", 503)
     if (!limit.allowed) throw new FlexError("Te veel imports. Probeer later opnieuw.", 429)
     const document = parseImport(await readBody(request, MAX_IMPORT_BYTES))
+    if (document.version === 2) {
+      const contract = await client.rpc("multipage_contract_version")
+      if (contract.error || contract.data !== 3) throw new FlexError("Installeer eerst de multipage-migratie om dit ontwerp op te slaan.", 503)
+    }
     const websiteId = await createImportedDesign({ db, storage: db, userId: transfer.user_id, designId, document, transfer: { requestId: id, revision } })
     return Response.json({ websiteId }, { status: 201 })
   } catch (error) {

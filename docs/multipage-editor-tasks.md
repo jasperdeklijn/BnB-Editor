@@ -6,6 +6,18 @@ Status: Remaining local implementation completed on 2026-10-06: page operations,
 
 Scope update: the old one-page websites are no longer needed. The full implementation targets the new multipage model; migrating or retaining old website content, version 2 snapshots, and old template checkpoints is not required. This task file update does not execute data cleanup.
 
+## AI URL migration — 2026-10-06
+
+- [x] Add URL input, explicit reuse/AI processing consent, same-domain page discovery, manual page selection (up to eight), cancellation and responsive controls to `/editor/import` and the existing managed import component.
+- [x] Fetch public HTTPS HTML safely with DNS pinning, private-address rejection, redirect checks, robots restrictions, crawl delays and size/time budgets. No source cookies, private areas or scripts are executed.
+- [x] Generate and validate v2 native components, one shared page menu, separate pages, source SEO, fresh import identities and typed page/section references. Reject missing pages and invented images; show source mapping/manual-setup warnings and allow JSON download before creating a draft.
+- [x] Preserve page SEO in atomic SQL import and gate v2 writes on database contract version 3 before uploading assets. This gate does not install the hosted migration.
+- [x] Verify extraction, crawl restrictions, AI contract and authenticated API behavior with automated fixtures. Full final suite: 287 passed; focused import suite: 12 passed including the missing-migration write guard. TypeScript and repository ESLint passed. Mobile import form verified at 390 px with document width equal to scroll width; screenshot: `output/ai-website/mobile.png`. Two-page native preview, cross-page section CTA, shared footer return link and mobile preview verified with the owned synthetic `docs/import/examples/multipage.json`; no design saved.
+- [ ] Confirm live provider generation: the controlled synthetic test returned Gateway HTTP 403 with the current server configuration. No customer content was submitted or design created. Restore provider access, then rerun `scripts/smoke-website-ai.cjs` and record successful validated output.
+- [ ] Complete authenticated URL → generated multipage preview → new draft → editor reload acceptance on an isolated hosted environment with the operations migration installed. Retain the existing release checks below.
+
+Implementation and setup: [URL migration workflow](import/URL_TO_JSON.md), [v2 format](import/FORMAT.md). Command evidence: `output/ai-website-*.log`. Final Node 24 production build passed (`next build --webpack`, 109 routes). Authenticated browser API smoke against that local production build rejected `https://127.0.0.1/` before source fetching. The Windows Turbopack CSS worker selected system Node 20 and failed, so the documented webpack build mode was used. Restart development with Node 24 before trying the URL endpoint.
+
 ## Initial UI prototype — verification history
 
 - [x] Add page tabs at the top inside the canvas and a responsive Pages drawer to `/editor`. Keep the tabs within the canvas width and visible while scrolling; scroll the tab strip horizontally on narrow screens and support arrow keys plus Enter/Space to select a page.

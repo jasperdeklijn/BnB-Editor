@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { FileJson, Loader2, Monitor, Smartphone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ImportPreviewFrame } from "./import-preview-frame"
+import { ImportWebsiteUrl, type WebsiteImportResult } from "./import-website-url"
 import { getImportImages, ImportValidationError, MAX_IMPORT_BYTES, normalizeImport, parseImport, type ImportDocument } from "@/lib/import/schema"
 
 type Selection = { document: ImportDocument; raw: string; design: ReturnType<typeof normalizeImport>; id: string }
@@ -17,6 +18,8 @@ export function ImportDesign({ canCreate = false, transfer }: { canCreate?: bool
   const [mobile, setMobile] = useState(false)
   const [busy, setBusy] = useState(false)
   const [createdId, setCreatedId] = useState<string | null>(null)
+  const [analyzing,setAnalyzing]=useState(false)
+  const [report,setReport]=useState<WebsiteImportResult|null>(null)
   const [imageStates, setImageStates] = useState<Array<"loading" | "loaded" | "failed">>([])
   const generation = useRef(0)
   const submitting = useRef(false)
@@ -43,7 +46,7 @@ export function ImportDesign({ canCreate = false, transfer }: { canCreate?: bool
 
   async function selectFile(file?: File) {
     const currentGeneration = ++generation.current
-    setSelection(null); setCreatedId(null); setIssues([]); setPermission(false)
+    setSelection(null); setCreatedId(null); setIssues([]); setPermission(false); setReport(null)
     if (!file) return
     try {
       if (!file.name.toLowerCase().endsWith(".json")) throw new Error("Kies een .json-bestand.")
@@ -58,7 +61,7 @@ export function ImportDesign({ canCreate = false, transfer }: { canCreate?: bool
   }
   function cancel() {
     generation.current++
-    setSelection(null); setIssues([]); setPermission(false); setCreatedId(null)
+    setSelection(null); setIssues([]); setPermission(false); setCreatedId(null); setReport(null)
     if (input.current) input.current.value = ""
   }
   async function createDesign() {
@@ -86,15 +89,24 @@ export function ImportDesign({ canCreate = false, transfer }: { canCreate?: bool
   const imagePending = imageStates.length !== imageCount || imageStates.includes("loading")
   const imageFailed = imageStates.includes("failed")
   const Container = transfer ? "section" : "main"
+  function acceptWebsite(result:WebsiteImportResult) {
+    try {
+      const raw=JSON.stringify(result.document)
+      const document=parseImport(raw)
+      generation.current++;setIssues([]);setCreatedId(null);setReport(result);setPermission(true)
+      setSelection({document,raw,design:normalizeImport(document,()=>crypto.randomUUID()),id:crypto.randomUUID()})
+    } catch(error) {setIssues(error instanceof ImportValidationError?error.issues:["De omzetting levert geen geldig importbestand op."])}
+  }
   const Heading = transfer ? "h2" : "h1"
   return <Container className="mx-auto w-full max-w-7xl space-y-6 overflow-y-auto p-4 sm:p-8">
     <div className="rounded-2xl border bg-card p-5 sm:p-8">
-      <div className="flex items-center gap-3"><FileJson className="h-7 w-7 text-primary" /><Heading className="text-2xl font-bold">{transfer ? `Concept voor ${transfer.businessName}` : "Import JSON"}</Heading></div>
+      <div className="flex items-center gap-3"><FileJson className="h-7 w-7 text-primary" /><Heading className="text-2xl font-bold">{transfer ? `Concept voor ${transfer.businessName}` : canCreate ? "Website overzetten" : "Import JSON"}</Heading></div>
       <p className="mt-3 max-w-3xl text-muted-foreground">{transfer ? "Importeer het gecontroleerde ontwerp als nieuw concept in het klantaccount." : canCreate
         ? "Importeer je eigen website als nieuw, bewerkbaar concept. Je bestaande ontwerpen en live website blijven behouden."
         : "Controleer een FlexPagina-bestand met de echte websiteweergave. Dit voorbeeld slaat niets op in een account."}</p>
-      <label htmlFor="import-file" className="mt-5 block text-sm font-semibold">FlexPagina JSON-bestand (maximaal 2 MB)</label>
-      <input ref={input} id="import-file" type="file" accept=".json,application/json" disabled={busy}
+      {canCreate?<ImportWebsiteUrl disabled={busy||Boolean(selection)} onPrepared={acceptWebsite} onBusyChange={setAnalyzing}/>:null}
+      <label htmlFor="import-file" className="mt-5 block text-sm font-semibold">Of kies een FlexPagina JSON-bestand (maximaal 2 MB)</label>
+      <input ref={input} id="import-file" type="file" accept=".json,application/json" disabled={busy||analyzing}
         className="mt-2 block w-full rounded-lg border p-3 text-sm file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:text-primary-foreground"
         onChange={(event) => void selectFile(event.target.files?.[0])} />
       {issues.length > 0 && <div role="alert" className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
@@ -102,7 +114,8 @@ export function ImportDesign({ canCreate = false, transfer }: { canCreate?: bool
       </div>}
       {selection && <>
         <h2 className="mt-5 text-lg font-semibold">{selection.document.title}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{selection.document.sections.length} secties · {imageCount} afbeeldingen · nieuw concept</p>
+        <p className="mt-1 text-sm text-muted-foreground">{selection.document.pages?.length ?? 1} pagina&apos;s · {selection.document.sections.length} secties · {imageCount} afbeeldingen · nieuw concept</p>
+        {report?<div className="mt-4 space-y-3 rounded-lg border p-4"><h3 className="font-semibold">Controleer de omzetting</h3><ul className="space-y-2 text-sm">{report.pages.map(page=><li key={page.key} className="break-words">{page.title}: {new URL(page.sourceUrl).pathname} → /{page.slug}</li>)}</ul>{report.warnings.length?<ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">{report.warnings.map((warning,index)=><li key={index}>{warning}</li>)}</ul>:null}<p className="text-sm text-muted-foreground">Extra pagina&apos;s starten als concept. Controleer inhoud, afbeeldingen en knoppen voordat u het nieuwe ontwerp aanmaakt.</p><Button type="button" variant="outline" onClick={()=>{const blob=new Blob([selection.raw],{type:"application/json"});const url=URL.createObjectURL(blob);const anchor=document.createElement("a");anchor.href=url;anchor.download="flexpagina-multipage.json";anchor.click();window.setTimeout(()=>URL.revokeObjectURL(url),1000)}}>JSON downloaden</Button></div>:null}
         <ol className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm">{selection.document.sections.map((section, i) => <li key={section.key}>{i + 1}. {section.type}</li>)}</ol>
         <p className="mt-4 text-sm text-muted-foreground">Alle geaccepteerde secties blijven bewerkbaar. Lay-outs volgen de FlexPagina-componenten; externe knoppen zijn in dit voorbeeld uitgeschakeld. Niet-ondersteunde onderdelen worden geweigerd.</p>
         <label className="mt-5 flex items-start gap-3 text-sm">

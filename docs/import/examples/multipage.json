@@ -1,0 +1,15 @@
+{
+  "format": "flexpagina",
+  "version": 2,
+  "title": "Testbedrijf multipage",
+  "pages": [
+    { "key": "home", "title": "Home", "slug": "", "isHome": true, "seo": { "title": "Testbedrijf" } },
+    { "key": "about", "title": "Over ons", "slug": "over-ons", "isHome": false, "includeInPublication": false, "seo": { "description": "Fictieve testinhoud voor de importpreview." } }
+  ],
+  "sections": [
+    { "key": "menu", "type": "nav", "scope": "site_header", "content": { "brandName": "Testbedrijf", "navLinks": [] } },
+    { "key": "welcome", "type": "hero", "pageKey": "home", "content": { "title": "Welkom bij Testbedrijf", "subtitle": "Fictieve testinhoud voor de multipage-import.", "ctaEnabled": true, "ctaText": "Ontmoet ons team", "ctaHref": "section:about:team" } },
+    { "key": "team", "type": "about", "pageKey": "about", "content": { "title": "Over ons team", "description": "Wij maken overzichtelijke websites en controleren iedere pagina samen met de eigenaar voor publicatie." } },
+    { "key": "footer", "type": "footer", "scope": "site_footer", "content": { "companyName": "Testbedrijf", "columns": [{ "title": "Pagina's", "links": [{ "label": "Home", "href": "page:home" }, { "label": "Over ons", "href": "page:about" }] }] } }
+  ]
+}

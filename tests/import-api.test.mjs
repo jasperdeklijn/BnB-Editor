@@ -11,12 +11,12 @@ const service = load("lib/import/create-design.ts")
 const { POST } = load("app/api/websites/import/route.ts")
 const raw = fs.readFileSync("docs/import/examples/bnb.json", "utf8")
 const id = "cdb481a5-2c7e-4edf-b559-212341b5ef1c"
-function setup({ user = { id: "owner" }, allowed = true, existing = null } = {}) {
+function setup({ user = { id: "owner" }, allowed = true, existing = null, contractVersion = 3 } = {}) {
   let writes = 0, storageClients = 0
   const filters = []
   const query = { select() { return this }, eq(key, value) { filters.push([key, value]); return this },
     async maybeSingle() { return { data: existing, error: null } } }
-  server.createClient = async () => ({ auth: { getUser: async () => ({ data: { user }, error: null }) }, from: () => query })
+  server.createClient = async () => ({ auth: { getUser: async () => ({ data: { user }, error: null }) }, from: () => query, rpc:async()=>({data:contractVersion,error:null}) })
   admin.createAdminClient = async () => { storageClients++; return {} }
   limiter.checkRateLimit = async () => ({ allowed })
   service.createImportedDesign = async (options) => { writes++; assert.equal(options.userId, "owner"); return options.designId }
@@ -45,6 +45,14 @@ test("API rejects malformed/oversized/unknown fields without creating assets or 
   }
   assert.equal(f.writes(), 0)
   assert.equal(f.storageClients(), 0)
+})
+
+test("multipage saving requires the complete database contract before storage or creation",async()=>{
+  const doc={format:"flexpagina",version:2,title:"Multipage",pages:[{key:"home",title:"Home",slug:"",isHome:true}],sections:[{key:"intro",pageKey:"home",type:"hero",content:{title:"Home"}}]}
+  const f=setup({contractVersion:2})
+  const response=await POST(request(JSON.stringify(doc)))
+  assert.equal(response.status,503)
+  assert.equal(f.writes(),0);assert.equal(f.storageClients(),0)
 })
 test("valid requests get owner identity from auth; retry reopens the same owned design", async () => {
   let f = setup()

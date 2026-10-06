@@ -11,6 +11,7 @@ See FORMAT.md for the exact accepted fields. Renderers live in `components/secti
 | features | features-section; heading, add/edit/reorder/delete feature items | Grid / columns / showcase / compact / cards / band |
 | faq | faq-section; heading, subtitle, add/edit/reorder/delete questions | Native shared layout arrangement, with expandable questions |
 | cta | cta-section; title, subtitle, primary/secondary buttons and destinations | Centered / split / banner / centered / split / banner |
+| footer | footer-section; company copy and columns of page/section/external links | Shared footer or page-local footer, without conflicting shared slots |
 
 The preview uses SectionRenderer, the same theme resolver and section defaults as EditorCanvas, inside an iframe with its own responsive viewport. No editor-specific source HTML is generated. Preview links stay inside the preview; external destinations are disabled.
 
@@ -21,7 +22,9 @@ Native database mapping:
 - features/FAQ items → fresh stable UUIDs for ordinary editing and future translations.
 - images → managed library URLs; imported files and provenance are not stored.
 
-Outside v1: services/booking, contact and request forms, prices, reviews, team, map, opening hours, footer, translations, transitions, logo uploads, arbitrary embedded widgets, custom CSS/HTML and external scripts. Use about/features/FAQ/CTA only where the meaning remains accurate. Add other native sections afterward in the editor. Never invent controls or silently replace a booking form with a functioning reservation system.
+Outside the import subset: functional services/booking, contact and request forms, reviews, maps, translations, transitions, logo uploads, arbitrary embedded widgets, custom CSS/HTML and external scripts. Preserve factual service/contact/pricing/team/opening-hours copy with about/features/FAQ where accurate; report functional setup separately. Add native forms/booking afterward in the editor. Never invent controls or silently replace a booking form with a functioning reservation system.
+
+For v2, `pages` become website_pages, section `pageKey` becomes page_id, and shared scopes have no page_id. Temporary page and section link keys are normalized together. The URL converter emits one shared native page menu and separate editable content per selected page; nested source paths are deliberately flattened and reported for redirect review.
 
 Known approximations: supported font pairs and layout presets only, native spacing/radius behavior, native image cropping, still images re-encoded as WebP, and Dutch system labels. Theme settings affect each component only where that renderer uses them. Record visual differences in the human handoff, not in extra JSON fields.
 

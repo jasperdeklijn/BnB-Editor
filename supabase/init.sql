@@ -6685,11 +6685,11 @@ begin
   for page in select value from jsonb_array_elements(p_pages) loop
     if (page->>'isHome')::boolean then
       input_home=(page->>'id')::uuid;
-      update public.website_pages set title=page->>'title',show_in_navigation=coalesce((page->>'showInNavigation')::boolean,true) where id=home_id;
+      update public.website_pages set title=page->>'title',show_in_navigation=coalesce((page->>'showInNavigation')::boolean,true),seo=coalesce(page->'seo','{}') where id=home_id;
     else
-      insert into public.website_pages(id,website_id,title,slug,position,show_in_navigation,include_in_publication)
+      insert into public.website_pages(id,website_id,title,slug,position,show_in_navigation,include_in_publication,seo)
       values((page->>'id')::uuid,p_design_id,page->>'title',page->>'slug',(select max(position)+1 from public.website_pages where website_id=p_design_id),
-        coalesce((page->>'showInNavigation')::boolean,true),coalesce((page->>'includeInPublication')::boolean,false));
+        coalesce((page->>'showInNavigation')::boolean,true),coalesce((page->>'includeInPublication')::boolean,false),coalesce(page->'seo','{}'));
     end if;
   end loop;
   mapping=jsonb_build_object('page:'||input_home,'page:'||home_id);

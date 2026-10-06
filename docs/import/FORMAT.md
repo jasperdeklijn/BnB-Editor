@@ -1,4 +1,14 @@
-# FlexPagina import v1
+# FlexPagina import v1 and multipage v2
+
+## Multipage contract (v2)
+
+Use `version: 2` and `pages` for URL-to-website conversions. Each page has a unique temporary `key`, `title`, `slug`, `isHome`, optional `showInNavigation`, `includeInPublication`, and optional `seo: {title, description}`. Exactly one Home has `isHome: true` and an empty slug. Other slugs are unique, flat, lowercase hyphenated paths; reserved locale/system routes are rejected. Page SEO is copied into the draft, including Home.
+
+Each normal section has `pageKey` and `scope: "page"` (default). A shared navigation uses `scope: "site_header"`; a shared footer uses `scope: "site_footer"`; both omit `pageKey`. There can be at most one of each shared slot, and no conflicting page-local nav/footer. Empty shared `navLinks` activates native page navigation. Footer content accepts `companyName`, optional `companyDescription`, and `columns: [{title, links: [{label, href}]}]`.
+
+Button/footer targets support `page:<page-key>` and `section:<page-key>:<section-key>`. Same-page `#section-key` remains supported. The parser checks ownership of all references and normalization replaces temporary keys with fresh native page/section UUIDs. Pages remain separate through preview, saving and normal canvas editing. Website creation never publishes; the URL converter initially excludes non-Home pages from publication so owners can review them.
+
+The general import contract permits up to 40 pages and 40 total sections; automated URL conversion reads at most **8 selected pages** and uses at most 8 distinct images. Source URLs and AI provenance belong to the separate review report, never inside the strict import document. Saving v2 requires `multipage_contract_version() = 3`; otherwise the API returns 503 before asset uploads or design creation. The existing v1 fields below remain valid for single-page files.
 
 The executable contract is `lib/import/schema.ts`. The browser, API and CLI use the same parser and normalizer. This is an external format, not a database dump.
 

@@ -1,37 +1,31 @@
-# Codex URL-to-JSON procedure
+# URL to editable FlexPagina pages
 
-This is developer-operated, not a customer-facing crawler. Repository access does not grant permission to change customer accounts.
+## Owner workflow
 
-1. Receive the public URL and explicit confirmation that the requester owns the site or has permission to reuse its text and images. If missing, ask for it before copying content. Respect crawl restrictions; do not enter private or login-only areas.
-2. Read FORMAT.md and COMPONENTS.md plus repository instructions. Inspect the source with browser tooling at desktop and mobile sizes. Record meaningful copy, section order, colors, font choices, layout, button destinations and authorized image URLs.
-3. Map the content to supported native sections. Use stable human section keys and #key references. Keep approximations/unsupported content in a separate human report. Do not invent controls, reviews, prices, or booking behavior.
-4. Write one local `imports/<descriptive-name>.json` file, with format flexpagina/version 1. This is the deliverable, not customer upload storage. Never write it to the database or customer storage and never publish it. Do not commit real third-party copy/assets into the repository examples.
-5. Run `npm run validate-import -- imports/<descriptive-name>.json`. Fix every field error until exit status 0.
-6. Start the local app with `npm run dev`; open `/import-preview`. Select the file and confirm authorized reuse to load the real renderer and source image previews. Check desktop and mobile, click internal navigation and FAQ controls. Check every image status. This route cannot save a design. External preview button navigation is intentionally disabled.
-7. Compare with the authorized source. Make up to two useful correction passes, rerun validation and reload the file after each pass. Report all unsupported content, missing/failed images, font/layout/cropping differences and verification limitations.
-8. Hand the requester a link to the local JSON. They choose an account and use **Import JSON** in the normal editor to create a new draft. Importing does not publish.
+Open `/editor/import`, enter the final public HTTPS website URL and confirm ownership or permission to reuse the content and images, including processing the selected public pages through our AI provider. **Pagina's zoeken** reads Home and lists same-domain links. Select up to eight pages, including Home; add a missing same-domain address manually. **Gekozen pagina's omzetten** reads the selected pages and produces a validated FlexPagina v2 document.
 
-Example prompt:
+Review the source-to-page mapping, warnings and actual component preview. Switch the page tabs and desktop/mobile preview. Download the generated JSON if desired. **Nieuw concept maken** uses the existing authenticated import flow, image library, quotas and atomic creation. It does not publish or replace a live website. Non-Home pages start excluded from publication; review and include them in the editor before publishing.
 
-```text
-Create a FlexPagina import JSON from https://example-bnb.nl.
-I confirm I own this site or have permission to reuse its text and images.
-Read docs/import/FORMAT.md, COMPONENTS.md and URL_TO_JSON.md.
-Use only supported editor sections and settings. Match the original content,
-section order and overall look on desktop and mobile as closely as the editor allows.
-Save imports/example-bnb.json. Validate it with npm run validate-import -- imports/example-bnb.json,
-preview it at /import-preview without saving or publishing, make up to two corrections, and report gaps.
-Do not change any production website or customer account.
-```
+The source copy, headings, SEO and selected images are mapped to native nav, hero, about, gallery, features, FAQ, CTA and footer sections. Selected-page links use native page/section references. Forms, booking/payment widgets, translations, login areas and arbitrary JavaScript/CSS are not executable imports; warnings identify manual work. This is a content migration and visual approximation, not a pixel-perfect browser clone.
 
-## Verification before release
-Use a local or isolated preview Supabase database with the import migration and existing ownership/quota policies. Never point a mutation test at a production customer account.
+## Server configuration and boundaries
 
-- Sign in as a test user with two designs. Import bnb.json, preview both sizes, create the draft, edit a title in the normal inspector, reload and confirm persistence.
-- Verify exactly one additional website, published=false, live_snapshot=null; existing website/sections and live snapshot unchanged.
-- Cancel and upload malformed/future-version/unsupported-field files: no API save, database or storage writes.
-- Use a controlled authorized image fixture. Verify every stored image URL belongs to user-images, thumbnail and metadata appear in the normal library, and no source URLs remain.
-- Reject private IP, mixed public/private DNS, redirect-to-private, oversized/truncated/animated images and excess images. Force upload/quota/RPC failures and check cleanup and no partial website.
-- Retry the same confirmation after simulating a lost response: one new design only. Try an unauthenticated API call and verify 401; use a second user to verify draft/section isolation.
-- Run npm run test:import, npm run typecheck, npm run lint and relevant existing tests. Report the distinction between local tests, browser preview checks, and any live authenticated flow that could not be performed.
+Use Node 24 to install dependencies and run/build the app (the AI SDK requires Node 22 or newer; the system Node 20 development process cannot run this endpoint). Configure server-only `AI_GATEWAY_API_KEY` (or Vercel OIDC); `AI_WEBSITE_IMPORT_MODEL` optionally overrides the default model. The provider receives only extracted public source data from selected pages. Discovery works without AI configuration; generation returns 503 when it is missing. Gateway authentication/quota failures return a safe error without credential-bearing provider diagnostics.
 
+`POST /api/websites/import-url` requires authenticated ownership context, same-origin JSON requests and literal consent. Limits are ten discovery requests and three generations per user per hour; unavailable production rate limiting fails closed. HTML fetches require public HTTPS on port 443, validate all DNS answers, pin the resolved address to TLS, recheck redirects and reject cross-origin redirects. Fetches carry no source cookies or login credentials. robots.txt restrictions and crawl delays are respected, including redirected destinations. Sources are bounded to 1 MB HTML each, 16,000 extracted text characters each, eight pages, a 45-second crawl budget and a 110-second overall conversion deadline.
+
+Only server-rendered public HTML is read. JavaScript-only websites, blocked crawlers, non-HTML URLs, excessive crawl delays or unsupported encodings require manual preparation. Discovery only sees links in the first page, not a recursive whole-site crawl. Static colors/fonts are hints; stylesheet-driven appearance and missing image formats may need editing. Nested paths become flat page slugs; old URL redirects must be reviewed separately.
+
+Saving v2 also requires the complete multipage operations migration (`20261006162718_multipage_operations_and_publication.sql`, contract version 3). Missing migration returns a clear 503 before creating images or designs. Do not run destructive `supabase/init.sql` on hosted data. Roll out the migration through the documented staging/release process.
+
+## Developer-operated fallback
+
+Receive explicit source reuse authorization first. Read FORMAT.md, COMPONENTS.md and repository instructions. Inspect authorized public source pages and write a local `imports/<name>.json` with `version: 2`, separate page keys, one Home, shared navigation/footer and typed internal links. Report unsupported elements honestly. Never commit third-party content into repository examples.
+
+Run `pnpm validate-import -- imports/<name>.json`. Preview it at `/import-preview` without saving; check each page, source image status, desktop/mobile and internal navigation. Make corrections and validate again. Deliver the JSON for an owner to create a new draft. A manual one-page v1 file is still accepted; multipage imports must use v2.
+
+## Verification
+
+Run `pnpm test`, `pnpm typecheck`, `pnpm lint` and `pnpm build` with Node 24. `tests/import-url.test.mjs` covers extraction, redirects/robots, selection boundaries, AI contract integrity, SEO, image provenance, consent/auth/origin/rate limits and read-only conversion results. The existing import/image/SQL tests cover safe image ingestion and atomic multipage saving; the SQL import test includes Home and non-Home SEO.
+
+For an explicit controlled provider smoke, use `node --env-file=.env --env-file=.env.local scripts/smoke-website-ai.cjs`. It submits only synthetic fixture copy, writes a local validated JSON if successful and prints sanitized metadata. It does not crawl a third-party website or write a customer design. Provider availability, authenticated hosted draft creation and publication require separate recorded evidence; passing local mocks does not prove them.

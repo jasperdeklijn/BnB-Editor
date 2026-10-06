@@ -102,11 +102,13 @@ test("multipage import is atomic and remaps the generated Home link without flat
   try {
     const id="00000000-0000-0000-0000-000000000081", home="00000000-0000-0000-0000-000000000082", about="00000000-0000-0000-0000-000000000083", section="00000000-0000-0000-0000-000000000084"
     const sections=[{id:section,pageId:about,scope:"page",type:"hero",data:{title:"About",ctaHref:`page:${home}`},styles:{}}]
-    const pages=[{id:home,title:"Home",slug:"",isHome:true},{id:about,title:"About",slug:"about",isHome:false}]
+    const pages=[{id:home,title:"Home",slug:"",isHome:true,seo:{title:"Home SEO"}},{id:about,title:"About",slug:"about",isHome:false,seo:{description:"About SEO"}}]
     await db.query("select create_multipage_imported_design($1,'Imported','{}',$2,'[]',$3)",[id,sections,pages])
     const savedHome=(await db.query("select id from website_pages where website_id=$1 and is_home",[id])).rows[0].id
     const saved=(await db.query("select page_id,content from website_sections where id=$1",[section])).rows[0]
     assert.equal(saved.page_id,about); assert.equal(saved.content.ctaHref,`page:${savedHome}`)
+    assert.equal((await db.query("select seo from website_pages where id=$1",[savedHome])).rows[0].seo.title,"Home SEO")
+    assert.equal((await db.query("select seo from website_pages where id=$1",[about])).rows[0].seo.description,"About SEO")
     assert.equal((await db.query("select count(*)::int n from website_pages where website_id=$1",[id])).rows[0].n,2)
   } finally { await db.close() }
 })

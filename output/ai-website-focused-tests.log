@@ -1,0 +1,20 @@
+✔ API authenticates and gates consent/origin/rate limits before writes (13.4919ms)
+✔ API rejects malformed/oversized/unknown fields without creating assets or designs (18.6131ms)
+✔ multipage saving requires the complete database contract before storage or creation (3.0473ms)
+✔ valid requests get owner identity from auth; retry reopens the same owned design (13.0356ms)
+✔ source extraction removes executable content and limits discovery to useful same-domain pages (6.3482ms)
+✔ source fetching validates redirects and robots BEFORE reading destination (4.4026ms)
+✔ multipage reading rejects cross-domain selections, more than eight pages and JS-only sources (8.9634ms)
+✔ AI contract preserves pages, source SEO and internal section references with draft inclusion (12.7631ms)
+✔ AI rejects missing pages, empty page content and invented images (5.024ms)
+✔ page planning handles reserved and duplicate slugs without creating conflicting routes (2.056ms)
+✔ URL API authenticates, requires consent, rejects foreign origins and fails closed on unavailable limiter (17.0095ms)
+✔ URL API discovery and generation only return a reviewable document (13.2586ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2428.1109

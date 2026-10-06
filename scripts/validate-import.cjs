@@ -7,7 +7,7 @@ try {
   if (fs.statSync(file).size > MAX_IMPORT_BYTES) throw new Error("bestand: Maximaal 2 MB.")
   const doc = parseImport(fs.readFileSync(file, "utf8"))
   const design = normalizeImport(doc, require("node:crypto").randomUUID)
-  console.log(`Geldig FlexPagina v1-bestand: ${design.sections.length} bewerkbare secties.`)
+  console.log(`Geldig FlexPagina v${doc.version}-bestand: ${design.pages?.length ?? 1} pagina's, ${design.sections.length} bewerkbare secties.`)
 } catch (error) {
   console.error(error instanceof Error ? error.message : "Validatie mislukt.")
   process.exitCode = 1

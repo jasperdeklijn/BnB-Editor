@@ -5,7 +5,6 @@ import { WebsiteLink } from "@/components/editor/website-links-context"
 import { SectionIcon } from "./section-icon"
 
 import type React from "react"
-import Link from "next/link"
 
 import { EditableText } from "@/components/editor/inline-editable-text"
 import type { Section, SectionStyles, SectionType } from "@/lib/types"
@@ -71,7 +70,7 @@ export function FooterSection({ data, isPreview, styles, onUpdate, allSections }
             {columns.map((column, columnIndex) => <div key={columnIndex}>
               <EditableText as="h4" data={editableData} path={["columns", columnIndex, "title"]} value={column.title} isPreview={isPreview} onUpdate={onUpdate} className="mb-4 text-sm font-semibold" />
               <ul className="flex flex-wrap gap-x-5 gap-y-2 md:flex-col">
-                {column.links.map((link, linkIndex) => <li key={`${link.href}-${linkIndex}`}><Link href={resolveHref(link.href)} className="text-sm opacity-75 transition hover:text-[var(--section-accent)] hover:opacity-100"><EditableText data={editableData} path={["columns", columnIndex, "links", linkIndex, "label"]} value={link.label} isPreview={isPreview} onUpdate={onUpdate} /></Link></li>)}
+                {column.links.map((link, linkIndex) => <li key={`${link.href}-${linkIndex}`}><WebsiteLink href={resolveHref(link.href)} className="text-sm opacity-75 transition hover:text-[var(--section-accent)] hover:opacity-100"><EditableText data={editableData} path={["columns", columnIndex, "links", linkIndex, "label"]} value={link.label} isPreview={isPreview} onUpdate={onUpdate} /></WebsiteLink></li>)}
               </ul>
             </div>)}
           </div> : null}

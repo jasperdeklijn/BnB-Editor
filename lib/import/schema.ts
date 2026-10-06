@@ -47,7 +47,8 @@ export const importSchema = z.object({
   format: z.literal("flexpagina"),
   version: z.union([z.literal(1), z.literal(2)]),
   pages: z.array(z.object({ key, title: text(80).trim().min(1), slug: z.string().max(80), isHome: z.boolean().default(false),
-    includeInPublication: z.boolean().default(false), showInNavigation: z.boolean().default(true) }).strict()).min(1).max(40).optional(),
+    includeInPublication: z.boolean().default(false), showInNavigation: z.boolean().default(true),
+    seo: z.object({title:text(200).optional(),description:text(500).optional()}).strict().optional() }).strict()).min(1).max(40).optional(),
   title: heading,
   theme: z.object({
     paletteId: z.string().refine((id) => COLOR_PALETTES.some((p) => p.id === id), "Onbekend kleurenpalet.").default("forest-green"),
@@ -163,7 +164,7 @@ export function getImportImages(doc: ImportDocument): string[] {
     ...(section.type === "gallery" || section.type === "about" ? section.content.images : []),
   ]))]
 }
-export function normalizeImport(doc: ImportDocument, makeId: () => string): { title: string; theme: ImportDocument["theme"]; sections: Array<Section & { pageId?: string }>; pages?: Array<{ id: string; title: string; slug: string; isHome: boolean; includeInPublication: boolean; showInNavigation: boolean }> } {
+export function normalizeImport(doc: ImportDocument, makeId: () => string): { title: string; theme: ImportDocument["theme"]; sections: Array<Section & { pageId?: string }>; pages?: Array<{ id: string; title: string; slug: string; isHome: boolean; includeInPublication: boolean; showInNavigation: boolean; seo?: {title?:string;description?:string} }> } {
   const ids = new Map(doc.sections.map((section) => [section.key, makeId()]))
   const pageIds = new Map((doc.pages ?? []).map((page) => [page.key, makeId()]))
   const mapTarget = (target: string) => target.startsWith("#") ? `#section-${ids.get(target.slice(1))}`
