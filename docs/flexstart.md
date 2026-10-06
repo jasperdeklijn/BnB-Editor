@@ -25,6 +25,8 @@ FlexStart gebruikt de bestaande procedure voor URL-naar-JSON en de bestaande imp
 
 Een verwijderd gekoppeld concept zet de aanvraag terug naar **In behandeling**, zodat opnieuw importeren mogelijk blijft. Een nieuwe import maakt steeds een nieuw concept; oude concepten worden niet automatisch verwijderd.
 
+Als het klantaccount nog geen bedrijfsprofiel heeft, maakt de import dit aan met de bedrijfsnaam, plaats en bronwebsite uit de bevestigde intake. Het profiel en het concept worden binnen dezelfde transactie opgeslagen: een mislukte import laat geen leeg profiel achter. Een bestaand bedrijfsprofiel wordt hergebruikt zonder de klantgegevens te overschrijven.
+
 ## Wat FlexCheck bewijst
 
 De twaalf punten tonen gereed, aanbevolen of vereist. De controle zoekt opgeslagen bedrijfs- en contactgegevens, een actieve knop met doel, een ingesteld formulier, een geselecteerde dienst, beeldverwijzingen, SEO, plaatsnaam, beschikbare mobiele preview, privacylink, domeinregistratie en een testaanvraag.
@@ -35,6 +37,7 @@ De score bewijst geen beeldkwaliteit, bereikbaarheid van alle links, juridische 
 
 - [ ] Pas eerst `supabase/migrations/20260927181522_flexstart_managed_transfers.sql` toe op de bedoelde omgeving. Gebruik nooit het destructieve `supabase/init.sql` voor een bestaande database.
 - [ ] Controleer dat de bestaande import-, afbeeldings-, formulierbestemmings- en draft-version-migraties aanwezig zijn.
+- [ ] Pas na de multipage-migraties `supabase/migrations/20261006200637_flexstart_import_business_profile.sql` toe. Deze herstelt `Customer business required` voor FlexStart-aanvragen zonder bedrijfsprofiel; er is geen losse reparatie van klantgegevens nodig.
 - [ ] Controleer bestaande Supabase-configuratie, service-roletoegang en de bestaande admin-autorisatie. Er zijn geen nieuwe secrets nodig.
 - [ ] Controleer `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS` en eventueel `SMTP_FROM` voor de testmail. Gebruik voor testen een geïsoleerde mailbox.
 - [ ] Deploy daarna de applicatie. De publicatie-API verwacht de FlexStart-tabel; zonder migratie meldt die tijdelijk onbeschikbaar.
@@ -54,3 +57,11 @@ De score bewijst geen beeldkwaliteit, bereikbaarheid van alle links, juridische 
 - [ ] Ontvangst van testmail en het gepubliceerde contactformulier controleren; domein/DNS en bereikbaarheid testen.
 
 Lokale controles: `pnpm test`, `pnpm lint`, `pnpm typecheck` en `pnpm build`. De browsertest gebruikt geen productieaanvragen en verstuurt geen echte e-mail.
+
+### Importfout van 6 oktober 2026
+
+De aanvraag `1acb0a36-e3cf-4e42-bc63-3bb0f8958b8f` had toestemming, status `processing` en geen gekoppeld concept, maar de eigenaar had geen bedrijfsprofiel. De productielogs bevestigden `Customer business required`. `imports/duynhoven/duynhoven-multipage.json` is een geldig v2-bestand met vijf pagina's en 21 secties. De algemene API-foutafhandeling verborg de databasefout achter een 500-respons.
+
+De additieve reparatie maakt het ontbrekende profiel aan tijdens de import en behoudt de bestaande uitsluitend-servertoegang. De API retourneert gerichte, veilige meldingen voor bekende importproblemen en logt alleen de databasefoutcode en het soort import, zonder klantinhoud. `tests/flexstart-import.test.mjs` reproduceert de oude databasefout en controleert daarna het echte genormaliseerde bestand, rollback, profielhergebruik en toegangsrechten. Dit bewijst de database-import lokaal; remote afbeeldingsdownloads en de ingelogde productieknop moeten na uitrol afzonderlijk worden gecontroleerd.
+
+Productie is tijdens dit onderzoek alleen gelezen. Pas de reparatiemigratie toe op de bedoelde database, deploy de API-aanpassing en probeer vervolgens de knop opnieuw. Gebruik hiervoor nooit `supabase/init.sql`.

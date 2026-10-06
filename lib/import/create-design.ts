@@ -4,6 +4,10 @@ import { getImportImages, normalizeImport, replaceImportImages, type ImportDocum
 import { decodeImportImage, fetchRemoteImage, MAX_REMOTE_TOTAL_BYTES } from "./remote-images"
 import { USER_IMAGES_BUCKET } from "../user-images"
 
+export class ImportCreationError extends Error {
+  constructor(message: string, public status = 422) { super(message) }
+}
+
 type Dependencies = {
   db: SupabaseClient
   storage: SupabaseClient
@@ -51,7 +55,7 @@ export async function createImportedDesign({ db, storage, userId, designId, docu
         urls.set(source, bucket.getPublicUrl(originalPath).data.publicUrl)
       } catch {
         // No source URL, response body, or customer text in errors/logs.
-        throw new Error(`Afbeelding ${index + 1} kon niet worden geïmporteerd. Controleer de openbare URL, het formaat en de limieten; probeer opnieuw of annuleer.`)
+        throw new ImportCreationError(`Afbeelding ${index + 1} kon niet worden geïmporteerd. Controleer de openbare URL, het formaat en de limieten; probeer opnieuw of annuleer.`)
       }
     }
     signal.throwIfAborted()
@@ -66,9 +70,11 @@ export async function createImportedDesign({ db, storage, userId, designId, docu
     if (error) {
       // A database error with a SQLSTATE means the transaction was rolled back.
       if (/^[0-9A-Z]{5}$/.test(error.code ?? "") && !error.code.startsWith("PGRST")) rpcStarted = false
-      throw new Error(error.message.includes("USER_IMAGE_QUOTA_EXCEEDED")
-        ? "Je opslaglimiet van 500 MB is bereikt."
-        : "Het ontwerp kon niet worden aangemaakt. Controleer of de importmigratie is toegepast en probeer opnieuw.")
+      console.error("[import] Design creation failed", { code: error.code, transfer: !!transfer, multipage: !!design.pages })
+      if (error.message.includes("USER_IMAGE_QUOTA_EXCEEDED")) throw new ImportCreationError("Je opslaglimiet van 500 MB is bereikt.")
+      if (error.message.includes("Customer business required")) throw new ImportCreationError("Het bedrijfsprofiel van de klant ontbreekt. Pas de FlexStart-bedrijfsprofielmigratie toe en probeer opnieuw.", 409)
+      if (error.message.includes("Invalid transfer")) throw new ImportCreationError("De aanvraag is gewijzigd. Vernieuw de pagina en probeer opnieuw.", 409)
+      throw new ImportCreationError("Het ontwerp kon niet worden aangemaakt. Controleer of de importmigratie is toegepast en probeer opnieuw.", 503)
     }
     return designId
   } catch (error) {

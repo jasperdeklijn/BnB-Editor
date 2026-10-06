@@ -1,6 +1,6 @@
 import { z } from "zod"
 import { flexContext, ownedTransfer, flexResponse, FlexError, sameOrigin, readBody } from "@/lib/flexstart/server"
-import { createImportedDesign } from "@/lib/import/create-design"
+import { createImportedDesign, ImportCreationError } from "@/lib/import/create-design"
 import { parseImport, ImportValidationError, MAX_IMPORT_BYTES } from "@/lib/import/schema"
 import { checkRateLimit } from "@/lib/rate-limit"
 
@@ -31,6 +31,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     return Response.json({ websiteId }, { status: 201 })
   } catch (error) {
     if (error instanceof ImportValidationError) return Response.json({ error: "Controleer het JSON-bestand.", issues: error.issues }, { status: 400 })
+    if (error instanceof ImportCreationError) return Response.json({ error: error.message }, { status: error.status })
     return flexResponse(error)
   }
 }

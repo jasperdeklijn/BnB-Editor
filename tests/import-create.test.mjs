@@ -57,3 +57,15 @@ test("ambiguous commit with unavailable database never deletes possibly referenc
   assert.deepEqual(f.removed, [])
 })
 
+test("known import failures preserve actionable messages and clean rolled-back assets", async () => {
+  for (const [message, status, expected] of [
+    ["Customer business required", 409, /bedrijfsprofiel/],
+    ["Invalid transfer", 409, /aanvraag is gewijzigd/],
+    ["missing function", 503, /importmigratie/],
+  ]) {
+    const f = fixture({ rpcError: { code: "P0001", message } })
+    await assert.rejects(createImportedDesign(f.args), (error) => error.status === status && expected.test(error.message))
+    assert.deepEqual(f.removed, f.uploaded)
+  }
+})
+
