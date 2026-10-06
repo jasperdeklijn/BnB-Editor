@@ -13,6 +13,7 @@ import type { WebsiteAnalyticsFields, WebsiteSeoFields } from "@/lib/seo/metadat
 
 interface SeoEssentialsClientProps {
   websiteId: string
+  pageId?: string
   businessId?: string | null
   initialSeo?: WebsiteSeoFields | null
   initialAnalytics?: WebsiteAnalyticsFields | null
@@ -21,6 +22,7 @@ interface SeoEssentialsClientProps {
 
 export function SeoEssentialsClient({
   websiteId,
+  pageId,
   businessId,
   initialSeo,
   initialAnalytics,
@@ -50,10 +52,17 @@ export function SeoEssentialsClient({
     setHeaderSaving(true)
     setStatus(null)
     const supabase = createClient()
+    if (pageId) {
+      const { error } = await supabase.from("website_pages").update({ seo }).eq("id", pageId).eq("website_id", websiteId)
+      if (error) {
+        setIsSaving(false); setHeaderSaving(false); setSaveState("error")
+        setStatus({ tone: "error", text: "Opslaan van pagina-SEO is mislukt." }); return
+      }
+    }
 
     const { error: websiteError } = await supabase
       .from("websites")
-      .update({ seo, analytics, updated_at: new Date().toISOString() })
+      .update({ ...(pageId ? {} : { seo }), analytics, updated_at: new Date().toISOString() })
       .eq("id", websiteId)
 
     if (websiteError) {
@@ -88,7 +97,8 @@ export function SeoEssentialsClient({
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
       <div className="space-y-6">
         <Card className="p-6">
-          <h2 className="text-lg font-semibold">SEO en deelinformatie</h2>
+          <h2 className="text-lg font-semibold">{pageId ? "Pagina-SEO en deelinformatie" : "Websitebrede SEO-standaarden"}</h2>
+          {pageId ? <p className="mt-2 text-sm text-muted-foreground">Lege velden gebruiken de websitebrede standaard. Het canonieke webadres volgt automatisch het pagina-adres.</p> : null}
           <div className="mt-4 space-y-4">
             <div>
               <Label htmlFor="seo-title">SEO titel</Label>
@@ -104,7 +114,7 @@ export function SeoEssentialsClient({
             </div>
             <div>
               <Label htmlFor="seo-canonical">Canonieke URL</Label>
-              <Input id="seo-canonical" value={seo.canonicalUrl ?? ""} onChange={(event) => updateSeo("canonicalUrl", event.target.value)} />
+              <Input id="seo-canonical" disabled={Boolean(pageId)} value={pageId ? "Volgt het pagina-adres" : seo.canonicalUrl ?? ""} onChange={(event) => updateSeo("canonicalUrl", event.target.value)} />
             </div>
           </div>
         </Card>

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useMemo, useRef, useState } from "react"
+import React, { useEffect, useId, useMemo, useRef, useState } from "react"
 import { BookOpen, CheckCircle2, Trash2, GripVertical, ChevronUp, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Section, SectionType, Transition } from "@/lib/types"
@@ -9,6 +9,7 @@ import {
 } from "@/lib/business-naming"
 import { getDefaultSectionData as getRegistryDefaultSectionData, getSectionDefinition } from "@/components/editor/section-registry"
 import { SectionRenderer, TransitionWrapper } from "./section-renderer"
+import { EditorPagePanel, EditorPageSelector } from "./editor-pages-workspace"
 import { applyThemeDefaultsToSection, resolveWebsiteTheme, type ResolvedTheme, type ThemeConfig } from "@/lib/themes"
 import type { BusinessCategory } from "@/lib/business/categories"
 
@@ -51,6 +52,7 @@ export function EditorCanvas({
   isDraggingImageExternal = false,
   onStartTutorial,
 }: EditorCanvasProps) {
+  const pagePanelId = useId()
   const [tutorialDismissed, setTutorialDismissed] = useState(false)
   const sectionRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const canvasRef = useRef<HTMLElement | null>(null)
@@ -477,10 +479,11 @@ export function EditorCanvas({
   return (
     <main
       ref={canvasRef}
-      className="flex-1 overflow-auto bg-muted"
+      className="min-w-0 flex-1 overflow-auto bg-muted"
       onDragOver={handleDragOver}
     >
-      <div className={isPreview ? "" : "p-3 sm:p-4 md:p-8"}>
+      <EditorPageSelector panelId={pagePanelId} />
+      <EditorPagePanel id={pagePanelId} className={isPreview ? "" : "p-3 sm:p-4 md:p-8"}>
         <div className={`mx-auto ${getDeviceWidth()} transition-all duration-300`}>
           {!isPreview && sections.length === 0 && !tutorialDismissed && (
             <div
@@ -540,7 +543,8 @@ export function EditorCanvas({
           <div className="website-theme-scope" style={themeScopeStyle}>
           {themedSections.map((section, i) => {
             const next = themedSections[i + 1]
-            const transitionCandidate = next
+            const shared = Boolean(section.scope && section.scope !== "page")
+            const transitionCandidate = next && !shared && (!next.scope || next.scope === "page")
               ? transitionsByPair.get(`${section.id}:${next.id}`) ?? null
               : null
             const transitionToNext = transitionCandidate?.type !== "none" ? transitionCandidate : null
@@ -561,7 +565,7 @@ export function EditorCanvas({
                     draggingSectionIndex === i ? "opacity-50" : ""
                   } ${showImageDropTargets ? "rounded-lg ring-2 ring-primary/50 ring-offset-2" : ""
                   } transition-all duration-200`}
-                  draggable={!isPreview}
+                  draggable={!isPreview && !shared}
                   tabIndex={isPreview ? undefined : 0}
                   onClickCapture={(event) => {
                     if (isPreview) return
@@ -596,6 +600,7 @@ export function EditorCanvas({
                         className="h-11 w-11 cursor-grab active:cursor-grabbing popup-btn md:h-7 md:w-7"
                         aria-label={`${sectionLabel} verslepen`}
                         title={`${sectionLabel} verslepen`}
+                        disabled={shared}
                       >
                         <GripVertical className="h-4 w-4" />
                       </Button>
@@ -604,7 +609,7 @@ export function EditorCanvas({
                         size="icon"
                         variant="ghost"
                         onClick={() => moveSectionAnimated(i, i - 1)}
-                        disabled={i === 0}
+                        disabled={shared || i === 0 || Boolean(sections[i - 1]?.scope && sections[i - 1].scope !== "page")}
                         className="h-11 w-11 popup-btn md:h-7 md:w-7"
                         aria-label={`${sectionLabel} omhoog verplaatsen`}
                         title={`${sectionLabel} omhoog verplaatsen`}
@@ -615,7 +620,7 @@ export function EditorCanvas({
                         size="icon"
                         variant="ghost"
                         onClick={() => moveSectionAnimated(i, i + 1)}
-                        disabled={i === sections.length - 1}
+                        disabled={shared || i === sections.length - 1 || Boolean(sections[i + 1]?.scope && sections[i + 1].scope !== "page")}
                         className="h-11 w-11 popup-btn md:h-7 md:w-7"
                         aria-label={`${sectionLabel} omlaag verplaatsen`}
                         title={`${sectionLabel} omlaag verplaatsen`}
@@ -638,12 +643,12 @@ export function EditorCanvas({
 
                   {isSelected && !isPreview ? (
                     <div className="pointer-events-none absolute left-3 top-3 z-10 rounded-full bg-primary px-2.5 py-1 text-[11px] font-medium text-primary-foreground shadow-sm">
-                      Geselecteerd: {sectionLabel}
+                      {section.scope && section.scope !== "page" ? "Gedeeld op alle pagina's: " : "Geselecteerd: "}{sectionLabel}
                     </div>
                   ) : null}
 
                   <div
-                    id={isPreview && section.type !== "nav" && section.type !== "footer" ? `section-${section.id}` : undefined}
+                    id={section.type !== "nav" && section.type !== "footer" ? `section-${section.id}` : undefined}
                     className={`${!isPreview ? "cursor-pointer rounded-lg border bg-background shadow-sm transition-all hover:shadow-md" : ""} ${
                       showImageDropTargets && !isPreview
                         ? "border-primary bg-primary/5 shadow-lg"
@@ -733,7 +738,7 @@ export function EditorCanvas({
           })}
           </div>
         </div>
-      </div>
+      </EditorPagePanel>
     </main>
   )
 }

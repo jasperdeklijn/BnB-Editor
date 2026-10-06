@@ -65,7 +65,10 @@ drop table if exists public.contact_request_reply_templates cascade;
 drop table if exists public.contact_requests cascade;
 drop table if exists public.audit_logs cascade;
 drop table if exists public.website_section_translations cascade;
+drop table if exists public.website_page_translations cascade;
+drop table if exists public.website_page_redirects cascade;
 drop table if exists public.website_locales cascade;
+drop table if exists public.website_pages cascade;
 drop table if exists public.website_visits cascade;
 drop table if exists public.service_translations cascade;
 drop table if exists public.business_translations cascade;
@@ -5962,3 +5965,857 @@ begin
 end $$;
 revoke all on function public.schedule_quote(uuid,uuid,uuid,timestamptz,timestamptz) from public,anon,authenticated;
 grant execute on function public.schedule_quote(uuid,uuid,uuid,timestamptz,timestamptz) to service_role;
+
+-- Multipage draft foundation
+-- Draft-page foundation. No legacy content is converted by this migration.
+-- On an existing installation, run the separately reviewed, scoped cleanup first.
+begin;
+
+do $$ begin
+  if exists (select 1 from public.website_sections)
+    or exists (select 1 from public.websites where live_snapshot is not null) then
+    raise exception 'Multipage: verwijder eerst de verouderde website-inhoud volgens docs/multipage-draft-rollout.md';
+  end if;
+end $$;
+
+create table public.website_pages (
+  id uuid primary key default gen_random_uuid(),
+  website_id uuid not null references public.websites(id) on delete cascade,
+  title text not null check (char_length(btrim(title)) between 1 and 80),
+  slug text not null,
+  position integer not null check (position >= 0),
+  is_home boolean not null default false,
+  show_in_navigation boolean not null default true,
+  include_in_publication boolean not null default false,
+  seo jsonb not null default '{}'::jsonb check (jsonb_typeof(seo) = 'object'),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (id, website_id),
+  unique (website_id, slug),
+  unique (website_id, position) deferrable initially deferred,
+  check ((is_home and slug = '' and position = 0 and include_in_publication)
+    or (not is_home and position > 0 and slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'
+      and char_length(slug) <= 80
+      and slug not in ('en','de','fr','nl','api','_next','site','preview','robots.txt','sitemap.xml')))
+);
+create unique index website_pages_one_home on public.website_pages(website_id) where is_home;
+alter table public.website_pages enable row level security;
+revoke all on public.website_pages from public, anon, authenticated;
+grant select, insert, update, delete on public.website_pages to authenticated;
+grant all on public.website_pages to service_role;
+create policy website_pages_owner on public.website_pages for all to authenticated
+  using (exists(select 1 from public.websites w where w.id = website_id and w.user_id = (select auth.uid())))
+  with check (exists(select 1 from public.websites w where w.id = website_id and w.user_id = (select auth.uid())));
+
+-- Stable identity and a mandatory Home page, also for direct Data API writes.
+create or replace function public.guard_website_page() returns trigger
+language plpgsql security invoker set search_path = public as $$
+begin
+  if tg_op = 'DELETE' then
+    if old.is_home and exists(select 1 from public.websites where id = old.website_id) then
+      raise exception 'De startpagina kan niet worden verwijderd';
+    end if;
+    return old;
+  end if;
+  if tg_op = 'UPDATE' and (new.website_id <> old.website_id or new.id <> old.id or new.is_home <> old.is_home) then
+    raise exception 'Pagina-identiteit en startpagina kunnen niet worden gewijzigd';
+  end if;
+  if exists(select 1 from public.website_locales where website_id = new.website_id and path_segment = new.slug) then
+    raise exception 'Dit webadres is gereserveerd voor een taal';
+  end if;
+  new.updated_at = now();
+  return new;
+end $$;
+create trigger guard_website_page before insert or update or delete on public.website_pages
+  for each row execute function public.guard_website_page();
+
+create or replace function public.initialize_website_home_page() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.website_pages(website_id,title,slug,position,is_home,include_in_publication)
+  values(new.id,'Home','',0,true,true);
+  return new;
+end $$;
+revoke all on function public.initialize_website_home_page() from public, anon, authenticated;
+create trigger initialize_website_home_page after insert on public.websites
+  for each row execute function public.initialize_website_home_page();
+-- Empty website shells are initialized; their old content is never backfilled.
+insert into public.website_pages(website_id,title,slug,position,is_home,include_in_publication)
+select id,'Home','',0,true,true from public.websites;
+
+alter table public.website_sections add column page_id uuid;
+alter table public.website_sections add column scope text not null default 'page'
+  check (scope in ('page','site_header','site_footer'));
+alter table public.website_sections add constraint website_sections_page_scope
+  check ((scope = 'page' and page_id is not null) or (scope <> 'page' and page_id is null));
+alter table public.website_sections add constraint website_sections_page_website_fkey
+  foreign key (page_id, website_id) references public.website_pages(id, website_id) on delete cascade;
+create index website_sections_page_order on public.website_sections(website_id,page_id,position);
+create unique index website_sections_one_shared_slot on public.website_sections(website_id,scope) where scope <> 'page';
+
+-- New single-page imports/templates explicitly land on Home when no page is supplied.
+create or replace function public.initialize_section_page() returns trigger
+language plpgsql security invoker set search_path = public as $$
+begin
+  if new.scope = 'page' and new.page_id is null then
+    select id into new.page_id from public.website_pages where website_id = new.website_id and is_home;
+  end if;
+  return new;
+end $$;
+create trigger initialize_section_page before insert on public.website_sections
+  for each row execute function public.initialize_section_page();
+
+create or replace function public.guard_section_page_identity() returns trigger
+language plpgsql security invoker set search_path = public as $$
+begin
+  if new.website_id <> old.website_id or new.page_id is distinct from old.page_id or new.scope <> old.scope then
+    raise exception 'Secties verplaatsen tussen pagina''s vereist een aparte verplaatsactie';
+  end if;
+  return new;
+end $$;
+create trigger guard_section_page_identity before update on public.website_sections
+  for each row execute function public.guard_section_page_identity();
+
+create or replace function public.guard_locale_page_path() returns trigger
+language plpgsql security invoker set search_path = public as $$
+begin
+  if exists(select 1 from public.website_pages where website_id=new.website_id and slug=new.path_segment) then
+    raise exception 'Dit taalpad wordt al door een pagina gebruikt';
+  end if;
+  return new;
+end $$;
+create trigger guard_locale_page_path before insert or update on public.website_locales
+  for each row execute function public.guard_locale_page_path();
+
+create or replace function public.bump_page_draft_version() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  update public.websites set draft_version = gen_random_uuid()
+    where id = case when tg_op = 'DELETE' then old.website_id else new.website_id end;
+  return null;
+end $$;
+revoke all on function public.bump_page_draft_version() from public, anon, authenticated;
+create trigger bump_page_draft_version after insert or update or delete on public.website_pages
+  for each row execute function public.bump_page_draft_version();
+
+create or replace function public.save_website_page(
+  p_website_id uuid, p_page_id uuid, p_title text, p_slug text,
+  p_show_in_navigation boolean, p_include_in_publication boolean
+) returns jsonb language plpgsql security invoker set search_path = public as $$
+declare result public.website_pages;
+begin
+  perform 1 from public.websites where id = p_website_id and user_id = auth.uid() for update;
+  if not found then raise exception 'Website niet gevonden'; end if;
+  if p_page_id is null then
+    insert into public.website_pages(website_id,title,slug,position,show_in_navigation,include_in_publication)
+    values(p_website_id,btrim(p_title),lower(btrim(p_slug)),
+      (select coalesce(max(position),0)+1 from public.website_pages where website_id=p_website_id),
+      p_show_in_navigation,p_include_in_publication) returning * into result;
+  else
+    update public.website_pages set title=btrim(p_title),slug=case when is_home then '' else lower(btrim(p_slug)) end,
+      show_in_navigation=p_show_in_navigation,
+      include_in_publication=case when is_home then true else p_include_in_publication end
+    where id=p_page_id and website_id=p_website_id returning * into result;
+    if not found then raise exception 'Pagina niet gevonden'; end if;
+  end if;
+  return to_jsonb(result);
+end $$;
+
+create or replace function public.reorder_website_pages(p_website_id uuid,p_page_ids uuid[])
+returns void language plpgsql security invoker set search_path = public as $$
+begin
+  perform 1 from public.websites where id=p_website_id and user_id=auth.uid() for update;
+  if not found then raise exception 'Website niet gevonden'; end if;
+  if p_page_ids is null or cardinality(p_page_ids) <> (select count(*) from public.website_pages where website_id=p_website_id)
+    or cardinality(p_page_ids) <> (select count(distinct id) from unnest(p_page_ids) id)
+    or exists(select 1 from unnest(p_page_ids) as input(id) where not exists(select 1 from public.website_pages p where p.id=input.id and p.website_id=p_website_id))
+    or not exists(select 1 from public.website_pages where id=p_page_ids[1] and website_id=p_website_id and is_home) then
+    raise exception 'Ongeldige paginavolgorde';
+  end if;
+  update public.website_pages p set position=ordered.pos-1
+    from unnest(p_page_ids) with ordinality as ordered(id,pos) where p.id=ordered.id and p.website_id=p_website_id;
+end $$;
+
+create or replace function public.delete_website_page(p_website_id uuid,p_page_id uuid)
+returns void language plpgsql security invoker set search_path = public as $$
+begin
+  perform 1 from public.websites where id=p_website_id and user_id=auth.uid() for update;
+  if not found then raise exception 'Website niet gevonden'; end if;
+  delete from public.website_pages where id=p_page_id and website_id=p_website_id;
+  if not found then raise exception 'Pagina niet gevonden'; end if;
+  update public.website_pages p set position=ordered.pos-1 from (
+    select id,row_number() over(order by position,id) as pos from public.website_pages where website_id=p_website_id
+  ) ordered where p.id=ordered.id;
+end $$;
+
+revoke all on function public.save_website_page(uuid,uuid,text,text,boolean,boolean),
+  public.reorder_website_pages(uuid,uuid[]),public.delete_website_page(uuid,uuid) from public, anon;
+grant execute on function public.save_website_page(uuid,uuid,text,text,boolean,boolean),
+  public.reorder_website_pages(uuid,uuid[]),public.delete_website_page(uuid,uuid) to authenticated;
+create or replace function public.reorder_page_sections(p_website_id uuid,p_page_id uuid,p_section_ids uuid[])
+returns void language plpgsql security invoker set search_path = public as $$
+begin
+  perform 1 from public.websites where id=p_website_id and user_id=auth.uid() for update;
+  if not found then raise exception 'Website niet gevonden'; end if;
+  if not exists(select 1 from public.website_pages where id=p_page_id and website_id=p_website_id)
+    or p_section_ids is null
+    or cardinality(p_section_ids) <> (select count(*) from public.website_sections where website_id=p_website_id and page_id=p_page_id)
+    or cardinality(p_section_ids) <> (select count(distinct id) from unnest(p_section_ids) id)
+    or exists(select 1 from unnest(p_section_ids) as input(id) where not exists(select 1 from public.website_sections s where s.id=input.id and s.website_id=p_website_id and s.page_id=p_page_id)) then
+    raise exception 'Ongeldige sectievolgorde';
+  end if;
+  update public.website_sections s set position=ordered.pos
+    from unnest(p_section_ids) with ordinality as ordered(id,pos) where s.id=ordered.id and s.page_id=p_page_id;
+end $$;
+revoke all on function public.reorder_page_sections(uuid,uuid,uuid[]) from public,anon;
+grant execute on function public.reorder_page_sections(uuid,uuid,uuid[]) to authenticated;
+
+create or replace function public.guard_page_transition() returns trigger
+language plpgsql security invoker set search_path = public as $$
+declare source_page uuid; target_page uuid;
+begin
+  select page_id into source_page from public.website_sections where id=new.from_section_id and website_id=new.website_id;
+  select page_id into target_page from public.website_sections where id=new.to_section_id and website_id=new.website_id;
+  if source_page is null or target_page is null or source_page <> target_page then
+    raise exception 'Een overgang moet tussen secties op dezelfde pagina staan';
+  end if;
+  return new;
+end $$;
+create trigger guard_page_transition before insert or update on public.section_transitions
+  for each row execute function public.guard_page_transition();
+-- Persist one page's structural edit atomically. Existing content stays under
+-- the editor save queue; new sections receive stable database IDs in this call.
+create or replace function public.save_page_structure(p_website_id uuid,p_page_id uuid,p_sections jsonb)
+returns jsonb language plpgsql security invoker set search_path = public as $$
+declare item jsonb; section_id uuid; ids uuid[] := '{}'; mapping jsonb := '{}'; pos integer := 0;
+begin
+  perform 1 from public.websites where id=p_website_id and user_id=auth.uid() for update;
+  if not found then raise exception 'Website niet gevonden'; end if;
+  if not exists(select 1 from public.website_pages where id=p_page_id and website_id=p_website_id) then
+    raise exception 'Pagina niet gevonden';
+  end if;
+  if jsonb_typeof(p_sections) is distinct from 'array' or jsonb_array_length(p_sections) > 100 then
+    raise exception 'Ongeldige secties';
+  end if;
+  if exists(select 1 from jsonb_array_elements(p_sections) v group by v->>'id' having count(*)>1) then
+    raise exception 'Dubbele sectie-identiteit';
+  end if;
+  for item in select value from jsonb_array_elements(p_sections) loop
+    pos := pos+1;
+    if item->>'id' like 'section-%' then
+      -- A retry after a lost response must retain the same section identity.
+      section_id := md5(p_website_id::text || ':' || p_page_id::text || ':' || (item->>'id'))::uuid;
+      insert into public.website_sections(id,website_id,page_id,scope,position,type,content,styles)
+        values(section_id,p_website_id,p_page_id,'page',pos,item->>'type',coalesce(item->'data','{}'),coalesce(item->'styles','{}'))
+        on conflict(id) do update set position=excluded.position,type=excluded.type,content=excluded.content,styles=excluded.styles
+          where website_sections.website_id=excluded.website_id and website_sections.page_id=excluded.page_id and website_sections.scope='page'
+        returning id into section_id;
+      if not found then raise exception 'Sectie-identiteit hoort bij een andere pagina'; end if;
+      mapping := mapping || jsonb_build_object(item->>'id',section_id);
+    else
+      section_id := (item->>'id')::uuid;
+      update public.website_sections set position=pos
+        where id=section_id and website_id=p_website_id and page_id=p_page_id and scope='page';
+      if not found then raise exception 'Sectie hoort niet bij deze pagina'; end if;
+    end if;
+    if section_id is null then raise exception 'Sectie-identiteit ontbreekt'; end if;
+    ids := array_append(ids,section_id);
+  end loop;
+  delete from public.website_sections where website_id=p_website_id and page_id=p_page_id and not(id=any(ids));
+  return mapping;
+end $$;
+revoke all on function public.save_page_structure(uuid,uuid,jsonb) from public,anon;
+grant execute on function public.save_page_structure(uuid,uuid,jsonb) to authenticated;
+-- Guard existing single-page template transactions during the draft-only phase.
+create or replace function public.apply_template_transaction(
+  p_website_id uuid,
+  p_business_id uuid,
+  p_applied_template_id text,
+  p_business_defaults jsonb,
+  p_sections jsonb,
+  p_services jsonb
+)
+returns jsonb
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  section_count integer;
+  service_count integer;
+begin
+  -- Serialize with page creation/deletion and protect the multipage draft until
+  -- template/checkpoint contracts support pages explicitly.
+  perform 1 from public.websites where id=p_website_id for update;
+  if (select count(*) from public.website_pages where website_id=p_website_id) <> 1 then
+    raise exception 'Templates en herstelpunten voor meerdere pagina''s volgen later';
+  end if;
+  if auth.uid() is null then raise exception 'Unauthorized'; end if;
+  if not exists (select 1 from public.websites where id = p_website_id and user_id = auth.uid()) then
+    raise exception 'Website not found';
+  end if;
+  if not exists (select 1 from public.businesses where id = p_business_id and user_id = auth.uid()) then
+    raise exception 'Business not found';
+  end if;
+  if jsonb_typeof(p_sections) <> 'array' or jsonb_array_length(p_sections) > 100 then
+    raise exception 'Invalid template sections';
+  end if;
+  if jsonb_typeof(p_services) <> 'array' or jsonb_array_length(p_services) > 250 then
+    raise exception 'Invalid template services';
+  end if;
+
+  perform 1 from public.websites where id = p_website_id for update;
+  perform 1 from public.businesses where id = p_business_id for update;
+
+  update public.businesses
+  set name = coalesce(p_business_defaults->>'name', name),
+      tagline = coalesce(p_business_defaults->>'tagline', tagline),
+      description = coalesce(p_business_defaults->>'description', description),
+      phone = coalesce(p_business_defaults->>'phone', phone),
+      email = coalesce(p_business_defaults->>'email', email),
+      category = coalesce(p_business_defaults->>'category', category)
+  where id = p_business_id and user_id = auth.uid();
+
+  update public.websites
+  set business_id = p_business_id, applied_template_id = p_applied_template_id, updated_at = now()
+  where id = p_website_id and user_id = auth.uid();
+
+  delete from public.website_sections where website_id = p_website_id;
+  insert into public.website_sections (website_id, type, content, styles, position)
+  select p_website_id, item->>'type', coalesce(item->'data', '{}'::jsonb),
+         coalesce(item->'styles', '{}'::jsonb), ordinality::integer
+  from jsonb_array_elements(p_sections) with ordinality as section_item(item, ordinality);
+  get diagnostics section_count = row_count;
+
+  delete from public.services where business_id = p_business_id;
+  insert into public.services (
+    business_id, title, description, price, duration, capacity,
+    image_urls, tags, position, is_featured
+  )
+  select p_business_id, coalesce(item->>'title', ''), coalesce(item->>'description', ''),
+         coalesce(item->>'price', ''), coalesce(item->>'duration', ''),
+         nullif(item->>'capacity', '')::integer,
+         coalesce(item->'image_urls', '[]'::jsonb), coalesce(item->'tags', '[]'::jsonb),
+         coalesce((item->>'position')::integer, ordinality::integer - 1),
+         coalesce((item->>'is_featured')::boolean, false)
+  from jsonb_array_elements(p_services) with ordinality as service_item(item, ordinality);
+  get diagnostics service_count = row_count;
+
+  return jsonb_build_object('sectionsCount', section_count, 'servicesCount', service_count);
+end;
+$$;
+
+create or replace function public.restore_template_transaction(
+  p_website_id uuid,
+  p_business_id uuid,
+  p_checkpoint jsonb
+)
+returns jsonb
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  section_count integer;
+  service_count integer;
+begin
+  -- Serialize with page creation/deletion and protect the multipage draft until
+  -- template/checkpoint contracts support pages explicitly.
+  perform 1 from public.websites where id=p_website_id for update;
+  if (select count(*) from public.website_pages where website_id=p_website_id) <> 1 then
+    raise exception 'Templates en herstelpunten voor meerdere pagina''s volgen later';
+  end if;
+  if auth.uid() is null then raise exception 'Unauthorized'; end if;
+  if not exists (select 1 from public.websites where id = p_website_id and user_id = auth.uid()) then
+    raise exception 'Website not found';
+  end if;
+  if p_business_id is not null and not exists (
+    select 1 from public.businesses where id = p_business_id and user_id = auth.uid()
+  ) then raise exception 'Business not found'; end if;
+  if jsonb_typeof(coalesce(p_checkpoint->'sections', '[]'::jsonb)) <> 'array'
+     or jsonb_array_length(coalesce(p_checkpoint->'sections', '[]'::jsonb)) > 100
+     or jsonb_array_length(coalesce(p_checkpoint->'services', '[]'::jsonb)) > 250 then
+    raise exception 'Invalid restore point';
+  end if;
+
+  perform 1 from public.websites where id = p_website_id for update;
+  update public.websites set business_id = p_business_id, updated_at = now()
+  where id = p_website_id and user_id = auth.uid();
+
+  delete from public.website_sections where website_id = p_website_id;
+  insert into public.website_sections (id, website_id, type, content, styles, position)
+  select (item->>'id')::uuid, p_website_id, item->>'type',
+         coalesce(item->'content', '{}'::jsonb), coalesce(item->'styles', '{}'::jsonb),
+         (item->>'position')::integer
+  from jsonb_array_elements(coalesce(p_checkpoint->'sections', '[]'::jsonb)) item;
+  get diagnostics section_count = row_count;
+
+  insert into public.section_transitions (website_id, from_section_id, to_section_id, transition)
+  select p_website_id, (item->>'from_section_id')::uuid, (item->>'to_section_id')::uuid,
+         nullif(item->'transition', 'null'::jsonb)
+  from jsonb_array_elements(coalesce(p_checkpoint->'transitions', '[]'::jsonb)) item
+  where exists (select 1 from public.website_sections where id = (item->>'from_section_id')::uuid and website_id = p_website_id)
+    and exists (select 1 from public.website_sections where id = (item->>'to_section_id')::uuid and website_id = p_website_id);
+
+  if p_business_id is not null then
+    delete from public.services where business_id = p_business_id;
+    insert into public.services (
+      id, business_id, title, description, price, duration, capacity,
+      image_urls, tags, position, is_featured
+    )
+    select (item->>'id')::uuid, p_business_id, coalesce(item->>'title', ''),
+           coalesce(item->>'description', ''), coalesce(item->>'price', ''),
+           coalesce(item->>'duration', ''), nullif(item->>'capacity', '')::integer,
+           coalesce(item->'image_urls', '[]'::jsonb), coalesce(item->'tags', '[]'::jsonb),
+           coalesce((item->>'position')::integer, 0), coalesce((item->>'is_featured')::boolean, false)
+    from jsonb_array_elements(coalesce(p_checkpoint->'services', '[]'::jsonb)) item;
+    get diagnostics service_count = row_count;
+  else
+    service_count := 0;
+  end if;
+
+  insert into public.website_locales (website_id, locale, path_segment, display_name, is_default, is_enabled, seo)
+  select p_website_id, item->>'locale', item->>'path_segment', item->>'display_name',
+         coalesce((item->>'is_default')::boolean, false), coalesce((item->>'is_enabled')::boolean, false),
+         coalesce(item->'seo', '{}'::jsonb)
+  from jsonb_array_elements(coalesce(p_checkpoint->'locales', '[]'::jsonb)) item
+  on conflict (website_id, locale) do update set
+    path_segment = excluded.path_segment, display_name = excluded.display_name,
+    is_default = excluded.is_default, is_enabled = excluded.is_enabled, seo = excluded.seo;
+
+  insert into public.website_section_translations (website_id, section_id, locale, values, source_hash)
+  select p_website_id, (item->>'section_id')::uuid, item->>'locale',
+         coalesce(item->'values', '{}'::jsonb), coalesce(item->>'source_hash', '')
+  from jsonb_array_elements(coalesce(p_checkpoint->'sectionTranslations', '[]'::jsonb)) item
+  on conflict (section_id, locale) do update set values = excluded.values, source_hash = excluded.source_hash;
+
+  if p_business_id is not null then
+    insert into public.business_translations (business_id, locale, name, description, opening_note, source_hash)
+    select p_business_id, item->>'locale', coalesce(item->>'name', ''),
+           coalesce(item->>'description', ''), coalesce(item->>'opening_note', ''), coalesce(item->>'source_hash', '')
+    from jsonb_array_elements(coalesce(p_checkpoint->'businessTranslations', '[]'::jsonb)) item
+    on conflict (business_id, locale) do update set
+      name = excluded.name, description = excluded.description,
+      opening_note = excluded.opening_note, source_hash = excluded.source_hash;
+
+    insert into public.service_translations (service_id, locale, title, description, source_hash)
+    select (item->>'service_id')::uuid, item->>'locale', coalesce(item->>'title', ''),
+           coalesce(item->>'description', ''), coalesce(item->>'source_hash', '')
+    from jsonb_array_elements(coalesce(p_checkpoint->'serviceTranslations', '[]'::jsonb)) item
+    on conflict (service_id, locale) do update set
+      title = excluded.title, description = excluded.description, source_hash = excluded.source_hash;
+  end if;
+
+  return jsonb_build_object('sectionsCount', section_count, 'servicesCount', service_count);
+end;
+$$;
+commit;
+-- Complete page operations and immutable publication data. No hosted cleanup.
+begin;
+
+-- Keep Home deletion explicit even though completeness is also checked at commit.
+create or replace function public.delete_website_page(p_website_id uuid,p_page_id uuid)
+returns void language plpgsql security invoker set search_path=public as $$
+begin
+  perform 1 from public.websites where id=p_website_id and user_id=auth.uid() for update;
+  if not found then raise exception 'Website niet gevonden'; end if;
+  if exists(select 1 from public.website_pages where id=p_page_id and website_id=p_website_id and is_home) then raise exception 'De startpagina kan niet worden verwijderd'; end if;
+  delete from public.website_pages where id=p_page_id and website_id=p_website_id;
+  if not found then raise exception 'Pagina niet gevonden'; end if;
+  update public.website_pages p set position=ordered.pos-1 from (select id,row_number() over(order by position,id) pos from public.website_pages where website_id=p_website_id) ordered where p.id=ordered.id;
+end $$;
+
+create table public.website_page_translations (
+  website_id uuid not null references public.websites(id) on delete cascade,
+  page_id uuid not null,
+  locale text not null,
+  title text not null check(char_length(btrim(title)) between 1 and 80),
+  navigation_label text not null default '' check(char_length(navigation_label)<=80),
+  seo jsonb not null default '{}' check(jsonb_typeof(seo)='object'),
+  source_hash text,
+  primary key(page_id,locale),
+  foreign key(page_id,website_id) references public.website_pages(id,website_id) on delete cascade,
+  foreign key(website_id,locale) references public.website_locales(website_id,locale) on delete cascade
+);
+create index website_page_translations_website on public.website_page_translations(website_id);
+create table public.website_page_redirects (
+  website_id uuid not null references public.websites(id) on delete cascade,
+  from_slug text not null check(from_slug='' or from_slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
+  to_page_id uuid not null,
+  primary key(website_id,from_slug),
+  foreign key(to_page_id,website_id) references public.website_pages(id,website_id) on delete cascade
+);
+create index website_page_redirects_target on public.website_page_redirects(to_page_id,website_id);
+alter table public.website_page_translations enable row level security;
+alter table public.website_page_redirects enable row level security;
+revoke all on public.website_page_translations,public.website_page_redirects from public,anon,authenticated;
+grant select,insert,update,delete on public.website_page_translations,public.website_page_redirects to authenticated;
+grant all on public.website_page_translations,public.website_page_redirects to service_role;
+create policy page_translations_owner on public.website_page_translations for all to authenticated
+using(exists(select 1 from public.websites where id=website_id and user_id=(select auth.uid())))
+with check(exists(select 1 from public.websites where id=website_id and user_id=(select auth.uid())));
+create policy page_redirects_owner on public.website_page_redirects for all to authenticated
+using(exists(select 1 from public.websites where id=website_id and user_id=(select auth.uid())))
+with check(exists(select 1 from public.websites where id=website_id and user_id=(select auth.uid())));
+create trigger page_translations_revision after insert or update or delete on public.website_page_translations
+for each row execute function public.bump_page_draft_version();
+create trigger page_redirects_revision after insert or update or delete on public.website_page_redirects
+for each row execute function public.bump_page_draft_version();
+
+-- Deferred completeness allows a transactional Home swap without a bypass flag.
+create or replace function public.guard_website_page() returns trigger
+language plpgsql security invoker set search_path=public as $$
+begin
+  if tg_op='DELETE' then return old; end if;
+  if tg_op='UPDATE' and (new.website_id<>old.website_id or new.id<>old.id) then raise exception 'Pagina-identiteit kan niet worden gewijzigd'; end if;
+  if exists(select 1 from public.website_locales where website_id=new.website_id and path_segment=new.slug) then raise exception 'Dit webadres is gereserveerd voor een taal'; end if;
+  new.updated_at=now(); return new;
+end $$;
+create or replace function public.require_website_home() returns trigger
+language plpgsql security invoker set search_path=public as $$
+declare site uuid := case when tg_op='DELETE' then old.website_id else new.website_id end;
+begin
+  if exists(select 1 from public.websites where id=site) and (select count(*) from public.website_pages where website_id=site and is_home)<>1 then
+    raise exception 'Elke website moet precies één startpagina hebben';
+  end if; return null;
+end $$;
+create constraint trigger require_website_home after insert or update or delete on public.website_pages
+deferrable initially deferred for each row execute function public.require_website_home();
+alter table public.website_sections add constraint shared_section_type
+check(scope='page' or (scope='site_header' and type='nav') or (scope='site_footer' and type='footer'));
+
+-- Rewrite only complete reference strings, never substrings in customer copy.
+create or replace function public.remap_design_references(value jsonb, mapping jsonb) returns jsonb
+language plpgsql immutable set search_path=public as $$
+declare result jsonb; entry record; str text;
+begin
+  if jsonb_typeof(value)='string' then
+    str=value#>>'{}'; return coalesce(mapping->str,value);
+  elsif jsonb_typeof(value)='array' then
+    select coalesce(jsonb_agg(public.remap_design_references(v,mapping)),'[]') into result from jsonb_array_elements(value) v;
+    return result;
+  elsif jsonb_typeof(value)='object' then
+    result='{}'; for entry in select * from jsonb_each(value) loop
+      result=result||jsonb_build_object(entry.key,public.remap_design_references(entry.value,mapping));
+    end loop; return result;
+  end if; return value;
+end $$;
+
+create or replace function public.guard_section_page_identity() returns trigger
+language plpgsql security invoker set search_path=public as $$
+begin
+  if new.website_id<>old.website_id or new.id<>old.id then raise exception 'Sectie-identiteit kan niet worden gewijzigd'; end if;
+  if new.page_id is distinct from old.page_id or new.scope<>old.scope then
+    perform 1 from public.websites where id=new.website_id and (user_id=auth.uid() or current_user='service_role') for update;
+    if not found then raise exception 'Website niet gevonden'; end if;
+    delete from public.section_transitions where website_id=new.website_id and (from_section_id=old.id or to_section_id=old.id);
+  end if; return new;
+end $$;
+
+create or replace function public.guard_shared_shell() returns trigger
+language plpgsql security invoker set search_path=public as $$
+begin
+  if new.type in ('nav','footer') then
+    perform 1 from public.websites where id=new.website_id for update;
+    if exists(select 1 from public.website_sections s where s.website_id=new.website_id and s.id<>new.id
+      and s.type=new.type and ((new.scope='page' and s.scope<>'page') or (new.scope<>'page' and s.scope='page'))) then
+      raise exception 'Gebruik de gedeelde header of footer; een lokaal onderdeel van dit type kan niet tegelijk bestaan';
+    end if;
+  end if;
+  return new;
+end $$;
+create trigger guard_shared_shell before insert or update on public.website_sections for each row execute function public.guard_shared_shell();
+
+create or replace function public.duplicate_website_page(p_website_id uuid,p_page_id uuid,p_title text,p_slug text)
+returns jsonb language plpgsql security invoker set search_path=public as $$
+declare source public.website_pages; dest public.website_pages; section public.website_sections; mapping jsonb:='{}'; new_id uuid;
+begin
+  perform 1 from public.websites where id=p_website_id and user_id=auth.uid() for update;
+  if not found then raise exception 'Website niet gevonden'; end if;
+  select * into source from public.website_pages where id=p_page_id and website_id=p_website_id;
+  if not found then raise exception 'Pagina niet gevonden'; end if;
+  insert into public.website_pages(website_id,title,slug,position,show_in_navigation,seo)
+  values(p_website_id,btrim(p_title),lower(btrim(p_slug)),(select max(position)+1 from public.website_pages where website_id=p_website_id),source.show_in_navigation,source.seo) returning * into dest;
+  mapping=jsonb_build_object('page:'||source.id,'page:'||dest.id);
+  for section in select * from public.website_sections where website_id=p_website_id and page_id=p_page_id loop
+    new_id=gen_random_uuid();
+    mapping=mapping||jsonb_build_object(section.id::text,new_id::text,'#section-'||section.id,'#section-'||new_id,
+      'section:'||source.id||':'||section.id,'section:'||dest.id||':'||new_id);
+  end loop;
+  insert into public.website_sections(id,website_id,page_id,scope,type,position,content,styles)
+  select (mapping->>id::text)::uuid,website_id,dest.id,'page',type,position,public.remap_design_references(content,mapping),styles
+  from public.website_sections where website_id=p_website_id and page_id=p_page_id;
+  insert into public.website_section_translations(website_id,section_id,locale,values,source_hash)
+  select website_id,(mapping->>section_id::text)::uuid,locale,public.remap_design_references(values,mapping),null
+  from public.website_section_translations where website_id=p_website_id and mapping ? section_id::text;
+  insert into public.section_transitions(website_id,from_section_id,to_section_id,transition)
+  select website_id,(mapping->>from_section_id::text)::uuid,(mapping->>to_section_id::text)::uuid,transition
+  from public.section_transitions where website_id=p_website_id and mapping ? from_section_id::text and mapping ? to_section_id::text;
+  insert into public.website_page_translations(website_id,page_id,locale,title,navigation_label,seo,source_hash)
+  select website_id,dest.id,locale,title,navigation_label,seo,null from public.website_page_translations where page_id=p_page_id;
+  return to_jsonb(dest);
+end $$;
+
+create or replace function public.replace_website_home(p_website_id uuid,p_page_id uuid,p_old_home_slug text)
+returns void language plpgsql security invoker set search_path=public as $$
+declare old_home public.website_pages; target public.website_pages;
+begin
+  perform 1 from public.websites where id=p_website_id and user_id=auth.uid() for update;
+  if not found then raise exception 'Website niet gevonden'; end if;
+  select * into old_home from public.website_pages where website_id=p_website_id and is_home;
+  select * into target from public.website_pages where website_id=p_website_id and id=p_page_id and not is_home;
+  if not found then raise exception 'Kies een andere pagina als startpagina'; end if;
+  update public.website_pages set is_home=false,slug=lower(btrim(p_old_home_slug)),position=target.position where id=old_home.id;
+  update public.website_pages set is_home=true,slug='',position=0,include_in_publication=true where id=target.id;
+  -- Root has a new intentional destination; it cannot also be a redirect.
+  delete from public.website_page_redirects where website_id=p_website_id and from_slug='';
+end $$;
+
+create or replace function public.move_website_section(p_website_id uuid,p_section_id uuid,p_page_id uuid,p_scope text default 'page')
+returns void language plpgsql security invoker set search_path=public as $$
+declare source public.website_sections; mapping jsonb:='{}';
+begin
+  perform 1 from public.websites where id=p_website_id and user_id=auth.uid() for update;
+  if not found then raise exception 'Website niet gevonden'; end if;
+  select * into source from public.website_sections where id=p_section_id and website_id=p_website_id;
+  if not found then raise exception 'Sectie niet gevonden'; end if;
+  if p_scope='page' and not exists(select 1 from public.website_pages where id=p_page_id and website_id=p_website_id) then raise exception 'Pagina niet gevonden'; end if;
+  if p_scope not in ('page','site_header','site_footer') or
+    (p_scope='site_header' and source.type<>'nav') or (p_scope='site_footer' and source.type<>'footer') then
+    raise exception 'Ongeldig gedeeld onderdeel';
+  end if;
+  -- Slot replacement and conversion are one transaction. A failed conversion restores the old slot.
+  if p_scope<>'page' then
+    delete from public.website_sections where website_id=p_website_id and (scope=p_scope or (scope='page' and type=source.type)) and id<>p_section_id;
+  end if;
+  if p_scope='page' and source.page_id is not null then
+    mapping=jsonb_build_object('section:'||source.page_id||':'||source.id,'section:'||p_page_id||':'||source.id,
+      '#section-'||source.id,'section:'||p_page_id||':'||source.id);
+    -- A local anchor inside the moved section now belongs to its destination.
+    update public.website_sections set content=public.remap_design_references(content,mapping) where website_id=p_website_id;
+  end if;
+  update public.website_sections set page_id=case when p_scope='page' then p_page_id else null end,scope=p_scope,
+    position=case when p_scope='page' then (select coalesce(max(position),0)+1 from public.website_sections where website_id=p_website_id and page_id=p_page_id) else 0 end
+  where id=p_section_id;
+end $$;
+
+create or replace function public.create_shared_website_section(p_website_id uuid,p_type text,p_content jsonb)
+returns uuid language plpgsql security invoker set search_path=public as $$
+declare section_id uuid:=gen_random_uuid(); slot text;
+begin
+  perform 1 from public.websites where id=p_website_id and user_id=auth.uid() for update;
+  if not found then raise exception 'Website niet gevonden'; end if;
+  if p_type not in ('nav','footer') or jsonb_typeof(p_content) is distinct from 'object' then raise exception 'Ongeldig gedeeld onderdeel'; end if;
+  slot:=case when p_type='nav' then 'site_header' else 'site_footer' end;
+  delete from public.website_sections where website_id=p_website_id and (scope=slot or (scope='page' and type=p_type));
+  insert into public.website_sections(id,website_id,page_id,scope,type,position,content) values(section_id,p_website_id,null,slot,p_type,0,p_content);
+  return section_id;
+end $$;
+revoke all on function public.create_shared_website_section(uuid,text,jsonb) from public,anon;
+grant execute on function public.create_shared_website_section(uuid,text,jsonb) to authenticated;
+
+create or replace function public.capture_page_redirect() returns trigger
+language plpgsql security invoker set search_path=public as $$
+declare published_slug text;
+begin
+  if new.slug is distinct from old.slug then
+    select p->>'slug' into published_slug from public.websites w,
+      lateral jsonb_array_elements(coalesce(w.live_snapshot->'pages','[]')) p
+      where w.id=new.website_id and p->>'id'=new.id::text;
+    if published_slug is not null and published_slug<>new.slug then
+      insert into public.website_page_redirects(website_id,from_slug,to_page_id) values(new.website_id,published_slug,new.id)
+      on conflict(website_id,from_slug) do update set to_page_id=excluded.to_page_id;
+    end if;
+  end if; return null;
+end $$;
+create trigger capture_page_redirect after update on public.website_pages for each row execute function public.capture_page_redirect();
+
+revoke all on function public.duplicate_website_page(uuid,uuid,text,text),public.replace_website_home(uuid,uuid,text),
+public.move_website_section(uuid,uuid,uuid,text) from public,anon;
+grant execute on function public.duplicate_website_page(uuid,uuid,text,text),public.replace_website_home(uuid,uuid,text),
+public.move_website_section(uuid,uuid,uuid,text) to authenticated;
+create or replace function public.apply_page_template(p_website_id uuid,p_page_id uuid,p_sections jsonb)
+returns jsonb language plpgsql security invoker set search_path=public as $$
+declare checkpoint jsonb; mapping jsonb;
+begin
+  perform 1 from public.websites where id=p_website_id and user_id=auth.uid() for update;
+  if not found then raise exception 'Website niet gevonden'; end if;
+  if not exists(select 1 from public.website_pages where id=p_page_id and website_id=p_website_id) then raise exception 'Pagina niet gevonden'; end if;
+  select jsonb_build_object('version',3,'scope','page','websiteId',p_website_id,'pageId',p_page_id,
+    'sections',coalesce((select jsonb_agg(to_jsonb(s)) from public.website_sections s where website_id=p_website_id and page_id=p_page_id),'[]'),
+    'transitions',coalesce((select jsonb_agg(to_jsonb(t)) from public.section_transitions t where website_id=p_website_id and from_section_id in(select id from public.website_sections where page_id=p_page_id)),'[]'),
+    'sectionTranslations',coalesce((select jsonb_agg(to_jsonb(t)) from public.website_section_translations t where website_id=p_website_id and section_id in(select id from public.website_sections where page_id=p_page_id)),'[]')) into checkpoint;
+  mapping=public.save_page_structure(p_website_id,p_page_id,p_sections);
+  return checkpoint;
+end $$;
+
+create or replace function public.restore_page_checkpoint(p_website_id uuid,p_page_id uuid,p_checkpoint jsonb)
+returns void language plpgsql security invoker set search_path=public as $$
+begin
+  perform 1 from public.websites where id=p_website_id and user_id=auth.uid() for update;
+  if not found then raise exception 'Website niet gevonden'; end if;
+  if p_checkpoint->>'version' is distinct from '3' or p_checkpoint->>'scope' is distinct from 'page'
+    or p_checkpoint->>'websiteId' is distinct from p_website_id::text or p_checkpoint->>'pageId' is distinct from p_page_id::text
+    or not exists(select 1 from public.website_pages where id=p_page_id and website_id=p_website_id)
+    or jsonb_typeof(p_checkpoint->'sections') is distinct from 'array' or jsonb_array_length(p_checkpoint->'sections')>100 then raise exception 'Ongeldig herstelpunt'; end if;
+  if exists(select 1 from jsonb_array_elements(coalesce(p_checkpoint->'transitions','[]')) t where
+    not exists(select 1 from jsonb_array_elements(p_checkpoint->'sections') s where s->>'id'=t->>'from_section_id')
+    or not exists(select 1 from jsonb_array_elements(p_checkpoint->'sections') s where s->>'id'=t->>'to_section_id'))
+    or exists(select 1 from jsonb_array_elements(coalesce(p_checkpoint->'sectionTranslations','[]')) t where
+      not exists(select 1 from jsonb_array_elements(p_checkpoint->'sections') s where s->>'id'=t->>'section_id')) then raise exception 'Herstelpunt bevat verwijzingen buiten deze pagina'; end if;
+  delete from public.website_sections where website_id=p_website_id and page_id=p_page_id;
+  insert into public.website_sections(id,website_id,page_id,scope,type,position,content,styles)
+  select (s->>'id')::uuid,p_website_id,p_page_id,'page',s->>'type',(s->>'position')::integer,coalesce(s->'content','{}'),coalesce(s->'styles','{}') from jsonb_array_elements(p_checkpoint->'sections') s;
+  insert into public.section_transitions(website_id,from_section_id,to_section_id,transition)
+  select p_website_id,(t->>'from_section_id')::uuid,(t->>'to_section_id')::uuid,t->'transition' from jsonb_array_elements(coalesce(p_checkpoint->'transitions','[]')) t;
+  insert into public.website_section_translations(website_id,section_id,locale,values,source_hash)
+  select p_website_id,(t->>'section_id')::uuid,t->>'locale',t->'values',t->>'source_hash' from jsonb_array_elements(coalesce(p_checkpoint->'sectionTranslations','[]')) t;
+end $$;
+revoke all on function public.apply_page_template(uuid,uuid,jsonb),public.restore_page_checkpoint(uuid,uuid,jsonb) from public,anon;
+grant execute on function public.apply_page_template(uuid,uuid,jsonb),public.restore_page_checkpoint(uuid,uuid,jsonb) to authenticated;
+-- Called inside the existing import transactions; all copied targets use fresh IDs.
+create or replace function public.assign_imported_pages(p_design_id uuid,p_pages jsonb,p_sections jsonb)
+returns void language plpgsql security invoker set search_path=public as $$
+declare home_id uuid; input_home uuid; page jsonb; section jsonb; mapping jsonb:='{}';
+begin
+  if not exists(select 1 from public.websites where id=p_design_id and (user_id=auth.uid() or current_user='service_role')) then raise exception 'Website niet gevonden'; end if;
+  if jsonb_typeof(p_pages) is distinct from 'array' or jsonb_array_length(p_pages) not between 1 and 40
+    or (select count(*) from jsonb_array_elements(p_pages) p where (p->>'isHome')::boolean)<>1 then raise exception 'Ongeldige pagina-import'; end if;
+  select id into home_id from public.website_pages where website_id=p_design_id and is_home;
+  for page in select value from jsonb_array_elements(p_pages) loop
+    if (page->>'isHome')::boolean then
+      input_home=(page->>'id')::uuid;
+      update public.website_pages set title=page->>'title',show_in_navigation=coalesce((page->>'showInNavigation')::boolean,true) where id=home_id;
+    else
+      insert into public.website_pages(id,website_id,title,slug,position,show_in_navigation,include_in_publication)
+      values((page->>'id')::uuid,p_design_id,page->>'title',page->>'slug',(select max(position)+1 from public.website_pages where website_id=p_design_id),
+        coalesce((page->>'showInNavigation')::boolean,true),coalesce((page->>'includeInPublication')::boolean,false));
+    end if;
+  end loop;
+  mapping=jsonb_build_object('page:'||input_home,'page:'||home_id);
+  for section in select value from jsonb_array_elements(p_sections) loop
+    if section->>'pageId'=input_home::text then
+      mapping=mapping||jsonb_build_object('section:'||input_home||':'||(section->>'id'),'section:'||home_id||':'||(section->>'id'));
+    end if;
+  end loop;
+  for section in select value from jsonb_array_elements(p_sections) loop
+    update public.website_sections set scope=coalesce(section->>'scope','page'),
+      page_id=case when coalesce(section->>'scope','page')<>'page' then null when section->>'pageId'=input_home::text then home_id else (section->>'pageId')::uuid end,
+      content=public.remap_design_references(content,mapping)
+    where website_id=p_design_id and id=(section->>'id')::uuid;
+  end loop;
+end $$;
+revoke all on function public.assign_imported_pages(uuid,jsonb,jsonb) from public,anon;
+grant execute on function public.assign_imported_pages(uuid,jsonb,jsonb) to authenticated,service_role;
+
+create or replace function public.create_multipage_imported_design(p_design_id uuid,p_title text,p_theme jsonb,p_sections jsonb,p_assets jsonb,p_pages jsonb)
+returns void language plpgsql security invoker set search_path=public as $$
+begin
+  perform public.create_imported_design(p_design_id,p_title,p_theme,p_sections,p_assets);
+  perform public.assign_imported_pages(p_design_id,p_pages,p_sections);
+end $$;
+create or replace function public.create_multipage_transfer_design(p_design_id uuid,p_title text,p_theme jsonb,p_sections jsonb,p_assets jsonb,p_pages jsonb,p_request_id uuid,p_revision integer)
+returns void language plpgsql security invoker set search_path=public as $$
+begin
+  perform public.create_transfer_design(p_design_id,p_title,p_theme,p_sections,p_assets,p_request_id,p_revision);
+  perform public.assign_imported_pages(p_design_id,p_pages,p_sections);
+end $$;
+revoke all on function public.create_multipage_imported_design(uuid,text,jsonb,jsonb,jsonb,jsonb),public.create_multipage_transfer_design(uuid,text,jsonb,jsonb,jsonb,jsonb,uuid,integer) from public,anon,authenticated;
+grant execute on function public.create_multipage_imported_design(uuid,text,jsonb,jsonb,jsonb,jsonb) to authenticated;
+grant execute on function public.create_multipage_transfer_design(uuid,text,jsonb,jsonb,jsonb,jsonb,uuid,integer) to service_role;
+create or replace function public.save_website_page(p_website_id uuid,p_page_id uuid,p_title text,p_slug text,p_show_in_navigation boolean,p_include_in_publication boolean,p_seo jsonb)
+returns jsonb language plpgsql security invoker set search_path=public as $$
+declare result jsonb;
+begin
+  result=public.save_website_page(p_website_id,p_page_id,p_title,p_slug,p_show_in_navigation,p_include_in_publication);
+  update public.website_pages set seo=coalesce(p_seo,'{}') where id=(result->>'id')::uuid returning to_jsonb(website_pages.*) into result;
+  return result;
+end $$;
+revoke all on function public.save_website_page(uuid,uuid,text,text,boolean,boolean,jsonb) from public,anon;
+grant execute on function public.save_website_page(uuid,uuid,text,text,boolean,boolean,jsonb) to authenticated;
+
+create or replace function public.create_imported_design(
+  p_design_id uuid, p_title text, p_theme jsonb, p_sections jsonb, p_assets jsonb
+) returns uuid
+language plpgsql security invoker set search_path = public
+as $$
+declare
+  owner_id uuid := auth.uid();
+  business_id_value uuid;
+  item jsonb;
+  ordinal bigint;
+begin
+  if owner_id is null then raise exception 'Authentication required' using errcode = '42501'; end if;
+  if p_design_id is null or length(btrim(p_title)) not between 1 and 200
+    or jsonb_typeof(p_sections) is distinct from 'array'
+    or jsonb_array_length(p_sections) not between 1 and 40
+    or jsonb_typeof(p_assets) is distinct from 'array'
+    or jsonb_array_length(p_assets) > 8
+    or jsonb_typeof(p_theme) is distinct from 'object' then
+    raise exception 'Invalid design';
+  end if;
+  -- Serialize repeated/concurrent confirmations without adding an import record.
+  perform pg_advisory_xact_lock(hashtextextended(p_design_id::text, 0));
+  if exists (select 1 from public.websites where id = p_design_id and user_id = owner_id) then
+    raise exception 'Design already exists' using errcode = '23505';
+  end if;
+  select id into business_id_value from public.businesses where user_id = owner_id order by created_at limit 1;
+  insert into public.websites(id, user_id, business_id, title, slug, theme_config, published, live_snapshot, custom_domain)
+    values (p_design_id, owner_id, business_id_value, btrim(p_title), 'site-' || p_design_id::text, p_theme, false, null, null);
+  for item, ordinal in select value, ordinality from jsonb_array_elements(p_sections) with ordinality loop
+    if item->>'type' not in ('nav','hero','about','gallery','features','faq','cta','footer')
+      or jsonb_typeof(item->'data') is distinct from 'object'
+      or jsonb_typeof(item->'styles') is distinct from 'object' then raise exception 'Invalid section'; end if;
+    insert into public.website_sections(id, website_id, position, type, content, styles)
+      values ((item->>'id')::uuid, p_design_id, ordinal, item->>'type', item->'data', item->'styles');
+  end loop;
+  for item in select value from jsonb_array_elements(p_assets) loop
+    if item->>'original_path' is distinct from owner_id::text || '/originals/' || (item->>'id') || '.webp'
+      or item->>'thumbnail_path' is distinct from owner_id::text || '/thumbnails/' || (item->>'id') || '.webp'
+      or (item->>'original_size')::bigint not between 1 and 5242880
+      or (item->>'thumbnail_size')::bigint not between 1 and 1048576 then
+      raise exception 'Invalid owned asset' using errcode = '42501';
+    end if;
+    insert into public.user_images(id,user_id,display_name,original_path,thumbnail_path,original_size,thumbnail_size)
+      values ((item->>'id')::uuid,owner_id,item->>'display_name',item->>'original_path',
+        item->>'thumbnail_path',(item->>'original_size')::bigint,(item->>'thumbnail_size')::bigint);
+  end loop;
+  return p_design_id;
+end;
+$$;
+
+create or replace function public.create_transfer_design(
+  p_design_id uuid, p_title text, p_theme jsonb, p_sections jsonb, p_assets jsonb, p_request_id uuid, p_revision integer
+) returns uuid language plpgsql security invoker set search_path = public as $$
+declare r public.website_transfer_requests; b uuid; item jsonb; ordinal bigint;
+begin
+  select * into r from public.website_transfer_requests where id = p_request_id for update;
+  if not found or r.revision <> p_revision or r.status not in ('processing','checking','corrections') or r.permission_confirmed_at is null then raise exception 'Invalid transfer'; end if;
+  if p_design_id is null or length(btrim(p_title)) not between 1 and 200 or jsonb_typeof(p_sections) is distinct from 'array'
+    or jsonb_array_length(p_sections) not between 1 and 40 or jsonb_typeof(p_assets) is distinct from 'array'
+    or jsonb_array_length(p_assets) > 8 or jsonb_typeof(p_theme) is distinct from 'object' then raise exception 'Invalid design'; end if;
+  select id into b from public.businesses where user_id = r.user_id order by created_at limit 1;
+  if b is null then raise exception 'Customer business required'; end if;
+  insert into public.websites(id,user_id,business_id,title,slug,theme_config,published,live_snapshot)
+    values(p_design_id,r.user_id,b,btrim(p_title),'site-' || p_design_id::text,p_theme,false,null);
+  for item, ordinal in select value, ordinality from jsonb_array_elements(p_sections) with ordinality loop
+    if item->>'type' not in ('nav','hero','about','gallery','features','faq','cta','footer') or jsonb_typeof(item->'data') is distinct from 'object' or jsonb_typeof(item->'styles') is distinct from 'object' then raise exception 'Invalid section'; end if;
+    insert into public.website_sections(id,website_id,position,type,content,styles)
+      values((item->>'id')::uuid,p_design_id,ordinal,item->>'type',item->'data',item->'styles');
+  end loop;
+  for item in select value from jsonb_array_elements(p_assets) loop
+    if item->>'original_path' is distinct from r.user_id::text || '/originals/' || (item->>'id') || '.webp'
+      or item->>'thumbnail_path' is distinct from r.user_id::text || '/thumbnails/' || (item->>'id') || '.webp'
+      or (item->>'original_size')::bigint not between 1 and 5242880 or (item->>'thumbnail_size')::bigint not between 1 and 1048576 then raise exception 'Invalid asset'; end if;
+    insert into public.user_images(id,user_id,display_name,original_path,thumbnail_path,original_size,thumbnail_size)
+      values((item->>'id')::uuid,r.user_id,item->>'display_name',item->>'original_path',item->>'thumbnail_path',(item->>'original_size')::bigint,(item->>'thumbnail_size')::bigint);
+  end loop;
+  update public.website_transfer_requests set website_id = p_design_id, status = 'checking', revision = revision + 1,
+    approved_at = null, approved_version = null, reviewed_at = null, reviewed_version = null, ready_at = null, updated_at = now() where id = p_request_id;
+  return p_design_id;
+end; $$;
+
+create or replace function public.multipage_contract_version() returns integer language sql immutable as $$ select 3 $$;
+revoke all on function public.multipage_contract_version() from public,anon;
+grant execute on function public.multipage_contract_version() to authenticated;
+commit;

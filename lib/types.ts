@@ -48,6 +48,7 @@ export interface Transition {
 }
 
 export interface Section {
+  scope?: "page" | "site_header" | "site_footer"
   id: string
   type: SectionType
   data: Record<string, unknown>

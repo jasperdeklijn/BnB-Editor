@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useId, useMemo, useState } from "react"
 import { ChevronDown, Globe2, Loader2, Plus, Settings2, Trash2, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -43,6 +43,7 @@ export function WebsiteLanguageControl({
   statuses = {},
   mobile = false,
 }: WebsiteLanguageControlProps) {
+  const localeSelectId = useId()
   const [managerOpen, setManagerOpen] = useState(false)
   const [busyLocale, setBusyLocale] = useState<SupportedWebsiteLocale | null>(null)
   const [isSavingSwitcher, setIsSavingSwitcher] = useState(false)
@@ -90,19 +91,19 @@ export function WebsiteLanguageControl({
     <>
       <div className={mobile
         ? "flex min-h-11 items-center gap-2 rounded-xl border border-border bg-gradient-to-b from-background to-muted/30 px-3 shadow-sm transition-all hover:border-primary/40 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20"
-        : "flex h-11 shrink-0 items-center gap-1 rounded-lg border border-input bg-gradient-to-b from-background to-muted/30 px-1.5 text-xs shadow-sm transition-all hover:border-primary/40 hover:shadow-md focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20"}
+        : "flex h-12 shrink-0 items-center gap-1 rounded-lg border border-input bg-gradient-to-b from-background to-muted/30 px-1.5 text-xs shadow-sm transition-all hover:border-primary/40 hover:shadow-md focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 md:h-11"}
       >
         <Globe2 className="h-4 w-4 shrink-0 text-primary" />
         {mobile ? <span className="shrink-0 text-sm font-medium">Taal van website</span> : null}
-        <label htmlFor={mobile ? "website-locale-mobile" : "website-locale"} className="sr-only">
+        <label htmlFor={localeSelectId} className="sr-only">
           Taal om te bewerken
         </label>
         <div className={`${mobile ? "ml-auto min-w-0 flex-1" : "w-36"} group relative`}>
           <select
-            id={mobile ? "website-locale-mobile" : "website-locale"}
+            id={localeSelectId}
             value={activeLocale}
             onChange={(event) => onLocaleChange(event.target.value as SupportedWebsiteLocale)}
-            className={`${mobile ? "text-right text-sm" : "text-xs"} h-7 w-full cursor-pointer appearance-none border-0 bg-transparent pl-1 pr-6 font-semibold text-foreground outline-none`}
+            className={`${mobile ? "text-right text-sm" : "text-xs"} h-11 w-full cursor-pointer appearance-none border-0 bg-transparent pl-1 pr-6 font-semibold text-foreground outline-none md:h-7`}
           >
             {locales.map((locale) => (
               <option key={locale.locale} value={locale.locale}>
@@ -115,7 +116,7 @@ export function WebsiteLanguageControl({
         <button
           type="button"
           onClick={() => setManagerOpen(true)}
-          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border-l border-border/70 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border-l border-border/70 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary md:h-7 md:w-7"
           aria-label="Talen beheren"
           title="Talen beheren"
         >

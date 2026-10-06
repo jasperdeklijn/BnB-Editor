@@ -18,6 +18,18 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
+    // A page template never replaces another page or the shared shell.
+    if (body.websiteId) {
+      const { data: website } = await supabase.from("websites").select("business_id").eq("id", body.websiteId).eq("user_id", user.id).maybeSingle()
+      if (!website) return NextResponse.json({ error: "Website not found" }, { status: 404 })
+      const { data: pages, error } = await supabase.from("website_pages").select("id,is_home").eq("website_id", body.websiteId)
+      const pageId = body.pageId || pages?.find((page) => page.is_home)?.id
+      if (error || !pageId || !getTemplatePreset(body.category)) return NextResponse.json({ error: "Kies een geldige pagina en een sjabloon." }, { status: 400 })
+      const sections = generateSectionsFromTemplate(body.category, website.business_id).filter((section) => section.type !== "nav" && section.type !== "footer")
+      const { data: checkpoint, error: applyError } = await supabase.rpc("apply_page_template", { p_website_id: body.websiteId, p_page_id: pageId, p_sections: sections })
+      if (applyError) return NextResponse.json({ error: applyError.message }, { status: 422 })
+      return NextResponse.json({ success: true, websiteId: body.websiteId, pageId, sectionsCount: sections.length, checkpoint })
+    }
     const { category, websiteId, businessId } = body as {
       category: BusinessCategory
       websiteId?: string

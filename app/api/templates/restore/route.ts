@@ -2,6 +2,9 @@ import { createClient } from "@/lib/supabase/server"
 import { NextRequest, NextResponse } from "next/server"
 
 type TemplateCheckpoint = {
+  version?: number
+  scope?: string
+  pageId?: string
   websiteId?: string
   businessId?: string | null
   sections?: Array<Record<string, unknown>>
@@ -24,52 +27,13 @@ export async function POST(request: NextRequest) {
     if (!checkpoint?.websiteId) {
       return NextResponse.json({ error: "Restore point is missing a website" }, { status: 400 })
     }
-
-    const { data: website, error: websiteError } = await supabase
-      .from("websites")
-      .select("id, business_id")
-      .eq("id", checkpoint.websiteId)
-      .eq("user_id", user.id)
-      .single()
-    if (websiteError || !website) return NextResponse.json({ error: "Website not found" }, { status: 404 })
-
-    if (checkpoint.businessId) {
-      const { data: business, error: businessError } = await supabase
-        .from("businesses")
-        .select("id")
-        .eq("id", checkpoint.businessId)
-        .eq("user_id", user.id)
-        .single()
-      if (businessError || !business) return NextResponse.json({ error: "Business not found" }, { status: 404 })
+    if (checkpoint.version === 3 && checkpoint.scope === "page" && checkpoint.pageId) {
+      const { error } = await supabase.rpc("restore_page_checkpoint", { p_website_id: checkpoint.websiteId, p_page_id: checkpoint.pageId, p_checkpoint: checkpoint })
+      if (error) return NextResponse.json({ error: error.message }, { status: 422 })
+      return NextResponse.json({ success: true, websiteId: checkpoint.websiteId, pageId: checkpoint.pageId })
     }
+    return NextResponse.json({ error: "Dit herstelpunt gebruikt een verouderd formaat." }, { status: 400 })
 
-    const normalizedCheckpoint = {
-      sections: checkpoint.sections ?? [],
-      transitions: checkpoint.transitions ?? [],
-      services: checkpoint.services ?? [],
-      locales: checkpoint.locales ?? [],
-      sectionTranslations: checkpoint.sectionTranslations ?? [],
-      businessTranslations: checkpoint.businessTranslations ?? [],
-      serviceTranslations: checkpoint.serviceTranslations ?? [],
-    }
-    const { data, error } = await supabase.rpc("restore_template_transaction", {
-      p_website_id: checkpoint.websiteId,
-      p_business_id: checkpoint.businessId ?? website.business_id ?? null,
-      p_checkpoint: normalizedCheckpoint,
-    } as never)
-    if (error) {
-      console.error("Atomic template restore failed:", error)
-      return NextResponse.json({ error: "Failed to restore template atomically" }, { status: 500 })
-    }
-
-    const result = (data ?? {}) as { sectionsCount?: number; servicesCount?: number }
-    return NextResponse.json({
-      success: true,
-      websiteId: checkpoint.websiteId,
-      businessId: checkpoint.businessId ?? website.business_id ?? null,
-      sectionsCount: result.sectionsCount ?? normalizedCheckpoint.sections.length,
-      servicesCount: result.servicesCount ?? normalizedCheckpoint.services.length,
-    })
   } catch (error) {
     console.error("Error restoring template checkpoint:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

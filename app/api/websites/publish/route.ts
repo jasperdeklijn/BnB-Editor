@@ -51,6 +51,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Website not found" }, { status: 404 })
   }
 
+  // Require the complete version 3 schema before exposing multipage writers.
+  if (published) {
+    const contract = await supabase.rpc("multipage_contract_version")
+    if (contract.error || contract.data !== 3) return NextResponse.json({ error: "Installeer eerst de nieuwe multipage-migratie.", code: "MULTIPAGE_MIGRATION_REQUIRED" }, { status: 503 })
+    const { data: pageRows, error: pagesError } = await supabase.from("website_pages")
+      .select("id,is_home").eq("website_id", websiteId)
+    if (pagesError || !pageRows?.some((page) => page.is_home)) {
+      return NextResponse.json({ error: "De paginacontrole is niet beschikbaar. Controleer de multipage-migratie." }, { status: 503 })
+    }
+  }
+
   const hasMultilingualAccess = hasMultilingualWebsiteAccess(subscription)
 
   if (published) {

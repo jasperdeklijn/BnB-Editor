@@ -1,0 +1,14 @@
+✔ new websites have one Home, and CRUD/order survive a separate read (4971.0828ms)
+✔ RLS and RPCs reject foreign owners, invalid slugs and incomplete/repeated ordering (3156.578ms)
+✔ sections belong to their page; reordering/deleting one page leaves the other untouched (3172.3711ms)
+✔ bootstrap mirrors the migration and migration refuses obsolete content (2583.9342ms)
+✔ a structural edit is atomic, maps new IDs, and cannot delete another page's sections (4360.5848ms)
+✔ single-page template apply/restore cannot overwrite a multipage draft (8431.7997ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 26966.1793

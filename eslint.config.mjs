@@ -10,6 +10,8 @@ export default tseslint.config(
       "node_modules/**",
       "out/**",
       "artifacts/**",
+      "output/**",
+      "tmp/**",
       "public/**",
       "next-env.d.ts",
     ],

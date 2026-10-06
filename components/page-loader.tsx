@@ -1,4 +1,7 @@
-import { notFound } from "next/navigation"
+import { notFound, permanentRedirect } from "next/navigation"
+import { headers } from "next/headers"
+import { customerSiteBase, resolveWebsiteRoute, snapshotRedirect } from "@/lib/website-routing"
+import { websitePagePath } from "@/lib/website-links"
 import React from "react"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -19,6 +22,8 @@ import { normalizeLanguageSwitcherConfig } from "@/lib/i18n/language-switcher"
 import { isMultilingualWebsitesEnabled } from "@/lib/i18n/feature"
 import { SiteCookieConsent } from "@/components/privacy/site-cookie-consent"
 import { PLATFORM_BASE_URL } from "@/lib/platform"
+import { WebsiteLinksProvider } from "@/components/editor/website-links-context"
+import { mapWebsitePage, type WebsitePage } from "@/lib/website-pages"
 
 interface PageLoaderOptions {
   slug: string
@@ -26,6 +31,7 @@ interface PageLoaderOptions {
   /** Optional pre-built client. Pass an admin client to bypass RLS (for preview). */
   client?: SupabaseClient
   locale?: string
+  path?: string[]
 }
 
 export async function loadPublicWebsitePage({
@@ -33,6 +39,7 @@ export async function loadPublicWebsitePage({
   isPreview = true,
   client,
   locale,
+  path = locale ? [locale] : [],
 }: PageLoaderOptions) {
   const supabase = client ?? (await createClient())
   const multilingualEnabled = isMultilingualWebsitesEnabled()
@@ -46,6 +53,14 @@ export async function loadPublicWebsitePage({
 
   if (error || !website) return notFound()
 
+  let previewLinkPages: WebsitePage[] = []
+  if (isPreview) {
+    const { data: pages, error: pagesError } = await supabase.from("website_pages")
+      .select("*").eq("website_id", website.id)
+    if (pagesError || !pages?.length) return notFound()
+    previewLinkPages = pages.map(mapWebsitePage)
+  }
+
   // Live route: only show published sites
   if (!isPreview && !website.published) return notFound()
 
@@ -56,16 +71,23 @@ export async function loadPublicWebsitePage({
   // A published flag without a complete snapshot is not a renderable live revision.
   if (!isPreview && !liveSnapshot) return notFound()
 
-  const liveLocale = liveSnapshot
-    ? (locale
-        ? liveSnapshot.locales?.find((entry) => entry.pathSegment === locale && !entry.isDefault)
-        : liveSnapshot.locales?.find((entry) => entry.isDefault))
-    : null
+  const visitorHeaders = await headers()
+  const basePath = customerSiteBase(slug, visitorHeaders.get("host") ?? "localhost", isPreview)
+  const routeLocales = liveSnapshot?.locales.filter((entry) => multilingualEnabled || entry.isDefault) ?? []
+  const liveRoute = liveSnapshot ? resolveWebsiteRoute(liveSnapshot.pages, routeLocales, path) : null
+  if (liveSnapshot && !liveRoute) {
+    const redirectPath = snapshotRedirect(liveSnapshot, path)
+    if (redirectPath) permanentRedirect(`${basePath}${redirectPath}`)
+    return notFound()
+  }
+  const liveLocale = liveSnapshot?.locales.find((entry) => entry.locale === liveRoute?.locale.locale) ?? null
+  const livePage = liveSnapshot?.pages.find((page) => page.id === liveRoute?.page.id)
+  let selectedPageId = livePage?.id ?? null
   if (liveSnapshot?.locales?.length && !liveLocale) return notFound()
 
   const adminSupabase = await createAdminClient()
 
-  const websiteBusinessId = liveSnapshot?.website.businessId ?? website.business_id ?? await (async () => {
+  const websiteBusinessId = liveSnapshot ? liveSnapshot.website.businessId : website.business_id ?? await (async () => {
     const { data: business, error: businessError } = await adminSupabase
       .from('businesses')
       .select('id')
@@ -112,7 +134,9 @@ export async function loadPublicWebsitePage({
   )
 
   let sections: Section[] = liveSnapshot
-    ? (liveLocale?.sections ?? liveSnapshot.sections).map((section) => {
+    ? [...(liveLocale?.sections ?? liveSnapshot.sections).filter((section) => liveSnapshot.sharedSections.some((shared) => shared.id === section.id && shared.type === "nav")),
+      ...(livePage?.locales.find((entry) => entry.locale === liveLocale?.locale)?.sections ?? livePage?.sections ?? []),
+      ...(liveLocale?.sections ?? liveSnapshot.sections).filter((section) => liveSnapshot.sharedSections.some((shared) => shared.id === section.id && shared.type === "footer"))].map((section) => {
         const selectedServiceIds = Array.isArray(section.data.serviceIds)
           ? section.data.serviceIds.filter((id): id is string => typeof id === "string")
           : []
@@ -160,11 +184,19 @@ export async function loadPublicWebsitePage({
     if (localeOptions.length === 0) {
       localeOptions = [{ locale: DEFAULT_WEBSITE_LOCALE, pathSegment: "nl", displayName: "Nederlands", isDefault: true }]
     }
-    const previewLocale = locale
-      ? localeOptions.find((entry) => entry.pathSegment === locale && !entry.isDefault)
-      : localeOptions.find((entry) => entry.isDefault)
+    if (!multilingualEnabled) localeOptions = localeOptions.filter((entry) => entry.isDefault)
+    const previewRoute = resolveWebsiteRoute(previewLinkPages, localeOptions, path)
+    const previewLocale = localeOptions.find((entry) => entry.locale === previewRoute?.locale.locale)
     if (!previewLocale) return notFound()
+    selectedPageId = previewRoute!.page.id
+    const pageIds = new Set((website.website_sections ?? []).filter((row: { page_id: string | null; scope: string }) => row.page_id === selectedPageId || row.scope !== "page").map((row: { id: string }) => row.id))
+    sections = sections.filter((section) => pageIds.has(section.id)).sort((a, b) => (a.type === "nav" ? -1 : a.type === "footer" ? 1 : 0) - (b.type === "nav" ? -1 : b.type === "footer" ? 1 : 0))
     activeLocale = previewLocale.locale
+    if (!previewLocale.isDefault) {
+      const { data: pageTranslations, error: pageTranslationError } = await supabase.from("website_page_translations").select("page_id,title,navigation_label").eq("website_id", website.id).eq("locale", activeLocale)
+      if (pageTranslationError) return notFound()
+      previewLinkPages = previewLinkPages.map((page) => { const translation = pageTranslations?.find((entry) => entry.page_id === page.id); return { ...page, title: translation?.navigation_label || translation?.title || page.title } })
+    }
 
     if (!previewLocale.isDefault) {
       const { data: translations } = await adminSupabase
@@ -227,14 +259,14 @@ export async function loadPublicWebsitePage({
   const currentThemeConfig = (website.theme_config as ThemeConfig | null) ?? null
   const themeConfig = liveSnapshot?.website.themeConfig ?? currentThemeConfig
   const languageSwitcher = normalizeLanguageSwitcherConfig(
-    currentThemeConfig?.languageSwitcher ?? themeConfig?.languageSwitcher,
+    themeConfig?.languageSwitcher,
   )
   sections.splice(0, sections.length, ...applyThemeDefaultsToSections(resolvedSections, themeConfig))
 
   const localeLinks = localeOptions.map((entry) => ({
     locale: entry.locale,
     label: entry.displayName,
-    href: entry.isDefault ? "/" : `/${entry.pathSegment}`,
+    href: `${basePath}${websitePagePath((liveSnapshot?.pages ?? previewLinkPages).find((page) => page.id === selectedPageId)!, entry.isDefault ? "" : entry.pathSegment)}`,
     isActive: entry.locale === activeLocale,
   }))
   const messages = getSiteMessages(activeLocale)
@@ -251,7 +283,7 @@ export async function loadPublicWebsitePage({
 
   // Fetch transitions from section_transitions table
   const { data: transitionRows } = liveSnapshot
-    ? { data: liveSnapshot.transitions.map((transition) => ({
+    ? { data: (livePage?.transitions ?? []).map((transition) => ({
         from_section_id: transition.fromSectionId,
         to_section_id: transition.toSectionId,
         transition: { type: transition.type },
@@ -395,10 +427,15 @@ export async function loadPublicWebsitePage({
     businessDetails as Parameters<typeof buildLocalBusinessJsonLd>[0],
     `${liveSnapshot?.website.customDomain
       ? `https://${liveSnapshot.website.customDomain}`
-      : `/site/${liveSnapshot?.website.slug ?? website.slug}`}${liveLocale && !liveLocale.isDefault ? `/${liveLocale.pathSegment}` : locale ? `/${locale}` : ""}`,
+      : `${PLATFORM_BASE_URL}/site/${liveSnapshot?.website.slug ?? website.slug}`}${websitePagePath((liveSnapshot?.pages ?? previewLinkPages).find((page) => page.id === selectedPageId)!, localeOptions.find((entry) => entry.locale === activeLocale && !entry.isDefault)?.pathSegment ?? "")}`,
   )
 
   return (
+    <WebsiteLinksProvider value={{ pages: liveSnapshot ? liveSnapshot.pages.map((page) => ({ ...page, title: page.locales.find((entry) => entry.locale === activeLocale)?.navigationLabel || page.title })) : previewLinkPages,
+      basePath,
+      sectionAliases: Object.fromEntries([...sections].reverse().map((section) => [`#${section.type}`, `#section-${section.id}`])),
+      activePageId: selectedPageId,
+      localePath: localeOptions.find((entry) => entry.locale === activeLocale && !entry.isDefault)?.pathSegment ?? "" }}>
     <WebsiteLocaleProvider locale={activeLocale}>
       <WebsiteThemeProvider initialConfig={themeConfig ?? undefined}>
         <div lang={activeLocale} className="website-theme-scope min-h-screen bg-background">{nodes}</div>
@@ -415,6 +452,7 @@ export async function loadPublicWebsitePage({
         )}
       </WebsiteThemeProvider>
     </WebsiteLocaleProvider>
+    </WebsiteLinksProvider>
   )
 }
 

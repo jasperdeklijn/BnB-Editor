@@ -72,7 +72,8 @@ test("template apply and restore use one transactional RPC", () => {
   assert.match(migration, /function public\.apply_template_transaction\(/)
   assert.match(migration, /function public\.restore_template_transaction\(/)
   assert.match(applyRoute, /\.rpc\("apply_template_transaction"/)
-  assert.match(restoreRoute, /\.rpc\("restore_template_transaction"/)
+  assert.match(applyRoute, /\.rpc\("apply_page_template"/)
+  assert.match(restoreRoute, /\.rpc\("restore_page_checkpoint"/)
   assert.doesNotMatch(restoreRoute, /\.from\("website_sections"\)[\s\S]*\.delete\(\)/)
 })
 

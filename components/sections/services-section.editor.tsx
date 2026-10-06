@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionLinkSelect } from "@/components/editor/section-link-select"
+
 import { SectionIconPicker } from "@/components/editor/section-icon-picker"
 
 import { useEffect, useState } from "react"
@@ -55,11 +57,7 @@ export function ServicesSectionEditor({
   const serviceIcons = (section.data.serviceIcons ?? {}) as Record<string, unknown>
   const moreInfoButtonEnabled = section.data.infoPopupButtonEnabled !== false
   const selectedPopupTarget = ((section.data as any).infoPopupCtaHref as string | undefined) || ""
-  const hasSelectedPopupTarget =
-    !selectedPopupTarget || sectionTargetOptions.some((option) => option.value === selectedPopupTarget)
   const selectedBookingTarget = ((section.data as any).bookingSpaceTargetHref as string | undefined) || ""
-  const hasSelectedBookingTarget =
-    !selectedBookingTarget || sectionTargetOptions.some((option) => option.value === selectedBookingTarget)
 
   useEffect(() => {
     let cancelled = false
@@ -321,19 +319,7 @@ export function ServicesSectionEditor({
           </div>
           <div>
             <Label className="text-xs mb-1.5 block">Knoplink</Label>
-            <select
-              value={selectedPopupTarget}
-              onChange={(event) => updateField("infoPopupCtaHref", event.target.value)}
-              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
-            >
-              <option value="">Kies sectie</option>
-              {!hasSelectedPopupTarget ? <option value={selectedPopupTarget}>{selectedPopupTarget}</option> : null}
-              {sectionTargetOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <SectionLinkSelect value={selectedPopupTarget} onChange={(value) => updateField("infoPopupCtaHref", value)} options={sectionTargetOptions} ariaLabel="Knopdoel meer informatie" />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2 pt-1">
@@ -497,19 +483,7 @@ export function ServicesSectionEditor({
             {((section.data as any).bookingSpaceMode as string | undefined) === "cta" ? (
               <div>
                 <Label className="text-xs mb-1.5 block">Knopdoel</Label>
-                <select
-                  value={selectedBookingTarget}
-                  onChange={(event) => updateField("bookingSpaceTargetHref", event.target.value)}
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
-                >
-                  <option value="">Kies sectie</option>
-                  {!hasSelectedBookingTarget ? <option value={selectedBookingTarget}>{selectedBookingTarget}</option> : null}
-                  {sectionTargetOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                <SectionLinkSelect value={selectedBookingTarget} onChange={(value) => updateField("bookingSpaceTargetHref", value)} options={sectionTargetOptions} ariaLabel="Knopdoel boekingsruimte" />
               </div>
             ) : null}
             {availableServices.length > 0 ? (

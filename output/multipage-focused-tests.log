@@ -1,0 +1,20 @@
+✔ shared replacement is atomic and old page revisions cannot be promoted (3109.2785ms)
+✔ page copies remap links, transitions, translations and form identities; moves retain identity (2022.1855ms)
+✔ Home replacement is atomic and preserves pages; malformed swaps roll back (1977.7027ms)
+✔ shared slots enforce section type and survive page deletion; scoped template restore preserves other pages (1953.2425ms)
+✔ multipage import is atomic and remaps the generated Home link without flattening (2013.0637ms)
+✔ imported footer references are validated and remapped across pages (134.8792ms)
+✔ root, page and translated paths resolve the same stable page identities (0.4484ms)
+✔ redirects use published page identity and locale, and platform bases cannot steal customer paths (0.3357ms)
+✔ multipage imports assign fresh IDs, typed targets and explicit shared slots (1.2672ms)
+✔ accepts complete versioned live snapshots (1.771ms)
+✔ rejects missing, partial, and future snapshots (0.3187ms)
+✔ a copied live snapshot is isolated from later draft mutations (0.245ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11333.5001

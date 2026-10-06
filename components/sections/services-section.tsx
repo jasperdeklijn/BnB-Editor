@@ -1,5 +1,7 @@
 "use client"
 
+import { WebsiteLink } from "@/components/editor/website-links-context"
+
 import type React from "react"
 import { SectionIcon } from "./section-icon"
 import { createContext, useContext, useState, useEffect, useRef } from "react"
@@ -1256,13 +1258,13 @@ function ServiceInfoPopup({
             ) : null}
 
             {settings.ctaLabel && settings.ctaHref ? (
-              <a
+              <WebsiteLink
                 href={settings.ctaHref}
                 onClick={(event) => handleSectionAnchorClick(event, settings.ctaHref, onClose)}
                 className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-[var(--section-accent)] px-5 py-3 text-sm font-semibold text-[var(--section-accent-foreground)] transition-all hover:brightness-90 sm:w-auto"
               >
                 {settings.ctaLabel}
-              </a>
+              </WebsiteLink>
             ) : null}
           </div>
         </div>
@@ -1578,14 +1580,14 @@ function ServicesBookingSpace({
             ) : null}
           </div>
           {settings.targetHref ? (
-            <a
+            <WebsiteLink
               href={settings.targetHref}
               onClick={(event) => handleSectionAnchorClick(event, settings.targetHref)}
               className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[var(--section-accent)] px-5 py-3 text-sm font-semibold text-[var(--section-accent-foreground)] transition-all hover:brightness-90"
             >
               <CalendarDays className="h-4 w-4" />
               {settings.buttonLabel}
-            </a>
+            </WebsiteLink>
           ) : null}
         </div>
       </div>

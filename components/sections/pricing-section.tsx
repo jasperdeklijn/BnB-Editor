@@ -1,5 +1,7 @@
 "use client"
 
+import { WebsiteLink } from "@/components/editor/website-links-context"
+
 import { SectionIcon } from "./section-icon"
 import type { IconFeature } from "@/lib/section-icons"
 import { EditableText } from "@/components/editor/inline-editable-text"
@@ -49,7 +51,7 @@ export function PricingSection({ data, isPreview, styles, onUpdate }: { data: Re
             <div className="mt-2 flex items-baseline gap-1"><EditableText as="span" data={editableData} path={["plans", index, "price"]} value={plan.price} isPreview={isPreview} onUpdate={onUpdate} className="text-4xl font-bold" />{plan.period ? <EditableText as="span" data={editableData} path={["plans", index, "period"]} value={plan.period} isPreview={isPreview} onUpdate={onUpdate} className="text-sm opacity-75" /> : null}</div>
             {plan.description ? <EditableText as="p" data={editableData} path={["plans", index, "description"]} value={plan.description} isPreview={isPreview} onUpdate={onUpdate} multiline className="mt-3 text-sm opacity-80" /> : null}
             <ul className="my-6 flex-1 space-y-3">{(plan.features || []).map((feature, featureIndex) => <li key={feature.id} className="flex gap-2 text-sm"><SectionIcon icon={feature.icon} className="mt-0.5 h-4 w-4 shrink-0" /><EditableText data={editableData} path={["plans", index, "features", featureIndex, "text"]} value={feature.text} isPreview={isPreview} onUpdate={onUpdate} /></li>)}</ul>
-            {plan.showButton !== false && plan.ctaText ? <a href={plan.ctaHref || "#contact"} className="rounded-xl px-5 py-3 text-center text-sm font-semibold" style={{ backgroundColor: plan.highlighted ? surface : accent, color: plan.highlighted ? surfaceForeground : accentForeground }}><EditableText data={editableData} path={["plans", index, "ctaText"]} value={plan.ctaText} isPreview={isPreview} onUpdate={onUpdate} /></a> : null}
+            {plan.showButton !== false && plan.ctaText ? <WebsiteLink href={plan.ctaHref || "#contact"} className="rounded-xl px-5 py-3 text-center text-sm font-semibold" style={{ backgroundColor: plan.highlighted ? surface : accent, color: plan.highlighted ? surfaceForeground : accentForeground }}><EditableText data={editableData} path={["plans", index, "ctaText"]} value={plan.ctaText} isPreview={isPreview} onUpdate={onUpdate} /></WebsiteLink> : null}
           </article>)}
         </div> : null}
 

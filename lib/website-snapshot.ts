@@ -6,8 +6,10 @@ import { DEFAULT_WEBSITE_LOCALE, type SupportedWebsiteLocale } from "@/lib/i18n/
 import { applySectionTranslation, getSectionTranslationStatus, getTranslationSourceHash, materializeNavigationTranslationSource } from "@/lib/i18n/section-translations"
 import { isMultilingualWebsitesEnabled } from "@/lib/i18n/feature"
 import { isMissingRelationError } from "@/lib/supabase/errors"
+import { mapWebsitePage, RESERVED_PAGE_SLUGS, type WebsitePage } from "@/lib/website-pages"
+import { invalidWebsiteLinks } from "@/lib/website-links"
 
-export const WEBSITE_SNAPSHOT_VERSION = 2 as const
+export const WEBSITE_SNAPSHOT_VERSION = 3 as const
 
 export interface SnapshotBusiness {
   id: string
@@ -73,7 +75,18 @@ export interface WebsiteLiveSnapshot {
   sections: Section[]
   transitions: Transition[]
   locales: WebsiteSnapshotLocale[]
-  translationWarnings?: Array<{ locale: SupportedWebsiteLocale; source: "section" | "business" | "service"; id: string; label: string }>
+  pages: WebsiteSnapshotPage[]
+  sharedSections: Section[]
+  redirects: Array<{ fromSlug: string; toPageId: string }>
+  /** Immutable page IDs/paths used by saved link references. */
+  linkPages?: WebsitePage[]
+  translationWarnings?: Array<{ locale: SupportedWebsiteLocale; source: "section" | "business" | "service" | "page"; id: string; label: string }>
+}
+
+export interface WebsiteSnapshotPage extends WebsitePage {
+  sections: Section[]
+  transitions: Transition[]
+  locales: Array<{ locale: SupportedWebsiteLocale; title: string; navigationLabel: string; seo: Record<string, unknown>; sections: Section[] }>
 }
 
 export interface WebsiteSnapshotLocale {
@@ -94,6 +107,7 @@ interface BuildSnapshotOptions {
 }
 
 export function isWebsiteLiveSnapshot(value: unknown): value is WebsiteLiveSnapshot {
+  try {
   if (!value || typeof value !== "object") return false
   const snapshot = value as Partial<WebsiteLiveSnapshot>
   return (
@@ -105,7 +119,45 @@ export function isWebsiteLiveSnapshot(value: unknown): value is WebsiteLiveSnaps
     Array.isArray(snapshot.services) &&
     Array.isArray(snapshot.availabilityWindows) &&
     Array.isArray(snapshot.locales)
+    && Array.isArray(snapshot.pages) && snapshot.pages.length > 0
+    && snapshot.pages.filter((page) => page.isHome).length === 1
+    && new Set(snapshot.pages.map((page) => page.id)).size === snapshot.pages.length
+    && new Set(snapshot.pages.map((page) => page.slug)).size === snapshot.pages.length
+    && snapshot.pages.every((page) => typeof page.id === "string" && page.websiteId === snapshot.website?.id
+      && page.includeInPublication === true && typeof page.slug === "string"
+      && (page.isHome ? page.slug === "" : /^[a-z0-9]+(-[a-z0-9]+)*$/.test(page.slug) && !RESERVED_PAGE_SLUGS.has(page.slug))
+      && Array.isArray(page.sections) && Array.isArray(page.transitions) && Array.isArray(page.locales)
+      && page.sections.every((section) => typeof section.id === "string" && typeof section.type === "string" && Boolean(section.data))
+      && page.transitions.every((transition) => page.sections.some((section) => section.id === transition.fromSectionId)
+        && page.sections.some((section) => section.id === transition.toSectionId)))
+    && Array.isArray(snapshot.sharedSections) && snapshot.sharedSections.length <= 2
+    && snapshot.sharedSections.every((section) => section.type === "nav" || section.type === "footer")
+    && new Set(snapshot.sharedSections.map((section) => section.type)).size === snapshot.sharedSections.length
+    && snapshot.locales.length > 0 && snapshot.locales.filter((locale) => locale.isDefault).length === 1
+    && new Set(snapshot.locales.map((locale) => locale.locale)).size === snapshot.locales.length
+    && snapshot.locales.every((locale) => typeof locale.locale === "string" && typeof locale.pathSegment === "string" && Array.isArray(locale.sections))
+    && snapshot.pages.every((page) => page.locales.length === snapshot.locales!.length
+      && new Set(page.locales.map((locale) => locale.locale)).size === page.locales.length
+      && page.locales.every((locale) => snapshot.locales!.some((entry) => entry.locale === locale.locale)
+        && typeof locale.title === "string" && locale.title.trim().length > 0 && Boolean(locale.seo) && Array.isArray(locale.sections)
+        && locale.sections.length === page.sections.length && new Set(locale.sections.map((section) => section.id)).size === locale.sections.length && locale.sections.every((section) => page.sections.some((source) => source.id === section.id))))
+    && (() => {
+      const all = [...snapshot.sharedSections!, ...snapshot.pages!.flatMap((page) => page.sections)]
+      const ids = new Set(all.map((section) => section.id))
+      if (ids.size !== all.length || snapshot.sections!.length !== all.length || new Set(snapshot.sections!.map((section) => section.id)).size !== all.length || snapshot.sections!.some((section) => !ids.has(section.id))) return false
+      const membership = new Map<string, string | null>(snapshot.pages!.flatMap((page) => page.sections.map((section): [string,string|null] => [section.id,page.id])))
+      snapshot.sharedSections!.forEach((section) => membership.set(section.id,null))
+      return snapshot.pages!.every((page) => page.locales.every((locale) => locale.sections.every((section) => invalidWebsiteLinks(section.data,snapshot.pages!,membership,page.id).length === 0)))
+        && snapshot.sharedSections!.every((section) => invalidWebsiteLinks(section.data,snapshot.pages!,membership).length === 0)
+        && snapshot.locales!.every((locale) => locale.sections.length === all.length && new Set(locale.sections.map((section) => section.id)).size === all.length && locale.sections.every((section) => ids.has(section.id) && invalidWebsiteLinks(section.data,snapshot.pages!,membership,membership.get(section.id) ?? undefined).length === 0))
+    })()
+    && Array.isArray(snapshot.redirects) && new Set(snapshot.redirects.map((redirect) => redirect.fromSlug)).size === snapshot.redirects.length
+    && snapshot.redirects.every((redirect) => typeof redirect.fromSlug === "string"
+      && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(redirect.fromSlug) && !RESERVED_PAGE_SLUGS.has(redirect.fromSlug)
+      && snapshot.pages!.some((page) => page.id === redirect.toPageId)
+      && !snapshot.pages!.some((page) => page.slug === redirect.fromSlug))
   )
+  } catch { return false }
 }
 
 export async function buildWebsiteLiveSnapshot({
@@ -156,10 +208,11 @@ export async function buildWebsiteLiveSnapshot({
     sectionTranslationsResult,
     businessTranslationsResult,
     serviceTranslationsResult,
+    pagesResult,
   ] = await Promise.all([
     supabase
       .from("website_sections")
-      .select("id, type, position, content, styles")
+      .select("id, page_id, scope, type, position, content, styles")
       .eq("website_id", websiteId)
       .order("position", { ascending: true }),
     supabase
@@ -203,7 +256,9 @@ export async function buildWebsiteLiveSnapshot({
           .from("service_translations")
           .select("service_id, locale, title, description, source_hash")
       : Promise.resolve({ data: [], error: null }),
+    supabase.from("website_pages").select("*").eq("website_id", websiteId).eq("include_in_publication", true).order("position"),
   ])
+  if (pagesResult.error) throw new Error(pagesResult.error.message)
 
   const firstError = [
     sectionsResult.error,
@@ -217,10 +272,18 @@ export async function buildWebsiteLiveSnapshot({
     serviceTranslationsResult.error,
   ].find((error) => Boolean(error) && !isMissingRelationError(error))
   if (firstError) throw new Error(firstError.message)
+  const linkPages = (pagesResult.data ?? []).map(mapWebsitePage)
+  if (linkPages.filter((page) => page.isHome).length !== 1) throw new Error("De startpagina ontbreekt of is niet opgenomen in publicatie.")
+  const includedIds = new Set(linkPages.map((page) => page.id))
+  const includedRows = (sectionsResult.data ?? []).filter((row) => row.scope !== "page" || includedIds.has(row.page_id))
+  const sectionPages = new Map<string, string | null>(includedRows.map((row) => [row.id, row.page_id]))
+  if (includedRows.some((row) => invalidWebsiteLinks(row.content, linkPages, sectionPages, row.page_id).length > 0)) {
+    throw new Error("Een link verwijst naar een verwijderde pagina, een conceptpagina of een onbekende sectie. Kies eerst een geldig linkdoel.")
+  }
 
   const business = (businessResult.data as SnapshotBusiness | null) ?? null
   const services = (servicesResult.data as SnapshotService[] | null) ?? []
-  const sections: Section[] = (sectionsResult.data ?? []).map((row) => {
+  const sections: Section[] = includedRows.map((row) => {
     const content = (row.content ?? {}) as Record<string, unknown>
     const { recipientEmail: _privateRecipientEmail, ...publicContent } = content
     const selectedServiceIds = Array.isArray(content.serviceIds) ? content.serviceIds : []
@@ -244,7 +307,7 @@ export async function buildWebsiteLiveSnapshot({
     }
   })
 
-  const transitions: Transition[] = (transitionsResult.data ?? []).map((row) => ({
+  const transitions: Transition[] = (transitionsResult.data ?? []).filter((row) => sectionPages.has(row.from_section_id) && sectionPages.has(row.to_section_id)).map((row) => ({
     id: row.id,
     fromSectionId: row.from_section_id,
     toSectionId: row.to_section_id,
@@ -334,7 +397,9 @@ export async function buildWebsiteLiveSnapshot({
         })
     const localizedSections = sections.map((section) => {
       if (locale.is_default) return section
-      const translationSource = materializeNavigationTranslationSource(section, sections)
+      const sourcePage = sectionPages.get(section.id)
+      const translationSource = materializeNavigationTranslationSource(section, section.data.navigationMode === "pages" ? [] : sourcePage
+        ? sections.filter((entry) => sectionPages.get(entry.id) === sourcePage) : sections)
       const translation = sectionTranslationRows.find(
         (row) => row.section_id === section.id && row.locale === locale.locale,
       )
@@ -378,7 +443,31 @@ export async function buildWebsiteLiveSnapshot({
   })
   const defaultLocaleBundle = locales.find((locale) => locale.isDefault) ?? locales[0]
 
-  return {
+  const [pageTranslations, redirectRows] = await Promise.all([
+    supabase.from("website_page_translations").select("*").eq("website_id", websiteId),
+    supabase.from("website_page_redirects").select("from_slug,to_page_id").eq("website_id", websiteId),
+  ])
+  if (pageTranslations.error || redirectRows.error) throw new Error(pageTranslations.error?.message || redirectRows.error?.message)
+  const pages: WebsiteSnapshotPage[] = linkPages.map((page) => {
+    const ids = new Set(includedRows.filter((row) => row.page_id === page.id).map((row) => row.id))
+    return { ...page, sections: (defaultLocaleBundle?.sections ?? sections).filter((section) => ids.has(section.id)),
+      transitions: transitions.filter((transition) => ids.has(transition.fromSectionId) && ids.has(transition.toSectionId)),
+      locales: locales.map((bundle) => {
+        const translation = pageTranslations.data?.find((row) => row.page_id === page.id && row.locale === bundle.locale)
+        if (!bundle.isDefault && !translation?.title?.trim()) throw new Error(`${bundle.displayName}: vertaling van pagina ${page.title} ontbreekt.`)
+        if (!bundle.isDefault && translation?.source_hash && translation.source_hash !== getTranslationSourceHash({ title: page.title, seo: page.seo })) {
+          translationWarnings.push({ locale: bundle.locale, source: "page", id: page.id, label: page.title })
+        }
+        return { locale: bundle.locale, title: translation?.title || page.title, navigationLabel: translation?.navigation_label || translation?.title || page.title,
+          seo: { ...bundle.seo, ...Object.fromEntries(Object.entries(page.seo ?? {}).filter(([, value]) => value !== "" && value != null)), ...Object.fromEntries(Object.entries(translation?.seo ?? {}).filter(([, value]) => value !== "" && value != null)) }, sections: bundle.sections.filter((section) => ids.has(section.id)) }
+      }) }
+  })
+  const redirects = (redirectRows.data ?? []).map((row) => ({ fromSlug: row.from_slug, toPageId: row.to_page_id }))
+  if (redirects.some((entry) => !includedIds.has(entry.toPageId) || RESERVED_PAGE_SLUGS.has(entry.fromSlug) || pages.some((page) => page.slug === entry.fromSlug))) {
+    throw new Error("Een doorverwijzing botst met een pagina of verwijst naar een conceptpagina. Pas deze aan in Pagina-instellingen.")
+  }
+
+  const snapshot: WebsiteLiveSnapshot = {
     version: WEBSITE_SNAPSHOT_VERSION,
     publishedAt: new Date().toISOString(),
     draftVersion: website.draft_version,
@@ -397,6 +486,12 @@ export async function buildWebsiteLiveSnapshot({
     sections: defaultLocaleBundle?.sections ?? sections,
     transitions,
     locales,
+    pages,
+    sharedSections: (defaultLocaleBundle?.sections ?? sections).filter((section) => sectionPages.get(section.id) === null),
+    redirects,
+    linkPages,
     translationWarnings,
   }
+  if (!isWebsiteLiveSnapshot(snapshot)) throw new Error("De volledige multipage-publicatie is ongeldig. Controleer pagina's, talen en linkdoelen.")
+  return snapshot
 }

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation"
+import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { EditorPageShell } from "@/components/editor/editor-page-shell"
 import { SeoEssentialsClient } from "@/components/business/seo-essentials-client"
@@ -9,7 +10,7 @@ export const metadata = {
   description: "Beheer metadata, social links en analytics voor uw website",
 }
 
-export default async function SeoPage({ searchParams }: { searchParams: Promise<{ websiteId?: string }> }) {
+export default async function SeoPage({ searchParams }: { searchParams: Promise<{ websiteId?: string; pageId?: string }> }) {
   const params = await searchParams
   const supabase = await createClient()
 
@@ -31,6 +32,8 @@ export default async function SeoPage({ searchParams }: { searchParams: Promise<
   if (!website) {
     redirect("/editor")
   }
+  const { data: page } = params.pageId ? await supabase.from("website_pages").select("id,title,seo").eq("website_id", website.id).eq("id", params.pageId).maybeSingle() : { data: null }
+  if (params.pageId && !page) redirect(`/editor?websiteId=${website.id}`)
 
   const { data: business } = website.business_id
     ? await supabase
@@ -43,13 +46,15 @@ export default async function SeoPage({ searchParams }: { searchParams: Promise<
   return (
     <EditorPageShell
       title="SEO & Analytics"
-      description="Stel zoekmachinegegevens, social previews, LocalBusiness-data en analytics in."
+      description={page ? `SEO voor pagina ${page.title}. Social links en analytics gelden voor de hele website.` : "Websitebrede SEO-standaarden, social links en analytics."}
       maxWidth="6xl"
     >
+      <Link className="mb-4 inline-flex min-h-11 items-center text-sm underline" href={`/editor?websiteId=${website.id}${page ? `&pageId=${page.id}` : ""}`}>Terug naar {page?.title ?? "de editor"}</Link>
       <SeoEssentialsClient
         websiteId={website.id}
+        pageId={page?.id}
         businessId={website.business_id}
-        initialSeo={(website.seo as WebsiteSeoFields | null) ?? null}
+        initialSeo={((page ? page.seo : website.seo) as WebsiteSeoFields | null) ?? null}
         initialAnalytics={(website.analytics as WebsiteAnalyticsFields | null) ?? null}
         initialSocialLinks={(business?.social_links as Record<string, string> | null) ?? null}
       />

@@ -1,0 +1,14 @@
+✔ page/section references follow path changes and preserve locale and section identity (2.0273ms)
+✔ external/relative/contact URLs are supported and executable or malformed schemes are rejected (0.3449ms)
+✔ custom navigation keeps configured page, section and URL links instead of regenerating the current page's sections (0.895ms)
+✔ editor links switch tabs, respect modifier clicks, and public links navigate normally (30.1438ms)
+✔ publication rejects removed/excluded pages and sections on the wrong page, including nested CTA/footer links (0.3964ms)
+✔ the rendered selector exposes page/section/URL modes and preserves external values (68.7997ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 607.4066

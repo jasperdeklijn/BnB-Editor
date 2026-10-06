@@ -8,12 +8,16 @@ import { PageLoadingIndicator } from "@/components/ui/page-loading-indicator"
 import { SectionTranslationPanel } from "./section-translation-panel"
 import { WebsiteLanguageControl } from "./website-language-control"
 import { EditorWebsiteToolbar } from "./editor-website-toolbar"
+import { EditorPagesWorkspace } from "./editor-pages-workspace"
 import { useEditorLayout } from "./editor-layout-context"
 import type { Section, SectionStyles, SectionType, Transition } from "@/lib/types"
 import { DEFAULT_SITE_TITLE } from "@/lib/business-naming"
 import { getDefaultSectionData as getRegistryDefaultSectionData, getSectionDefinition } from "@/components/editor/section-registry"
 import { createClient } from "@/lib/supabase/client"
 import websiteSections from "@/lib/supabase/websiteSections"
+import { listWebsitePages, saveWebsitePage, reorderWebsitePages, deleteWebsitePage, duplicateWebsitePage, replaceWebsiteHome } from "@/lib/supabase/websitePages"
+import { activePageStorageKey, type WebsitePage, type PageSettings } from "@/lib/website-pages"
+import { WebsiteLinksProvider } from "./website-links-context"
 import {
   addWebsiteLocale,
   listSectionTranslations,
@@ -197,6 +201,11 @@ export function EditorClient({
   const [transitions, setTransitions] = useState<Transition[]>([])
   const [websites, setWebsites] = useState<WebsiteSummary[]>([])
   const [websiteId, setWebsiteId] = useState<string | null>(null)
+  const [pages, setPages] = useState<WebsitePage[]>([])
+  const [activePageId, setActivePageId] = useState<string | null>(null)
+  const [pageLoadError, setPageLoadError] = useState<string | null>(null)
+  const [isLoadingPage, setIsLoadingPage] = useState(false)
+  const [multipageReady, setMultipageReady] = useState(false)
   const [businessId, setBusinessId] = useState<string | null>(initialBusinessId)
   const [businessCategory] = useState<BusinessCategory | null>(initialBusinessCategory)
   const [title, setTitle] = useState(DEFAULT_SITE_TITLE)
@@ -220,6 +229,7 @@ export function EditorClient({
   const searchParams = useSearchParams()
   const { isPreview, isSaving, setIsSaving, saveState, setSaveState, device, setOnPublish, setOnLogout, registerNavigationGuard } = useEditorLayout()
   const requestedWebsiteId = searchParams.get("websiteId")
+  const requestedPageId = searchParams.get("pageId")
   const multilingualEnabled = isMultilingualWebsitesEnabled()
   const multilingualAvailable = multilingualEnabled && hasMultilingualAccess
   const previousEntitlementViolationKeys = useRef<Set<string>>(new Set())
@@ -228,6 +238,7 @@ export function EditorClient({
   const historyRef = useRef<{ undo: SectionHistoryEntry[]; redo: SectionHistoryEntry[] }>({ undo: [], redo: [] })
   const [historyVersion, setHistoryVersion] = useState(0)
   const saveQueueRef = useRef<EditorSaveQueue | null>(null)
+  const loadVersionRef = useRef(0)
 
   if (!saveQueueRef.current) {
     saveQueueRef.current = new EditorSaveQueue({
@@ -260,8 +271,12 @@ export function EditorClient({
     sectionsRef.current = sections
   }, [sections])
 
-  useEffect(() => () => {
-    mountedRef.current = false
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      loadVersionRef.current += 1
+    }
   }, [])
 
   const entitlementResult = useMemo(() => inspectWebsiteEntitlements(currentPlan, {
@@ -372,7 +387,17 @@ export function EditorClient({
   }, [])
 
   const loadWebsite = useCallback(async (preferredWebsiteId?: string | null) => {
+    const loadVersion = ++loadVersionRef.current
     setIsLoadingWebsite(true)
+    setIsLoadingPage(false)
+    setPageLoadError(null)
+    setPages([])
+    setActivePageId(null)
+    setSections([])
+    sectionsRef.current = []
+    setTransitions([])
+    historyRef.current = { undo: [], redo: [] }
+    setHistoryVersion((version) => version + 1)
     try {
       const supabase = createClient()
 
@@ -381,6 +406,7 @@ export function EditorClient({
       .select("id, title, slug, published, custom_domain, created_at, business_id, theme_config")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
+    if (loadVersion !== loadVersionRef.current) return
 
     if (websiteRows && websiteRows.length > 0) {
       const summaries = websiteRows.map((website: any) => ({
@@ -404,15 +430,28 @@ export function EditorClient({
       setThemeConfig((website.theme_config as ThemeConfig | null) ?? null)
       setSelectedSectionId(null)
 
+      const loadedPages = await listWebsitePages(supabase, website.id)
+      const contract = await supabase.rpc("multipage_contract_version")
+      if (loadVersion !== loadVersionRef.current) return
+      setMultipageReady(!contract.error && contract.data === 3)
+      let savedPageId: string | null = null
+      try { savedPageId = localStorage.getItem(activePageStorageKey(website.id)) } catch { /* Storage is optional. */ }
+      const loadedPage = loadedPages.find((page) => page.id === requestedPageId)
+        ?? loadedPages.find((page) => page.id === savedPageId) ?? loadedPages.find((page) => page.isHome)!
+
+      const pageSectionsPromise = websiteSections.listEditorSections(website.id, supabase, loadedPage.id)
       const [sectionResult, transitionResult, localeResult, translationResult] = await Promise.all([
-        websiteSections.listSections(website.id, supabase),
-        supabase
-          .from("section_transitions")
-          .select("from_section_id, to_section_id, transition")
-          .eq("website_id", website.id),
+        pageSectionsPromise,
+        pageSectionsPromise.then((result) => websiteSections.getTransitionsBetweenSections(website.id, supabase, (result.data ?? []).map((section) => section.id))),
         listWebsiteLocales(supabase, website.id),
         listSectionTranslations(supabase, website.id),
       ])
+      if (loadVersion !== loadVersionRef.current) return
+      if (sectionResult.error) throw sectionResult.error
+      if (transitionResult.error) throw transitionResult.error
+      setPages(loadedPages)
+      setActivePageId(loadedPage.id)
+      try { localStorage.setItem(activePageStorageKey(website.id), loadedPage.id) } catch { /* Storage is optional. */ }
       const fallbackLocale: WebsiteLocale = {
         website_id: website.id,
         locale: DEFAULT_WEBSITE_LOCALE,
@@ -446,7 +485,8 @@ export function EditorClient({
         const transitionRows = transitionResult.data
         
         // Map transitions to Transition objects
-        const mappedTransitions: Transition[] = (transitionRows || []).map((t: any) => ({
+        const loadedSectionIds = new Set((rows ?? []).map((row) => row.id))
+        const mappedTransitions: Transition[] = (transitionRows || []).filter((t) => loadedSectionIds.has(t.from_section_id) && loadedSectionIds.has(t.to_section_id)).map((t: any) => ({
           id: `${t.from_section_id}-${t.to_section_id}`,
           fromSectionId: t.from_section_id,
           toSectionId: t.to_section_id,
@@ -456,6 +496,7 @@ export function EditorClient({
         
         const mapped = (rows || []).map((r: any) => ({
           id: r.id,
+          scope: r.scope,
           type: r.type,
           data: r.content || {},
           styles: r.styles || {},
@@ -477,6 +518,12 @@ export function EditorClient({
         .single()
 
       if (newWebsite && !error) {
+        const loadedPages = await listWebsitePages(supabase, newWebsite.id)
+        const contract = await supabase.rpc("multipage_contract_version")
+        if (loadVersion !== loadVersionRef.current) return
+        setMultipageReady(!contract.error && contract.data === 3)
+        setPages(loadedPages)
+        setActivePageId(loadedPages.find((page) => page.isHome)!.id)
         await logWebsiteCreated(newWebsite.id)
         setActiveWebsiteId(newWebsite.id)
         setWebsiteId(newWebsite.id)
@@ -506,10 +553,12 @@ export function EditorClient({
         ])
       }
     }
+    } catch (error) {
+      if (loadVersion === loadVersionRef.current) setPageLoadError(error instanceof Error ? error.message : "Pagina's konden niet worden geladen. Controleer de multipage-migratie.")
     } finally {
-      setIsLoadingWebsite(false)
+      if (loadVersion === loadVersionRef.current) setIsLoadingWebsite(false)
     }
-  }, [initialBusinessId, userId])
+  }, [initialBusinessId, requestedPageId, userId])
 
   const handleTemplateApplied = useCallback(
     async (nextWebsiteId?: string | null) => {
@@ -737,11 +786,11 @@ export function EditorClient({
     setSections(newSections)
   }, [])
 
-  const saveSectionNow = useCallback(async (id: string) => {
+  const saveSectionNow = useCallback(async (id: string, capturedSection?: Section) => {
     if (!websiteId || id.startsWith("section-")) return
     const latestSections = sectionsRef.current
     const latestIndex = latestSections.findIndex((section) => section.id === id)
-    const latestSection = latestSections[latestIndex]
+    const latestSection = capturedSection ?? latestSections[latestIndex]
     if (!latestSection) return
 
     const { error } = await websiteSections.updateSection(
@@ -750,7 +799,6 @@ export function EditorClient({
         type: latestSection.type,
         content: latestSection.data ?? {},
         styles: latestSection.styles ?? {},
-        position: latestIndex + 1,
       },
       createClient(),
     )
@@ -759,8 +807,12 @@ export function EditorClient({
 
   const scheduleSectionSave = useCallback((id: string) => {
     if (!websiteId || id.startsWith("section-")) return
-    saveQueueRef.current?.schedule(id, () => saveSectionNow(id))
-  }, [saveSectionNow, websiteId])
+    const capturedSection = sectionsRef.current.find((section) => section.id === id)
+    if (!capturedSection) return
+    // Capture the payload and scope so URL/back navigation cannot retarget or
+    // silently discard an already queued write when the canvas is reloaded.
+    saveQueueRef.current?.schedule(`${websiteId}:${activePageId}:${id}`, () => saveSectionNow(id, capturedSection))
+  }, [activePageId, saveSectionNow, websiteId])
 
   const flushPendingSectionSaves = useCallback(async () => {
     try {
@@ -770,6 +822,150 @@ export function EditorClient({
       return false
     }
   }, [])
+
+  const handlePageChange = useCallback(async (pageId: string) => {
+    if (!websiteId || !pages.some((page) => page.id === pageId)) return false
+    if (pageId === activePageId) return true
+    if (!(await flushPendingSectionSaves())) return false
+    const loadVersion = ++loadVersionRef.current
+    setIsLoadingPage(true)
+    try {
+      const supabase = createClient()
+      const pageSectionsPromise = websiteSections.listEditorSections(websiteId, supabase, pageId)
+      const [sectionResult, transitionResult] = await Promise.all([
+        pageSectionsPromise,
+        pageSectionsPromise.then((result) => websiteSections.getTransitionsBetweenSections(websiteId, supabase, (result.data ?? []).map((section) => section.id))),
+      ])
+      if (sectionResult.error) throw sectionResult.error
+      if (transitionResult.error) throw transitionResult.error
+      if (loadVersion !== loadVersionRef.current) return false
+      const rows = sectionResult.data ?? []
+      const ids = new Set(rows.map((row) => row.id))
+      updateLocalSections(rows.map((row) => ({ id: row.id, scope: row.scope, type: row.type, data: row.content ?? {}, styles: row.styles ?? {} })))
+      setTransitions((transitionResult.data ?? []).filter((transition) => ids.has(transition.from_section_id) && ids.has(transition.to_section_id))
+        .map((transition) => ({ id: `${transition.from_section_id}-${transition.to_section_id}`, fromSectionId: transition.from_section_id,
+          toSectionId: transition.to_section_id, type: transition.transition?.type ?? "none" })))
+      setActivePageId(pageId)
+      setSelectedSectionId(null)
+      setMobilePanel("canvas")
+      historyRef.current = { undo: [], redo: [] }
+      setHistoryVersion((version) => version + 1)
+      try { localStorage.setItem(activePageStorageKey(websiteId), pageId) } catch { /* Storage is optional. */ }
+      return true
+    } catch {
+      toast.error("Pagina kon niet worden geopend. Uw huidige pagina blijft geselecteerd.")
+      return false
+    } finally {
+      if (loadVersion === loadVersionRef.current) setIsLoadingPage(false)
+    }
+  }, [activePageId, flushPendingSectionSaves, pages, updateLocalSections, websiteId])
+
+  const handleSavePage = async (pageId: string | null, values: PageSettings) => {
+    if (!multipageReady) throw new Error("Installeer eerst de nieuwe multipage-migratie.")
+    if (!websiteId) throw new Error("Kies eerst een website.")
+    const loadVersion = loadVersionRef.current
+    const page = await saveWebsitePage(createClient(), websiteId, pageId, values)
+    if (loadVersion !== loadVersionRef.current) return page
+    setPages((current) => current.some((candidate) => candidate.id === page.id)
+      ? current.map((candidate) => candidate.id === page.id ? page : candidate)
+      : [...current, page].sort((a, b) => a.position - b.position))
+    return page
+  }
+
+  const loadLinkSections = useCallback(async (pageId: string) => {
+    if (!websiteId) return []
+    const { data, error } = await createClient().from("website_sections").select("id,type,content")
+      .eq("website_id", websiteId).eq("page_id", pageId).eq("scope", "page").order("position").range(0,99)
+    if (error) throw error
+    return (data ?? []).filter((section) => section.type !== "nav" && section.type !== "footer")
+      .map((section) => ({ value: section.id, label: String(section.content?.title || getSectionDefinition(section.type as SectionType)?.label || "Sectie") }))
+  }, [websiteId])
+
+  const navigateToLink = useCallback(async (pageId: string, sectionId?: string) => {
+    if (!(await handlePageChange(pageId))) return false
+    // Wait for the selected page's canvas to render before locating its anchor.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const target = sectionId ? Array.from(document.querySelectorAll<HTMLElement>("[id]"))
+        .find((element) => element.id === `section-${sectionId}` && element.getClientRects().length > 0) : null
+      target?.scrollIntoView({ behavior: "smooth", block: "start" })
+      if (target) {
+        target.tabIndex = -1
+        target.focus({ preventScroll: true })
+        setSelectedSectionId(sectionId ?? null)
+      } else if (!sectionId) {
+        const tab = Array.from(document.querySelectorAll<HTMLElement>('[role="tab"][aria-selected="true"]'))
+          .find((element) => element.getClientRects().length > 0)
+        tab?.closest("main")?.scrollTo({ top: 0 })
+        tab?.focus({ preventScroll: true })
+      }
+    }))
+    return true
+  }, [handlePageChange])
+
+  const linkSectionOptions = useMemo(() => sections.filter((section) => section.type !== "nav" && section.type !== "footer" && !section.id.startsWith("section-"))
+    .map((section) => ({ value: section.id, label: String(section.data.title || getSectionDefinition(section.type)?.label || "Sectie") })), [sections])
+
+  useEffect(() => {
+    if (isLoadingWebsite || activePageId !== requestedPageId || !window.location.hash.startsWith("#section-")) return
+    const frame = requestAnimationFrame(() => {
+      const target = Array.from(document.querySelectorAll<HTMLElement>("[id]"))
+        .find((element) => `#${element.id}` === window.location.hash && element.getClientRects().length > 0)
+      target?.scrollIntoView({ block: "start" })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [activePageId, isLoadingWebsite, requestedPageId])
+
+  const handleReorderPages = async (ids: string[]) => {
+    if (!websiteId) throw new Error("Kies eerst een website.")
+    const loadVersion = loadVersionRef.current
+    await reorderWebsitePages(createClient(), websiteId, ids)
+    if (loadVersion !== loadVersionRef.current) return
+    setPages((current) => ids.map((id, position) => ({ ...current.find((page) => page.id === id)!, position })))
+  }
+
+  const handleDeletePage = async (pageId: string) => {
+    if (!websiteId) throw new Error("Kies eerst een website.")
+    const home = pages.find((page) => page.isHome)!
+    if (pageId === activePageId && !(await handlePageChange(home.id))) throw new Error("De startpagina kon niet worden geopend.")
+    const loadVersion = loadVersionRef.current
+    await deleteWebsitePage(createClient(), websiteId, pageId)
+    if (loadVersion !== loadVersionRef.current) return
+    setPages((current) => current.filter((page) => page.id !== pageId).map((page, position) => ({ ...page, position })))
+  }
+
+  const handleDuplicatePage = async (pageId: string, title: string, slug: string) => {
+    if (!websiteId || !(await flushPendingSectionSaves())) throw new Error("Sla eerst de wijzigingen op.")
+    const version = loadVersionRef.current
+    const page = await duplicateWebsitePage(createClient(), websiteId, pageId, title, slug)
+    if (version === loadVersionRef.current) setPages((current) => [...current, page])
+    return page
+  }
+
+  const handleReplaceHome = async (pageId: string, oldHomeSlug: string) => {
+    if (!websiteId || !(await flushPendingSectionSaves())) throw new Error("Sla eerst de wijzigingen op.")
+    const version = loadVersionRef.current
+    await replaceWebsiteHome(createClient(), websiteId, pageId, oldHomeSlug)
+    if (version === loadVersionRef.current) await loadWebsite(websiteId)
+  }
+
+  const handleSectionDestination = async (sectionId: string, pageId: string | null, scope = "page") => {
+    if (scope !== "page" && !window.confirm("Dit onderdeel delen op alle pagina's? Bestaande lokale en gedeelde headers of footers van dit type worden vervangen.")) return
+    if (!websiteId || !(await flushPendingSectionSaves())) throw new Error("Sla eerst de wijzigingen op.")
+    const version = loadVersionRef.current
+    const { error } = await createClient().rpc("move_website_section", { p_website_id: websiteId, p_section_id: sectionId, p_page_id: pageId, p_scope: scope })
+    if (error) throw new Error(error.message)
+    if (version === loadVersionRef.current) await loadWebsite(websiteId)
+  }
+
+  const handleCreateShared = async (type: "nav" | "footer") => {
+    if (!window.confirm(`Een gedeelde ${type === "nav" ? "header" : "footer"} maken? Bestaande lokale onderdelen van dit type worden op alle pagina's vervangen.`)) return
+    if (!websiteId || !(await flushPendingSectionSaves())) throw new Error("Sla eerst de wijzigingen op.")
+    const version = loadVersionRef.current
+    const { error } = await createClient().rpc("create_shared_website_section", { p_website_id: websiteId, p_type: type,
+      p_content: { ...getDefaultSectionData(type, businessId), ...(type === "nav" ? { navigationMode: "pages" } : {}) } })
+    if (error) throw new Error(error.message)
+    if (version === loadVersionRef.current) await loadWebsite(websiteId)
+  }
 
   useEffect(() => registerNavigationGuard(async () => {
     const saved = await flushPendingSectionSaves()
@@ -808,28 +1004,30 @@ export function EditorClient({
   }, [scheduleSectionSave, updateLocalSections])
 
   const handleUndo = useCallback(() => {
+    if (isLoadingPage) return
     const entry = historyRef.current.undo.pop()
     if (!entry) return
     historyRef.current.redo.push(entry)
     applyHistorySections(entry.before)
     setHistoryVersion((version) => version + 1)
     toast.success(`${entry.label} ongedaan gemaakt`)
-  }, [applyHistorySections])
+  }, [applyHistorySections, isLoadingPage])
 
   const handleRedo = useCallback(() => {
+    if (isLoadingPage) return
     const entry = historyRef.current.redo.pop()
     if (!entry) return
     historyRef.current.undo.push(entry)
     applyHistorySections(entry.after)
     setHistoryVersion((version) => version + 1)
     toast.success(`${entry.label} opnieuw toegepast`)
-  }, [applyHistorySections])
+  }, [applyHistorySections, isLoadingPage])
 
   useEffect(() => {
     const handleHistoryShortcut = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== "z") return
       const target = event.target as HTMLElement | null
-      if (target?.isContentEditable) return
+      if (target?.isContentEditable || target?.closest("input, textarea, select")) return
       event.preventDefault()
       if (event.shiftKey) handleRedo()
       else handleUndo()
@@ -838,8 +1036,10 @@ export function EditorClient({
     return () => window.removeEventListener("keydown", handleHistoryShortcut)
   }, [handleRedo, handleUndo])
 
-  // Structural changes only create/delete rows and persist the final order.
+  // Structural edits are one page-scoped database transaction and share the
+  // recoverable save queue, so navigation also waits for additions/deletions.
   const persistSections = useCallback(async (newSections: Section[]) => {
+    if (!websiteId || !activePageId || isLoadingPage) return
     const previousSections = sectionsRef.current
     const structureChanged = previousSections.length !== newSections.length || previousSections.some(
       (section, index) => section.id !== newSections[index]?.id,
@@ -848,69 +1048,19 @@ export function EditorClient({
       historyRef.current = { undo: [], redo: [] }
       setHistoryVersion((version) => version + 1)
     }
+    const header = newSections.filter((section) => section.scope === "site_header")
+    const footer = newSections.filter((section) => section.scope === "site_footer")
+    newSections = [...header, ...newSections.filter((section) => !section.scope || section.scope === "page"), ...footer]
     updateLocalSections(newSections)
-
-    if (!websiteId) return
-
-    setIsSaving(true)
-    const supabase = createClient()
-
-    try {
-      const nextIds = new Set(newSections.map((section) => section.id))
-      const removedSections = previousSections.filter(
-        (section) => !section.id.startsWith("section-") && !nextIds.has(section.id),
-      )
-      const temporarySections = newSections.filter((section) => section.id.startsWith("section-"))
-
-      const [{ error: deleteError }, createdResults] = await Promise.all([
-        websiteSections.deleteSections(removedSections.map((section) => section.id), supabase),
-        Promise.all(
-          temporarySections.map(async (section) => {
-            const position = newSections.findIndex((candidate) => candidate.id === section.id) + 1
-            const result = await websiteSections.createSection(
-              websiteId,
-              {
-                type: section.type,
-                content: section.data ?? {},
-                styles: section.styles ?? {},
-                position,
-              },
-              supabase,
-            )
-            if (result.error) throw result.error
-            return { temporaryId: section.id, section, created: result.data }
-          }),
-        ),
-      ])
-
-      if (deleteError) throw deleteError
-
-      const idMapping = new Map(
-        createdResults
-          .filter((result) => result.created?.id)
-          .map((result) => [result.temporaryId, result.created!.id] as const),
-      )
-      await Promise.all(createdResults.map(async (result) => {
-        if (!result.created?.id) return
-        const latestTemporarySection = sectionsRef.current.find(
-          (section) => section.id === result.temporaryId,
-        )
-        if (!latestTemporarySection || latestTemporarySection === result.section) return
-        const latestPosition = sectionsRef.current.findIndex(
-          (section) => section.id === result.temporaryId,
-        ) + 1
-        const { error } = await websiteSections.updateSection(
-          result.created.id,
-          {
-            type: latestTemporarySection.type,
-            content: latestTemporarySection.data ?? {},
-            styles: latestTemporarySection.styles ?? {},
-            position: latestPosition,
-          },
-          supabase,
-        )
-        if (error) throw error
-      }))
+    const contextVersion = loadVersionRef.current
+    const key = `structure:${websiteId}:${activePageId}`
+    saveQueueRef.current?.schedule(key, async () => {
+      const desired = contextVersion === loadVersionRef.current ? sectionsRef.current : newSections
+      const supabase = createClient()
+      const { data: mapping, error } = await websiteSections.savePageStructure(websiteId, activePageId, desired.filter((section) => !section.scope || section.scope === "page"), supabase)
+      if (error) throw error
+      const idMapping = new Map<string, string>(Object.entries(mapping ?? {}) as [string, string][])
+      if (contextVersion !== loadVersionRef.current) return
       const latestSections = sectionsRef.current.map((section) => {
         const persistedId = idMapping.get(section.id)
         return persistedId ? { ...section, id: persistedId } : section
@@ -922,32 +1072,31 @@ export function EditorClient({
         id: `${idMapping.get(transition.fromSectionId) ?? transition.fromSectionId}-${idMapping.get(transition.toSectionId) ?? transition.toSectionId}`,
         fromSectionId: idMapping.get(transition.fromSectionId) ?? transition.fromSectionId,
         toSectionId: idMapping.get(transition.toSectionId) ?? transition.toSectionId,
-      })))
-
-      const { error: reorderError } = await websiteSections.reorderSections(
-        websiteId,
-        latestSections.map((section) => section.id),
-        supabase,
-      )
-      if (reorderError) throw reorderError
-
+      })).filter((transition) => latestSections.some((section) => section.id === transition.fromSectionId)
+        && latestSections.some((section) => section.id === transition.toSectionId)))
+      // Capture edits made to a new section while its database ID was pending.
+      await Promise.all([...idMapping.values()].map(async (id) => {
+        const latest = sectionsRef.current.find((section) => section.id === id)
+        if (!latest) return
+        const { error: updateError } = await websiteSections.updateSection(id, { content: latest.data ?? {}, styles: latest.styles ?? {} }, supabase)
+        if (updateError) throw updateError
+      }))
+      const nextIds = new Set(latestSections.map((section) => section.id))
       await Promise.all([
-        ...removedSections.map((section) => logSectionAudit("section.deleted", websiteId, section)),
-        ...createdResults
-          .filter((result) => result.created?.id)
-          .map((result) => logSectionAudit("section.added", websiteId, {
-            id: result.created!.id,
-            type: result.section.type,
-          })),
+        ...previousSections.filter((section) => !section.id.startsWith("section-") && !nextIds.has(section.id))
+          .map((section) => logSectionAudit("section.deleted", websiteId, section)),
+        ...latestSections.filter((section) => [...idMapping.values()].includes(section.id))
+          .map((section) => logSectionAudit("section.added", websiteId, section)),
       ])
-    } catch (err) {
-      console.error("Error persisting section structure:", err)
+    })
+    try {
+      await saveQueueRef.current?.flush()
+      setSaveState("saved")
+    } catch {
+      // The queue retains failed work and provides its existing Retry action.
       setSaveState("error")
-    } finally {
-      setIsSaving(false)
     }
-  }, [setIsSaving, setSaveState, updateLocalSections, websiteId])
-
+  }, [activePageId, isLoadingPage, setSaveState, updateLocalSections, websiteId])
   const handleCanvasSectionUpdate = useCallback((id: string, updates: Partial<Section>) => {
     const currentSections = sectionsRef.current
     const sectionIndex = currentSections.findIndex((section) => section.id === id)
@@ -1012,6 +1161,7 @@ export function EditorClient({
   }, [flushPendingSectionSaves, router, setIsSaving, setSaveState, websiteId])
 
   const handlePublish = useCallback(() => {
+    if (!multipageReady) { toast.error("Installeer eerst de nieuwe multipage-migratie voordat u publiceert."); return }
     if (!websiteId) return
     if (!canPublishDraft) {
       setPublishPreflightOpen(true)
@@ -1019,7 +1169,7 @@ export function EditorClient({
     }
     setStaleTranslationWarnings([])
     setPublishConfirmationOpen(true)
-  }, [canPublishDraft, websiteId])
+  }, [canPublishDraft, multipageReady, websiteId])
 
   const handleLogout = useCallback(async () => {
     if (!(await flushPendingSectionSaves())) {
@@ -1119,6 +1269,18 @@ export function EditorClient({
     const removedIndex = currentSections.findIndex((section) => section.id === id)
     const removedSection = currentSections[removedIndex]
     if (!removedSection) return
+    if (removedSection.scope && removedSection.scope !== "page") {
+      if (!window.confirm("Dit gedeelde onderdeel op alle pagina's verwijderen?")) return
+      void (async () => {
+        const version = loadVersionRef.current
+        const sourceWebsiteId = websiteId
+        if (!(await flushPendingSectionSaves())) return
+        const { error } = await websiteSections.deleteSection(id, createClient())
+        if (error) { toast.error(error.message); return }
+        if (version === loadVersionRef.current) await loadWebsite(sourceWebsiteId)
+      })()
+      return
+    }
     const nextSections = currentSections.filter((section) => section.id !== id)
     void persistSections(nextSections)
     setTransitions((prev) =>
@@ -1183,6 +1345,12 @@ export function EditorClient({
   }
 
   const addSectionAt = (type: SectionType, index: number) => {
+    const shared = sections.find((section) => section.type === type && section.scope && section.scope !== "page")
+    if (shared && (type === "nav" || type === "footer")) {
+      setSelectedSectionId(shared.id); setPendingMobileSectionType(null); setMobilePanel("style")
+      toast.info("Dit onderdeel wordt gedeeld op alle pagina's. Bewerk het bestaande onderdeel.")
+      return
+    }
     const tempId = `section-${Date.now()}`
     const newSection: Section = {
       id: tempId,
@@ -1526,7 +1694,7 @@ export function EditorClient({
     ? `${PLATFORM_DOMAIN}/preview/${selectedWebsite.slug}`
     : ""
   const selectedWebsitePreviewHref = selectedWebsitePreviewUrl
-    ? `https://${selectedWebsitePreviewUrl}`
+    ? `https://${selectedWebsitePreviewUrl}/${[activeWebsiteLocale && !activeWebsiteLocale.is_default ? activeWebsiteLocale.path_segment : "", pages.find((page) => page.id === activePageId)?.slug ?? ""].filter(Boolean).join("/")}`
     : ""
   const saveStatusLabel =
     isSaving || saveState === "saving" ? "Wijzigingen opslaan..." : saveState === "error" ? "Niet opgeslagen" : "Wijzigingen opgeslagen"
@@ -1547,6 +1715,9 @@ export function EditorClient({
   if (isLoadingWebsite) {
     return <PageLoadingIndicator variant="workspace" />
   }
+  if (pageLoadError) {
+    return <div className="m-4 rounded-lg border border-destructive/30 bg-background p-5" role="alert"><p className="font-medium">Pagina&apos;s konden niet worden geladen</p><p className="mt-2 text-sm text-muted-foreground">{pageLoadError}</p><button type="button" className="mt-4 text-sm font-medium text-primary underline" onClick={() => void loadWebsite(websiteId)}>Opnieuw proberen</button></div>
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-muted" onClickCapture={handleEditorNavigationCapture}>
@@ -1554,6 +1725,7 @@ export function EditorClient({
         <EditorWebsiteToolbar
           websites={websites.map((website, index) => ({ id: website.id, label: getWebsiteOptionLabel(website, index) }))}
           websiteId={websiteId}
+          pageId={activePageId}
           title={title}
           busy={isCreatingWebsite || isDeletingWebsite || isRenamingWebsite}
           saving={isSaving}
@@ -1562,6 +1734,7 @@ export function EditorClient({
           canRedo={canRedo}
           canPublish={canPublishDraft}
           published={Boolean(selectedWebsite?.published)}
+          pagePreview={false}
           previewHref={selectedWebsitePreviewHref}
           liveHref={selectedWebsiteLiveHref}
           onWebsiteChange={handleWebsiteChange}
@@ -1588,7 +1761,8 @@ export function EditorClient({
           /> : multilingualEnabled ? <Button variant="outline" asChild className="h-11"><Link href="/editor/account/billing"><Globe2 className="h-4 w-4" />Talen · Gold/add-on</Link></Button> : null}
         />
         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground" role="status">
-          <span>{selectedWebsite?.published ? "Live · wijzigingen blijven concept tot publicatie" : "Offline · alleen zichtbaar als concept"}</span>
+          <span className="hidden md:inline">{selectedWebsite?.published ? "Live · wijzigingen blijven concept tot publicatie" : "Offline · alleen zichtbaar als concept"}</span>
+          <span className="md:hidden">{selectedWebsite?.published ? "Live · concept" : "Concept"}</span>
           <span className="sm:hidden">{saveStatusLabel}</span>
         </div>
         {websiteMessage ? <StatusMessage tone={websiteMessage.type} className="mt-2 text-xs">{websiteMessage.text}</StatusMessage> : null}
@@ -1641,6 +1815,33 @@ export function EditorClient({
           </div>
         </details>
       ) : null}
+      <WebsiteLinksProvider value={{ pages, activePageId, websiteId, editor: true,
+        localePath: activeWebsiteLocale && !activeWebsiteLocale.is_default ? activeWebsiteLocale.path_segment : "",
+        sectionAliases: Object.fromEntries([...sections].reverse().map((section) => [`#${section.type}`, `#section-${section.id}`])),
+        sectionOptions: linkSectionOptions, loadSections: loadLinkSections, navigate: navigateToLink }}>
+      <EditorPagesWorkspace
+        key={websiteId ?? "no-website"}
+        siteAddress={selectedWebsiteLiveUrl}
+        localePath={activeWebsiteLocale && !activeWebsiteLocale.is_default ? activeWebsiteLocale.path_segment : ""}
+        sectionCount={sections.length}
+        disabled={!websiteId || isCreatingWebsite || isDeletingWebsite || isRenamingWebsite || isSaving || isLoadingPage}
+        pages={pages}
+        activePageId={activePageId}
+        loading={isLoadingPage}
+        beforePageChange={flushPendingSectionSaves}
+        onPageChange={handlePageChange}
+        onSavePage={handleSavePage}
+        onReorderPages={handleReorderPages}
+        onDeletePage={handleDeletePage}
+        onDuplicatePage={handleDuplicatePage}
+        onReplaceHome={handleReplaceHome}
+        sections={sections}
+        selectedSectionId={selectedSectionId}
+        onSectionDestination={handleSectionDestination}
+        onCreateShared={handleCreateShared}
+        onSelectSection={setSelectedSectionId}
+        advancedReady={multipageReady}
+      >
       {/* Desktop layout: side-by-side panels */}
       <div className="hidden flex-1 overflow-hidden md:flex">
         {!isPreview && !isTranslationMode && (
@@ -1912,6 +2113,9 @@ export function EditorClient({
           </nav>
         )}
       </div>
+
+      </EditorPagesWorkspace>
+      </WebsiteLinksProvider>
 
       <AlertDialog
         open={deleteWebsiteConfirmationOpen}

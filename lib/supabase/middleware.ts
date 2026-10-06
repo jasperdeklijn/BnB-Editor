@@ -14,6 +14,7 @@ function rewriteWebsite(request: NextRequest, url: URL) {
   return NextResponse.rewrite(url, { request: { headers: requestHeaders } })
 }
 function isAssetOrApiRequest(pathname: string) {
+  if (pathname === "/sitemap.xml" || pathname === "/robots.txt") return false
   return (
     pathname.startsWith("/api/") ||
     pathname.startsWith("/_next/") ||
@@ -50,6 +51,8 @@ const hostname = host.split(":")[0].toLowerCase()
 
 // Preview
 if (hostname.startsWith("preview-") && hostname.endsWith(`.${platformDomain}`)) {
+  if (request.nextUrl.pathname === "/robots.txt") return new NextResponse("User-agent: *\nDisallow: /\n", { headers: { "Content-Type": "text/plain" } })
+  if (request.nextUrl.pathname === "/sitemap.xml") return new NextResponse("Not found", { status: 404 })
   if (isAssetOrApiRequest(request.nextUrl.pathname)) {
     return supabaseResponse
   }

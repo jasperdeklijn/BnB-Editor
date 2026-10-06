@@ -28,7 +28,8 @@ test("fragment/nav links and repeating ids map to fresh native identities", () =
 })
 test("malformed, missing, future, deep and oversized documents fail safely", () => {
   assert.throws(() => parseImport("{secret"), /Ongeldige JSON/)
-  assert.throws(() => parse({ ...example, version: 2 }), /alleen versie 1/)
+  assert.throws(() => parse({ ...example, version: 2 }), /startpagina/)
+  assert.throws(() => parse({ ...example, version: 3 }), /Niet ondersteund/)
   assert.throws(() => parse({ ...example, title: undefined }))
   assert.throws(() => parse({ ...example, title: "  " }))
   assert.throws(() => parseImport("[".repeat(17) + "]".repeat(17)), /diep/)

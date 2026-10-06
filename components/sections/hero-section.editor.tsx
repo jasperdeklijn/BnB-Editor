@@ -24,7 +24,7 @@ export function HeroSectionEditor({ section, updateField, sectionTargetOptions }
       </button>
       {buttonEnabled ? <>
         <div><Label className="mb-1.5 block text-xs">Knoptekst</Label><Input placeholder="Neem contact op" value={(section.data.ctaText as string) || ""} onChange={(event) => updateField("ctaText", event.target.value)} /></div>
-        <div><Label className="mb-1.5 block text-xs">Link naar sectie</Label><SectionLinkSelect value={(section.data.ctaHref as string) || ""} onChange={(value) => updateField("ctaHref", value)} options={sectionTargetOptions} ariaLabel="Hero knopdoel" /></div>
+        <div><Label className="mb-1.5 block text-xs">Linkdoel</Label><SectionLinkSelect value={(section.data.ctaHref as string) || ""} onChange={(value) => updateField("ctaHref", value)} options={sectionTargetOptions} ariaLabel="Hero knopdoel" /></div>
       </> : null}
     </Card>
   )

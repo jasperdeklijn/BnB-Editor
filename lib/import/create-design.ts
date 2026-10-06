@@ -57,9 +57,10 @@ export async function createImportedDesign({ db, storage, userId, designId, docu
     signal.throwIfAborted()
     const design = normalizeImport(replaceImportImages(document, urls), () => crypto.randomUUID())
     rpcStarted = true
-    const { error } = await db.rpc(transfer ? "create_transfer_design" : "create_imported_design", {
+    const { error } = await db.rpc(design.pages ? (transfer ? "create_multipage_transfer_design" : "create_multipage_imported_design") : transfer ? "create_transfer_design" : "create_imported_design", {
       p_design_id: designId, p_title: design.title, p_theme: design.theme,
       p_sections: design.sections, p_assets: assets,
+      ...(design.pages ? { p_pages: design.pages } : {}),
       ...(transfer ? { p_request_id: transfer.requestId, p_revision: transfer.revision } : {}),
     })
     if (error) {

@@ -1,5 +1,7 @@
 "use client"
 
+import { WebsiteLink } from "@/components/editor/website-links-context"
+
 import { SectionIcon } from "./section-icon"
 
 
@@ -68,20 +70,20 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
             )}
           </div>
           <div className="flex flex-wrap gap-3 justify-center">
-            {primaryEnabled ? <a
+            {primaryEnabled ? <WebsiteLink
               href={primaryHref}
               className="inline-flex items-center gap-2 rounded-xl bg-[var(--section-accent)] px-6 py-3 text-sm font-semibold text-[var(--section-accent-foreground)] shadow transition-all hover:scale-[1.02] hover:brightness-90"
             >
               <EditableText data={data} path={["primaryCtaText"]} value={primaryText} isPreview={isPreview} onUpdate={onUpdate} />
               <SectionIcon icon={data.primaryCtaIcon} fallback="tabler:arrow-right" className="h-4 w-4" />
-            </a> : null}
+            </WebsiteLink> : null}
             {secondaryEnabled && (
-              <a
+              <WebsiteLink
                 href={secondaryHref}
                 className="inline-flex items-center gap-2 rounded-xl border border-white/40 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-all"
               >
                 <SectionIcon icon={data.secondaryCtaIcon ?? null} /><EditableText data={data} path={["secondaryCtaText"]} value={secondaryText} isPreview={isPreview} onUpdate={onUpdate} />
-              </a>
+              </WebsiteLink>
             )}
           </div>
         </div>
@@ -113,21 +115,21 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
               )}
             </div>
             <div className="flex flex-col gap-3">
-              {primaryEnabled ? <a
+              {primaryEnabled ? <WebsiteLink
                 href={primaryHref}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--section-accent)] px-8 py-3.5 text-sm font-semibold text-[var(--section-accent-foreground)] shadow transition-all hover:scale-[1.02] hover:brightness-90"
               >
                 <EditableText data={data} path={["primaryCtaText"]} value={primaryText} isPreview={isPreview} onUpdate={onUpdate} />
                 <SectionIcon icon={data.primaryCtaIcon} fallback="tabler:arrow-right" className="h-4 w-4" />
-              </a> : null}
+              </WebsiteLink> : null}
               {phone && (
-                <a
+                <WebsiteLink
                   href={`tel:${phone}`}
                   className="inline-flex items-center justify-center gap-2 rounded-xl border border-border px-8 py-3 text-sm text-muted-foreground transition-colors hover:border-[var(--section-accent)] hover:text-[var(--section-accent)]"
                 >
                   <SectionIcon icon={data.phoneIcon} fallback="tabler:phone" className="h-4 w-4" />
                   <EditableText data={data} path={["phone"]} value={phone} isPreview={isPreview} onUpdate={onUpdate} />
-                </a>
+                </WebsiteLink>
               )}
             </div>
           </div>
@@ -157,28 +159,28 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
           <EditableText as="p" data={data} path={["subtitle"]} value={subtitle} isPreview={isPreview} onUpdate={onUpdate} className="mb-8 text-lg text-muted-foreground" style={textStyle} multiline />
         )}
         <div className="flex flex-wrap items-center justify-center gap-4">
-          {primaryEnabled ? <a
+          {primaryEnabled ? <WebsiteLink
             href={primaryHref}
             className="inline-flex items-center gap-2 rounded-xl bg-[var(--section-accent)] px-8 py-4 text-base font-semibold text-[var(--section-accent-foreground)] shadow-lg transition-all hover:scale-[1.02] hover:brightness-90"
           >
             <EditableText data={data} path={["primaryCtaText"]} value={primaryText} isPreview={isPreview} onUpdate={onUpdate} />
             <SectionIcon icon={data.primaryCtaIcon} fallback="tabler:arrow-right" className="h-5 w-5" />
-          </a> : null}
+          </WebsiteLink> : null}
           {secondaryEnabled && (
-            <a
+            <WebsiteLink
               href={secondaryHref}
               className="inline-flex items-center gap-2 rounded-xl border border-border px-8 py-4 text-base font-semibold text-foreground transition-all hover:border-[var(--section-accent)] hover:text-[var(--section-accent)]"
             >
               <SectionIcon icon={data.secondaryCtaIcon ?? null} /><EditableText data={data} path={["secondaryCtaText"]} value={secondaryText} isPreview={isPreview} onUpdate={onUpdate} />
-            </a>
+            </WebsiteLink>
           )}
         </div>
         {phone && (
           <p className="mt-6 text-sm text-muted-foreground">
             Of bel direct:{" "}
-            <a href={`tel:${phone}`} className="inline-flex items-center gap-2 font-medium text-[var(--section-accent)] hover:underline"><SectionIcon icon={data.phoneIcon} fallback="tabler:phone" />
+            <WebsiteLink href={`tel:${phone}`} className="inline-flex items-center gap-2 font-medium text-[var(--section-accent)] hover:underline"><SectionIcon icon={data.phoneIcon} fallback="tabler:phone" />
               <EditableText data={data} path={["phone"]} value={phone} isPreview={isPreview} onUpdate={onUpdate} />
-            </a>
+            </WebsiteLink>
           </p>
         )}
       </div>

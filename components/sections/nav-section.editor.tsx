@@ -3,157 +3,42 @@
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
+import { SectionLinkSelect } from "@/components/editor/section-link-select"
+import { RepeatingItemActions, moveRepeatingItem } from "@/components/editor/repeating-item-actions"
+import { resolveNavigationLinks, type ResolvedNavigationLink } from "@/lib/i18n/section-translations"
+import { useWebsiteLinks } from "@/components/editor/website-links-context"
+import { encodeWebsiteLink } from "@/lib/website-links"
 import type { SectionEditorProps } from "@/components/editor/section-editor-types"
-import type { SectionType } from "@/lib/types"
-import { Eye, EyeOff, Navigation, Pin, Type } from "lucide-react"
+import { Eye, EyeOff, Navigation, Plus } from "lucide-react"
 
-const navigableSectionTypes: SectionType[] = [
-  "hero",
-  "about",
-  "services",
-  "gallery",
-  "features",
-  "contact",
-  "testimonials",
-  "faq",
-  "opening_hours",
-  "pricing",
-  "team",
-  "map",
-  "cta",
-  "request_form",
-]
-
-const defaultLabels: Record<SectionType, string> = {
-  hero: "Home",
-  about: "Over",
-  services: "Aanbod",
-  gallery: "Galerij",
-  features: "Kenmerken",
-  contact: "Contact",
-  nav: "Navigation",
-  footer: "Footer",
-  testimonials: "Recensies",
-  faq: "FAQ",
-  opening_hours: "Openingstijden",
-  pricing: "Tarieven",
-  team: "Team",
-  map: "Locatie",
-  cta: "Actie",
-  request_form: "Aanvraag",
-}
-
-export function NavSectionEditor({ section, sections, updateField }: SectionEditorProps) {
-  const navLinks =
-    ((section.data as any).navLinks as Array<{ sectionId: string; label: string; enabled: boolean }>) || []
-  const navigableSections = sections.filter((candidate) => navigableSectionTypes.includes(candidate.type))
-
-  const getConfig = (sectionId: string, sectionType: SectionType, data: Record<string, unknown>) => {
-    const existing = navLinks.find((link) => link.sectionId === sectionId)
-    if (existing) return existing
-    return {
-      sectionId,
-      label: (data?.title as string) || defaultLabels[sectionType],
-      enabled: true,
-    }
-  }
-
-  const updateNavLink = (sectionId: string, field: "label" | "enabled", value: string | boolean) => {
-    const currentLinks = [...navLinks]
-    const existingIndex = currentLinks.findIndex((link) => link.sectionId === sectionId)
-    const targetSection = navigableSections.find((candidate) => candidate.id === sectionId)
-
-    if (existingIndex >= 0) {
-      currentLinks[existingIndex] = { ...currentLinks[existingIndex], [field]: value }
-    } else {
-      currentLinks.push({
-        sectionId,
-        label: (targetSection?.data?.title as string) || defaultLabels[targetSection?.type || "hero"],
-        enabled: true,
-        [field]: value,
-      })
-    }
-
-    updateField("navLinks", currentLinks)
-  }
-
-  return (
-    <Card className="p-4 space-y-4">
-      <Label className="flex items-center gap-2">
-        <Navigation className="h-3.5 w-3.5" />
-        Navigatie-instellingen
-      </Label>
-      <div className="space-y-2">
-        <Label className="text-xs">Merknaam</Label>
-        <Input
-          value={(section.data as any).brandName || "Mijn bedrijf"}
-          onChange={(e) => updateField("brandName", e.target.value)}
-          placeholder="Je merknaam"
-        />
-      </div>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Pin className="h-3.5 w-3.5" />
-          <Label className="text-xs">Vaste navigatie</Label>
+export function NavSectionEditor({ section, sections, updateField, updateFields, sectionTargetOptions }: SectionEditorProps) {
+  const context = useWebsiteLinks()
+  const defaults: ResolvedNavigationLink[] = section.data.navigationMode === "pages" && context
+    ? context.pages.filter((page) => page.showInNavigation).map((page) => ({ sectionId: page.id, label: page.title, enabled: true, href: encodeWebsiteLink({ type: "page", pageId: page.id }) }))
+    : resolveNavigationLinks(section.data, sections)
+  const links = defaults.map((link) => ({ ...link,
+    href: link.href ?? (context?.activePageId ? encodeWebsiteLink({ type: "section", pageId: context.activePageId, sectionId: link.sectionId }) : `#section-${link.sectionId}`),
+  }))
+  const saveLinks = (next: ResolvedNavigationLink[]) => updateFields({ navigationMode: "custom", navLinks: next })
+  const updateLink = (index: number, changes: Partial<ResolvedNavigationLink>) => saveLinks(links.map((link, position) => position === index ? { ...link, ...changes } : link))
+  const sticky = section.data.isSticky !== false
+  return <Card className="space-y-4 p-4">
+    <h3 className="flex items-center gap-2 text-sm font-medium"><Navigation className="h-4 w-4" />Navigatie-instellingen</h3>
+    <label className="block space-y-2"><span className="text-xs font-medium">Merknaam</span><Input value={String(section.data.brandName ?? "Mijn bedrijf")} onChange={(event) => updateField("brandName", event.target.value)} placeholder="Je merknaam" /></label>
+    <div className="flex items-center justify-between gap-3"><Label htmlFor={`nav-sticky-${section.id}`}>Vaste navigatie</Label><Switch id={`nav-sticky-${section.id}`} checked={sticky} onCheckedChange={(checked) => updateField("isSticky", checked)} /></div>
+    <p className="text-xs text-muted-foreground">{sticky ? "De navigatie blijft bovenaan tijdens scrollen." : "De navigatie scrolt met de pagina."}</p>
+    <div className="space-y-3"><h4 className="text-sm font-medium">Navigatielinks</h4><p className="text-xs text-muted-foreground">Kies een pagina, een sectie op een pagina of een webadres.</p>
+      {links.map((link, index) => <div key={link.sectionId} className="min-w-0 space-y-3 rounded-lg border border-border bg-muted/20 p-3">
+        <div className="flex items-center justify-between gap-2">
+          <button type="button" className="flex h-11 min-w-11 items-center justify-center rounded-md hover:bg-muted" aria-label={link.enabled ? `Link ${index + 1} verbergen` : `Link ${index + 1} tonen`} aria-pressed={link.enabled} onClick={() => updateLink(index, { enabled: !link.enabled })}>{link.enabled ? <Eye className="h-4 w-4 text-primary" /> : <EyeOff className="h-4 w-4 text-muted-foreground" />}</button>
+          <RepeatingItemActions itemLabel={`Navigatielink ${index + 1}`} index={index} count={links.length} onMove={(direction) => saveLinks(moveRepeatingItem(links, index, direction))} onDuplicate={() => saveLinks([...links.slice(0,index+1), { ...link, sectionId: crypto.randomUUID() }, ...links.slice(index+1)])} onDelete={() => saveLinks(links.filter((_, position) => position !== index))} />
         </div>
-        <button
-          type="button"
-          onClick={() => updateField("isSticky", !((section.data as any).isSticky ?? true))}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-            ((section.data as any).isSticky ?? true) ? "bg-primary" : "bg-muted"
-          }`}
-        >
-          <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-              ((section.data as any).isSticky ?? true) ? "translate-x-6" : "translate-x-1"
-            }`}
-          />
-        </button>
-      </div>
-      <p className="text-xs text-muted-foreground">
-        {((section.data as any).isSticky ?? true) ? "Navbar blijft bovenaan tijdens scrollen" : "Navbar scrolt met pagina"}
-      </p>
-      <div className="space-y-3">
-        <Label className="flex items-center gap-2 text-xs">
-          <Type className="h-3.5 w-3.5" />
-          Navigatielinks
-        </Label>
-        <p className="text-xs text-muted-foreground">
-          Kies welke secties in de navigatie verschijnen en pas de labels aan
-        </p>
-        <div className="space-y-2">
-          {navigableSections.map((candidate) => {
-            const config = getConfig(candidate.id, candidate.type, candidate.data)
-            return (
-              <div key={candidate.id} className="flex items-center gap-2 p-2 rounded border bg-muted/20">
-                <button
-                  type="button"
-                  onClick={() => updateNavLink(candidate.id, "enabled", !config.enabled)}
-                  className="flex-shrink-0"
-                  title={config.enabled ? "Verbergen uit nav" : "Tonen in nav"}
-                >
-                  {config.enabled ? <Eye className="h-4 w-4 text-primary" /> : <EyeOff className="h-4 w-4 text-muted-foreground" />}
-                </button>
-                <Input
-                  value={config.label}
-                  onChange={(e) => updateNavLink(candidate.id, "label", e.target.value)}
-                  className={`flex-1 h-8 text-sm ${!config.enabled ? "opacity-50" : ""}`}
-                  disabled={!config.enabled}
-                  placeholder={defaultLabels[candidate.type]}
-                />
-                <span className="text-xs text-muted-foreground capitalize w-16 text-right">
-                  {candidate.type}
-                </span>
-              </div>
-            )
-          })}
-          {navigableSections.length === 0 ? (
-            <p className="text-xs text-muted-foreground italic">
-              Voeg secties toe aan je pagina om navigatielinks te maken
-            </p>
-          ) : null}
-        </div>
-      </div>
-    </Card>
-  )
+        <Input aria-label={`Tekst van navigatielink ${index + 1}`} value={link.label} disabled={!link.enabled} onChange={(event) => updateLink(index, { label: event.target.value })} placeholder="Linktekst" />
+        <fieldset disabled={!link.enabled} className="min-w-0"><SectionLinkSelect value={link.href ?? `#section-${link.sectionId}`} onChange={(href) => updateLink(index, { href })} options={sectionTargetOptions} ariaLabel={`Doel van navigatielink ${index + 1}`} /></fieldset>
+      </div>)}
+      <Button type="button" variant="outline" className="h-11 w-full" onClick={() => saveLinks([...links, { sectionId: crypto.randomUUID(), label: "Nieuwe link", href: "", enabled: true }])}><Plus className="h-4 w-4" />Link toevoegen</Button>
+    </div>
+  </Card>
 }

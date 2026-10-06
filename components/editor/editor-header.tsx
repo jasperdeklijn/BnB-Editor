@@ -63,10 +63,10 @@ export function EditorHeader({ onLogout, isSaving, saveState = isSaving ? "savin
         <Image src="/icon.png" alt={PLATFORM_BRAND_NAME} width={1024} height={1024} className="h-8 w-8 lg:hidden" />
         <Image src="/logo_klein.png" alt={PLATFORM_BRAND_NAME} width={1536} height={1024} className="hidden h-10 w-auto object-contain lg:block" />
       </Link>
-      <nav aria-label="Hoofdnavigatie" className="order-3 grid w-full grid-cols-2 gap-1 min-[380px]:grid-cols-4 lg:order-2 lg:flex lg:w-auto lg:flex-1 lg:justify-center">
+      <nav aria-label="Hoofdnavigatie" className="order-3 grid w-full grid-cols-4 gap-1 lg:order-2 lg:flex lg:w-auto lg:flex-1 lg:justify-center">
         {EDITOR_NAVIGATION.map((group) => (
           <Link key={group.id} href={group.href} aria-current={activeGroup?.id === group.id ? "true" : undefined}
-            className={cn("inline-flex min-h-11 items-center justify-center rounded-md px-2 text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-white sm:px-3 sm:text-sm",
+            className={cn("inline-flex min-h-11 min-w-0 items-center justify-center rounded-md px-1 text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-white sm:px-3 sm:text-sm",
               activeGroup?.id === group.id ? "bg-white text-primary shadow-sm" : "text-[var(--editor-header-fg)] hover:bg-[var(--editor-header-accent)]/25")}>
             {group.label}
           </Link>

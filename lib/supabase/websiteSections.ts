@@ -5,6 +5,8 @@ import { isMissingRelationError } from './errors'
 export type WebsiteSection = {
   id: string
   website_id: string
+  page_id: string | null
+  scope: 'page' | 'site_header' | 'site_footer'
   position: number
   type: string
   content: any
@@ -32,17 +34,18 @@ async function updateSectionPositions(
   client: SupabaseClient,
   websiteId: string,
   updates: Array<{ id: string; position: number }>,
+  pageId?: string,
 ) {
   const results = await Promise.all(
-    updates.map(({ id, position }) =>
-      client
+    updates.map(({ id, position }) => {
+      let query = client
         .from('website_sections')
         .update({ position })
         .eq('id', id)
         .eq('website_id', websiteId)
-        .select('id, position')
-        .single()
-    )
+      if (pageId) query = query.eq('page_id', pageId).eq('scope', 'page')
+      return query.select('id, position').single()
+    })
   )
   const failed = results.find((result) => result.error)
   return {
@@ -61,6 +64,8 @@ export async function fetchWebsiteWithSectionsBySlug(slug: string, supabase?: Su
       website_sections (
         id,
         website_id,
+        page_id,
+        scope,
         type,
         position,
         content,
@@ -76,15 +81,26 @@ export async function fetchWebsiteWithSectionsBySlug(slug: string, supabase?: Su
   return { data, error }
 }
 
-export async function listSections(websiteId: string, supabase?: SupabaseClient) {
+export async function listSections(websiteId: string, supabase?: SupabaseClient, pageId?: string) {
   const client = await getClient(supabase)
-  const { data, error } = await client
+  let query = client
     .from('website_sections')
     .select('*')
     .eq('website_id', websiteId)
+  if (pageId) query = query.eq('page_id', pageId).eq('scope', 'page')
+  const { data, error } = await query
     .order('position', { ascending: true })
 
   return { data, error }
+}
+
+export async function listEditorSections(websiteId: string, supabase: SupabaseClient, pageId: string) {
+  const [page, shared] = await Promise.all([
+    listSections(websiteId, supabase, pageId),
+    supabase.from("website_sections").select("*").eq("website_id", websiteId).neq("scope", "page"),
+  ])
+  return { data: [...(shared.data ?? []).filter((row) => row.scope === "site_header"), ...(page.data ?? []),
+    ...(shared.data ?? []).filter((row) => row.scope === "site_footer")], error: page.error || shared.error }
 }
 
 export async function getSectionById(id: string, supabase?: SupabaseClient) {
@@ -108,10 +124,12 @@ export async function createSection(
   // If position not provided, append to the end
   let position = section.position
   if (position == null) {
-    const { data: last } = await client
+    let query = client
       .from('website_sections')
       .select('position')
       .eq('website_id', websiteId)
+    if (section.page_id) query = query.eq('page_id', section.page_id)
+    const { data: last } = await query
       .order('position', { ascending: false })
       .limit(1)
       .single()
@@ -121,6 +139,8 @@ export async function createSection(
 
   const payload = {
     website_id: websiteId,
+    page_id: section.page_id,
+    scope: section.scope ?? 'page',
     type: section.type,
     position,
     content: section.content ?? {},
@@ -148,10 +168,13 @@ export async function deleteSection(id: string, supabase?: SupabaseClient) {
   const websiteId = (deleted as any)?.website_id
   if (!websiteId) return { data: deleted, error: null }
 
-  const { data: remaining } = await client
+  let remainingQuery = client
     .from('website_sections')
     .select('id')
     .eq('website_id', websiteId)
+    .eq('scope', deleted.scope)
+  remainingQuery = deleted.page_id ? remainingQuery.eq('page_id', deleted.page_id) : remainingQuery.is('page_id', null)
+  const { data: remaining } = await remainingQuery
     .order('position', { ascending: true })
 
   if (remaining && remaining.length) {
@@ -169,10 +192,16 @@ export async function deleteSections(ids: string[], supabase?: SupabaseClient) {
   return client.from('website_sections').delete().in('id', ids).select()
 }
 
-export async function reorderSections(websiteId: string, orderedIds: string[], supabase?: SupabaseClient) {
+export async function reorderSections(websiteId: string, orderedIds: string[], supabase?: SupabaseClient, pageId?: string) {
   const client = await getClient(supabase)
+  if (pageId) return client.rpc('reorder_page_sections', { p_website_id: websiteId, p_page_id: pageId, p_section_ids: orderedIds })
   const updates = orderedIds.map((id, idx) => ({ id, position: idx + 1 }))
   return updateSectionPositions(client, websiteId, updates)
+}
+
+export async function savePageStructure(websiteId: string, pageId: string, sections: unknown[], supabase?: SupabaseClient) {
+  const client = await getClient(supabase)
+  return client.rpc('save_page_structure', { p_website_id: websiteId, p_page_id: pageId, p_sections: sections })
 }
 
 export async function moveSection(sectionId: string, newPosition: number, supabase?: SupabaseClient) {
@@ -188,10 +217,13 @@ export async function moveSection(sectionId: string, newPosition: number, supaba
 
   const websiteId = section.website_id
 
-  const { data: all } = await client
+  let allQuery = client
     .from('website_sections')
     .select('id')
     .eq('website_id', websiteId)
+    .eq('scope', section.scope)
+  allQuery = section.page_id ? allQuery.eq('page_id', section.page_id) : allQuery.is('page_id', null)
+  const { data: all } = await allQuery
     .order('position', { ascending: true })
 
   if (!all) return { data: null, error: new Error('failed to fetch sections') }
@@ -216,10 +248,13 @@ export async function duplicateSection(sectionId: string, supabase?: SupabaseCli
   const originalPos = (section as any).position
 
   // Shift subsequent sections down by 1
-  const { data: later } = await client
+  let laterQuery = client
     .from('website_sections')
     .select('id, position')
     .eq('website_id', websiteId)
+    .eq('scope', section.scope)
+  laterQuery = section.page_id ? laterQuery.eq('page_id', section.page_id) : laterQuery.is('page_id', null)
+  const { data: later } = await laterQuery
     .gte('position', originalPos + 1)
     .order('position', { ascending: true })
 
@@ -231,6 +266,8 @@ export async function duplicateSection(sectionId: string, supabase?: SupabaseCli
 
   const payload = {
     website_id: websiteId,
+    page_id: section.page_id,
+    scope: section.scope,
     type: (section as any).type,
     position: originalPos + 1,
     content: (section as any).content ?? {},
@@ -267,12 +304,15 @@ export async function duplicateSection(sectionId: string, supabase?: SupabaseCli
 }
 
 // Transition management functions
-export async function getTransitionsBetweenSections(websiteId: string, supabase?: SupabaseClient) {
+export async function getTransitionsBetweenSections(websiteId: string, supabase?: SupabaseClient, sectionIds?: string[]) {
   const client = await getClient(supabase)
-  const { data, error } = await client
+  if (sectionIds?.length === 0) return { data: [], error: null }
+  let query = client
     .from('section_transitions')
     .select('*')
     .eq('website_id', websiteId)
+  if (sectionIds) query = query.in('from_section_id', sectionIds).in('to_section_id', sectionIds)
+  const { data, error } = await query
 
   return { data, error }
 }
@@ -354,6 +394,7 @@ export async function deleteTransitionsForSection(sectionId: string, supabase?: 
 export default {
   fetchWebsiteWithSectionsBySlug,
   listSections,
+  listEditorSections,
   getSectionById,
   createSection,
   updateSection,
@@ -361,6 +402,7 @@ export default {
   deleteSections,
   moveSection,
   reorderSections,
+  savePageStructure,
   duplicateSection,
   getTransitionsBetweenSections,
   getTransitionFromSection,

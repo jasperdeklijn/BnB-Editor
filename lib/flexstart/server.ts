@@ -31,16 +31,17 @@ export async function loadWebsiteCheck(db: SupabaseClient, websiteId: string, ow
   const { data: website, error } = await db.from("websites").select("id,user_id,business_id,title,theme_config,seo,draft_version,published,slug")
     .eq("id", websiteId).eq("user_id", ownerId).maybeSingle()
   if (error || !website) throw new FlexError("Concept niet gevonden.", 404)
-  const [sections, business, services, destinations, domains, evidence] = await Promise.all([
-    db.from("website_sections").select("id,type,content,styles").eq("website_id", websiteId).order("position"),
+  const [sections, business, services, destinations, domains, evidence, pages] = await Promise.all([
+    db.from("website_sections").select("id,page_id,scope,type,content,styles").eq("website_id", websiteId).order("position"),
     website.business_id ? db.from("businesses").select("name,city,email,phone").eq("id", website.business_id).eq("user_id", ownerId).maybeSingle() : Promise.resolve({ data: null, error: null }),
     website.business_id ? db.from("services").select("id,title,description,price,image_urls,position,metadata").eq("business_id", website.business_id).order("position") : Promise.resolve({ data: [], error: null }),
     db.from("website_form_destinations").select("section_id,recipient_email").eq("website_id", websiteId),
     db.from("website_domains").select("status").eq("website_id", websiteId).eq("status", "active"),
     db.from("website_check_evidence").select("tested_version,tested_at").eq("website_id", websiteId).maybeSingle(),
+    db.from("website_pages").select("*").eq("website_id", websiteId).order("position"),
   ])
-  if ([sections, business, services, destinations, domains, evidence].some((r) => r.error)) throw new FlexError("De websitecontrole kon niet worden geladen.", 503)
-  const design: PreviewDesign = { title: website.title, theme: website.theme_config ?? {}, sections: (sections.data ?? []).map((s) => ({ id: s.id, type: s.type, data: { ...s.content, businessId: website.business_id, websiteId,
+  if ([sections, business, services, destinations, domains, evidence, pages].some((r) => r.error)) throw new FlexError("De websitecontrole kon niet worden geladen.", 503)
+  const design: PreviewDesign = { title: website.title, theme: website.theme_config ?? {}, pages: (pages.data ?? []).map((page) => ({ id: page.id, title: page.title, slug: page.slug, isHome: page.is_home, includeInPublication: page.include_in_publication, showInNavigation: page.show_in_navigation })), sections: (sections.data ?? []).map((s) => ({ id: s.id, type: s.type, scope: s.scope, pageId: s.page_id, data: { ...s.content, businessId: website.business_id, websiteId,
     ...(s.type === "services" ? { services: services.data ?? [] } : {}) }, styles: s.styles ?? {} })) }
   const formIds = design.sections.filter((s) => ["contact", "request_form"].includes(s.type)).map((s) => s.id)
   const destination = destinations.data?.find((d) => formIds.includes(d.section_id))?.recipient_email || business.data?.email || ""

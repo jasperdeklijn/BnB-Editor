@@ -29,6 +29,7 @@ export interface ResolvedNavigationLink {
   sectionId: string
   label: string
   enabled: boolean
+  href?: string
 }
 
 export function resolveNavigationLinks(
@@ -38,6 +39,15 @@ export function resolveNavigationLinks(
   const configuredLinks = Array.isArray(navData.navLinks)
     ? navData.navLinks.filter((entry): entry is Record<string, unknown> => Boolean(entry && typeof entry === "object"))
     : []
+
+  if (navData.navigationMode === "custom") {
+    return configuredLinks.map((entry) => ({
+      sectionId: String(entry.sectionId ?? entry.id ?? ""),
+      label: typeof entry.label === "string" ? entry.label : "Link",
+      enabled: entry.enabled !== false,
+      href: typeof entry.href === "string" ? entry.href : `#section-${String(entry.sectionId ?? "")}`,
+    }))
+  }
 
   return allSections
     .filter((section) => NAVIGABLE_SECTION_TYPES.has(section.type))

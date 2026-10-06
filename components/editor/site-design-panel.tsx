@@ -129,6 +129,7 @@ export function SiteDesignPanel({
           category: confirmTemplate.category,
           websiteId,
           businessId,
+          pageId: typeof window !== "undefined" && websiteId ? window.localStorage.getItem(`flexpagina:active-page:${websiteId}`) : null,
         }),
       })
       const result = await response.json().catch(() => ({}))

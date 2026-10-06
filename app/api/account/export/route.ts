@@ -32,6 +32,9 @@ export async function GET() {
   const websiteIds = websites.map((website) => website.id)
 
   const emptyResult = { data: [], error: null }
+  const pageResults = await Promise.all(["website_pages", "website_page_translations", "website_page_redirects"].map((table) =>
+    websiteIds.length ? supabase.from(table).select("*").in("website_id", websiteIds) : Promise.resolve(emptyResult)))
+  if (pageResults.some((result) => result.error)) return Response.json({ error: "Paginagegevens konden niet worden geëxporteerd." }, { status: 500 })
   const [servicesResult, entriesResult, availabilityResult, sectionsResult, transitionsResult, localesResult, sectionTranslationsResult, businessTranslationsResult] = await Promise.all([
     businessIds.length ? supabase.from("services").select("*").in("business_id", businessIds) : Promise.resolve(emptyResult),
     businessIds.length ? supabase.from("calendar_entries").select("*").in("business_id", businessIds) : Promise.resolve(emptyResult),
@@ -70,7 +73,7 @@ export async function GET() {
   }
 
   const payload = {
-    schemaVersion: "2.0",
+    schemaVersion: "3.0",
     exportedAt: new Date().toISOString(),
     account: {
       id: user.id,
@@ -83,6 +86,9 @@ export async function GET() {
     termsAcceptance: termsAcceptanceResult.data,
     businesses,
     websites,
+    websitePages: pageResults[0].data ?? [],
+    websitePageTranslations: pageResults[1].data ?? [],
+    websitePageRedirects: pageResults[2].data ?? [],
     websiteSections: sectionsResult.data ?? [],
     sectionTransitions: transitionsResult.data ?? [],
     websiteLocales: localesResult.data ?? [],

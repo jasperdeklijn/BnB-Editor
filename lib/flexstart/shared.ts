@@ -39,7 +39,7 @@ export interface TransferRequest extends Omit<TransferInput, "permission"> {
   published_at: string | null;
 }
 export interface TransferFeedback { id: string; message: string; created_at: string; resolved_at: string | null }
-export type PreviewDesign = { title: string; theme: ThemeConfig; sections: Section[] }
+export type PreviewDesign = { title: string; theme: ThemeConfig; sections: Array<Section & { pageId?: string }>; pages?: Array<{ id: string; title: string; slug: string; isHome: boolean; includeInPublication: boolean; showInNavigation: boolean }> }
 export type CheckItem = { id: string; label: string; state: "ready" | "recommended" | "required"; detail: string; href: string }
 export interface CheckResult { items: CheckItem[]; ready: number; total: number; canPublish: boolean; version: string }
 export interface TransferDetail {

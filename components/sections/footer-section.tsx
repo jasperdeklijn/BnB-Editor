@@ -1,5 +1,7 @@
 "use client"
 
+import { WebsiteLink } from "@/components/editor/website-links-context"
+
 import { SectionIcon } from "./section-icon"
 
 import type React from "react"
@@ -58,8 +60,8 @@ export function FooterSection({ data, isPreview, styles, onUpdate, allSections }
             <h4 className="mb-4 text-sm font-semibold">{messages.companyDetails}</h4>
             <ul className="space-y-2.5 text-sm opacity-80">
               {address ? <li className="flex items-start gap-2"><SectionIcon icon={data.addressIcon} fallback="tabler:map-pin" className="mt-0.5 h-4 w-4 shrink-0 text-[var(--section-accent)]" /><EditableText data={data} path={["address"]} value={address} isPreview={isPreview} onUpdate={onUpdate} multiline /></li> : null}
-              {phone ? <li><a href={`tel:${phone}`} className="flex items-center gap-2 hover:opacity-100"><SectionIcon icon={data.phoneIcon} fallback="tabler:phone" className="h-4 w-4 shrink-0 text-[var(--section-accent)]" /><EditableText data={data} path={["phone"]} value={phone} isPreview={isPreview} onUpdate={onUpdate} /></a></li> : null}
-              {email ? <li><a href={`mailto:${email}`} className="flex items-center gap-2 hover:opacity-100"><SectionIcon icon={data.emailIcon} fallback="tabler:mail" className="h-4 w-4 shrink-0 text-[var(--section-accent)]" /><EditableText data={data} path={["email"]} value={email} isPreview={isPreview} onUpdate={onUpdate} /></a></li> : null}
+              {phone ? <li><WebsiteLink href={`tel:${phone}`} className="flex items-center gap-2 hover:opacity-100"><SectionIcon icon={data.phoneIcon} fallback="tabler:phone" className="h-4 w-4 shrink-0 text-[var(--section-accent)]" /><EditableText data={data} path={["phone"]} value={phone} isPreview={isPreview} onUpdate={onUpdate} /></WebsiteLink></li> : null}
+              {email ? <li><WebsiteLink href={`mailto:${email}`} className="flex items-center gap-2 hover:opacity-100"><SectionIcon icon={data.emailIcon} fallback="tabler:mail" className="h-4 w-4 shrink-0 text-[var(--section-accent)]" /><EditableText data={data} path={["email"]} value={email} isPreview={isPreview} onUpdate={onUpdate} /></WebsiteLink></li> : null}
               {registrationNumber ? <li className="flex items-center gap-2"><SectionIcon icon={data.registrationIcon} fallback="tabler:briefcase" className="h-4 w-4 shrink-0 text-[var(--section-accent)]" /><span>{messages.registrationNumber}: <EditableText data={data} path={["registrationNumber"]} value={registrationNumber} isPreview={isPreview} onUpdate={onUpdate} /></span></li> : null}
               {vatNumber ? <li className="pl-6">{messages.vatNumber}: <EditableText data={data} path={["vatNumber"]} value={vatNumber} isPreview={isPreview} onUpdate={onUpdate} /></li> : null}
             </ul>
@@ -78,7 +80,7 @@ export function FooterSection({ data, isPreview, styles, onUpdate, allSections }
         <div className="border-t border-white/20 pt-6">
           <div className="flex flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
             <p className="text-sm opacity-75">&copy; {currentYear} <EditableText data={editableData} path={["companyName"]} value={companyName} isPreview={isPreview} onUpdate={onUpdate} />. {messages.rightsReserved}</p>
-            {showSocialLinks ? <div className="flex flex-wrap justify-center gap-4">{socialLinks.map((link, index) => <a key={`${link.href}-${index}`} href={link.href} className="text-sm opacity-75 transition hover:text-[var(--section-accent)] hover:opacity-100"><EditableText data={editableData} path={["socialLinks", index, "label"]} value={link.label} isPreview={isPreview} onUpdate={onUpdate} /></a>)}</div> : null}
+            {showSocialLinks ? <div className="flex flex-wrap justify-center gap-4">{socialLinks.map((link, index) => <WebsiteLink key={`${link.href}-${index}`} href={link.href} className="text-sm opacity-75 transition hover:text-[var(--section-accent)] hover:opacity-100"><EditableText data={editableData} path={["socialLinks", index, "label"]} value={link.label} isPreview={isPreview} onUpdate={onUpdate} /></WebsiteLink>)}</div> : null}
           </div>
         </div>
       </div>

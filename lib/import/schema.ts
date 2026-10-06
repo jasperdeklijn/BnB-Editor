@@ -2,6 +2,7 @@ import { z } from "zod"
 import { COLOR_PALETTES } from "../themes/palettes"
 import { FONT_PAIRS } from "../themes/fonts"
 import type { Section } from "../types"
+import { RESERVED_PAGE_SLUGS } from "../website-pages"
 
 export const MAX_IMPORT_BYTES = 2 * 1024 * 1024
 export const MAX_IMPORT_IMAGES = 8
@@ -22,7 +23,7 @@ export function isHttpsUrl(value: string) {
 }
 const imageUrl = z.string().max(2048).refine((value) => isHttpsUrl(value) && !/[()]/.test(value), "Gebruik een geldige HTTPS-afbeeldings-URL zonder inloggegevens; codeer haakjes als %28 en %29.")
 const href = z.string().max(2048).refine(
-  (value) => /^#[a-z][a-z0-9-]{0,47}$/.test(value) || isHttpsUrl(value),
+  (value) => /^#[a-z][a-z0-9-]{0,47}$/.test(value) || /^(page:[a-z][a-z0-9-]*|section:[a-z][a-z0-9-]*:[a-z][a-z0-9-]*)$/.test(value) || isHttpsUrl(value),
   "Gebruik HTTPS of # gevolgd door een sectiesleutel.",
 )
 const color = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Gebruik een kleur als #385344.")
@@ -39,10 +40,14 @@ const common = {
 const section = <T extends string, S extends z.ZodRawShape>(type: T, shape: S) => z.object({
   key, type: z.literal(type), content: z.object({ ...common, ...shape }).strict(),
   styles: styles.optional(),
+  pageKey: key.optional(),
+  scope: z.enum(["page", "site_header", "site_footer"]).optional(),
 }).strict()
 export const importSchema = z.object({
   format: z.literal("flexpagina"),
-  version: z.literal(1),
+  version: z.union([z.literal(1), z.literal(2)]),
+  pages: z.array(z.object({ key, title: text(80).trim().min(1), slug: z.string().max(80), isHome: z.boolean().default(false),
+    includeInPublication: z.boolean().default(false), showInNavigation: z.boolean().default(true) }).strict()).min(1).max(40).optional(),
   title: heading,
   theme: z.object({
     paletteId: z.string().refine((id) => COLOR_PALETTES.some((p) => p.id === id), "Onbekend kleurenpalet.").default("forest-green"),
@@ -53,6 +58,7 @@ export const importSchema = z.object({
   sections: z.array(z.discriminatedUnion("type", [
     section("nav", { brandName: heading, isSticky: z.boolean().default(true),
       navLinks: z.array(z.object({ sectionKey: key, label: text(80).min(1), enabled: z.boolean().default(true) }).strict()).max(20).default([]) }),
+    section("footer", { companyName: heading, companyDescription: short.default(""), columns: z.array(z.object({ title: text(80), links: z.array(z.object({ label: text(80), href }).strict()).max(20) }).strict()).max(4).default([]) }),
     section("hero", { title: heading, subtitle: short.default(""), ctaText: text(80).default(""),
       ctaEnabled: z.boolean().default(false), ctaHref: href.optional() }),
     section("about", { title: heading, description: text(10000).min(1), images: z.array(imageUrl).max(8).default([]) }),
@@ -65,18 +71,39 @@ export const importSchema = z.object({
       secondaryCtaText: text(80).default(""), secondaryCtaEnabled: z.boolean().default(false), secondaryCtaHref: href.optional() }),
   ])).min(1).max(40),
 }).strict().superRefine((value, ctx) => {
+  const pages = value.pages ?? []
+  if (value.version === 2 && (pages.length === 0 || pages.filter((page) => page.isHome).length !== 1)) ctx.addIssue({ code: "custom", path: ["pages"], message: "Versie 2 vereist precies één startpagina." })
+  if (new Set(pages.map((page) => page.key)).size !== pages.length || new Set(pages.map((page) => page.slug)).size !== pages.length) ctx.addIssue({ code: "custom", path: ["pages"], message: "Paginasleutels en webadressen moeten uniek zijn." })
+  for (const [i, page] of pages.entries()) if (page.isHome ? page.slug !== "" : !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(page.slug) || RESERVED_PAGE_SLUGS.has(page.slug)) ctx.addIssue({ code: "custom", path: ["pages", i, "slug"], message: "Ongeldig of gereserveerd webadres." })
   const keys = new Set<string>()
   for (const [i, item] of value.sections.entries()) {
+    if (value.version === 2 && (item.scope ?? "page") === "page" && !pages.some((page) => page.key === item.pageKey)) ctx.addIssue({ code: "custom", path: ["sections", i, "pageKey"], message: "Kies een bestaande pagina." })
+    if ((item.scope === "site_header" && item.type !== "nav") || (item.scope === "site_footer" && item.type !== "footer")) ctx.addIssue({ code: "custom", path: ["sections", i, "scope"], message: "Gedeelde onderdelen moeten een header of footer zijn." })
     if (keys.has(item.key)) ctx.addIssue({ code: "custom", path: ["sections", i, "key"], message: "Sectiesleutels moeten uniek zijn." })
     keys.add(item.key)
   }
+  for (const scope of ["site_header", "site_footer"]) if (value.sections.filter((item) => item.scope === scope).length > 1) ctx.addIssue({ code: "custom", path: ["sections"], message: "Gebruik maximaal één gedeelde header en footer." })
+  for (const type of ["nav", "footer"]) if (value.sections.some((item) => item.type === type && item.scope && item.scope !== "page") && value.sections.some((item) => item.type === type && (item.scope ?? "page") === "page")) ctx.addIssue({ code: "custom", path: ["sections"], message: "Gebruik een gedeeld onderdeel of lokale onderdelen van hetzelfde type." })
   for (const [i, item] of value.sections.entries()) {
     if (item.type === "nav" && item.styles && ["backgroundImage", "backgroundImageAlt", "backgroundPosition"].some((field) => field in item.styles!)) {
       ctx.addIssue({ code: "custom", path: ["sections", i, "styles"], message: "Navigatie ondersteunt geen achtergrondafbeelding." })
     }
     const data = item.content as Record<string, unknown>
+    if (item.type === "footer") for (const [columnIndex, column] of item.content.columns.entries()) for (const [linkIndex, link] of column.links.entries()) {
+      const target = link.href
+      const [, pageKey, sectionKey] = target.split(":")
+      const valid = target.startsWith("page:") ? pages.some((page) => page.key === pageKey)
+        : target.startsWith("section:") ? value.sections.some((section) => section.key === sectionKey && section.pageKey === pageKey && (section.scope ?? "page") === "page")
+        : target.startsWith("#") ? keys.has(target.slice(1)) : true
+      if (!valid) ctx.addIssue({ code: "custom", path: ["sections", i, "content", "columns", columnIndex, "links", linkIndex, "href"], message: "Verwijzing naar een ontbrekende pagina of sectie." })
+    }
     for (const name of ["ctaHref", "primaryCtaHref", "secondaryCtaHref"]) {
       const target = data[name]
+      if (typeof target === "string" && target.startsWith("page:") && !pages.some((page) => page.key === target.slice(5))) ctx.addIssue({ code: "custom", path: ["sections", i, "content", name], message: "Onbekende pagina." })
+      if (typeof target === "string" && target.startsWith("section:")) {
+        const [, pageKey, sectionKey] = target.split(":")
+        if (!value.sections.some((section) => section.key === sectionKey && section.pageKey === pageKey)) ctx.addIssue({ code: "custom", path: ["sections", i, "content", name], message: "Onbekende sectie op deze pagina." })
+      }
       if (typeof target === "string" && target.startsWith("#") && !keys.has(target.slice(1))) {
         ctx.addIssue({ code: "custom", path: ["sections", i, "content", name], message: "Verwijzing naar een ontbrekende sectie." })
       }
@@ -115,8 +142,8 @@ export function parseImport(raw: string): ImportDocument {
   let value: unknown
   try { value = JSON.parse(raw.replace(/^\uFEFF/, "")) }
   catch { throw new ImportValidationError(["bestand: Ongeldige JSON. Controleer komma's en aanhalingstekens."]) }
-  if (value && typeof value === "object" && "version" in value && value.version !== 1) {
-    throw new ImportValidationError(["version: Niet ondersteund. Deze importer accepteert alleen versie 1."])
+  if (value && typeof value === "object" && "version" in value && value.version !== 1 && value.version !== 2) {
+    throw new ImportValidationError(["version: Niet ondersteund. Gebruik versie 1 of 2."])
   }
   const result = importSchema.safeParse(value)
   if (!result.success) throw new ImportValidationError(result.error.issues.slice(0, 30).map((issue) =>
@@ -136,19 +163,29 @@ export function getImportImages(doc: ImportDocument): string[] {
     ...(section.type === "gallery" || section.type === "about" ? section.content.images : []),
   ]))]
 }
-export function normalizeImport(doc: ImportDocument, makeId: () => string): { title: string; theme: ImportDocument["theme"]; sections: Section[] } {
+export function normalizeImport(doc: ImportDocument, makeId: () => string): { title: string; theme: ImportDocument["theme"]; sections: Array<Section & { pageId?: string }>; pages?: Array<{ id: string; title: string; slug: string; isHome: boolean; includeInPublication: boolean; showInNavigation: boolean }> } {
   const ids = new Map(doc.sections.map((section) => [section.key, makeId()]))
+  const pageIds = new Map((doc.pages ?? []).map((page) => [page.key, makeId()]))
+  const mapTarget = (target: string) => target.startsWith("#") ? `#section-${ids.get(target.slice(1))}`
+    : target.startsWith("page:") ? `page:${pageIds.get(target.slice(5))}`
+    : target.startsWith("section:") ? (() => { const [,pageKey,sectionKey] = target.split(":"); return `section:${pageIds.get(pageKey)}:${ids.get(sectionKey)}` })() : target
   const sections: Section[] = doc.sections.map((section) => {
     const data: Record<string, unknown> = { ...section.content }
+    if (section.type === "footer") data.columns = section.content.columns.map((column) => ({ ...column, links: column.links.map((link) => ({ ...link, href: mapTarget(link.href) })) }))
     for (const name of ["ctaHref", "primaryCtaHref", "secondaryCtaHref"]) {
       if (typeof data[name] === "string" && data[name].startsWith("#")) data[name] = `#section-${ids.get(data[name].slice(1))}`
+      else if (typeof data[name] === "string" && data[name].startsWith("page:")) data[name] = `page:${pageIds.get(data[name].slice(5))}`
+      else if (typeof data[name] === "string" && data[name].startsWith("section:")) { const [,pageKey,sectionKey] = data[name].split(":"); data[name] = `section:${pageIds.get(pageKey)}:${ids.get(sectionKey)}` }
     }
-    if (section.type === "nav") data.navLinks = section.content.navLinks.map(({ sectionKey, ...link }) => ({ ...link, sectionId: ids.get(sectionKey) }))
+    if (section.type === "nav") {
+      data.navLinks = section.content.navLinks.map(({ sectionKey, ...link }) => ({ ...link, sectionId: ids.get(sectionKey), ...(doc.version === 2 ? { href: `section:${pageIds.get(doc.sections.find((item) => item.key === sectionKey)?.pageKey ?? "")}:${ids.get(sectionKey)}` } : {}) }))
+      if (doc.version === 2) data.navigationMode = section.content.navLinks.length ? "custom" : "pages"
+    }
     if (section.type === "features") data.features = section.content.features.map((item) => ({ ...item, id: makeId(), icon: "tabler:check" }))
     if (section.type === "faq") data.items = section.content.items.map((item) => ({ ...item, id: makeId() }))
-    return { id: ids.get(section.key)!, type: section.type, data, styles: { ...section.styles } }
+    return { id: ids.get(section.key)!, type: section.type, data, styles: { ...section.styles }, ...(doc.version === 2 ? { scope: section.scope ?? "page", pageId: pageIds.get(section.pageKey ?? "") } : {}) }
   })
-  return { title: doc.title.trim(), theme: { ...doc.theme }, sections }
+  return { title: doc.title.trim(), theme: { ...doc.theme }, sections, ...(doc.version === 2 ? { pages: doc.pages!.map((page) => ({ ...page, id: pageIds.get(page.key)! })) } : {}) }
 }
 export function replaceImportImages(doc: ImportDocument, urls: Map<string, string>): ImportDocument {
   return { ...doc, sections: doc.sections.map((section) => ({

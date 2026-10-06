@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useId, useState } from "react"
 import type { Section, SectionStyles } from "@/lib/types"
 import { Globe2, Menu, X } from "lucide-react"
 import { EditableText } from "@/components/editor/inline-editable-text"
@@ -10,6 +10,8 @@ import { resolveNavigationLinks } from "@/lib/i18n/section-translations"
 import { getSectionColorVars } from "@/lib/section-colors"
 import { normalizeLanguageSwitcherConfig } from "@/lib/i18n/language-switcher"
 import { normalizeSectionStyleType } from "@/lib/section-style-types"
+import { WebsiteLink, useWebsiteLinks } from "@/components/editor/website-links-context"
+import { encodeWebsiteLink } from "@/lib/website-links"
 
 interface NavSectionProps {
   data: Record<string, unknown>
@@ -28,10 +30,13 @@ interface LocaleLink {
 }
 
 export function NavSection({ data, isPreview, styles, onUpdate, allSections, device }: NavSectionProps) {
+  const linkContext = useWebsiteLinks()
+  const homePage = linkContext?.pages.find((page) => page.isHome)
   const brandName = (data.brandName as string) || "Mijn bedrijf"
   const logo = typeof styles?.logo === "string" ? styles.logo.trim() : ""
   const isSticky = (data.isSticky as boolean) ?? true
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const mobileMenuId = useId()
   const layout = normalizeSectionLayout(data.layout)
   const styleType = normalizeSectionStyleType(data.styleType)
   const localeLinks = Array.isArray(data.localeLinks) ? data.localeLinks as LocaleLink[] : []
@@ -44,29 +49,21 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
   const isMobileView = device === "mobile" || device === "tablet"
 
   // Generate navigation links from sections
-  const getNavLinks = (): Array<{ label: string; href: string; sectionId: string }> => {
-    if (!allSections) return []
-    return resolveNavigationLinks(data, allSections)
-      .filter((link) => link.enabled)
-      .map((link) => ({ ...link, href: `#section-${link.sectionId}` }))
-  }
-
-  const links = getNavLinks()
+  const configuredLinks = data.navigationMode === "pages" && linkContext
+    ? linkContext.pages.filter((page) => page.showInNavigation).map((page) => ({ sectionId: page.id, label: page.title, href: encodeWebsiteLink({ type: "page", pageId: page.id }), enabled: true }))
+    : resolveNavigationLinks(data, allSections ?? [])
+  const links = configuredLinks.filter((link) => link.enabled)
+    .map((link) => ({ ...link, href: link.href ?? `#section-${link.sectionId}`, sourceIndex: configuredLinks.findIndex((entry) => entry.sectionId === link.sectionId) }))
   const editableData = {
     ...data,
-    navLinks: links.map((link) => ({
-      sectionId: link.sectionId,
-      label: link.label,
-      enabled: true,
-    })),
+    navLinks: configuredLinks,
   }
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault()
-    const targetId = href.replace("#", "")
-    const element = document.getElementById(targetId)
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" })
+    if (href.startsWith("#") && !e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey) {
+      const element = Array.from(document.querySelectorAll<HTMLElement>("[id]"))
+        .find((candidate) => candidate.id === href.slice(1) && candidate.getClientRects().length > 0)
+      if (element) { e.preventDefault(); element.scrollIntoView({ behavior: "smooth" }) }
     }
     setMobileMenuOpen(false)
   }
@@ -269,12 +266,8 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
       <div className={containerClass}>
         <div className={barClass}>
           <div className="flex-shrink-0">
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault()
-                window.scrollTo({ top: 0, behavior: "smooth" })
-              }}
+            <WebsiteLink
+              href={homePage ? encodeWebsiteLink({ type: "page", pageId: homePage.id }) : "#"}
               className={`flex cursor-pointer items-center gap-3 font-bold text-[var(--section-accent)] ${brandClass} ${styleTypeBrandClass}`}
             >
               {logo ? (
@@ -285,21 +278,21 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
                 />
               ) : null}
               <EditableText data={data} path={["brandName"]} value={brandName} isPreview={isPreview} onUpdate={onUpdate} />
-            </a>
+            </WebsiteLink>
           </div>
 
           {/* Desktop navigation */}
           <div className={`${isMobileView ? "hidden" : "hidden md:flex"} items-center ${desktopNavClass}`}>
             {languageSwitcher.position === "nav-left" ? renderLanguageSwitcher() : null}
-            {links.map((link, idx) => (
-              <a
-                key={idx}
+            {links.map((link) => (
+              <WebsiteLink
+                key={link.sectionId}
                 href={link.href}
                 onClick={(e) => handleNavClick(e, link.href)}
                 className={`${linkClass} ${styleTypeLinkClass}`}
               >
-                <EditableText data={editableData} path={["navLinks", idx, "label"]} value={link.label} isPreview={isPreview} onUpdate={onUpdate} />
-              </a>
+                <EditableText data={editableData} path={["navLinks", link.sourceIndex, "label"]} value={link.label} isPreview={isPreview} onUpdate={onUpdate} />
+              </WebsiteLink>
             ))}
             {languageSwitcher.position === "nav-right" ? renderLanguageSwitcher() : null}
           </div>
@@ -312,6 +305,7 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
               className="rounded-md p-2 transition hover:bg-black/5"
               aria-label={mobileMenuOpen ? "Menu sluiten" : "Menu openen"}
               aria-expanded={mobileMenuOpen}
+              aria-controls={mobileMenuId}
             >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -321,20 +315,24 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
 
         {/* Mobile navigation */}
         <div
+          id={mobileMenuId}
+          inert={!mobileMenuOpen}
+          aria-hidden={!mobileMenuOpen}
+          style={{ overflowY: mobileMenuOpen ? "auto" : undefined }}
           className={`${isMobileView ? "block" : "md:hidden"} overflow-hidden transition-all duration-300 ease-in-out ${
-            mobileMenuOpen ? "max-h-96 opacity-100 pb-4" : "max-h-0 opacity-0"
+            mobileMenuOpen ? "max-h-[70dvh] opacity-100 pb-4" : "max-h-0 opacity-0"
           }`}
         >
           <div className="flex flex-col gap-1 border-t border-black/10 pt-4">
-            {links.map((link, idx) => (
-              <a
-                key={idx}
+            {links.map((link) => (
+              <WebsiteLink
+                key={link.sectionId}
                 href={link.href}
                 onClick={(e) => handleNavClick(e, link.href)}
                 className={`rounded-md px-3 py-3 text-base font-medium transition hover:text-[var(--section-accent)] active:bg-black/10 ${styleTypeLinkClass}`}
               >
-                <EditableText data={editableData} path={["navLinks", idx, "label"]} value={link.label} isPreview={isPreview} onUpdate={onUpdate} />
-              </a>
+                <EditableText data={editableData} path={["navLinks", link.sourceIndex, "label"]} value={link.label} isPreview={isPreview} onUpdate={onUpdate} />
+              </WebsiteLink>
             ))}
           </div>
         </div>
