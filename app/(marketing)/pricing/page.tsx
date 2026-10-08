@@ -26,8 +26,8 @@ export const metadata = {
 
 const planPosition: Record<PlanId, number> = {
   bronze: 1,
-  silver: 2,
-  gold: 3,
+  silver: 3,
+  gold: 2,
 }
 
 function ComparisonValue({ value }: { value: boolean | string }) {
@@ -89,7 +89,7 @@ export default function PricingPage() {
                 Duidelijke abonnementen voor elke groeifase
               </h1>
               <p className="mt-5 text-lg leading-relaxed text-[var(--landing-muted)]">
-                Bronze zet je bedrijf professioneel online, Silver biedt meer mogelijkheden en Gold voegt onbeperkte secties, dienstenbeheer, meertaligheid en priority support toe. Booking & Facturatie voeg je aan elk plan toe.
+                Bronze zet je bedrijf professioneel online met een onepage-website. Silver en Gold ondersteunen meerdere pagina&apos;s en onbeperkte secties. Gold voegt recensiebeheer, dienstenbeheer, meertaligheid en priority support toe. Booking & Facturatie voeg je aan elk plan toe.
               </p>
               <p className="mt-3 text-sm font-semibold text-[var(--landing-primary)]">
                 Alle vermelde prijzen zijn exclusief btw.

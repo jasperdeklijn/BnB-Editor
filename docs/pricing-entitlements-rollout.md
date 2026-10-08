@@ -60,7 +60,7 @@ Run each row at desktop width and at approximately 390px mobile width.
 | Bronze | Gallery or FAQ | Silver badge; remains editable | Blocked |
 | Bronze | Quote/appointment/WhatsApp request mode | Silver control warning | Blocked |
 | Silver | 10 allowed sections | All tools visible | Allowed |
-| Silver | 11 sections | Gold count warning | Blocked |
+| Silver | 11 or 100 allowed sections | No section-count warning | Allowed |
 | Any plan without Booking & Facturatie | Services booking space | Booking & Facturatie warning; remains editable | Blocked |
 | Bronze/Silver with Booking & Facturatie | Booking within section limits | Booking available | Allowed |
 | Gold with Booking & Facturatie | More than 10 sections and booking | All tools visible | Allowed |

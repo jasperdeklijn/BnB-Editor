@@ -32,6 +32,20 @@ const {
 
 const section = (id, type, data = {}) => ({ id, type, data })
 
+test("Bronze is onepage; multipage requires Silver or Gold independently of add-ons", () => {
+  assert.equal(getMinimumPlanForCapability("multipage_websites"), "silver")
+  assert.equal(inspectWebsiteEntitlements("bronze", { sections: [], pageCount: 1 }).allowed, true)
+  const blocked = inspectWebsiteEntitlements("bronze", { sections: [], pageCount: 2, hasBookingAccess: true,
+    capabilityOverrides: ["multilingual_websites", "multipage_websites"] })
+  assert.equal(blocked.allowed, false)
+  assert.equal(blocked.requiredPlan, "silver")
+  assert.equal(blocked.violations[0].capability, "multipage_websites")
+  for (const plan of ["silver", "gold"]) {
+    assert.equal(inspectWebsiteEntitlements(plan, { sections: [], pageCount: 8 }).allowed, true)
+  }
+  assert.equal(inspectWebsiteEntitlements("gold", { sections: [], pageCount: 2, hasMultipageAccess: false }).allowed, false)
+})
+
 test("plan order and every section entitlement are explicit", () => {
   assert.deepEqual(ENTITLEMENT_PLAN_ORDER, ["bronze", "silver", "gold"])
   for (const type of ["nav", "hero", "about", "services", "contact", "map", "footer", "request_form"]) {
@@ -64,11 +78,14 @@ test("Bronze section-count boundaries are 6 allowed and 7 blocked by Silver", ()
   })
 })
 
-test("Silver section-count boundaries are 10 allowed and 11 blocked by Gold", () => {
-  const ten = Array.from({ length: 10 }, (_, index) => section(String(index), "hero"))
-  assert.equal(inspectWebsiteEntitlements("silver", { sections: ten }).allowed, true)
-  const result = inspectWebsiteEntitlements("silver", { sections: [...ten, section("11", "hero")] })
-  assert.equal(result.violations[0].requiredPlan, "gold")
+test("Silver has no section-count limit; Bronze needs Silver even above ten sections", () => {
+  for (const count of [10, 11, 100]) {
+    const sections = Array.from({ length: count }, (_, index) => section(String(index), "hero"))
+    assert.equal(inspectWebsiteEntitlements("silver", { sections }).allowed, true)
+    const bronze = inspectWebsiteEntitlements("bronze", { sections })
+    assert.equal(bronze.allowed, false)
+    assert.equal(bronze.requiredPlan, "silver")
+  }
 })
 
 test("Gold has no section-count limit", () => {

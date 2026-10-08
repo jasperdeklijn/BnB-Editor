@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { logAuditEvent } from "@/lib/audit-log"
 import { createClient } from "@/lib/supabase/server"
-import { getUserSubscription, hasMultilingualWebsiteAccess, hasBookingAddonAccess } from "@/lib/subscriptions"
+import { getUserSubscription, hasMultilingualWebsiteAccess, hasBookingAddonAccess, hasMultipageWebsiteAccess } from "@/lib/subscriptions"
 import { buildWebsiteLiveSnapshot } from "@/lib/website-snapshot"
 import { inspectWebsiteEntitlements } from "@/lib/entitlements"
 import { getPlanEnforcementMode, shouldEnforcePlanEntitlements } from "@/lib/plan-enforcement"
@@ -56,9 +56,12 @@ export async function POST(request: Request) {
     const contract = await supabase.rpc("multipage_contract_version")
     if (contract.error || contract.data !== 3) return NextResponse.json({ error: "Installeer eerst de nieuwe multipage-migratie.", code: "MULTIPAGE_MIGRATION_REQUIRED" }, { status: 503 })
     const { data: pageRows, error: pagesError } = await supabase.from("website_pages")
-      .select("id,is_home").eq("website_id", websiteId)
+      .select("id,is_home,include_in_publication").eq("website_id", websiteId)
     if (pagesError || !pageRows?.some((page) => page.is_home)) {
       return NextResponse.json({ error: "De paginacontrole is niet beschikbaar. Controleer de multipage-migratie." }, { status: 503 })
+    }
+    if (!hasMultipageWebsiteAccess(subscription) && pageRows.filter((page) => page.is_home || page.include_in_publication).length > 1) {
+      return NextResponse.json({ error: "Bronze is voor één pagina. Kies Silver of Gold voor meerdere pagina's, of sluit extra pagina's uit van publicatie.", code: "PLAN_UPGRADE_REQUIRED", requiredPlan: "silver" }, { status: 403 })
     }
   }
 

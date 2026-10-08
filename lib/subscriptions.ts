@@ -10,7 +10,7 @@ import type {
 } from "@/lib/types/pricing"
 
 // Temporary product default: every account receives Gold and all add-on features.
-// Stored subscriptions remain the source of truth for billing, not feature access.
+// Stored subscriptions govern billing and page access; other features keep temporary access.
 export const DEFAULT_PLAN_ID: PlanId = "gold"
 export const DEFAULT_ALL_FEATURES_INCLUDED = true
 
@@ -160,7 +160,7 @@ export async function getUserSubscription(
 }
 
 export function getSubscriptionAccessNotice(resolved: ResolvedSubscription): string | null {
-  if (DEFAULT_ALL_FEATURES_INCLUDED) return "Alle functies zijn tijdelijk gratis beschikbaar voor iedereen."
+  if (DEFAULT_ALL_FEATURES_INCLUDED) return "Alle functies zijn tijdelijk gratis beschikbaar voor iedereen. Bronze blijft beperkt tot één pagina; meerdere pagina's zijn beschikbaar bij Silver en Gold."
   const paidThrough = resolved.record?.current_period_end
     ? new Date(resolved.record.current_period_end)
     : null
@@ -194,11 +194,16 @@ export function hasBookingAddonAccess(resolved: ResolvedSubscription): boolean {
 }
 
 export function hasSubscriptionCapability(resolved: ResolvedSubscription, capability: EntitlementCapability): boolean {
+  if (capability === "multipage_websites") return hasMultipageWebsiteAccess(resolved)
   if (capability === "review_collection") return hasReviewCollectionAccess(resolved)
   if (isBookingCapability(capability)) return hasBookingAddonAccess(resolved)
   if (capability === "service_management") return resolved.planId === "gold" || hasBookingAddonAccess(resolved)
   if (capability === "multilingual_websites") return hasMultilingualWebsiteAccess(resolved)
   return planMeetsRequirement(resolved.planId, getMinimumPlanForCapability(capability))
+}
+
+export function hasMultipageWebsiteAccess(resolved: ResolvedSubscription): boolean {
+  return planMeetsRequirement(resolved.storedPlanId ?? resolved.planId, "silver")
 }
 
 export function toUserBillingData(resolved: ResolvedSubscription): UserBillingData {

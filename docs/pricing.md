@@ -13,9 +13,15 @@ All catalog prices are monthly in EUR, excluding VAT. `lib/pricing.ts` is the ap
 
 ## Base plans
 
-- **Bronze:** professional responsive website, custom domain support and SSL, SEO, contact form, up to 6 sections.
-- **Silver:** everything in Bronze, up to 10 sections, gallery, reviews, FAQ, opening hours, pricing sections, CTA and enquiries. Existing WhatsApp contact support remains available.
+- **Bronze:** onepage website (one page), custom domain support and SSL, SEO, contact form, up to 6 sections.
+- **Silver:** multipage website, unlimited sections, gallery, reviews, FAQ, opening hours, pricing sections, CTA and enquiries. Existing WhatsApp contact support remains available.
 - **Gold:** everything in Silver, unlimited sections, extensive features, service management, multilingual website and priority support.
+
+Pricing cards and comparisons display Bronze, Gold, Silver. Gold is the center recommendation (`AANBEVOLEN`). Upgrade/downgrade logic retains the plan rank Bronze, Silver, Gold.
+
+Page access follows the stored subscription plan, including during temporary free access to other Gold features. Accounts without a subscription retain the existing temporary Gold default. Add-ons do not unlock multipage access. Section limits remain unchanged and apply across the published website.
+
+Bronze cannot add, duplicate or import extra pages. Existing pages remain editable and removable after a downgrade; only Home may be included in a new Bronze publication. Existing live content is preserved until the owner republishes or unpublishes.
 
 ## Add-ons
 
@@ -40,3 +46,7 @@ An active/trial subscription, or a canceled subscription still within its paid-t
 `current_price` remains the base subscription amount; billing adds each active add-on once. Gold never adds a multilingual charge. The payment-provider integration is still a placeholder, and plan/add-on purchase controls remain disabled. No provider prices, live subscriptions or charges were changed by this implementation.
 
 Release checks: apply the migration, verify owner-only subscription reads and service-role-only writes, test authenticated editor/publish and public booking with and without the add-on on every plan, then configure provider checkout and reconciliation before enabling purchases.
+
+## Onepage / multipage rollout
+
+Apply supabase/migrations/20261008184614_bronze_onepage_entitlement.sql before deploying these page controls. The same guards are included in init.sql for fresh installations. The database guards apply in every PLAN_ENFORCEMENT_MODE and also cover direct writes, duplication and imported designs. Validate Bronze single-page publication and denied multipage creation/import/publication; validate Silver and Gold multipage. Review existing Bronze multipage sites before rollout. No hosted migration, provider subscription or price was changed locally.

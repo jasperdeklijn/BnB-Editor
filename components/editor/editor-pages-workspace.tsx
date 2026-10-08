@@ -62,6 +62,7 @@ interface EditorPagesWorkspaceProps {
   onCreateShared: (type: "nav" | "footer") => Promise<void>
   onSelectSection: (id: string) => void
   advancedReady: boolean
+  hasMultipageAccess: boolean
 }
 
 const PageSelectorContext = createContext<{
@@ -89,7 +90,7 @@ export function EditorPagesWorkspace({
   children, siteAddress, localePath = "", sectionCount, disabled = false,
   pages, activePageId, loading = false, beforePageChange, onPageChange, onSavePage, onReorderPages, onDeletePage,
   onDuplicatePage, onReplaceHome, sections, selectedSectionId, onSectionDestination, onCreateShared, onSelectSection,
-  advancedReady,
+  advancedReady, hasMultipageAccess,
 }: EditorPagesWorkspaceProps) {
   const workspaceRef = useRef<HTMLDivElement>(null)
   const focusSelectedTabRef = useRef(false)
@@ -226,7 +227,7 @@ export function EditorPagesWorkspace({
           <Button data-editor-page-manager type="button" variant="outline" className="h-11 shrink-0 px-3" disabled={busy} onClick={(event) => openManager(false, event.currentTarget)} aria-label="Pagina's beheren">
             <PanelLeft className="h-4 w-4" /><span className="hidden sm:inline">Pagina&apos;s</span><span className="hidden rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground sm:inline">{pages.length}</span>
           </Button>
-          <Button type="button" variant="ghost" className="hidden h-11 w-11 shrink-0 px-0 md:inline-flex" disabled={busy} onClick={(event) => openManager(true, event.currentTarget)} aria-label="Nieuwe pagina" title="Nieuwe pagina">
+          <Button type="button" variant="ghost" className="hidden h-11 w-11 shrink-0 px-0 md:inline-flex" disabled={busy || !hasMultipageAccess} onClick={(event) => openManager(true, event.currentTarget)} aria-label="Nieuwe pagina" title={hasMultipageAccess ? "Nieuwe pagina" : "Meerdere pagina's vanaf Silver"}>
             <Plus className="h-4 w-4" />
           </Button>
         </div>
@@ -272,7 +273,8 @@ export function EditorPagesWorkspace({
                       </li>
                     ))}
                   </ul>
-                  <Button type="button" variant="outline" className="mt-3 h-10 w-full" disabled={busy} onClick={() => { setSettingsPageId(null); setAnnouncement("") }}><Plus className="h-4 w-4" />Nieuwe pagina</Button>
+                  <Button type="button" variant="outline" className="mt-3 h-10 w-full" disabled={busy || !hasMultipageAccess} onClick={() => { setSettingsPageId(null); setAnnouncement("") }}><Plus className="h-4 w-4" />Nieuwe pagina</Button>
+                  {!hasMultipageAccess ? <p className="mt-2 text-xs text-muted-foreground">Bronze is voor één pagina. <a className="underline" href="/editor/account/billing">Kies Silver of Gold</a> voor meerdere pagina&apos;s.</p> : null}
                   <div className="mt-6 border-t border-border pt-4">
                     <h3 className="flex items-center gap-2 text-xs font-semibold text-muted-foreground"><Layers className="h-3.5 w-3.5" />Gedeelde onderdelen</h3>
                     <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Gedeeld op alle pagina&apos;s. Wijzigingen aan deze onderdelen gelden overal.</p>
@@ -291,13 +293,13 @@ export function EditorPagesWorkspace({
                 </div>
                 <div className="min-w-0 p-5">
                   {!advancedReady ? <p role="status" className="mb-4 rounded-md border p-3 text-sm">De nieuwe multipage-migratie moet nog worden geïnstalleerd. Bestaande pagina&apos;s kunt u bekijken; de nieuwe beheeracties volgen na installatie.</p> : null}
-                  <PageSettingsForm key={settingsPage?.id ?? "new"} page={settingsPage} pages={pages} localePath={localePath} busy={busy || !advancedReady} onApply={applySettings} />
+                  <PageSettingsForm key={settingsPage?.id ?? "new"} page={settingsPage} pages={pages} localePath={localePath} busy={busy || !advancedReady || (!settingsPage && !hasMultipageAccess)} onApply={applySettings} />
                   {settingsPage && advancedReady ? <PageLocaleAndRedirectSettings key={`${settingsPage.id}:${localePath}`} page={settingsPage} localePath={localePath} busy={busy} /> : null}
                   {announcement ? <p role="status" className="mt-3 rounded-md border border-primary/20 bg-primary/5 p-3 text-xs leading-relaxed text-primary">{announcement}</p> : null}
                   {switchError ? <p role="alert" className="mt-3 text-sm text-destructive">{switchError}</p> : null}
                   {settingsPage ? <div className="mt-5 space-y-3 border-t border-border pt-4">
                     <Button type="button" className="h-10 w-full" disabled={busy} onClick={async () => { if (await selectPage(settingsPage)) setManagerOpen(false) }}>{switching ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}Pagina openen{settingsPage.isHome ? ` · ${sectionCount} secties` : ""}</Button>
-                    <Button type="button" variant="outline" className="min-h-11 w-full" disabled={busy || !advancedReady} onClick={() => {
+                    <Button type="button" variant="outline" className="min-h-11 w-full" disabled={busy || !advancedReady || !hasMultipageAccess} onClick={() => {
                       const title = window.prompt("Naam van de kopie", `${settingsPage.title} kopie`)
                       if (!title) return
                       const slug = window.prompt("Webadres van de kopie", `${settingsPage.slug || "home"}-kopie`)

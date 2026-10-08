@@ -59,6 +59,7 @@ test("ambiguous commit with unavailable database never deletes possibly referenc
 
 test("known import failures preserve actionable messages and clean rolled-back assets", async () => {
   for (const [message, status, expected] of [
+    ["MULTIPAGE_REQUIRES_SILVER", 403, /Kies Silver of Gold/],
     ["Customer business required", 409, /bedrijfsprofiel/],
     ["Invalid transfer", 409, /aanvraag is gewijzigd/],
     ["missing function", 503, /importmigratie/],

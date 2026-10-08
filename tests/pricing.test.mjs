@@ -10,6 +10,30 @@ const compiled = ts.transpileModule(fs.readFileSync("lib/pricing.ts", "utf8"), {
 Function("module", "exports", compiled.outputText)(module, module.exports)
 const { calculateMonthlyPrice, formatPrice } = module.exports
 
+test("Gold is recommended in the center while plan rank remains Bronze, Silver, Gold", () => {
+  const { getMainPlans, getPopularPlan, PLAN_ORDER, FEATURE_COMPARISON, PRICING_PLANS } = module.exports
+  const plans = getMainPlans()
+  assert.deepEqual(plans.map((plan) => plan.id), ["bronze", "gold", "silver"])
+  assert.deepEqual(PLAN_ORDER, ["bronze", "silver", "gold"])
+  assert.equal(getPopularPlan().id, "gold")
+  assert.deepEqual(plans.filter((plan) => plan.isPopular).map((plan) => [plan.id, plan.badge]), [["gold", "AANBEVOLEN"]])
+  assert.equal(PRICING_PLANS.silver.badge, undefined)
+  assert.ok(PRICING_PLANS.silver.features.includes("Onbeperkte secties"))
+  const limits = FEATURE_COMPARISON.find((row) => row.feature === "Maximaal aantal secties")
+  assert.equal(limits.silver, "Onbeperkt")
+  assert.equal(limits.gold, "Onbeperkt")
+})
+
+test("pricing clearly distinguishes Bronze onepage from Silver and Gold multipage", () => {
+  const { PRICING_PLANS, FEATURE_COMPARISON } = module.exports
+  assert.ok(PRICING_PLANS.bronze.features.includes("Onepage-website (1 pagina)"))
+  assert.ok(PRICING_PLANS.silver.features.includes("Multipage-website (meerdere pagina's)"))
+  const pages = FEATURE_COMPARISON.find((row) => row.feature === "Websitepagina's")
+  assert.equal(pages.bronze, "1 pagina (onepage)")
+  assert.equal(pages.silver, "Meerdere pagina's")
+  assert.equal(pages.gold, "Meerdere pagina's")
+})
+
 test("monthly totals include optional booking and multilingual, with languages free on Gold", () => {
   const expected = { bronze: [7.95, 22.90, 10.94, 25.89], silver: [14.95, 29.90, 17.94, 32.89], gold: [24.95, 39.90, 24.95, 39.90] }
   for (const [plan, totals] of Object.entries(expected)) {

@@ -173,6 +173,7 @@ interface EditorClientProps {
   initialBusinessId?: string | null
   initialBusinessCategory?: BusinessCategory | null
   currentPlan: PlanId
+  hasMultipageAccess: boolean
   hasMultilingualAccess: boolean
   hasReviewAccess: boolean
   hasBookingAccess: boolean
@@ -185,6 +186,7 @@ export function EditorClient({
   initialBusinessId = null,
   initialBusinessCategory = null,
   currentPlan,
+  hasMultipageAccess,
   hasMultilingualAccess,
   hasReviewAccess,
   hasBookingAccess,
@@ -280,6 +282,8 @@ export function EditorClient({
   }, [])
 
   const entitlementResult = useMemo(() => inspectWebsiteEntitlements(currentPlan, {
+    hasMultipageAccess,
+    pageCount: pages.filter((page) => page.isHome || page.includeInPublication).length,
     hasReviewAccess,
     hasBookingAccess,
     sections,
@@ -287,9 +291,10 @@ export function EditorClient({
       (locale) => !locale.is_default && locale.is_enabled,
     ) ? ["multilingual_websites"] : [],
     capabilityOverrides: hasMultilingualAccess ? ["multilingual_websites"] : [],
-  }), [currentPlan, hasReviewAccess, hasBookingAccess, hasMultilingualAccess, multilingualEnabled, sections, websiteLocales])
+  }), [currentPlan, hasMultipageAccess, pages, hasReviewAccess, hasBookingAccess, hasMultilingualAccess, multilingualEnabled, sections, websiteLocales])
   const publishEnforcementActive = enforcementMode === "enforce"
-  const canPublishDraft = !publishEnforcementActive || entitlementResult.allowed
+  const canPublishDraft = (!publishEnforcementActive || entitlementResult.allowed)
+    && !entitlementResult.violations.some((violation) => violation.capability === "multipage_websites")
   const activePreflightViolations = serverPublishViolations.length > 0
     ? serverPublishViolations
     : entitlementResult.violations
@@ -861,6 +866,7 @@ export function EditorClient({
   }, [activePageId, flushPendingSectionSaves, pages, updateLocalSections, websiteId])
 
   const handleSavePage = async (pageId: string | null, values: PageSettings) => {
+    if (!pageId && !hasMultipageAccess) throw new Error("Meerdere pagina's zijn beschikbaar bij Silver en Gold. Bronze is voor één pagina.")
     if (!multipageReady) throw new Error("Installeer eerst de nieuwe multipage-migratie.")
     if (!websiteId) throw new Error("Kies eerst een website.")
     const loadVersion = loadVersionRef.current
@@ -934,6 +940,7 @@ export function EditorClient({
   }
 
   const handleDuplicatePage = async (pageId: string, title: string, slug: string) => {
+    if (!hasMultipageAccess) throw new Error("Meerdere pagina's zijn beschikbaar bij Silver en Gold. Bronze is voor één pagina.")
     if (!websiteId || !(await flushPendingSectionSaves())) throw new Error("Sla eerst de wijzigingen op.")
     const version = loadVersionRef.current
     const page = await duplicateWebsitePage(createClient(), websiteId, pageId, title, slug)
@@ -1841,6 +1848,7 @@ export function EditorClient({
         onCreateShared={handleCreateShared}
         onSelectSection={setSelectedSectionId}
         advancedReady={multipageReady}
+        hasMultipageAccess={hasMultipageAccess}
       >
       {/* Desktop layout: side-by-side panels */}
       <div className="hidden flex-1 overflow-hidden md:flex">

@@ -146,6 +146,7 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
           <li>{BOOKING_ADDON_NAME} bevat boekingen, beschikbaarheid, bevestigingen, klantgegevens en facturen vanuit boekingen, inclusief PDF en historie. {billingData.defaultFeaturesIncluded ? "Deze functies zijn voorlopig standaard beschikbaar." : `De add-on kost ${formatPrice(BOOKING_ADDON_MONTHLY_PRICE)} per maand extra.`}</li>
           <li>{billingData.defaultFeaturesIncluded ? "Meertaligheid is voorlopig standaard beschikbaar voor iedereen." : "Meertaligheid is inbegrepen bij Gold en kost bij Bronze of Silver € 2,99 per maand extra."}</li>
           <li>Priority support is inbegrepen bij Gold.</li>
+          <li>Bronze is voor een onepage-website. Meerdere pagina&apos;s zijn beschikbaar bij Silver en Gold, ook tijdens tijdelijke gratis toegang tot andere functies.</li>
         </ul>
       </div>
     </div>

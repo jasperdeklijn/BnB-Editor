@@ -5,6 +5,7 @@
 import { FeatureComparison, PlanId, PricingPlan } from "@/lib/types/pricing"
 
 export const PLAN_ORDER: PlanId[] = ["bronze", "silver", "gold"]
+export const PRICING_DISPLAY_ORDER: PlanId[] = ["bronze", "gold", "silver"]
 export const BOOKING_ADDON_MONTHLY_PRICE = 14.95
 export const BOOKING_ADDON_NAME = "Booking & Facturatie"
 export const BOOKING_ADDON_FEATURES = [
@@ -23,11 +24,11 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
   bronze: {
     id: "bronze",
     name: "Bronze",
-    description: "Voor een eenvoudige, professionele bedrijfswebsite.",
+    description: "Voor een professionele onepage-website.",
     monthlyPrice: 7.95,
     currency: "EUR",
     features: [
-      "Website",
+      "Onepage-website (1 pagina)",
       "Eigen domein",
       "SSL",
       "SEO-basis",
@@ -46,7 +47,8 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
     currency: "EUR",
     features: [
       "Alles uit Bronze",
-      "Maximaal 10 secties",
+      "Multipage-website (meerdere pagina's)",
+      "Onbeperkte secties",
       "Galerie",
       "Google-recensielink",
       "FAQ",
@@ -55,9 +57,8 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
       "CTA",
       "Aanvragen",
     ],
-    badge: "AANBEVOLEN",
     isAddon: false,
-    isPopular: true,
+    isPopular: false,
     cta: "Kies Silver",
   },
   gold: {
@@ -74,13 +75,15 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
       "Meertaligheid",
       "Priority support",
     ],
+    badge: "AANBEVOLEN",
     isAddon: false,
-    isPopular: false,
+    isPopular: true,
     cta: "Kies Gold",
   },
 }
 
 export const FEATURE_COMPARISON: FeatureComparison[] = [
+  { feature: "Websitepagina's", bronze: "1 pagina (onepage)", silver: "Meerdere pagina's", gold: "Meerdere pagina's" },
   { feature: "Recensies verzamelen en beheren", bronze: false, silver: false, gold: true },
   {
     feature: "SEO-basis",
@@ -109,7 +112,7 @@ export const FEATURE_COMPARISON: FeatureComparison[] = [
   {
     feature: "Maximaal aantal secties",
     bronze: "6",
-    silver: "10",
+    silver: "Onbeperkt",
     gold: "Onbeperkt",
   },
   {
@@ -200,6 +203,10 @@ export const FEATURE_COMPARISON: FeatureComparison[] = [
 
 export const PRICING_FAQ = [
   {
+    question: "Welk abonnement heb ik nodig voor meerdere pagina's?",
+    answer: "Bronze is voor een onepage-website met één pagina. Met Silver of Gold kunt u een website met meerdere pagina's maken. Add-ons veranderen deze paginalimiet niet.",
+  },
+  {
     question: "Wat zit er in Booking & Facturatie?",
     answer:
       `${BOOKING_ADDON_NAME} kost ${formatPrice(BOOKING_ADDON_MONTHLY_PRICE)} per maand exclusief btw en is beschikbaar bij Bronze, Silver en Gold. De add-on bevat online boekingen, beschikbaarheid, boekingsbeheer, automatische bevestigingen, facturen vanuit boekingen, PDF-facturen, klantgegevens en factuurhistorie. Ook het beheer van de boekbare diensten is inbegrepen.`,
@@ -236,7 +243,7 @@ export function getPlanById(planId: PlanId): PricingPlan {
 }
 
 export function getMainPlans(): PricingPlan[] {
-  return PLAN_ORDER.map((planId) => PRICING_PLANS[planId])
+  return PRICING_DISPLAY_ORDER.map((planId) => PRICING_PLANS[planId])
 }
 
 export function getAddonPlans(): PricingPlan[] {
@@ -248,7 +255,7 @@ export function getFeaturesByPlan(planId: PlanId): string[] {
 }
 
 export function getPopularPlan(): PricingPlan {
-  return PRICING_PLANS.silver
+  return PRICING_PLANS.gold
 }
 
 export function calculateMonthlyPrice(

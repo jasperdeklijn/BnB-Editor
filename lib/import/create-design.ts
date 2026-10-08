@@ -72,6 +72,7 @@ export async function createImportedDesign({ db, storage, userId, designId, docu
       if (/^[0-9A-Z]{5}$/.test(error.code ?? "") && !error.code.startsWith("PGRST")) rpcStarted = false
       console.error("[import] Design creation failed", { code: error.code, transfer: !!transfer, multipage: !!design.pages })
       if (error.message.includes("USER_IMAGE_QUOTA_EXCEEDED")) throw new ImportCreationError("Je opslaglimiet van 500 MB is bereikt.")
+      if (error.message.includes("MULTIPAGE_REQUIRES_SILVER")) throw new ImportCreationError("Bronze is voor één pagina. Kies Silver of Gold om een website met meerdere pagina's te importeren.", 403)
       if (error.message.includes("Customer business required")) throw new ImportCreationError("Het bedrijfsprofiel van de klant ontbreekt. Pas de FlexStart-bedrijfsprofielmigratie toe en probeer opnieuw.", 409)
       if (error.message.includes("Invalid transfer")) throw new ImportCreationError("De aanvraag is gewijzigd. Vernieuw de pagina en probeer opnieuw.", 409)
       throw new ImportCreationError("Het ontwerp kon niet worden aangemaakt. Controleer of de importmigratie is toegepast en probeer opnieuw.", 503)

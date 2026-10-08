@@ -26,7 +26,7 @@ Function("module", "exports", "require", compiled.outputText)(module, module.exp
   throw new Error(`Unexpected runtime dependency: ${specifier}`)
 })
 
-const { getUserSubscription, getSubscriptionAccessNotice, hasMultilingualWebsiteAccess, hasBookingAddonAccess, hasSubscriptionCapability, toUserBillingData, resolveEffectivePlan } = module.exports
+const { getUserSubscription, getSubscriptionAccessNotice, hasMultilingualWebsiteAccess, hasMultipageWebsiteAccess, hasBookingAddonAccess, hasSubscriptionCapability, toUserBillingData, resolveEffectivePlan } = module.exports
 const now = new Date("2026-07-12T12:00:00.000Z")
 const record = (status, overrides = {}) => ({
   id: "sub-1",
@@ -56,6 +56,17 @@ test("missing subscriptions receive the temporary Gold default", () => {
     status: "none",
     source: "default_fallback",
   })
+})
+
+test("page access follows the stored plan despite temporary Gold and add-ons", () => {
+  for (const plan_id of ["bronze", "silver", "gold"]) {
+    const subscription = record("active", { plan_id, booking_addon_active: true, multilingual_addon_active: true })
+    const resolved = { userId: "user-1", record: subscription, ...resolveEffectivePlan(subscription, now) }
+    assert.equal(resolved.planId, "gold")
+    assert.equal(hasMultipageWebsiteAccess(resolved), plan_id !== "bronze")
+    assert.equal(hasSubscriptionCapability(resolved, "multipage_websites"), plan_id !== "bronze")
+  }
+  assert.equal(hasMultipageWebsiteAccess({ ...resolveEffectivePlan(null), record: null }), true)
 })
 
 test("review collection agrees with billing's effective Gold across subscription states", () => {

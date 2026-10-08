@@ -4,6 +4,7 @@ import type { PlanId } from "@/lib/types/pricing"
 export const ENTITLEMENT_PLAN_ORDER = ["bronze", "silver", "gold"] as const satisfies readonly PlanId[]
 
 export type EntitlementCapability =
+  | "multipage_websites"
   | "review_collection"
   | "contact_form"
   | "email_contact_requests"
@@ -38,6 +39,8 @@ export interface EntitlementViolation {
 }
 
 export interface WebsiteEntitlementInput {
+  pageCount?: number
+  hasMultipageAccess?: boolean
   sections: readonly Pick<Section, "id" | "type" | "data">[]
   enabledCapabilities?: readonly EntitlementCapability[]
   capabilityOverrides?: readonly EntitlementCapability[]
@@ -73,11 +76,12 @@ const SECTION_MINIMUM_PLAN = {
 
 export const SECTION_LIMIT_BY_PLAN = {
   bronze: 6,
-  silver: 10,
+  silver: null,
   gold: null,
 } as const satisfies Record<PlanId, number | null>
 
 export const CAPABILITY_MINIMUM_PLAN = {
+  multipage_websites: "silver",
   review_collection: "gold",
   contact_form: "bronze",
   email_contact_requests: "silver",
@@ -94,6 +98,7 @@ export const CAPABILITY_MINIMUM_PLAN = {
 } as const satisfies Record<EntitlementCapability, PlanId>
 
 const CAPABILITY_LABELS = {
+  multipage_websites: "Website met meerdere pagina's",
   review_collection: "Recensies verzamelen en beheren",
   contact_form: "Contactformulier",
   email_contact_requests: "Contactaanvragen per e-mail",
@@ -208,8 +213,14 @@ export function inspectWebsiteEntitlements(
   const requiredPlans: PlanId[] = ["bronze"]
   const sectionLimit = getSectionLimit(currentPlan)
 
+  if ((input.pageCount ?? 1) > 1 && !(input.hasMultipageAccess ?? planMeetsRequirement(currentPlan, "silver"))) {
+    requiredPlans.push("silver")
+    violations.push({ code: "feature.requires_plan", label: CAPABILITY_LABELS.multipage_websites,
+      currentPlan: "bronze", requiredPlan: "silver", capability: "multipage_websites", actualCount: input.pageCount, allowedCount: 1 })
+  }
+
   if (sectionLimit !== null && input.sections.length > sectionLimit) {
-    const requiredPlan: PlanId = currentPlan === "bronze" && input.sections.length <= 10 ? "silver" : "gold"
+    const requiredPlan: PlanId = "silver"
     requiredPlans.push(requiredPlan)
     violations.push({
       code: "section.limit_exceeded",
