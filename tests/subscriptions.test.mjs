@@ -6,7 +6,8 @@ import ts from "typescript"
 
 const sourcePath = path.resolve("lib/subscriptions.ts")
 const source = fs.readFileSync(sourcePath, "utf8")
-const compiled = ts.transpileModule(source, {
+function loadSubscriptions(temporaryAccess) {
+const compiled = ts.transpileModule(source.replace("DEFAULT_ALL_FEATURES_INCLUDED = true", `DEFAULT_ALL_FEATURES_INCLUDED = ${temporaryAccess}`), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
   fileName: sourcePath,
 })
@@ -25,8 +26,12 @@ Function("module", "exports", "require", compiled.outputText)(module, module.exp
   }
   throw new Error(`Unexpected runtime dependency: ${specifier}`)
 })
+return module.exports
+}
 
-const { getSubscriptionPageLimit, getUserSubscription, getSubscriptionAccessNotice, hasMultilingualWebsiteAccess, hasMultipageWebsiteAccess, hasBookingAddonAccess, hasSubscriptionCapability, toUserBillingData, resolveEffectivePlan } = module.exports
+// Keep the paid-plan regression matrix for the coordinated end of this temporary period.
+const { getSubscriptionPageLimit, getUserSubscription, getSubscriptionAccessNotice, hasMultilingualWebsiteAccess, hasMultipageWebsiteAccess, hasBookingAddonAccess, hasSubscriptionCapability, toUserBillingData, resolveEffectivePlan } = loadSubscriptions(false)
+const temporary = loadSubscriptions(true)
 const now = new Date("2026-07-12T12:00:00.000Z")
 const record = (status, overrides = {}) => ({
   id: "sub-1",
@@ -47,6 +52,32 @@ const record = (status, overrides = {}) => ({
   created_at: "2026-07-01T00:00:00.000Z",
   updated_at: "2026-07-01T00:00:00.000Z",
   ...overrides,
+})
+
+test("temporary Gold grants existing and new users every capability without rewriting billing", () => {
+  assert.match(source, /DEFAULT_ALL_FEATURES_INCLUDED = true/)
+  const capabilities = ["multipage_websites", "review_collection", "contact_form", "email_contact_requests", "email_quote_requests", "email_appointment_requests", "whatsapp_integration", "booking_system", "availability_calendar", "automatic_booking_confirmations", "booking_management", "multilingual_websites", "priority_support", "service_management", "advanced_seo", "ga4_configuration", "detailed_analytics", "advanced_analytics"]
+  const records = [null, ...["bronze", "silver", "gold"].flatMap(plan_id => ["active", "trial", "canceled", "past_due", "expired"].map(status => record(status, {plan_id, current_period_end:"2026-01-01T00:00:00Z"})))]
+  for (const row of records) {
+    const before = JSON.stringify(row)
+    const resolved = {userId: "user-1", record: row, ...temporary.resolveEffectivePlan(row, now)}
+    assert.equal(resolved.planId, "gold")
+    assert.equal(resolved.storedPlanId, row?.plan_id ?? null)
+    assert.equal(resolved.status, row?.status ?? "none")
+    assert.equal(temporary.getSubscriptionPageLimit(resolved), null)
+    assert.equal(temporary.hasBookingAddonAccess(resolved), true)
+    assert.equal(temporary.hasMultilingualWebsiteAccess(resolved), true)
+    for (const capability of capabilities) assert.equal(temporary.hasSubscriptionCapability(resolved, capability), true, capability)
+    const billing = temporary.toUserBillingData(resolved)
+    assert.equal(billing.currentPlan, "gold")
+    assert.equal(billing.storedPlan, row?.plan_id ?? null)
+    assert.equal(billing.currentPrice, 0)
+    assert.equal(billing.nextBillingDate, null)
+    assert.equal(billing.defaultFeaturesIncluded, true)
+    assert.deepEqual(billing.addons, {bookingAddon:true, multilingualAddon:true})
+    assert.match(billing.accessNotice, /tijdelijk gratis/)
+    assert.equal(JSON.stringify(row), before)
+  }
 })
 
 test("missing and inactive subscriptions receive Bronze without add-ons", () => {

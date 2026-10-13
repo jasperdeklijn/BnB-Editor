@@ -1,6 +1,6 @@
 # Pricing, publication quotas and visitor analytics
 
-Implemented 13 October 2026. This runbook supersedes the onepage/six-section policy and the temporary free-feature rollout. The user explicitly chose stored-plan/add-on enforcement for all features. No hosted database, live Stripe product, subscription, or price was changed.
+Implemented 13 October 2026. The catalog supersedes the onepage/six-section policy. **The later request to keep all users on temporary free Gold access supersedes this runbook's stored-plan enforcement during that period:** see [temporary Gold access](temporary-gold-access.md). The paid-plan implementation remains available for a coordinated return to billing. No hosted database, live Stripe product, subscription, or price was changed by the local implementation.
 
 ## Repository findings and scope
 

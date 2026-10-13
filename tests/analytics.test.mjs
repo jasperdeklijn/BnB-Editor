@@ -28,7 +28,7 @@ test("signed public-page requests reject tampering, bots, wrong tenant/domain/pa
   assert.equal(isAnalyticsBot('Mozilla HeadlessChrome'),true);assert.equal(isAnalyticsBot('Mozilla Chrome'),false)
 })
 test("daily aggregates deduplicate batches, enforce plan reporting, RLS and deletion",async()=>{
-  const db=await fixture()
+  const db=await fixture({temporaryGoldAccess:false})
   try{
     const home=(await db.query("select id from website_pages where website_id=$1 and is_home",[website])).rows[0].id
     await plan(db,'bronze')
@@ -68,7 +68,7 @@ test("daily aggregates deduplicate batches, enforce plan reporting, RLS and dele
   }finally{await db.close()}
 })
 test("conversion successes validate backend rows, count once and require an active Booking add-on",async()=>{
-  const db=await fixture()
+  const db=await fixture({temporaryGoldAccess:false})
   try{
     await plan(db,'gold',false)
     await db.query("update websites set published=true,analytics='{\"firstPartyEnabled\":true}' where id=$1",[website])

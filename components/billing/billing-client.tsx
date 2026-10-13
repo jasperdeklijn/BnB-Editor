@@ -49,13 +49,15 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              Huidig abonnement
+              {billingData.defaultFeaturesIncluded ? "Tijdelijke toegang" : "Huidig abonnement"}
             </p>
             <h2 className="text-3xl font-bold text-foreground">{currentPlan.name}</h2>
             <p className="mt-1 text-muted-foreground">{currentPlan.description}</p>
           </div>
 
-          <BillingStatusBadge status={billingData.status} />
+          {billingData.defaultFeaturesIncluded
+            ? <span className="rounded-full bg-success/10 px-3 py-1 text-sm font-medium text-success">Tijdelijk gratis</span>
+            : <BillingStatusBadge status={billingData.status} />}
         </div>
         {!billingData.defaultFeaturesIncluded && billingData.source === "default_fallback" ? (
           <p className="mt-4 text-sm text-muted-foreground">

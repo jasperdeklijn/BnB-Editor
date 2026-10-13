@@ -9,7 +9,7 @@ async function setPlan(db,plan) {
   await db.exec("set role authenticated")
 }
 test("3/10/unlimited quotas guard publications and activations while drafts and downgrades are preserved",async()=>{
-  const db=await fixture()
+  const db=await fixture({temporaryGoldAccess:false})
   try {
     const migration=readFileSync("supabase/migrations/20261013131134_pricing_visitor_analytics.sql","utf8")
     assert.ok(readFileSync("supabase/init.sql","utf8").includes(migration))

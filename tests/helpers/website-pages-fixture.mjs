@@ -7,7 +7,7 @@ const outsider = "00000000-0000-0000-0000-000000000002"
 export const website = "00000000-0000-0000-0000-000000000011"
 export const otherWebsite = "00000000-0000-0000-0000-000000000012"
 
-export async function fixture() {
+export async function fixture({ temporaryGoldAccess = true } = {}) {
   const db = new PGlite({ extensions: { pgcrypto } })
   await db.exec(`
     create role anon; create role authenticated; create role service_role bypassrls;
@@ -24,6 +24,7 @@ export async function fixture() {
     create function storage.foldername(text) returns text[] language sql immutable as $$ select string_to_array($1,'/') $$;
   `)
   await db.exec(read("supabase/init.sql"))
+  if (!temporaryGoldAccess) await db.exec("create or replace function public.temporary_gold_access_enabled() returns boolean language sql stable security invoker set search_path = '' as $$ select false $$;")
   await db.query(`insert into auth.users(id,email,raw_user_meta_data) values
     ($1,'owner@example.test','{"terms_accepted":true,"terms_version":"2026-09-17"}'),
     ($2,'other@example.test','{"terms_accepted":true,"terms_version":"2026-09-17"}')`, [owner, outsider])

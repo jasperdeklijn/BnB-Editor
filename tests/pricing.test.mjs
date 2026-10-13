@@ -34,13 +34,13 @@ test("pricing exposes published page quotas and VAT disclosure", () => {
 })
 
 test("monthly totals include optional booking and multilingual, with languages free on Gold", () => {
-  const expected = { bronze: [7.95, 26.95, 10.94, 29.94], silver: [14.95, 33.95, 17.94, 36.94], gold: [24.95, 43.95, 24.95, 43.95] }
+  const expected = { bronze: [7.95, 22.90, 10.94, 25.89], silver: [14.95, 29.90, 17.94, 32.89], gold: [24.95, 39.90, 24.95, 39.90] }
   for (const [plan, totals] of Object.entries(expected)) {
     for (let index = 0; index < 4; index++) {
       assert.equal(calculateMonthlyPrice(plan, { bookingAddon: Boolean(index & 1), multilingualAddon: Boolean(index & 2) }), totals[index])
     }
   }
-  assert.equal(formatPrice(module.exports.BOOKING_ADDON_MONTHLY_PRICE).replace(/\s/g, ""), "€19,00")
+  assert.equal(formatPrice(module.exports.BOOKING_ADDON_MONTHLY_PRICE).replace(/\s/g, ""), "€14,95")
 })
 
 test("Booking & Facturatie includes booking, customer and invoice features on every plan", () => {

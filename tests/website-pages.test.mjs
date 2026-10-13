@@ -109,7 +109,7 @@ test("sections belong to their page; reordering/deleting one page leaves the oth
 })
 
 test("bootstrap mirrors the migration and migration refuses obsolete content", async () => {
-  assert.ok(read("supabase/init.sql").includes(migration))
+  assert.ok(read("supabase/init.sql").replace(/\r\n/g, "\n").includes(migration.replace(/\r\n/g, "\n")))
   const db = new PGlite()
   try {
     await db.exec("create table website_sections(id int); insert into website_sections values(1); create table websites(live_snapshot jsonb);")
