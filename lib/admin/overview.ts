@@ -5,6 +5,21 @@ import { countNewAccounts, periodBounds, type AdminLog } from "./model"
 export type AttentionItem = { id: string; title: string; description: string; href: string; createdAt: string }
 export type AttentionGroup = { title: string; count: number | null; href: string; items: AttentionItem[]; error: boolean }
 
+/** Daily reports use aligned UTC boundaries; legacy rows keep timestamp filters. */
+function nextUtcBoundary(value: string) {
+  const date = new Date(value)
+  if (date.getUTCHours() || date.getUTCMinutes() || date.getUTCSeconds() || date.getUTCMilliseconds()) date.setUTCDate(date.getUTCDate()+1)
+  date.setUTCHours(0,0,0,0)
+  return date.toISOString().slice(0,10)
+}
+async function visitorTotal(admin: Awaited<ReturnType<typeof adminDatabase>>, start: string, end: string) {
+  const [legacy, daily] = await Promise.all([
+    admin.from("website_visits").select("*", {count:"exact",head:true}).gte("visited_at",start).lt("visited_at",end),
+    admin.rpc("website_analytics_admin_visitors", {p_from:nextUtcBoundary(start),p_to:nextUtcBoundary(end)}),
+  ])
+  return {data:null,count:legacy.error || daily.error ? null : (legacy.count ?? 0) + Number(daily.data ?? 0),error:legacy.error ?? daily.error}
+}
+
 export async function loadOverview(days: number) {
   const admin = await adminDatabase()
   const bounds = periodBounds(days)
@@ -13,8 +28,8 @@ export async function loadOverview(days: number) {
     admin.from("websites").select("*", { count: "exact", head: true }).eq("published", true),
     admin.from("subscriptions").select("*", { count: "exact", head: true }).eq("status", "active").gt("current_price", 0),
     admin.from("mail_threads").select("*", { count: "exact", head: true }).in("status", ["new", "draft_ready", "needs_review"]),
-    admin.from("website_visits").select("*", { count: "exact", head: true }).gte("visited_at", bounds.start).lt("visited_at", bounds.now),
-    admin.from("website_visits").select("*", { count: "exact", head: true }).gte("visited_at", bounds.previous).lt("visited_at", bounds.start),
+    visitorTotal(admin,bounds.start,bounds.now),
+    visitorTotal(admin,bounds.previous,bounds.start),
     admin.from("contact_requests").select("*", { count: "exact", head: true }).gte("created_at", bounds.start).lt("created_at", bounds.now),
     admin.from("contact_requests").select("*", { count: "exact", head: true }).gte("created_at", bounds.previous).lt("created_at", bounds.start),
     admin.from("mail_threads").select("id,subject_normalized,contact_email,last_message_at", { count: "exact" }).gt("unread_count", 0).order("last_message_at").limit(4),

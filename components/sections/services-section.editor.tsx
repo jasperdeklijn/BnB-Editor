@@ -373,7 +373,7 @@ export function ServicesSectionEditor({
         </p>
         {(section.data as any).bookingSpaceEnabled && !hasBookingAccess ? (
           <p className="rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-900">
-            De boekingsruimte vereist de Booking & Facturatie (€ 14,95 per maand). Je kunt haar instellen en testen, maar deze versie nog niet live zetten.
+            De boekingsruimte vereist de Booking & Facturatie (€ 19,00 per maand exclusief btw). Je kunt haar instellen en testen, maar deze versie nog niet live zetten.
           </p>
         ) : null}
 

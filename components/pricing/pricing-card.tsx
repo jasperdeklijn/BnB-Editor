@@ -78,7 +78,7 @@ export function PricingCard({
         <div className="mb-8 flex-1">
           {plan.id === "gold" && (
             <p className="mb-5 rounded-xl bg-[var(--landing-primary-light)] p-4 text-sm leading-relaxed text-[var(--landing-primary-dark)]">
-              Bereik klanten in meerdere talen, presenteer al je diensten en verzamel recensies. Met ruimte voor onbeperkte secties en ondersteuning met voorrang.
+              Bereik klanten in meerdere talen, presenteer al je diensten en verzamel recensies. Bekijk conversies, maandrapporten en tot 12 maanden historie.
             </p>
           )}
           <ul className="space-y-3">

@@ -32,18 +32,16 @@ const {
 
 const section = (id, type, data = {}) => ({ id, type, data })
 
-test("Bronze is onepage; multipage requires Silver or Gold independently of add-ons", () => {
-  assert.equal(getMinimumPlanForCapability("multipage_websites"), "silver")
-  assert.equal(inspectWebsiteEntitlements("bronze", { sections: [], pageCount: 1 }).allowed, true)
-  const blocked = inspectWebsiteEntitlements("bronze", { sections: [], pageCount: 2, hasBookingAccess: true,
-    capabilityOverrides: ["multilingual_websites", "multipage_websites"] })
-  assert.equal(blocked.allowed, false)
-  assert.equal(blocked.requiredPlan, "silver")
-  assert.equal(blocked.violations[0].capability, "multipage_websites")
-  for (const plan of ["silver", "gold"]) {
-    assert.equal(inspectWebsiteEntitlements(plan, { sections: [], pageCount: 8 }).allowed, true)
+test("published caps are 3/10/unlimited independently of add-ons and free features", () => {
+  assert.equal(getMinimumPlanForCapability("multipage_websites"), "bronze")
+  for (const [plan, allowed, blocked, required] of [["bronze",3,4,"silver"],["silver",10,11,"gold"],["gold",10000,null,null]]) {
+    assert.equal(inspectWebsiteEntitlements(plan,{sections:[],pageCount:allowed}).allowed,true)
+    if (blocked) {
+      const result=inspectWebsiteEntitlements(plan,{sections:[],pageCount:blocked,hasBookingAccess:true,capabilityOverrides:["multipage_websites"]})
+      assert.equal(result.allowed,false); assert.equal(result.requiredPlan,required); assert.equal(result.violations[0].code,"page.limit_exceeded")
+    }
   }
-  assert.equal(inspectWebsiteEntitlements("gold", { sections: [], pageCount: 2, hasMultipageAccess: false }).allowed, false)
+  assert.equal(inspectWebsiteEntitlements("gold",{sections:[],pageCount:4,publishedPageLimit:3}).allowed,false)
 })
 
 test("plan order and every section entitlement are explicit", () => {
@@ -52,7 +50,7 @@ test("plan order and every section entitlement are explicit", () => {
     assert.equal(getMinimumPlanForSection(type), "bronze")
   }
   for (const type of ["gallery", "features", "testimonials", "faq", "opening_hours", "pricing", "team", "cta"]) {
-    assert.equal(getMinimumPlanForSection(type), "silver")
+    assert.equal(getMinimumPlanForSection(type), "bronze")
   }
 })
 
@@ -62,29 +60,17 @@ test("plan comparison follows Bronze, Silver, Gold", () => {
   assert.equal(planMeetsRequirement("gold", "silver"), true)
 })
 
-test("Bronze section-count boundaries are 6 allowed and 7 blocked by Silver", () => {
-  const six = Array.from({ length: 6 }, (_, index) => section(String(index), "hero"))
-  assert.equal(inspectWebsiteEntitlements("bronze", { sections: six }).allowed, true)
-
-  const result = inspectWebsiteEntitlements("bronze", { sections: [...six, section("7", "about")] })
-  assert.equal(result.allowed, false)
-  assert.deepEqual(result.violations[0], {
-    code: "section.limit_exceeded",
-    label: "Maximaal 6 secties in bronze",
-    currentPlan: "bronze",
-    requiredPlan: "silver",
-    actualCount: 7,
-    allowedCount: 6,
-  })
+test("all plans retain unrestricted core builder sections", () => {
+  for (const plan of ["bronze","silver","gold"]) assert.equal(inspectWebsiteEntitlements(plan,{sections:Array.from({length:100},(_,i)=>section(String(i),"gallery"))}).allowed,true)
 })
 
-test("Silver has no section-count limit; Bronze needs Silver even above ten sections", () => {
+test("Bronze and Silver have no section-count limit", () => {
   for (const count of [10, 11, 100]) {
     const sections = Array.from({ length: count }, (_, index) => section(String(index), "hero"))
     assert.equal(inspectWebsiteEntitlements("silver", { sections }).allowed, true)
     const bronze = inspectWebsiteEntitlements("bronze", { sections })
-    assert.equal(bronze.allowed, false)
-    assert.equal(bronze.requiredPlan, "silver")
+    assert.equal(bronze.allowed, true)
+    assert.equal(bronze.requiredPlan, "bronze")
   }
 })
 
@@ -93,12 +79,8 @@ test("Gold has no section-count limit", () => {
   assert.equal(inspectWebsiteEntitlements("gold", { sections }).allowed, true)
 })
 
-test("Silver sections remain editable but are reported for Bronze", () => {
-  const result = inspectWebsiteEntitlements("bronze", { sections: [section("gallery", "gallery")] })
-  assert.equal(result.allowed, false)
-  assert.equal(result.requiredPlan, "silver")
-  assert.deepEqual(result.violations.map((violation) => violation.code), ["section.requires_plan"])
-  assert.equal(result.violations[0].sectionId, "gallery")
+test("gallery is included in Bronze", () => {
+  assert.equal(inspectWebsiteEntitlements("bronze",{sections:[section("gallery","gallery")]}).allowed,true)
 })
 
 test("mixed-tier section settings are inspected independently", () => {
@@ -183,7 +165,7 @@ test("booking requires the add-on on every plan and preserves section limits", (
     hasBookingAccess: true,
     sections: Array.from({ length: 7 }, (_, index) => section(String(index), "services", { bookingSpaceEnabled: true })),
   })
-  assert.deepEqual(bronze.violations.map((violation) => violation.code), ["section.limit_exceeded"])
+  assert.equal(bronze.allowed, true)
 })
 
 test("service management is included in Gold and available through Booking & Facturatie", () => {

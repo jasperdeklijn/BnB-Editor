@@ -1,0 +1,228 @@
+{
+  "format": "flexpagina",
+  "version": 2,
+  "title": "Customer draft",
+  "pages": [
+    {
+      "key": "home",
+      "title": "Home",
+      "slug": "",
+      "isHome": true
+    },
+    {
+      "key": "about",
+      "title": "About",
+      "slug": "about",
+      "isHome": false
+    },
+    {
+      "key": "services",
+      "title": "Services",
+      "slug": "services",
+      "isHome": false
+    },
+    {
+      "key": "faq",
+      "title": "FAQ",
+      "slug": "faq",
+      "isHome": false
+    },
+    {
+      "key": "contact",
+      "title": "Contact",
+      "slug": "contact",
+      "isHome": false
+    }
+  ],
+  "sections": [
+    {
+      "key": "home-0",
+      "pageKey": "home",
+      "type": "hero",
+      "content": {
+        "title": "Home",
+        "subtitle": "Synthetic customer fixture"
+      }
+    },
+    {
+      "key": "home-1",
+      "pageKey": "home",
+      "type": "about",
+      "content": {
+        "title": "Home",
+        "description": "Synthetic customer fixture"
+      }
+    },
+    {
+      "key": "home-2",
+      "pageKey": "home",
+      "type": "about",
+      "content": {
+        "title": "Home",
+        "description": "Synthetic customer fixture"
+      }
+    },
+    {
+      "key": "home-3",
+      "pageKey": "home",
+      "type": "about",
+      "content": {
+        "title": "Home",
+        "description": "Synthetic customer fixture"
+      }
+    },
+    {
+      "key": "home-4",
+      "pageKey": "home",
+      "type": "about",
+      "content": {
+        "title": "Home",
+        "description": "Synthetic customer fixture"
+      }
+    },
+    {
+      "key": "about-0",
+      "pageKey": "about",
+      "type": "hero",
+      "content": {
+        "title": "About",
+        "subtitle": "Synthetic customer fixture"
+      }
+    },
+    {
+      "key": "about-1",
+      "pageKey": "about",
+      "type": "about",
+      "content": {
+        "title": "About",
+        "description": "Synthetic customer fixture"
+      }
+    },
+    {
+      "key": "about-2",
+      "pageKey": "about",
+      "type": "about",
+      "content": {
+        "title": "About",
+        "description": "Synthetic customer fixture"
+      }
+    },
+    {
+      "key": "about-3",
+      "pageKey": "about",
+      "type": "about",
+      "content": {
+        "title": "About",
+        "description": "Synthetic customer fixture"
+      }
+    },
+    {
+      "key": "services-0",
+      "pageKey": "services",
+      "type": "hero",
+      "content": {
+        "title": "Services",
+        "subtitle": "Synthetic customer fixture"
+      }
+    },
+    {
+      "key": "services-1",
+      "pageKey": "services",
+      "type": "about",
+      "content": {
+        "title": "Services",
+        "description": "Synthetic customer fixture"
+      }
+    },
+    {
+      "key": "services-2",
+      "pageKey": "services",
+      "type": "about",
+      "content": {
+        "title": "Services",
+        "description": "Synthetic customer fixture"
+      }
+    },
+    {
+      "key": "services-3",
+      "pageKey": "services",
+      "type": "about",
+      "content": {
+        "title": "Services",
+        "description": "Synthetic customer fixture"
+      }
+    },
+    {
+      "key": "faq-0",
+      "pageKey": "faq",
+      "type": "hero",
+      "content": {
+        "title": "FAQ",
+        "subtitle": "Synthetic customer fixture"
+      }
+    },
+    {
+      "key": "faq-1",
+      "pageKey": "faq",
+      "type": "about",
+      "content": {
+        "title": "FAQ",
+        "description": "Synthetic customer fixture"
+      }
+    },
+    {
+      "key": "faq-2",
+      "pageKey": "faq",
+      "type": "about",
+      "content": {
+        "title": "FAQ",
+        "description": "Synthetic customer fixture"
+      }
+    },
+    {
+      "key": "faq-3",
+      "pageKey": "faq",
+      "type": "about",
+      "content": {
+        "title": "FAQ",
+        "description": "Synthetic customer fixture"
+      }
+    },
+    {
+      "key": "contact-0",
+      "pageKey": "contact",
+      "type": "hero",
+      "content": {
+        "title": "Contact",
+        "subtitle": "Synthetic customer fixture"
+      }
+    },
+    {
+      "key": "contact-1",
+      "pageKey": "contact",
+      "type": "about",
+      "content": {
+        "title": "Contact",
+        "description": "Synthetic customer fixture"
+      }
+    },
+    {
+      "key": "contact-2",
+      "pageKey": "contact",
+      "type": "about",
+      "content": {
+        "title": "Contact",
+        "description": "Synthetic customer fixture"
+      }
+    },
+    {
+      "key": "contact-3",
+      "pageKey": "contact",
+      "type": "about",
+      "content": {
+        "title": "Contact",
+        "description": "Synthetic customer fixture"
+      }
+    }
+  ]
+}

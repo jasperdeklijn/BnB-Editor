@@ -80,6 +80,7 @@ export function EditorLayoutClient({
     "/editor/calendar": businessCategory === "bnb" ? "Boekingskalender" : "Afsprakenkalender",
     "/editor/domains": "Domeininstellingen",
     "/editor/seo": "SEO & Analytics",
+    "/editor/analytics": "Statistieken",
     "/editor/account/profile": "Profiel",
     "/editor/account/billing": "Facturering",
   }
@@ -94,6 +95,7 @@ export function EditorLayoutClient({
     "/editor/reservations": <ClipboardList className="h-4 w-4" />,
     "/editor/calendar": <CalendarDays className="h-4 w-4" />,
     "/editor/domains": <Globe className="h-4 w-4" />,
+    "/editor/analytics": <Search className="h-4 w-4" />,
     "/editor/seo": <Search className="h-4 w-4" />,
     "/editor/account/profile": <User className="h-4 w-4" />,
     "/editor/account/billing": <CreditCard className="h-4 w-4" />,

@@ -9,7 +9,7 @@ const require = createRequire(import.meta.url)
 const load = require("../scripts/load-import-module.cjs")
 const { runFlexCheck } = load("lib/flexstart/check.ts")
 const { transferSchema, isSourceUrl } = load("lib/flexstart/shared.ts")
-const read = (file) => readFileSync(new URL(`../${file}`, import.meta.url), "utf8")
+const read = (file) => readFileSync(new URL(`../${file}`, import.meta.url), "utf8").replace(/\r\n/g, "\n")
 
 test("intake requires permission and public web URL; rejects owner/status injection", () => {
   const input = { id: randomUUID(), source_url: "https://example.com", business_name: "Bedrijf", business_type: "coach", services: "Coaching", city: "Utrecht", service_area: "Utrecht", primary_goal: "requests", appearance: "", preferred_colors: "", preserve_notes: "", customer_notes: "", logo_image_id: null, permission: true }

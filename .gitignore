@@ -13,7 +13,6 @@
 # local generated media/tooling artifacts
 /artifacts/
 /tmp/
-/.npm-cache
 # debug
 npm-debug.log*
 yarn-debug.log*
@@ -37,3 +36,5 @@ next-env.d.ts
 
 # Supabase CLI local metadata
 /supabase/.temp/
+
+/.npm-cache/

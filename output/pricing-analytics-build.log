@@ -1,0 +1,178 @@
+
+> my-v0-project@0.1.0 build
+> next build
+
+▲ Next.js 16.3.2 (Turbopack)
+✓ Running next.config.mjs took 132ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 13.2s
+  Running TypeScript ...
+  Finished TypeScript in 30.5s ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/111) ...
+  Generating static pages using 7 workers (27/111) 
+  Generating static pages using 7 workers (55/111) 
+  Generating static pages using 7 workers (83/111) 
+✓ Generating static pages using 7 workers (111/111) in 4.1s
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /aanvraag
+├ ƒ /aanvraag/[token]
+├ ƒ /acceptable-use
+├ ƒ /admin
+├ ƒ /admin/agents
+├ ƒ /admin/agents/approvals
+├ ƒ /admin/agents/history
+├ ƒ /admin/agents/settings
+├ ƒ /admin/audit-logs
+├ ƒ /admin/customers
+├ ƒ /admin/customers/[customerId]
+├ ƒ /admin/flexstart
+├ ƒ /admin/leads
+├ ƒ /admin/leads/settings
+├ ƒ /admin/mailbox
+├ ƒ /admin/mailbox/knowledge
+├ ƒ /admin/websites
+├ ƒ /api/account
+├ ƒ /api/account/export
+├ ƒ /api/admin/agents/approvals
+├ ƒ /api/admin/agents/approvals/[approvalId]/approve
+├ ƒ /api/admin/agents/approvals/[approvalId]/reject
+├ ƒ /api/admin/agents/artifacts/[artifactId]/revise
+├ ƒ /api/admin/agents/jobs
+├ ƒ /api/admin/agents/jobs/[jobId]
+├ ƒ /api/admin/agents/jobs/[jobId]/retry
+├ ƒ /api/admin/agents/runs/[runId]
+├ ƒ /api/admin/agents/settings
+├ ƒ /api/admin/leads/[id]
+├ ƒ /api/admin/leads/search
+├ ƒ /api/admin/leads/settings
+├ ƒ /api/admin/mailbox/knowledge
+├ ƒ /api/admin/mailbox/knowledge/[answerId]
+├ ƒ /api/admin/mailbox/sync
+├ ƒ /api/admin/mailbox/threads/[threadId]
+├ ƒ /api/admin/mailbox/threads/[threadId]/draft
+├ ƒ /api/admin/mailbox/threads/[threadId]/send
+├ ƒ /api/analytics/visit
+├ ƒ /api/audit/billing
+├ ƒ /api/audit/entitlement
+├ ƒ /api/audit/language
+├ ƒ /api/audit/section
+├ ƒ /api/audit/website-created
+├ ƒ /api/auth/change-password
+├ ƒ /api/auth/login
+├ ƒ /api/auth/login-event
+├ ƒ /api/auth/logout
+├ ƒ /api/auth/password-reset
+├ ƒ /api/booking/availability
+├ ƒ /api/booking/confirm
+├ ƒ /api/booking/holds
+├ ƒ /api/booking/invoices/[invoiceId]/pdf
+├ ƒ /api/booking/manage/[token]
+├ ƒ /api/booking/manage/[token]/invoice
+├ ƒ /api/calendar/ical/[token]
+├ ƒ /api/cron/agents/daily-summary
+├ ƒ /api/cron/agents/dispatch
+├ ƒ /api/cron/agents/reconcile
+├ ƒ /api/cron/analytics-cleanup
+├ ƒ /api/cron/booking-notifications
+├ ƒ /api/cron/calendar-sync
+├ ƒ /api/cron/leads
+├ ƒ /api/cron/mail-sync
+├ ƒ /api/cron/review-cleanup
+├ ƒ /api/customer-request
+├ ƒ /api/customer-request/document
+├ ƒ /api/customer-request/session
+├ ƒ /api/domain
+├ ƒ /api/domain/[domainId]
+├ ƒ /api/domain/verify
+├ ƒ /api/flexcheck/[id]
+├ ƒ /api/flexstart
+├ ƒ /api/flexstart/[id]
+├ ƒ /api/flexstart/[id]/import
+├ ƒ /api/flexstart/[id]/prepare
+├ ƒ /api/health
+├ ƒ /api/images/upload
+├ ƒ /api/onboarding/event
+├ ƒ /api/onboarding/slug
+├ ƒ /api/profile
+├ ƒ /api/quotes/[id]/pdf
+├ ƒ /api/requests
+├ ƒ /api/reviews
+├ ƒ /api/templates/apply
+├ ƒ /api/templates/restore
+├ ƒ /api/themes
+├ ƒ /api/websites/delete
+├ ƒ /api/websites/import
+├ ƒ /api/websites/import-url
+├ ƒ /api/websites/publish
+├ ƒ /api/websites/rename
+├ ƒ /auth/callback
+├ ƒ /auth/error
+├ ƒ /auth/forgot-password
+├ ƒ /auth/login
+├ ƒ /auth/sign-up
+├ ƒ /auth/sign-up-success
+├ ƒ /auth/update-password
+├ ƒ /booking/[token]
+├ ƒ /cookies
+├ ƒ /disclaimer
+├ ƒ /editor
+├ ƒ /editor/account/billing
+├ ƒ /editor/account/profile
+├ ƒ /editor/analytics
+├ ƒ /editor/business
+├ ƒ /editor/calendar
+├ ƒ /editor/domains
+├ ƒ /editor/flexcheck
+├ ƒ /editor/flexstart
+├ ƒ /editor/images
+├ ƒ /editor/import
+├ ƒ /editor/quotes
+├ ƒ /editor/requests
+├ ƒ /editor/reservations
+├ ƒ /editor/reviews
+├ ƒ /editor/seo
+├ ƒ /editor/services
+├ ƒ /import-preview
+├ ƒ /legal
+├ ƒ /legal/aup
+├ ƒ /legal/cookies
+├ ƒ /legal/disclaimer
+├ ƒ /legal/privacy
+├ ƒ /legal/processor-agreement
+├ ƒ /legal/takedown
+├ ƒ /legal/terms
+├ ƒ /melding-onrechtmatige-content
+├ ƒ /onboarding
+├ ƒ /preview/[slug]/[[...path]]
+├ ƒ /pricing
+├ ƒ /privacy
+├ ƒ /processor-agreement
+├ ƒ /reviews/[websiteId]
+├ ƒ /reviews/confirm
+├ ƒ /reviews/withdraw
+├ ○ /robots.txt
+├ ƒ /site/[slug]/[[...path]]
+├ ƒ /site/[slug]/robots.txt
+├ ƒ /site/-/sitemap.xml
+├ ○ /sitemap.xml
+├ ƒ /status
+├ ƒ /terms
+└ ƒ /voorbeelden/[slug]
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+npm notice
+npm notice New major version of npm available! 10.9.2 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice

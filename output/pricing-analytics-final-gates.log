@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: ingest runs one bounded batch after responding and skips bot/abuse/invalid inputs
+ok 1 - ingest runs one bounded batch after responding and skips bot/abuse/invalid inputs
+  ---
+  duration_ms: 61.3514
+  type: 'test'
+  ...
+# Subtest: backend conversion recording requires valid website consent and never counts a browser click
+ok 2 - backend conversion recording requires valid website consent and never counts a browser click
+  ---
+  duration_ms: 3.2789
+  type: 'test'
+  ...
+# Subtest: missing and inactive subscriptions receive Bronze without add-ons
+ok 3 - missing and inactive subscriptions receive Bronze without add-ons
+  ---
+  duration_ms: 7.3461
+  type: 'test'
+  ...
+# Subtest: stored active plans and add-ons govern every capability without changing billing records
+ok 4 - stored active plans and add-ons govern every capability without changing billing records
+  ---
+  duration_ms: 107.627
+  type: 'test'
+  ...
+# Subtest: multilingual add-on unlocks Bronze/Silver and Gold includes it
+ok 5 - multilingual add-on unlocks Bronze/Silver and Gold includes it
+  ---
+  duration_ms: 1.051
+  type: 'test'
+  ...
+# Subtest: inactive access notices preserve live content
+ok 6 - inactive access notices preserve live content
+  ---
+  duration_ms: 2.0619
+  type: 'test'
+  ...
+# Subtest: subscription loading fails booking closed before the add-on column exists
+ok 7 - subscription loading fails booking closed before the add-on column exists
+  ---
+  duration_ms: 4.69
+  type: 'test'
+  ...
+# Subtest: migrated subscriptions read the booking add-on without a fallback query
+ok 8 - migrated subscriptions read the booking add-on without a fallback query
+  ---
+  duration_ms: 0.587
+  type: 'test'
+  ...
+# Subtest: subscription schema fallback preserves real database errors
+ok 9 - subscription schema fallback preserves real database errors
+  ---
+  duration_ms: 2.8118
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3285.4732

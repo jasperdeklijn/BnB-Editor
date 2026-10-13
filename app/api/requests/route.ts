@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server"
+import { recordAnalyticsConversion } from "@/lib/analytics/server"
+import { after, NextRequest, NextResponse } from "next/server"
 import nodemailer from "nodemailer"
 import { deliverRequestReceipt } from "@/lib/quotes/receipt"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -439,6 +440,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Aanvraag kon niet worden opgeslagen." }, { status: 500 })
     }
 
+    if (requestType === "contact" && contactRequest?.id && context.websiteId) {
+      const successId = contactRequest.id
+      const analyticsWebsiteId = context.websiteId
+      after(() => recordAnalyticsConversion(request, analyticsWebsiteId, "contact", successId))
+    }
     if (context.businessId && contactRequest?.id) {
       const { error: messageError } = await context.supabase.from("contact_request_messages").insert({
         contact_request_id: contactRequest.id,

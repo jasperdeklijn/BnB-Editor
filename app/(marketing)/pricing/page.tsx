@@ -89,8 +89,7 @@ export default function PricingPage() {
                 Duidelijke abonnementen voor elke groeifase
               </h1>
               <p className="mt-5 text-lg leading-relaxed text-[var(--landing-muted)]">
-                Bronze zet je bedrijf professioneel online met een onepage-website. Silver en Gold ondersteunen meerdere pagina&apos;s en onbeperkte secties. Gold voegt recensiebeheer, dienstenbeheer, meertaligheid en priority support toe. Booking & Facturatie voeg je aan elk plan toe.
-              </p>
+                Bronze zet je bedrijf online met 3 pagina&apos;s en basisstatistieken. Silver biedt 10 pagina&apos;s en gedetailleerde statistieken. Gold biedt onbeperkte pagina&apos;s (fair-use), conversies en meertaligheid. Booking & Facturatie voeg je aan elk plan toe. </p>
               <p className="mt-3 text-sm font-semibold text-[var(--landing-primary)]">
                 Alle vermelde prijzen zijn exclusief btw.
               </p>

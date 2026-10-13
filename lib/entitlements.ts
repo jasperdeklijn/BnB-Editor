@@ -18,12 +18,17 @@ export type EntitlementCapability =
   | "multilingual_websites"
   | "priority_support"
   | "service_management"
+  | "advanced_seo"
+  | "ga4_configuration"
+  | "detailed_analytics"
+  | "advanced_analytics"
 
 export type EntitlementViolationCode =
   | "section.requires_plan"
   | "section.limit_exceeded"
   | "feature.requires_plan"
   | "feature.requires_addon"
+  | "page.limit_exceeded"
 
 export interface EntitlementViolation {
   code: EntitlementViolationCode
@@ -41,6 +46,7 @@ export interface EntitlementViolation {
 export interface WebsiteEntitlementInput {
   pageCount?: number
   hasMultipageAccess?: boolean
+  publishedPageLimit?: number | null
   sections: readonly Pick<Section, "id" | "type" | "data">[]
   enabledCapabilities?: readonly EntitlementCapability[]
   capabilityOverrides?: readonly EntitlementCapability[]
@@ -64,24 +70,28 @@ const SECTION_MINIMUM_PLAN = {
   map: "bronze",
   footer: "bronze",
   request_form: "bronze",
-  gallery: "silver",
-  features: "silver",
-  testimonials: "silver",
-  faq: "silver",
-  opening_hours: "silver",
-  pricing: "silver",
-  team: "silver",
-  cta: "silver",
+  gallery: "bronze",
+  features: "bronze",
+  testimonials: "bronze",
+  faq: "bronze",
+  opening_hours: "bronze",
+  pricing: "bronze",
+  team: "bronze",
+  cta: "bronze",
 } as const satisfies Record<SectionType, PlanId>
 
 export const SECTION_LIMIT_BY_PLAN = {
-  bronze: 6,
+  bronze: null,
   silver: null,
   gold: null,
 } as const satisfies Record<PlanId, number | null>
 
 export const CAPABILITY_MINIMUM_PLAN = {
-  multipage_websites: "silver",
+  multipage_websites: "bronze",
+  advanced_seo: "silver",
+  ga4_configuration: "silver",
+  detailed_analytics: "silver",
+  advanced_analytics: "gold",
   review_collection: "gold",
   contact_form: "bronze",
   email_contact_requests: "silver",
@@ -98,6 +108,10 @@ export const CAPABILITY_MINIMUM_PLAN = {
 } as const satisfies Record<EntitlementCapability, PlanId>
 
 const CAPABILITY_LABELS = {
+  advanced_seo: "Uitgebreide pagina-SEO",
+  ga4_configuration: "Google Analytics configuratie",
+  detailed_analytics: "Gedetailleerde statistieken",
+  advanced_analytics: "Conversies en maandrapport",
   multipage_websites: "Website met meerdere pagina's",
   review_collection: "Recensies verzamelen en beheren",
   contact_form: "Contactformulier",
@@ -181,6 +195,12 @@ export function getSectionLimit(plan: PlanId): number | null {
   return SECTION_LIMIT_BY_PLAN[plan]
 }
 
+export const PUBLISHED_PAGE_LIMIT_BY_PLAN = { bronze: 3, silver: 10, gold: null } as const
+
+export function getPublishedPageLimit(plan: PlanId): number | null {
+  return PUBLISHED_PAGE_LIMIT_BY_PLAN[plan]
+}
+
 export function getSectionCapabilities(
   section: Pick<Section, "type" | "data">,
 ): EntitlementCapability[] {
@@ -213,10 +233,12 @@ export function inspectWebsiteEntitlements(
   const requiredPlans: PlanId[] = ["bronze"]
   const sectionLimit = getSectionLimit(currentPlan)
 
-  if ((input.pageCount ?? 1) > 1 && !(input.hasMultipageAccess ?? planMeetsRequirement(currentPlan, "silver"))) {
-    requiredPlans.push("silver")
-    violations.push({ code: "feature.requires_plan", label: CAPABILITY_LABELS.multipage_websites,
-      currentPlan: "bronze", requiredPlan: "silver", capability: "multipage_websites", actualCount: input.pageCount, allowedCount: 1 })
+  const pageLimit = input.publishedPageLimit === undefined ? getPublishedPageLimit(currentPlan) : input.publishedPageLimit
+  if (pageLimit !== null && (input.pageCount ?? 1) > pageLimit) {
+    const requiredPlan = (input.pageCount ?? 1) <= 10 ? "silver" : "gold"
+    requiredPlans.push(requiredPlan)
+    violations.push({ code: "page.limit_exceeded", label: `Maximaal ${pageLimit} gepubliceerde pagina's per website. Kies welke pagina's live blijven of upgrade.`,
+      currentPlan, requiredPlan, capability: "multipage_websites", actualCount: input.pageCount, allowedCount: pageLimit })
   }
 
   if (sectionLimit !== null && input.sections.length > sectionLimit) {

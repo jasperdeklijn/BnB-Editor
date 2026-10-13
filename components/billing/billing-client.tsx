@@ -59,7 +59,7 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
         </div>
         {!billingData.defaultFeaturesIncluded && billingData.source === "default_fallback" ? (
           <p className="mt-4 text-sm text-muted-foreground">
-            Er is geen actief betaald abonnement gevonden. Daarom geldt voorlopig het standaardabonnement Gold.
+            Er is geen actief betaald abonnement gevonden. Je kunt de basisrechten van Bronze gebruiken. Er wordt geen nieuw abonnement afgesloten.
           </p>
         ) : null}
         {!billingData.defaultFeaturesIncluded && billingData.accessNotice ? (
@@ -141,12 +141,12 @@ export function BillingClient({ billingData, userId }: BillingClientProps) {
           {billingData.defaultFeaturesIncluded ? (
             <li>U kunt alle functies gratis gebruiken. Betaalde abonnementen zijn nog niet beschikbaar.</li>
           ) : (
-            <li>Uw abonnement wordt automatisch maandelijks verlengd. U kunt op elk moment van abonnement wisselen.</li>
+            <li>Betaalproviderkoppeling en abonnementswijzigingen zijn nog niet beschikbaar. Opgeslagen bedragen worden niet automatisch gewijzigd.</li>
           )}
           <li>{BOOKING_ADDON_NAME} bevat boekingen, beschikbaarheid, bevestigingen, klantgegevens en facturen vanuit boekingen, inclusief PDF en historie. {billingData.defaultFeaturesIncluded ? "Deze functies zijn voorlopig standaard beschikbaar." : `De add-on kost ${formatPrice(BOOKING_ADDON_MONTHLY_PRICE)} per maand extra.`}</li>
           <li>{billingData.defaultFeaturesIncluded ? "Meertaligheid is voorlopig standaard beschikbaar voor iedereen." : "Meertaligheid is inbegrepen bij Gold en kost bij Bronze of Silver € 2,99 per maand extra."}</li>
-          <li>Priority support is inbegrepen bij Gold.</li>
-          <li>Bronze is voor een onepage-website. Meerdere pagina&apos;s zijn beschikbaar bij Silver en Gold, ook tijdens tijdelijke gratis toegang tot andere functies.</li>
+
+          <li>Bronze ondersteunt 3 gepubliceerde pagina's, Silver 10 en Gold onbeperkt (fair-use). Conceptpagina's blijven onbeperkt. </li>
         </ul>
       </div>
     </div>

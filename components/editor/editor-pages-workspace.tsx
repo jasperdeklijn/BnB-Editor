@@ -63,6 +63,7 @@ interface EditorPagesWorkspaceProps {
   onSelectSection: (id: string) => void
   advancedReady: boolean
   hasMultipageAccess: boolean
+  advancedSeoAllowed?: boolean
 }
 
 const PageSelectorContext = createContext<{
@@ -90,7 +91,7 @@ export function EditorPagesWorkspace({
   children, siteAddress, localePath = "", sectionCount, disabled = false,
   pages, activePageId, loading = false, beforePageChange, onPageChange, onSavePage, onReorderPages, onDeletePage,
   onDuplicatePage, onReplaceHome, sections, selectedSectionId, onSectionDestination, onCreateShared, onSelectSection,
-  advancedReady, hasMultipageAccess,
+  advancedReady, hasMultipageAccess, advancedSeoAllowed = false,
 }: EditorPagesWorkspaceProps) {
   const workspaceRef = useRef<HTMLDivElement>(null)
   const focusSelectedTabRef = useRef(false)
@@ -227,7 +228,7 @@ export function EditorPagesWorkspace({
           <Button data-editor-page-manager type="button" variant="outline" className="h-11 shrink-0 px-3" disabled={busy} onClick={(event) => openManager(false, event.currentTarget)} aria-label="Pagina's beheren">
             <PanelLeft className="h-4 w-4" /><span className="hidden sm:inline">Pagina&apos;s</span><span className="hidden rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground sm:inline">{pages.length}</span>
           </Button>
-          <Button type="button" variant="ghost" className="hidden h-11 w-11 shrink-0 px-0 md:inline-flex" disabled={busy || !hasMultipageAccess} onClick={(event) => openManager(true, event.currentTarget)} aria-label="Nieuwe pagina" title={hasMultipageAccess ? "Nieuwe pagina" : "Meerdere pagina's vanaf Silver"}>
+          <Button type="button" variant="ghost" className="hidden h-11 w-11 shrink-0 px-0 md:inline-flex" disabled={busy || !hasMultipageAccess} onClick={(event) => openManager(true, event.currentTarget)} aria-label="Nieuwe pagina" title={hasMultipageAccess ? "Nieuwe pagina" : "Conceptpagina's zijn onbeperkt"}>
             <Plus className="h-4 w-4" />
           </Button>
         </div>
@@ -274,7 +275,7 @@ export function EditorPagesWorkspace({
                     ))}
                   </ul>
                   <Button type="button" variant="outline" className="mt-3 h-10 w-full" disabled={busy || !hasMultipageAccess} onClick={() => { setSettingsPageId(null); setAnnouncement("") }}><Plus className="h-4 w-4" />Nieuwe pagina</Button>
-                  {!hasMultipageAccess ? <p className="mt-2 text-xs text-muted-foreground">Bronze is voor één pagina. <a className="underline" href="/editor/account/billing">Kies Silver of Gold</a> voor meerdere pagina&apos;s.</p> : null}
+                  <p className="mt-2 text-xs text-muted-foreground">Conceptpagina’s tellen niet mee. Publiceer maximaal 3 pagina’s bij Bronze, 10 bij Silver of onbeperkt bij Gold (fair-use).</p>
                   <div className="mt-6 border-t border-border pt-4">
                     <h3 className="flex items-center gap-2 text-xs font-semibold text-muted-foreground"><Layers className="h-3.5 w-3.5" />Gedeelde onderdelen</h3>
                     <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Gedeeld op alle pagina&apos;s. Wijzigingen aan deze onderdelen gelden overal.</p>
@@ -293,7 +294,7 @@ export function EditorPagesWorkspace({
                 </div>
                 <div className="min-w-0 p-5">
                   {!advancedReady ? <p role="status" className="mb-4 rounded-md border p-3 text-sm">De nieuwe multipage-migratie moet nog worden geïnstalleerd. Bestaande pagina&apos;s kunt u bekijken; de nieuwe beheeracties volgen na installatie.</p> : null}
-                  <PageSettingsForm key={settingsPage?.id ?? "new"} page={settingsPage} pages={pages} localePath={localePath} busy={busy || !advancedReady || (!settingsPage && !hasMultipageAccess)} onApply={applySettings} />
+                  <PageSettingsForm advancedSeoAllowed={advancedSeoAllowed} key={settingsPage?.id ?? "new"} page={settingsPage} pages={pages} localePath={localePath} busy={busy || !advancedReady || (!settingsPage && !hasMultipageAccess)} onApply={applySettings} />
                   {settingsPage && advancedReady ? <PageLocaleAndRedirectSettings key={`${settingsPage.id}:${localePath}`} page={settingsPage} localePath={localePath} busy={busy} /> : null}
                   {announcement ? <p role="status" className="mt-3 rounded-md border border-primary/20 bg-primary/5 p-3 text-xs leading-relaxed text-primary">{announcement}</p> : null}
                   {switchError ? <p role="alert" className="mt-3 text-sm text-destructive">{switchError}</p> : null}
@@ -323,6 +324,7 @@ export function EditorPagesWorkspace({
 }
 
 interface PageSettingsFormProps {
+  advancedSeoAllowed: boolean
   page: PreviewPage | null
   pages: PreviewPage[]
   localePath: string
@@ -330,7 +332,7 @@ interface PageSettingsFormProps {
   onApply: (values: PageSettings) => Promise<void>
 }
 
-function PageSettingsForm({ page, pages, localePath, busy, onApply }: PageSettingsFormProps) {
+function PageSettingsForm({ advancedSeoAllowed, page, pages, localePath, busy, onApply }: PageSettingsFormProps) {
   const id = useId()
   const [title, setTitle] = useState(page?.title ?? "")
   const [slug, setSlug] = useState(page?.slug ?? "")
@@ -353,7 +355,7 @@ function PageSettingsForm({ page, pages, localePath, busy, onApply }: PageSettin
     if (RESERVED_SLUGS.has(normalizedSlug)) { setError("Dit webadres is gereserveerd. Kies een ander adres."); return }
     if (pages.some((candidate) => candidate.id !== page?.id && candidate.slug === normalizedSlug)) { setError("Dit webadres wordt al door een andere pagina gebruikt."); return }
     setError("")
-    void onApply({ title: title.trim(), slug: isHome ? "" : normalizedSlug, showInNavigation, includeInPublication: isHome || includeInPublication, seo: { title: seoTitle, description: seoDescription, ogImage } })
+    void onApply({ title: title.trim(), slug: isHome ? "" : normalizedSlug, showInNavigation, includeInPublication: isHome || includeInPublication, seo: { ...page?.seo, title: seoTitle, description: seoDescription, ogImage } })
   }
 
   return (
@@ -368,7 +370,8 @@ function PageSettingsForm({ page, pages, localePath, busy, onApply }: PageSettin
       <details className="rounded-lg border p-3"><summary className="cursor-pointer text-sm font-medium">Zoekmachines en delen</summary><div className="mt-3 space-y-3">
         <Label htmlFor={`${id}-seo-title`}>SEO-titel</Label><Input id={`${id}-seo-title`} value={seoTitle} onChange={(event) => setSeoTitle(event.target.value)} maxLength={200} disabled={busy} />
         <Label htmlFor={`${id}-seo-description`}>Omschrijving</Label><Input id={`${id}-seo-description`} value={seoDescription} onChange={(event) => setSeoDescription(event.target.value)} maxLength={500} disabled={busy} />
-        <Label htmlFor={`${id}-og`}>Afbeelding voor delen (HTTPS)</Label><Input id={`${id}-og`} type="url" value={ogImage} onChange={(event) => setOgImage(event.target.value)} disabled={busy} />
+        <Label htmlFor={`${id}-og`}>Afbeelding voor delen (HTTPS)</Label><Input id={`${id}-og`} type="url" value={ogImage} onChange={(event) => setOgImage(event.target.value)} disabled={busy || !advancedSeoAllowed} />
+        {!advancedSeoAllowed ? <p className="text-xs text-muted-foreground">Afbeeldingen voor delen en canonieke overrides vanaf Silver. <a className="text-primary underline" href="/editor/account/billing">Abonnement bekijken</a></p> : null}
       </div></details>
       {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}
       <Button type="submit" variant="outline" className="h-10 w-full" disabled={busy}>{page ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}{page ? "Pagina opslaan" : "Pagina toevoegen"}</Button>

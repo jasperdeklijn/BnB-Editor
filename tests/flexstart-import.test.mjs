@@ -5,16 +5,16 @@ import { randomUUID } from "node:crypto"
 import { createRequire } from "node:module"
 import { fixture } from "./helpers/website-pages-fixture.mjs"
 
-const read = (file) => readFileSync(new URL(`../${file}`, import.meta.url), "utf8")
+const read = (file) => readFileSync(new URL(`../${file}`, import.meta.url), "utf8").replace(/\r\n/g, "\n")
 const load = createRequire(import.meta.url)("../scripts/load-import-module.cjs")
 const { parseImport, normalizeImport } = load("lib/import/schema.ts")
 const repair = read("supabase/migrations/20261006200637_flexstart_import_business_profile.sql")
 const owner = "00000000-0000-0000-0000-000000000001"
 
-test("Duynhoven FlexStart import creates a missing customer profile atomically and reuses it", async () => {
+test("Multipage FlexStart import creates a missing customer profile atomically and reuses it", async () => {
   const db = await fixture()
   const requestId = randomUUID()
-  const document = parseImport(read("imports/duynhoven/duynhoven-multipage.json"))
+  const document = parseImport(read("tests/fixtures/flexstart-multipage.json"))
   try {
     await db.exec("reset role; grant usage on schema auth to service_role;")
     // Reproduce the deployed function before applying the additive repair.
@@ -79,7 +79,7 @@ test("FlexStart import returns actionable import failures without exposing unexp
   context.ownedTransfer = async () => ({ user_id: owner, revision: 1, status: "processing", permission_confirmed_at: "confirmed" })
   limiter.checkRateLimit = async () => ({ allowed: true })
   const request = () => new Request(`https://app.example/api/flexstart/${requestId}/import`, {
-    method: "POST", body: read("imports/duynhoven/duynhoven-multipage.json"),
+    method: "POST", body: read("tests/fixtures/flexstart-multipage.json"),
     headers: { Origin: "https://app.example", "x-import-design-id": designId, "x-import-permission": "confirmed", "x-transfer-revision": "1" },
   })
   for (const [message, status] of [["Bedrijfsprofiel ontbreekt", 409], ["Afbeelding 1 kon niet worden geïmporteerd", 422]]) {

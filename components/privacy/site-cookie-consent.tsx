@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { Cookie, Settings2 } from "lucide-react"
 
+import { GoogleAnalyticsTracker } from "@/components/analytics/google-analytics-tracker"
 import { PublicVisitTracker } from "@/components/analytics/public-visit-tracker"
 import { useWebsiteLocale } from "@/lib/site-i18n/provider"
 
@@ -13,22 +14,34 @@ export function SiteCookieConsent({
   websiteId,
   policyUrl,
   enableTracking,
+  trackingToken,
+  measurementId,
+  consentMode,
 }: {
   websiteId: string
   policyUrl: string
   enableTracking: boolean
+  trackingToken?: string | null
+  measurementId?: string
+  consentMode?: boolean
 }) {
   const { messages } = useWebsiteLocale()
   const [consent, setConsent] = useState<ConsentState>("loading")
-  const storageKey = `flexpagina:cookie-consent:${websiteId}:v1`
+  const storageKey = `flexpagina:cookie-consent:${websiteId}:v2`
 
   useEffect(() => {
+    const sync = (event: StorageEvent) => {
+      if (event.key !== storageKey) return
+      setConsent(event.newValue === "analytics" ? "analytics" : event.newValue === "necessary" ? "necessary" : "pending")
+    }
+    window.addEventListener("storage", sync)
     try {
       const storedChoice = window.localStorage.getItem(storageKey)
       setConsent(storedChoice === "analytics" || storedChoice === "necessary" ? storedChoice : "pending")
     } catch {
       setConsent("pending")
     }
+    return () => window.removeEventListener("storage", sync)
   }, [storageKey])
 
   const saveChoice = (choice: ConsentChoice) => {
@@ -37,6 +50,10 @@ export function SiteCookieConsent({
     } catch {
       // The choice still applies for this page view when storage is unavailable.
     }
+    if (choice === "necessary") {
+      document.cookie = `fp_analytics_${websiteId}=; Max-Age=0; Path=/; SameSite=Strict`
+      try { sessionStorage.removeItem(`flexpagina:analytics-session:${websiteId}`) } catch { /* Consent still updates when session storage is unavailable. */ }
+    }
     setConsent(choice)
   }
 
@@ -44,7 +61,8 @@ export function SiteCookieConsent({
 
   return (
     <>
-      {enableTracking && consent === "analytics" ? <PublicVisitTracker websiteId={websiteId} /> : null}
+      {enableTracking && trackingToken && consent === "analytics" ? <PublicVisitTracker websiteId={websiteId} token={trackingToken} /> : null}
+      {measurementId && consent === "analytics" ? <GoogleAnalyticsTracker measurementId={measurementId} consentMode={consentMode !== false} /> : null}
 
       {consent === "pending" ? (
         <div

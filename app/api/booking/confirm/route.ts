@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto"
+import { recordAnalyticsConversion } from "@/lib/analytics/server"
 import { NextRequest, NextResponse } from "next/server"
 
 import {
@@ -78,6 +79,8 @@ export async function POST(request: NextRequest) {
     const result = Array.isArray(data) ? data[0] : data
     if (!result?.calendar_entry_id) throw new PublicBookingError("De boeking kon niet worden opgeslagen.", 500)
 
+    // Register consenting pending bookings too; SQL counts the eventual confirmation.
+    await recordAnalyticsConversion(request, context.websiteId, "booking", result.calendar_entry_id)
     if (result.contact_request_id) {
       const { error: inboxError } = await context.supabase.from("contact_request_messages").insert({
         contact_request_id: result.contact_request_id,

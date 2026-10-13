@@ -19,7 +19,7 @@
     },
     {
       "path": "/api/cron/booking-notifications",
-     "schedule": "0 8 * * 1"
+      "schedule": "0 8 * * 1"
     },
     {
       "path": "/api/cron/calendar-sync",
@@ -36,6 +36,10 @@
     {
       "path": "/api/cron/agents/daily-summary",
       "schedule": "0 8 * * 1"
+    },
+    {
+      "path": "/api/cron/analytics-cleanup",
+      "schedule": "17 3 * * *"
     }
   ]
 }

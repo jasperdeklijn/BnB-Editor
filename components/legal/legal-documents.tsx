@@ -55,7 +55,7 @@ export const legalDocuments: Record<LegalDocumentKey, LegalDocument> = {
           "Websitegegevens: website-inhoud, uploads, domeinnamen, instellingen, formulieren en publicatiegegevens.",
           "Technische gegevens: IP-adres, browser, apparaat, loggegevens, sessiegegevens en beveiligingsinformatie.",
           "Betalings- en factuurgegevens: abonnementsstatus, factuurgegevens, transactiegegevens en betaalstatus via Stripe of een vergelijkbare betaalprovider.",
-          "Analyticsgegevens: geaggregeerde of pseudonieme gebruiksstatistieken wanneer analytics is ingeschakeld."
+          "Analytics op klantwebsites: alleen na toestemming en wanneer de eigenaar dit inschakelt. We bewaren dagelijkse totalen van paginaweergaven, geschatte browsersessies, broncategorieën, grove apparaatcategorieën en succesvolle contactformulieren/bevestigde boekingen. Geen IP-adressen, volledige verwijzende URL’s, locatiegegevens of fingerprints in deze statistieken."
         ]
       },
       {
@@ -157,8 +157,8 @@ export const legalDocuments: Record<LegalDocumentKey, LegalDocument> = {
       {
         title: "4. Analytische cookies",
         paragraphs: [
-          "Analytische cookies kunnen worden gebruikt om te begrijpen hoe het platform wordt gebruikt en waar technische verbeteringen nodig zijn.",
-          "Voor privacyvriendelijke analytische cookies die geen of geringe gevolgen hebben voor de privacy kan toestemming niet altijd nodig zijn. Voor uitgebreidere analytics, tracking of profielen vragen wij vooraf toestemming."
+          "Dagelijkse totalen blijven maximaal 366 dagen bewaard. Tijdelijke deduplicatiecodes zijn per website en dag afgeschermd en worden binnen twee UTC-dagen verwijderd. Succes-ID’s voor eenmalige conversietelling worden maximaal 366 dagen bewaard. Bij verwijderen van de website of het account worden de bijbehorende statistieken verwijderd. Optioneel GA4 bij Silver/Gold begint eveneens pas na toestemming; daarbij verwerkt Google gegevens volgens het door de website-eigenaar gekozen beleid.",
+          "Eerste-partijstatistieken op klantwebsites staan standaard uit en starten alleen na expliciete toestemming. De toestemmingskeuze wordt per website in localStorage bewaard; een pseudonieme browsersessie in sessionStorage verloopt na maximaal 30 minuten en wordt dagelijks vernieuwd. Een toestemmingscookie voor conversiemeting verloopt na 30 minuten. Via Cookie-instellingen kun je weigeren of toestemming intrekken. DNT en Global Privacy Control worden gerespecteerd."
         ]
       },
       {

@@ -83,6 +83,11 @@ test("pagination survives a lower hosted row cap and propagates mid-page errors"
 test("overview keeps failed counts unavailable and builds specific attention links", async () => {
   const calls = []
   const admin = {
+    rpc: async (name, args) => {
+      assert.equal(name,"website_analytics_admin_visitors")
+      assert.ok(args.p_from < args.p_to)
+      return {data:12,error:null}
+    },
     from(table) {
       const call = { table, filters: [], options: null }
       calls.push(call)

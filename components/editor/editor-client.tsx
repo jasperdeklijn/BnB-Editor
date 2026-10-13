@@ -174,6 +174,7 @@ interface EditorClientProps {
   initialBusinessCategory?: BusinessCategory | null
   currentPlan: PlanId
   hasMultipageAccess: boolean
+  publishedPageLimit: number | null
   hasMultilingualAccess: boolean
   hasReviewAccess: boolean
   hasBookingAccess: boolean
@@ -187,6 +188,7 @@ export function EditorClient({
   initialBusinessCategory = null,
   currentPlan,
   hasMultipageAccess,
+  publishedPageLimit,
   hasMultilingualAccess,
   hasReviewAccess,
   hasBookingAccess,
@@ -283,6 +285,7 @@ export function EditorClient({
 
   const entitlementResult = useMemo(() => inspectWebsiteEntitlements(currentPlan, {
     hasMultipageAccess,
+    publishedPageLimit,
     pageCount: pages.filter((page) => page.isHome || page.includeInPublication).length,
     hasReviewAccess,
     hasBookingAccess,
@@ -291,7 +294,7 @@ export function EditorClient({
       (locale) => !locale.is_default && locale.is_enabled,
     ) ? ["multilingual_websites"] : [],
     capabilityOverrides: hasMultilingualAccess ? ["multilingual_websites"] : [],
-  }), [currentPlan, hasMultipageAccess, pages, hasReviewAccess, hasBookingAccess, hasMultilingualAccess, multilingualEnabled, sections, websiteLocales])
+  }), [currentPlan, hasMultipageAccess, publishedPageLimit, pages, hasReviewAccess, hasBookingAccess, hasMultilingualAccess, multilingualEnabled, sections, websiteLocales])
   const publishEnforcementActive = enforcementMode === "enforce"
   const canPublishDraft = (!publishEnforcementActive || entitlementResult.allowed)
     && !entitlementResult.violations.some((violation) => violation.capability === "multipage_websites")
@@ -300,7 +303,7 @@ export function EditorClient({
     : entitlementResult.violations
   const preflightGroups = useMemo(() => ({
     sections: activePreflightViolations.filter((violation) => violation.code === "section.requires_plan"),
-    count: activePreflightViolations.filter((violation) => violation.code === "section.limit_exceeded"),
+    count: activePreflightViolations.filter((violation) => violation.code === "section.limit_exceeded" || violation.code === "page.limit_exceeded"),
     features: activePreflightViolations.filter(
       (violation) => violation.code === "feature.requires_plan" && violation.capability !== "booking_system",
     ),
@@ -310,7 +313,7 @@ export function EditorClient({
   }), [activePreflightViolations])
   const preflightGroupEntries = useMemo(() => [
     { title: "Secties waarvoor een hoger abonnement nodig is", violations: preflightGroups.sections },
-    { title: "Maximum aantal secties", violations: preflightGroups.count },
+    { title: "Publicatiequota", violations: preflightGroups.count },
     { title: "Functies binnen secties", violations: preflightGroups.features },
     { title: "Boeking en agenda", violations: preflightGroups.booking },
   ].filter((group) => group.violations.length > 0), [preflightGroups])
@@ -866,7 +869,6 @@ export function EditorClient({
   }, [activePageId, flushPendingSectionSaves, pages, updateLocalSections, websiteId])
 
   const handleSavePage = async (pageId: string | null, values: PageSettings) => {
-    if (!pageId && !hasMultipageAccess) throw new Error("Meerdere pagina's zijn beschikbaar bij Silver en Gold. Bronze is voor één pagina.")
     if (!multipageReady) throw new Error("Installeer eerst de nieuwe multipage-migratie.")
     if (!websiteId) throw new Error("Kies eerst een website.")
     const loadVersion = loadVersionRef.current
@@ -940,7 +942,6 @@ export function EditorClient({
   }
 
   const handleDuplicatePage = async (pageId: string, title: string, slug: string) => {
-    if (!hasMultipageAccess) throw new Error("Meerdere pagina's zijn beschikbaar bij Silver en Gold. Bronze is voor één pagina.")
     if (!websiteId || !(await flushPendingSectionSaves())) throw new Error("Sla eerst de wijzigingen op.")
     const version = loadVersionRef.current
     const page = await duplicateWebsitePage(createClient(), websiteId, pageId, title, slug)
@@ -1799,7 +1800,7 @@ export function EditorClient({
               {entitlementResult.violations.map((violation) => (
                 <li key={getViolationKey(violation)} className="flex items-center justify-between gap-3 rounded-md bg-amber-500/5 px-3 py-2">
                   <span className="min-w-0 truncate">{violation.label}</span>
-                  <span>{violation.requiredAddon === "bookingAddon" ? <span className="text-xs font-semibold text-primary">Booking & Facturatie · € 14,95/mnd</span> : <TierBadge plan={violation.requiredPlan} prefix="Vereist" />}</span>
+                  <span>{violation.requiredAddon === "bookingAddon" ? <span className="text-xs font-semibold text-primary">Booking & Facturatie · € 19,00/mnd</span> : <TierBadge plan={violation.requiredPlan} prefix="Vereist" />}</span>
                 </li>
               ))}
             </ul>
@@ -1849,6 +1850,7 @@ export function EditorClient({
         onSelectSection={setSelectedSectionId}
         advancedReady={multipageReady}
         hasMultipageAccess={hasMultipageAccess}
+        advancedSeoAllowed={currentPlan !== "bronze"}
       >
       {/* Desktop layout: side-by-side panels */}
       <div className="hidden flex-1 overflow-hidden md:flex">
@@ -2186,7 +2188,7 @@ export function EditorClient({
                               </p>
                             ) : null}
                           </div>
-                          <span>{violation.requiredAddon === "bookingAddon" ? <span className="text-xs font-semibold text-primary">Booking & Facturatie · € 14,95/mnd</span> : <TierBadge plan={violation.requiredPlan} prefix="Vereist" />}</span>
+                          <span>{violation.requiredAddon === "bookingAddon" ? <span className="text-xs font-semibold text-primary">Booking & Facturatie · € 19,00/mnd</span> : <TierBadge plan={violation.requiredPlan} prefix="Vereist" />}</span>
                         </div>
                         <div className="mt-3 flex flex-wrap gap-2">
                           <Button type="button" variant="outline" size="xs" onClick={() => handlePreflightLocation(violation)}>

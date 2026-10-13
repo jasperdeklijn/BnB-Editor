@@ -6,7 +6,7 @@ import { FeatureComparison, PlanId, PricingPlan } from "@/lib/types/pricing"
 
 export const PLAN_ORDER: PlanId[] = ["bronze", "silver", "gold"]
 export const PRICING_DISPLAY_ORDER: PlanId[] = ["bronze", "gold", "silver"]
-export const BOOKING_ADDON_MONTHLY_PRICE = 14.95
+export const BOOKING_ADDON_MONTHLY_PRICE = 19
 export const BOOKING_ADDON_NAME = "Booking & Facturatie"
 export const BOOKING_ADDON_FEATURES = [
   "Online boekingen",
@@ -24,17 +24,10 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
   bronze: {
     id: "bronze",
     name: "Bronze",
-    description: "Voor een professionele onepage-website.",
+    description: "Ga online met je bedrijf.",
     monthlyPrice: 7.95,
     currency: "EUR",
-    features: [
-      "Onepage-website (1 pagina)",
-      "Eigen domein",
-      "SSL",
-      "SEO-basis",
-      "Contact",
-      "Maximaal 6 secties",
-    ],
+    features: ["3 gepubliceerde pagina's", "Alle websitebouwfuncties en hosting", "Eigen domein en SSL", "SEO-basis en social links", "Contactformulier", "Bezoekers en paginaweergaven", "Onbeperkte secties"],
     isAddon: false,
     isPopular: false,
     cta: "Start met Bronze",
@@ -42,21 +35,10 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
   silver: {
     id: "silver",
     name: "Silver",
-    description: "Voor ondernemers die aanvragen willen binnenhalen.",
+    description: "Laat je bedrijf groeien.",
     monthlyPrice: 14.95,
     currency: "EUR",
-    features: [
-      "Alles uit Bronze",
-      "Multipage-website (meerdere pagina's)",
-      "Onbeperkte secties",
-      "Galerie",
-      "Google-recensielink",
-      "FAQ",
-      "Openingstijden",
-      "Prijssecties",
-      "CTA",
-      "Aanvragen",
-    ],
+    features: ["Alles uit Bronze", "10 gepubliceerde pagina's", "Onbeperkte secties", "Aanvragen beheren", "Uitgebreide pagina-SEO en GA4", "Populaire pagina's, bronnen en apparaten", "Trends en 30/90 dagen"],
     isAddon: false,
     isPopular: false,
     cta: "Kies Silver",
@@ -64,17 +46,10 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
   gold: {
     id: "gold",
     name: "Gold",
-    description: "Voor ondernemers die meer klanten willen bereiken en hun diensten en recensies op één plek willen beheren.",
+    description: "Begrijp je bezoekers en verbeter je website.",
     monthlyPrice: 24.95,
     currency: "EUR",
-    features: [
-      "Alles uit Silver",
-      "Onbeperkte secties",
-      "Recensies verzamelen en beheren",
-      "Diensten beheren",
-      "Meertaligheid",
-      "Priority support",
-    ],
+    features: ["Alles uit Silver", "Onbeperkte pagina's (fair-use)", "Recensies verzamelen en beheren", "Diensten beheren", "Meertaligheid", "Conversies en maandrapport", "Tot 12 maanden historie"],
     badge: "AANBEVOLEN",
     isAddon: false,
     isPopular: true,
@@ -83,7 +58,11 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
 }
 
 export const FEATURE_COMPARISON: FeatureComparison[] = [
-  { feature: "Websitepagina's", bronze: "1 pagina (onepage)", silver: "Meerdere pagina's", gold: "Meerdere pagina's" },
+  { feature: "Websitepagina's", bronze: "3 gepubliceerd", silver: "10 gepubliceerd", gold: "Onbeperkt (fair-use)" },
+  { feature: "Bezoekers en paginaweergaven", bronze: true, silver: true, gold: true },
+  { feature: "Bronnen, apparaten en trends", bronze: false, silver: true, gold: true },
+  { feature: "Conversies en maandrapport", bronze: false, silver: false, gold: true },
+  { feature: "Uitgebreide pagina-SEO en GA4", bronze: false, silver: true, gold: true },
   { feature: "Recensies verzamelen en beheren", bronze: false, silver: false, gold: true },
   {
     feature: "SEO-basis",
@@ -111,19 +90,19 @@ export const FEATURE_COMPARISON: FeatureComparison[] = [
   },
   {
     feature: "Maximaal aantal secties",
-    bronze: "6",
+    bronze: "Onbeperkt",
     silver: "Onbeperkt",
     gold: "Onbeperkt",
   },
   {
     feature: "Galerie, Google-recensielink, FAQ en openingstijden",
-    bronze: false,
+    bronze: true,
     silver: true,
     gold: true,
   },
   {
     feature: "Prijs- en CTA-secties",
-    bronze: false,
+    bronze: true,
     silver: true,
     gold: true,
   },
@@ -193,18 +172,14 @@ export const FEATURE_COMPARISON: FeatureComparison[] = [
     silver: "Add-on € 2,99/mnd",
     gold: "Inbegrepen",
   },
-  {
-    feature: "Priority support",
-    bronze: false,
-    silver: false,
-    gold: true,
-  },
+
 ]
 
 export const PRICING_FAQ = [
+  { question: "Wat betekent fair-use bij Gold?", answer: "Gold heeft geen vaste paginalimiet. Bestaande technische upload- en importgrenzen blijven gelden. Statistieken verwerken maximaal 20 gebeurtenissen per aanvraag, 120 aanvragen per browsersessie per minuut en 1.000 per website per minuut; pieken kunnen worden overgeslagen. Je gepubliceerde pagina's blijven bereikbaar." },
   {
     question: "Welk abonnement heb ik nodig voor meerdere pagina's?",
-    answer: "Bronze is voor een onepage-website met één pagina. Met Silver of Gold kunt u een website met meerdere pagina's maken. Add-ons veranderen deze paginalimiet niet.",
+    answer: "Bronze ondersteunt 3 gepubliceerde pagina's per website, Silver 10 en Gold onbeperkt (fair-use). Conceptpagina's, ontwerpen en secties tellen niet mee. Add-ons veranderen de paginalimiet niet.",
   },
   {
     question: "Wat zit er in Booking & Facturatie?",
@@ -229,7 +204,7 @@ export const PRICING_FAQ = [
   {
     question: "Wanneer heb ik Gold nodig?",
     answer:
-      "Gold biedt onbeperkte secties, recensies verzamelen en beheren, dienstenbeheer, meertaligheid en priority support. Online boeken en facturen vanuit boekingen zijn bij elk abonnement beschikbaar met Booking & Facturatie.",
+      "Gold biedt onbeperkte pagina's (fair-use), geavanceerde statistieken, recensiebeheer, dienstenbeheer en meertaligheid. Online boeken en facturen vanuit boekingen zijn bij elk abonnement beschikbaar met Booking & Facturatie.",
   },
   {
     question: "Zijn domein en SSL inbegrepen?",

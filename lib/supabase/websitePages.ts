@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { readAllQueryRows } from "./pagination"
 import { mapWebsitePage, type PageSettings, type WebsitePage } from "@/lib/website-pages"
 
 function pageError(error: { code?: string; message: string }): Error {
@@ -8,8 +9,8 @@ function pageError(error: { code?: string; message: string }): Error {
 }
 
 export async function listWebsitePages(client: SupabaseClient, websiteId: string): Promise<WebsitePage[]> {
-  const { data, error } = await client.from("website_pages").select("*")
-    .eq("website_id", websiteId).order("position")
+  const { data, error } = await readAllQueryRows(client.from("website_pages").select("*", {count:"exact"})
+    .eq("website_id", websiteId).order("position").order("id"))
   if (error) throw pageError(error)
   if (!data?.some((page) => page.is_home)) throw new Error("De startpagina ontbreekt. Controleer de multipage-migratie.")
   return data.map(mapWebsitePage)

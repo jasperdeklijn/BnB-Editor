@@ -1,5 +1,5 @@
 export const EDITOR_NAVIGATION = [
-  { id: "website", label: "Website", href: "/editor", tabs: [], routes: ["/editor", "/editor/images", "/editor/import", "/editor/flexstart", "/editor/flexcheck", "/editor/seo"] },
+  { id: "website", label: "Website", href: "/editor", tabs: [], routes: ["/editor", "/editor/images", "/editor/import", "/editor/flexstart", "/editor/flexcheck", "/editor/seo", "/editor/analytics"] },
   { id: "customers", label: "Klantzaken", href: "/editor/requests", tabs: [
     { href: "/editor/requests", label: "Aanvragen" },
     { href: "/editor/quotes", label: "Offertes" },
@@ -28,6 +28,6 @@ export function getEditorGroup(pathname: string | null) {
 }
 
 export function withEditorWebsite(href: string, websiteId: string | null) {
-  if (!websiteId || !["/editor", "/editor/flexcheck", "/editor/domains", "/editor/reviews", "/editor/seo"].includes(href)) return href
+  if (!websiteId || !["/editor", "/editor/flexcheck", "/editor/domains", "/editor/reviews", "/editor/seo", "/editor/analytics"].includes(href)) return href
   return `${href}?${new URLSearchParams({ websiteId })}`
 }

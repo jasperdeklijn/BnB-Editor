@@ -1,0 +1,1843 @@
+TAP version 13
+# Subtest: customer search groups drafts/live sites by owner and searches every domain
+ok 1 - customer search groups drafts/live sites by owner and searches every domain
+  ---
+  duration_ms: 54.6429
+  type: 'test'
+  ...
+# Subtest: period comparisons use adjacent non-overlapping windows and handle zero/error states
+ok 2 - period comparisons use adjacent non-overlapping windows and handle zero/error states
+  ---
+  duration_ms: 27.5427
+  type: 'test'
+  ...
+# Subtest: signed-out and ordinary customers never initialize a service-role client
+ok 3 - signed-out and ordinary customers never initialize a service-role client
+  ---
+  duration_ms: 200.7426
+  type: 'test'
+  ...
+# Subtest: pagination survives a lower hosted row cap and propagates mid-page errors
+ok 4 - pagination survives a lower hosted row cap and propagates mid-page errors
+  ---
+  duration_ms: 52.7336
+  type: 'test'
+  ...
+# Subtest: overview keeps failed counts unavailable and builds specific attention links
+ok 5 - overview keeps failed counts unavailable and builds specific attention links
+  ---
+  duration_ms: 62.36
+  type: 'test'
+  ...
+# Subtest: query and metadata input stay bounded and escaped
+ok 6 - query and metadata input stay bounded and escaped
+  ---
+  duration_ms: 0.6279
+  type: 'test'
+  ...
+# Subtest: an old mailbox deep link loads its own messages and drafts beyond the recent-list cap
+ok 7 - an old mailbox deep link loads its own messages and drafts beyond the recent-list cap
+  ---
+  duration_ms: 304.6071
+  type: 'test'
+  ...
+# Subtest: approvals bind one execution to the immutable artifact hash
+ok 8 - approvals bind one execution to the immutable artifact hash
+  ---
+  duration_ms: 2.7907
+  type: 'test'
+  ...
+# Subtest: observe-only and kill switch block external execution
+ok 9 - observe-only and kill switch block external execution
+  ---
+  duration_ms: 0.2368
+  type: 'test'
+  ...
+# Subtest: uncertain SMTP outcomes reconcile without blind retry
+ok 10 - uncertain SMTP outcomes reconcile without blind retry
+  ---
+  duration_ms: 0.1971
+  type: 'test'
+  ...
+# Subtest: jobs use the canonical business scope without parallel tenant columns
+ok 11 - jobs use the canonical business scope without parallel tenant columns
+  ---
+  duration_ms: 1.0266
+  type: 'test'
+  ...
+# Subtest: agent tables deny browser access and grant only service-role RPCs
+ok 12 - agent tables deny browser access and grant only service-role RPCs
+  ---
+  duration_ms: 1.5712
+  type: 'test'
+  ...
+# Subtest: all agent cron routes require the exact bearer secret
+ok 13 - all agent cron routes require the exact bearer secret
+  ---
+  duration_ms: 3.2251
+  type: 'test'
+  ...
+# Subtest: cron configuration schedules dispatch, recovery and local-time summary
+ok 14 - cron configuration schedules dispatch, recovery and local-time summary
+  ---
+  duration_ms: 1.4287
+  type: 'test'
+  ...
+# Subtest: agent network is connected to the operational dashboard
+ok 15 - agent network is connected to the operational dashboard
+  ---
+  duration_ms: 1.1844
+  type: 'test'
+  ...
+# Subtest: connections only render for genuine active handoffs
+ok 16 - connections only render for genuine active handoffs
+  ---
+  duration_ms: 0.3001
+  type: 'test'
+  ...
+# Subtest: agent nodes remain keyboard accessible and have a mobile list fallback
+ok 17 - agent nodes remain keyboard accessible and have a mobile list fallback
+  ---
+  duration_ms: 0.2639
+  type: 'test'
+  ...
+# Subtest: agent platform schema is mirrored in init.sql
+ok 18 - agent platform schema is mirrored in init.sql
+  ---
+  duration_ms: 4.9856
+  type: 'test'
+  ...
+# Subtest: enqueue is idempotent and claims use a skip-locked lease
+ok 19 - enqueue is idempotent and claims use a skip-locked lease
+  ---
+  duration_ms: 0.5136
+  type: 'test'
+  ...
+# Subtest: explicit checks do not collide with PostgreSQL column-check names
+ok 20 - explicit checks do not collide with PostgreSQL column-check names
+  ---
+  duration_ms: 3.167
+  type: 'test'
+  ...
+# Subtest: status changes are validated and audited transactionally
+ok 21 - status changes are validated and audited transactionally
+  ---
+  duration_ms: 2.183
+  type: 'test'
+  ...
+# Subtest: expired workers are recovered or dead-lettered
+ok 22 - expired workers are recovered or dead-lettered
+  ---
+  duration_ms: 2.0717
+  type: 'test'
+  ...
+# Subtest: new inbound mail enqueues one support job instead of sending
+ok 23 - new inbound mail enqueues one support job instead of sending
+  ---
+  duration_ms: 2.5444
+  type: 'test'
+  ...
+# Subtest: support generation uses strict structured output and hostile-input rules
+ok 24 - support generation uses strict structured output and hostile-input rules
+  ---
+  duration_ms: 4.2779
+  type: 'test'
+  ...
+# Subtest: support output always becomes an approval-bound artifact
+ok 25 - support output always becomes an approval-bound artifact
+  ---
+  duration_ms: 0.5589
+  type: 'test'
+  ...
+# Subtest: ingest runs one bounded batch after responding and skips bot/abuse/invalid inputs
+ok 26 - ingest runs one bounded batch after responding and skips bot/abuse/invalid inputs
+  ---
+  duration_ms: 20.5128
+  type: 'test'
+  ...
+# Subtest: backend conversion recording requires valid website consent and never counts a browser click
+ok 27 - backend conversion recording requires valid website consent and never counts a browser click
+  ---
+  duration_ms: 1.0293
+  type: 'test'
+  ...
+# Subtest: signed public-page requests reject tampering, bots, wrong tenant/domain/path, DNT and GPC
+ok 28 - signed public-page requests reject tampering, bots, wrong tenant/domain/path, DNT and GPC
+  ---
+  duration_ms: 31.4099
+  type: 'test'
+  ...
+# Subtest: daily aggregates deduplicate batches, enforce plan reporting, RLS and deletion
+ok 29 - daily aggregates deduplicate batches, enforce plan reporting, RLS and deletion
+  ---
+  duration_ms: 5872.7375
+  type: 'test'
+  ...
+# Subtest: conversion successes validate backend rows, count once and require an active Booking add-on
+ok 30 - conversion successes validate backend rows, count once and require an active Booking add-on
+  ---
+  duration_ms: 7575.435
+  type: 'test'
+  ...
+# Subtest: login exposes the password recovery flow
+ok 31 - login exposes the password recovery flow
+  ---
+  duration_ms: 3.3848
+  type: 'test'
+  ...
+# Subtest: recovery callback exchanges the one-time code before password update
+ok 32 - recovery callback exchanges the one-time code before password update
+  ---
+  duration_ms: 2.9685
+  type: 'test'
+  ...
+# Subtest: account settings verifies the current password before changing it
+ok 33 - account settings verifies the current password before changing it
+  ---
+  duration_ms: 2.4026
+  type: 'test'
+  ...
+# Subtest: zoned conversion rejects nonexistent DST times and preserves valid local times
+ok 34 - zoned conversion rejects nonexistent DST times and preserves valid local times
+  ---
+  duration_ms: 57.4721
+  type: 'test'
+  ...
+# Subtest: appointment slots respect local windows, duration, and interval
+ok 35 - appointment slots respect local windows, duration, and interval
+  ---
+  duration_ms: 4.4441
+  type: 'test'
+  ...
+# Subtest: conflicts, buffers, and capacity are applied together
+ok 36 - conflicts, buffers, and capacity are applied together
+  ---
+  duration_ms: 9.2333
+  type: 'test'
+  ...
+# Subtest: an existing appointment keeps its after-buffer regardless of evaluation order
+ok 37 - an existing appointment keeps its after-buffer regardless of evaluation order
+  ---
+  duration_ms: 2.8627
+  type: 'test'
+  ...
+# Subtest: minimum notice and booking horizon remove otherwise valid slots
+ok 38 - minimum notice and booking horizon remove otherwise valid slots
+  ---
+  duration_ms: 3.4416
+  type: 'test'
+  ...
+# Subtest: service-specific inactive windows override global availability
+ok 39 - service-specific inactive windows override global availability
+  ---
+  duration_ms: 1.1587
+  type: 'test'
+  ...
+# Subtest: stay availability enforces minimum nights and overlapping blocks
+ok 40 - stay availability enforces minimum nights and overlapping blocks
+  ---
+  duration_ms: 18.924
+  type: 'test'
+  ...
+# Subtest: stay checks enforce minimum and maximum nights before public booking exists
+ok 41 - stay checks enforce minimum and maximum nights before public booking exists
+  ---
+  duration_ms: 4.7887
+  type: 'test'
+  ...
+# Subtest: availability day summaries distinguish free, partly booked, occupied, and unavailable dates
+ok 42 - availability day summaries distinguish free, partly booked, occupied, and unavailable dates
+  ---
+  duration_ms: 18.1185
+  type: 'test'
+  ...
+# Subtest: the public Diensten popup exposes a color-coded monthly availability preview
+ok 43 - the public Diensten popup exposes a color-coded monthly availability preview
+  ---
+  duration_ms: 3.3785
+  type: 'test'
+  ...
+# Subtest: phase 1 schema exists in migration and destructive bootstrap with owner RLS
+ok 44 - phase 1 schema exists in migration and destructive bootstrap with owner RLS
+  ---
+  duration_ms: 3.1758
+  type: 'test'
+  ...
+# Subtest: booking settings defaults and validation keep unsafe values out of persistence
+ok 45 - booking settings defaults and validation keep unsafe values out of persistence
+  ---
+  duration_ms: 1.2974
+  type: 'test'
+  ...
+# Subtest: the services editor exposes a read-only phase 1 availability preview
+ok 46 - the services editor exposes a read-only phase 1 availability preview
+  ---
+  duration_ms: 2.5187
+  type: 'test'
+  ...
+# Subtest: service calendar schema is mirrored, provider-scoped, and owner-scoped
+ok 47 - service calendar schema is mirrored, provider-scoped, and owner-scoped
+  ---
+  duration_ms: 11.7986
+  type: 'test'
+  ...
+# Subtest: source replacement is transactional, service-scoped, privacy-safe, and idempotent
+ok 48 - source replacement is transactional, service-scoped, privacy-safe, and idempotent
+  ---
+  duration_ms: 1.4584
+  type: 'test'
+  ...
+# Subtest: calendar secrets are encrypted, fingerprinted, and export tokens are hashed
+ok 49 - calendar secrets are encrypted, fingerprinted, and export tokens are hashed
+  ---
+  duration_ms: 0.9376
+  type: 'test'
+  ...
+# Subtest: iCal import pins validated public DNS, limits responses, redirects, and conditional requests
+ok 50 - iCal import pins validated public DNS, limits responses, redirects, and conditional requests
+  ---
+  duration_ms: 0.5611
+  type: 'test'
+  ...
+# Subtest: maintained ICAL.js parser handles all-day dates, recurrence, cancellation, and missing UID
+ok 51 - maintained ICAL.js parser handles all-day dates, recurrence, cancellation, and missing UID
+  ---
+  duration_ms: 50.2923
+  type: 'test'
+  ...
+# Subtest: ICAL.js normalization handles TZID, numeric offsets, folded text, and invalid feeds
+ok 52 - ICAL.js normalization handles TZID, numeric offsets, folded text, and invalid feeds
+  ---
+  duration_ms: 7.3043
+  type: 'test'
+  ...
+# Subtest: provider export uses private summaries, date-only stays, stable UIDs, and CRLF
+ok 53 - provider export uses private summaries, date-only stays, stable UIDs, and CRLF
+  ---
+  duration_ms: 3.2738
+  type: 'test'
+  ...
+# Subtest: provider export filters service scope, inactive entries, and same-provider imports
+ok 54 - provider export filters service scope, inactive entries, and same-provider imports
+  ---
+  duration_ms: 1.407
+  type: 'test'
+  ...
+# Subtest: calendar UI is active and exposes accommodation-specific wizards and non-realtime warning
+ok 55 - calendar UI is active and exposes accommodation-specific wizards and non-realtime warning
+  ---
+  duration_ms: 2.3788
+  type: 'test'
+  ...
+# Subtest: calendar cron is authenticated, daily Hobby-compatible, and database intervals are configurable
+ok 56 - calendar cron is authenticated, daily Hobby-compatible, and database intervals are configurable
+  ---
+  duration_ms: 1.7359
+  type: 'test'
+  ...
+# Subtest: phase 5 schema is mirrored, owner-scoped, and keeps invoices private
+ok 57 - phase 5 schema is mirrored, owner-scoped, and keeps invoices private
+  ---
+  duration_ms: 7.3717
+  type: 'test'
+  ...
+# Subtest: reservation and document numbers are durable and sequential where required
+ok 58 - reservation and document numbers are durable and sequential where required
+  ---
+  duration_ms: 0.7759
+  type: 'test'
+  ...
+# Subtest: issued invoices are immutable and corrections retain their audit trail
+ok 59 - issued invoices are immutable and corrections retain their audit trail
+  ---
+  duration_ms: 0.8529
+  type: 'test'
+  ...
+# Subtest: payment remains owner-managed and invoice delivery is explicit
+ok 60 - payment remains owner-managed and invoice delivery is explicit
+  ---
+  duration_ms: 1.4217
+  type: 'test'
+  ...
+# Subtest: invoice delivery follows the original booking request locale
+ok 61 - invoice delivery follows the original booking request locale
+  ---
+  duration_ms: 1.0557
+  type: 'test'
+  ...
+# Subtest: owner and customer PDF routes enforce their own authorization boundary
+ok 62 - owner and customer PDF routes enforce their own authorization boundary
+  ---
+  duration_ms: 1.4582
+  type: 'test'
+  ...
+# Subtest: calendar and customer workspaces expose reservation and invoice references
+ok 63 - calendar and customer workspaces expose reservation and invoice references
+  ---
+  duration_ms: 2.8819
+  type: 'test'
+  ...
+# Subtest: pricing uses integer minor-unit calculations with bounded inputs
+ok 64 - pricing uses integer minor-unit calculations with bounded inputs
+  ---
+  duration_ms: 0.7897
+  type: 'test'
+  ...
+# Subtest: invoice PDFs reuse the booking website logo and carry FlexPagina attribution
+ok 65 - invoice PDFs reuse the booking website logo and carry FlexPagina attribution
+  ---
+  duration_ms: 2.7704
+  type: 'test'
+  ...
+# Subtest: phase 3 lifecycle schema is mirrored in migration and destructive bootstrap
+ok 66 - phase 3 lifecycle schema is mirrored in migration and destructive bootstrap
+  ---
+  duration_ms: 9.6556
+  type: 'test'
+  ...
+# Subtest: lifecycle trigger strips transient private context and queues deterministic events
+ok 67 - lifecycle trigger strips transient private context and queues deterministic events
+  ---
+  duration_ms: 2.2887
+  type: 'test'
+  ...
+# Subtest: customer links are signed, versioned, expiring, and compared in constant time
+ok 68 - customer links are signed, versioned, expiring, and compared in constant time
+  ---
+  duration_ms: 2.4813
+  type: 'test'
+  ...
+# Subtest: customer management is rate limited and replacement times are revalidated before atomic apply
+ok 69 - customer management is rate limited and replacement times are revalidated before atomic apply
+  ---
+  duration_ms: 4.1235
+  type: 'test'
+  ...
+# Subtest: notification delivery claims outbox rows and uses stable message ids
+ok 70 - notification delivery claims outbox rows and uses stable message ids
+  ---
+  duration_ms: 5.5731
+  type: 'test'
+  ...
+# Subtest: customer booking emails follow the request locale while owner emails stay Dutch
+ok 71 - customer booking emails follow the request locale while owner emails stay Dutch
+  ---
+  duration_ms: 2.3865
+  type: 'test'
+  ...
+# Subtest: owner calendar exposes approve, decline, alternatives, requests, and owner-only history
+ok 72 - owner calendar exposes approve, decline, alternatives, requests, and owner-only history
+  ---
+  duration_ms: 4.6788
+  type: 'test'
+  ...
+# Subtest: customer workspace does not render owner private notes or add payment behavior
+ok 73 - customer workspace does not render owner private notes or add payment behavior
+  ---
+  duration_ms: 6.8449
+  type: 'test'
+  ...
+# Subtest: phase 2 schema provides expiring holds in migration and destructive bootstrap
+ok 74 - phase 2 schema provides expiring holds in migration and destructive bootstrap
+  ---
+  duration_ms: 9.8652
+  type: 'test'
+  ...
+# Subtest: finalization creates the request and calendar entry in one database function
+ok 75 - finalization creates the request and calendar entry in one database function
+  ---
+  duration_ms: 1.5584
+  type: 'test'
+  ...
+# Subtest: public context requires a published calendar section, service membership, and runtime entitlement
+ok 76 - public context requires a published calendar section, service membership, and runtime entitlement
+  ---
+  duration_ms: 1.3488
+  type: 'test'
+  ...
+# Subtest: availability, hold, and confirmation endpoints are rate limited and revalidate availability
+ok 77 - availability, hold, and confirmation endpoints are rate limited and revalidate availability
+  ---
+  duration_ms: 2.1265
+  type: 'test'
+  ...
+# Subtest: calendar UI exposes clickable date selection and returns before any preview network call
+ok 78 - calendar UI exposes clickable date selection and returns before any preview network call
+  ---
+  duration_ms: 4.3823
+  type: 'test'
+  ...
+# Subtest: calendar range counts and day groups include overlapping multi-day bookings
+ok 79 - calendar range counts and day groups include overlapping multi-day bookings
+  ---
+  duration_ms: 6.8759
+  type: 'test'
+  ...
+# Subtest: mobile month view uses compact indicators and a readable selected-day agenda
+ok 80 - mobile month view uses compact indicators and a readable selected-day agenda
+  ---
+  duration_ms: 3.2223
+  type: 'test'
+  ...
+# Subtest: mobile calendar dialog has a name and unique form field ids
+ok 81 - mobile calendar dialog has a name and unique form field ids
+  ---
+  duration_ms: 2.7392
+  type: 'test'
+  ...
+# Subtest: booking detail uses progressive disclosure and protects destructive actions
+ok 82 - booking detail uses progressive disclosure and protects destructive actions
+  ---
+  duration_ms: 3.873
+  type: 'test'
+  ...
+# Subtest: editor navigation title no longer creates a duplicate page h1
+ok 83 - editor navigation title no longer creates a duplicate page h1
+  ---
+  duration_ms: 1.3695
+  type: 'test'
+  ...
+# Subtest: temporary access migration preserves billing and service ownership restrictions
+ok 84 - temporary access migration preserves billing and service ownership restrictions
+  ---
+  duration_ms: 4677.0599
+  type: 'test'
+  ...
+# Subtest: initial editor render shows only the loader before website data is ready
+ok 85 - initial editor render shows only the loader before website data is ready
+  ---
+  duration_ms: 1202.7749
+  type: 'test'
+  ...
+# Subtest: section inspector remains the default route
+ok 86 - section inspector remains the default route
+  ---
+  duration_ms: 4.0701
+  type: 'test'
+  ...
+# Subtest: site-only mobile panel opens the site menu
+ok 87 - site-only mobile panel opens the site menu
+  ---
+  duration_ms: 0.4182
+  type: 'test'
+  ...
+# Subtest: site detail returns through the menu without losing section context
+ok 88 - site detail returns through the menu without losing section context
+  ---
+  duration_ms: 0.631
+  type: 'test'
+  ...
+# Subtest: refactored detail panels retain the existing automatic save paths
+ok 89 - refactored detail panels retain the existing automatic save paths
+  ---
+  duration_ms: 3.5999
+  type: 'test'
+  ...
+# Subtest: four editor groups open their intended default page
+ok 90 - four editor groups open their intended default page
+  ---
+  duration_ms: 2.7681
+  type: 'test'
+  ...
+# Subtest: direct and nested editor routes stay in the correct group
+ok 91 - direct and nested editor routes stay in the correct group
+  ---
+  duration_ms: 0.3935
+  type: 'test'
+  ...
+# Subtest: website context applies only to website-scoped destinations and preserves detail parameters
+ok 92 - website context applies only to website-scoped destinations and preserves detail parameters
+  ---
+  duration_ms: 0.4836
+  type: 'test'
+  ...
+# Subtest: calendar type remains distinct from booking status and includes non-booking items
+ok 93 - calendar type remains distinct from booking status and includes non-booking items
+  ---
+  duration_ms: 0.4998
+  type: 'test'
+  ...
+# Subtest: publish and editor navigation flush pending section saves
+ok 94 - publish and editor navigation flush pending section saves
+  ---
+  duration_ms: 3.7586
+  type: 'test'
+  ...
+# Subtest: database update errors are surfaced to the shared save queue
+ok 95 - database update errors are surfaced to the shared save queue
+  ---
+  duration_ms: 3.5834
+  type: 'test'
+  ...
+# Subtest: section deletion is undoable from canvas and inspector
+ok 96 - section deletion is undoable from canvas and inspector
+  ---
+  duration_ms: 2.511
+  type: 'test'
+  ...
+# Subtest: mobile section actions use touch-safe targets
+ok 97 - mobile section actions use touch-safe targets
+  ---
+  duration_ms: 1.0607
+  type: 'test'
+  ...
+# Subtest: the inspector contains the integrated media workflow
+ok 98 - the inspector contains the integrated media workflow
+  ---
+  duration_ms: 1.4811
+  type: 'test'
+  ...
+# Subtest: flush runs a pending save immediately
+ok 99 - flush runs a pending save immediately
+  ---
+  duration_ms: 2.8886
+  type: 'test'
+  ...
+# Subtest: only the latest pending save for a section is kept
+ok 100 - only the latest pending save for a section is kept
+  ---
+  duration_ms: 0.8598
+  type: 'test'
+  ...
+# Subtest: flush reports save failures and leaves the queue idle
+ok 101 - flush reports save failures and leaves the queue idle
+  ---
+  duration_ms: 2.2838
+  type: 'test'
+  ...
+# Subtest: a failed save can be retried by flushing again
+ok 102 - a failed save can be retried by flushing again
+  ---
+  duration_ms: 1.4735
+  type: 'test'
+  ...
+# Subtest: publishing after flush observes the newest draft
+ok 103 - publishing after flush observes the newest draft
+  ---
+  duration_ms: 0.7925
+  type: 'test'
+  ...
+# Subtest: published caps are 3/10/unlimited independently of add-ons and free features
+ok 104 - published caps are 3/10/unlimited independently of add-ons and free features
+  ---
+  duration_ms: 6.4104
+  type: 'test'
+  ...
+# Subtest: plan order and every section entitlement are explicit
+ok 105 - plan order and every section entitlement are explicit
+  ---
+  duration_ms: 2.5084
+  type: 'test'
+  ...
+# Subtest: plan comparison follows Bronze, Silver, Gold
+ok 106 - plan comparison follows Bronze, Silver, Gold
+  ---
+  duration_ms: 0.6261
+  type: 'test'
+  ...
+# Subtest: all plans retain unrestricted core builder sections
+ok 107 - all plans retain unrestricted core builder sections
+  ---
+  duration_ms: 1.9836
+  type: 'test'
+  ...
+# Subtest: Bronze and Silver have no section-count limit
+ok 108 - Bronze and Silver have no section-count limit
+  ---
+  duration_ms: 1.0773
+  type: 'test'
+  ...
+# Subtest: Gold has no section-count limit
+ok 109 - Gold has no section-count limit
+  ---
+  duration_ms: 1.2846
+  type: 'test'
+  ...
+# Subtest: gallery is included in Bronze
+ok 110 - gallery is included in Bronze
+  ---
+  duration_ms: 0.7045
+  type: 'test'
+  ...
+# Subtest: mixed-tier section settings are inspected independently
+ok 111 - mixed-tier section settings are inspected independently
+  ---
+  duration_ms: 0.7838
+  type: 'test'
+  ...
+# Subtest: all standalone capability tiers are represented
+ok 112 - all standalone capability tiers are represented
+  ---
+  duration_ms: 1.7263
+  type: 'test'
+  ...
+# Subtest: multilingual websites require Gold unless the billing add-on overrides the capability
+ok 113 - multilingual websites require Gold unless the billing add-on overrides the capability
+  ---
+  duration_ms: 3.9224
+  type: 'test'
+  ...
+# Subtest: public request types map to the correct runtime capability
+ok 114 - public request types map to the correct runtime capability
+  ---
+  duration_ms: 0.8802
+  type: 'test'
+  ...
+# Subtest: booking requires the add-on on every plan and preserves section limits
+ok 115 - booking requires the add-on on every plan and preserves section limits
+  ---
+  duration_ms: 0.8671
+  type: 'test'
+  ...
+# Subtest: service management is included in Gold and available through Booking & Facturatie
+ok 116 - service management is included in Gold and available through Booking & Facturatie
+  ---
+  duration_ms: 0.3745
+  type: 'test'
+  ...
+# Subtest: Multipage FlexStart import creates a missing customer profile atomically and reuses it
+ok 117 - Multipage FlexStart import creates a missing customer profile atomically and reuses it
+  ---
+  duration_ms: 15298.446
+  type: 'test'
+  ...
+# Subtest: FlexStart import returns actionable import failures without exposing unexpected errors
+ok 118 - FlexStart import returns actionable import failures without exposing unexpected errors
+  ---
+  duration_ms: 2181.6897
+  type: 'test'
+  ...
+# Subtest: intake requires permission and public web URL; rejects owner/status injection
+ok 119 - intake requires permission and public web URL; rejects owner/status injection
+  ---
+  duration_ms: 16.0791
+  type: 'test'
+  ...
+# Subtest: FlexCheck has twelve evidence-based checks and stale tests cannot approve a new draft
+ok 120 - FlexCheck has twelve evidence-based checks and stale tests cannot approve a new draft
+  ---
+  duration_ms: 6.8476
+  type: 'test'
+  ...
+# Subtest: FlexStart database enforces ownership, transitions, publication, import rollback and first 100 customers
+ok 121 - FlexStart database enforces ownership, transitions, publication, import rollback and first 100 customers
+  ---
+  duration_ms: 15968.7775
+  type: 'test'
+  ...
+# Subtest: server image validation trusts file signatures instead of claimed MIME types
+ok 122 - server image validation trusts file signatures instead of claimed MIME types
+  ---
+  duration_ms: 5.6337
+  type: 'test'
+  ...
+# Subtest: server image validation rejects decompression-sized dimensions
+ok 123 - server image validation rejects decompression-sized dimensions
+  ---
+  duration_ms: 0.8722
+  type: 'test'
+  ...
+# Subtest: API authenticates and gates consent/origin/rate limits before writes
+ok 124 - API authenticates and gates consent/origin/rate limits before writes
+  ---
+  duration_ms: 70.2822
+  type: 'test'
+  ...
+# Subtest: API rejects malformed/oversized/unknown fields without creating assets or designs
+ok 125 - API rejects malformed/oversized/unknown fields without creating assets or designs
+  ---
+  duration_ms: 50.0419
+  type: 'test'
+  ...
+# Subtest: multipage saving requires the complete database contract before storage or creation
+ok 126 - multipage saving requires the complete database contract before storage or creation
+  ---
+  duration_ms: 7.3837
+  type: 'test'
+  ...
+# Subtest: valid requests get owner identity from auth; retry reopens the same owned design
+ok 127 - valid requests get owner identity from auth; retry reopens the same owned design
+  ---
+  duration_ms: 15.2259
+  type: 'test'
+  ...
+# [import] Design creation failed { code: '23514', transfer: false, multipage: false }
+# [import] Design creation failed { code: '', transfer: false, multipage: false }
+# [import] Design creation failed { code: '', transfer: false, multipage: false }
+# [import] Commit status unknown; assets retained for reconciliation { designId: 'new-design' }
+# [import] Design creation failed { code: 'P0001', transfer: false, multipage: false }
+# [import] Design creation failed { code: 'P0001', transfer: false, multipage: false }
+# [import] Design creation failed { code: 'P0001', transfer: false, multipage: false }
+# [import] Design creation failed { code: 'P0001', transfer: false, multipage: false }
+# Subtest: new native design and asset metadata use one RPC, no external payload/source remains
+ok 128 - new native design and asset metadata use one RPC, no external payload/source remains
+  ---
+  duration_ms: 8.4084
+  type: 'test'
+  ...
+# Subtest: download and partial upload failures never create a design and clean allocated paths
+ok 129 - download and partial upload failures never create a design and clean allocated paths
+  ---
+  duration_ms: 4.8892
+  type: 'test'
+  ...
+# Subtest: transaction failure cleans assets; lost response preserves a committed draft
+ok 130 - transaction failure cleans assets; lost response preserves a committed draft
+  ---
+  duration_ms: 4.9029
+  type: 'test'
+  ...
+# Subtest: ambiguous commit with unavailable database never deletes possibly referenced assets
+ok 131 - ambiguous commit with unavailable database never deletes possibly referenced assets
+  ---
+  duration_ms: 4.5558
+  type: 'test'
+  ...
+# Subtest: known import failures preserve actionable messages and clean rolled-back assets
+ok 132 - known import failures preserve actionable messages and clean rolled-back assets
+  ---
+  duration_ms: 5.9903
+  type: 'test'
+  ...
+# Subtest: actual migration creates one additional editable private draft, rolls back failures and enforces owner RLS
+ok 133 - actual migration creates one additional editable private draft, rolls back failures and enforces owner RLS
+  ---
+  duration_ms: 15647.276
+  type: 'test'
+  ...
+# Subtest: private, metadata, special IPv4 and nonpublic IPv6 ranges are blocked
+ok 134 - private, metadata, special IPv4 and nonpublic IPv6 ranges are blocked
+  ---
+  duration_ms: 46.2963
+  type: 'test'
+  ...
+# Subtest: all DNS answers must be public and encoded IP/local hosts are rejected
+ok 135 - all DNS answers must be public and encoded IP/local hosts are rejected
+  ---
+  duration_ms: 8.8724
+  type: 'test'
+  ...
+# Subtest: redirect loops and protocol downgrade fail; relative redirects resolve
+ok 136 - redirect loops and protocol downgrade fail; relative redirects resolve
+  ---
+  duration_ms: 16.0486
+  type: 'test'
+  ...
+# Subtest: real decoding rejects disguised/truncated files and produces managed WebP with exact thumbnail dimensions
+ok 137 - real decoding rejects disguised/truncated files and produces managed WebP with exact thumbnail dimensions
+  ---
+  duration_ms: 131.478
+  type: 'test'
+  ...
+# Subtest: a redirect destination is subject to the same DNS/IP restrictions
+ok 138 - a redirect destination is subject to the same DNS/IP restrictions
+  ---
+  duration_ms: 2.381
+  type: 'test'
+  ...
+# Subtest: both documented examples normalize into editable native sections
+ok 139 - both documented examples normalize into editable native sections
+  ---
+  duration_ms: 25.5438
+  type: 'test'
+  ...
+# Subtest: fragment/nav links and repeating ids map to fresh native identities
+ok 140 - fragment/nav links and repeating ids map to fresh native identities
+  ---
+  duration_ms: 3.4271
+  type: 'test'
+  ...
+# Subtest: malformed, missing, future, deep and oversized documents fail safely
+ok 141 - malformed, missing, future, deep and oversized documents fail safely
+  ---
+  duration_ms: 19.1209
+  type: 'test'
+  ...
+# Subtest: unsupported types, variants and executable/custom fields are rejected
+ok 142 - unsupported types, variants and executable/custom fields are rejected
+  ---
+  duration_ms: 8.6669
+  type: 'test'
+  ...
+# Subtest: URL protocols, credentials, broken links, duplicate keys and missing CTA targets fail
+ok 143 - URL protocols, credentials, broken links, duplicate keys and missing CTA targets fail
+  ---
+  duration_ms: 6.1388
+  type: 'test'
+  ...
+# Subtest: image count is bounded and native image mapping removes all source URLs
+ok 144 - image count is bounded and native image mapping removes all source URLs
+  ---
+  duration_ms: 4.334
+  type: 'test'
+  ...
+# Subtest: image URLs cannot break out of native CSS url values
+ok 145 - image URLs cannot break out of native CSS url values
+  ---
+  duration_ms: 2.7515
+  type: 'test'
+  ...
+# Subtest: source extraction removes executable content and limits discovery to useful same-domain pages
+ok 146 - source extraction removes executable content and limits discovery to useful same-domain pages
+  ---
+  duration_ms: 6.7583
+  type: 'test'
+  ...
+# Subtest: source fetching validates redirects and robots BEFORE reading destination
+ok 147 - source fetching validates redirects and robots BEFORE reading destination
+  ---
+  duration_ms: 6.636
+  type: 'test'
+  ...
+# Subtest: multipage reading rejects cross-domain selections, more than eight pages and JS-only sources
+ok 148 - multipage reading rejects cross-domain selections, more than eight pages and JS-only sources
+  ---
+  duration_ms: 17.2822
+  type: 'test'
+  ...
+# Subtest: AI contract preserves pages, source SEO and internal section references with draft inclusion
+ok 149 - AI contract preserves pages, source SEO and internal section references with draft inclusion
+  ---
+  duration_ms: 30.2248
+  type: 'test'
+  ...
+# Subtest: AI rejects missing pages, empty page content and invented images
+ok 150 - AI rejects missing pages, empty page content and invented images
+  ---
+  duration_ms: 7.1293
+  type: 'test'
+  ...
+# Subtest: page planning handles reserved and duplicate slugs without creating conflicting routes
+ok 151 - page planning handles reserved and duplicate slugs without creating conflicting routes
+  ---
+  duration_ms: 0.9395
+  type: 'test'
+  ...
+# Subtest: URL API authenticates, requires consent, rejects foreign origins and fails closed on unavailable limiter
+ok 152 - URL API authenticates, requires consent, rejects foreign origins and fails closed on unavailable limiter
+  ---
+  duration_ms: 107.0016
+  type: 'test'
+  ...
+# Subtest: URL API discovery and generation only return a reviewable document
+ok 153 - URL API discovery and generation only return a reviewable document
+  ---
+  duration_ms: 13.3168
+  type: 'test'
+  ...
+# Subtest: enquiry inbox migration adds tenant workflow, messages, activities, and owner RLS
+ok 154 - enquiry inbox migration adds tenant workflow, messages, activities, and owner RLS
+  ---
+  duration_ms: 7.4494
+  type: 'test'
+  ...
+# Subtest: reset schema stays in parity with the enquiry inbox migration
+ok 155 - reset schema stays in parity with the enquiry inbox migration
+  ---
+  duration_ms: 5.5627
+  type: 'test'
+  ...
+# Subtest: public requests create inbox history and label preferred-date calendar entries as unverified
+ok 156 - public requests create inbox history and label preferred-date calendar entries as unverified
+  ---
+  duration_ms: 1.3792
+  type: 'test'
+  ...
+# Subtest: availability-checked public bookings enter the inbox and confirmed bookings close the enquiry as won
+ok 157 - availability-checked public bookings enter the inbox and confirmed bookings close the enquiry as won
+  ---
+  duration_ms: 2.6693
+  type: 'test'
+  ...
+# Subtest: owner inbox and booking setup guidance are available without WhatsApp integration
+ok 158 - owner inbox and booking setup guidance are available without WhatsApp integration
+  ---
+  duration_ms: 8.4498
+  type: 'test'
+  ...
+# Subtest: normalizes reply and forward subject prefixes for stable threading
+ok 159 - normalizes reply and forward subject prefixes for stable threading
+  ---
+  duration_ms: 6.9843
+  type: 'test'
+  ...
+# Subtest: requires review for financial, legal, privacy and security mail
+ok 160 - requires review for financial, legal, privacy and security mail
+  ---
+  duration_ms: 2.3545
+  type: 'test'
+  ...
+# Subtest: recognizes automated mail that must not receive a draft
+ok 161 - recognizes automated mail that must not receive a draft
+  ---
+  duration_ms: 1.165
+  type: 'test'
+  ...
+# Subtest: schema and cron keep the agent durable and scheduled
+ok 162 - schema and cron keep the agent durable and scheduled
+  ---
+  duration_ms: 10.0304
+  type: 'test'
+  ...
+# Subtest: sent replies remain visible after the admin mailbox reloads
+ok 163 - sent replies remain visible after the admin mailbox reloads
+  ---
+  duration_ms: 2.6382
+  type: 'test'
+  ...
+# Subtest: locale path lookup accepts only supported short segments
+ok 164 - locale path lookup accepts only supported short segments
+  ---
+  duration_ms: 2.6685
+  type: 'test'
+  ...
+# Subtest: translation overlays ignore configuration and unknown keys
+ok 165 - translation overlays ignore configuration and unknown keys
+  ---
+  duration_ms: 1.022
+  type: 'test'
+  ...
+# Subtest: generated navigation links can be translated by section id
+ok 166 - generated navigation links can be translated by section id
+  ---
+  duration_ms: 4.0048
+  type: 'test'
+  ...
+# Subtest: repeating translations follow stable ids and preserve shared configuration
+ok 167 - repeating translations follow stable ids and preserve shared configuration
+  ---
+  duration_ms: 0.7066
+  type: 'test'
+  ...
+# Subtest: completeness and source hashes track only present visitor copy
+ok 168 - completeness and source hashes track only present visitor copy
+  ---
+  duration_ms: 47.528
+  type: 'test'
+  ...
+# Subtest: schema, routing, and public selector include multilingual safeguards
+ok 169 - schema, routing, and public selector include multilingual safeguards
+  ---
+  duration_ms: 9.9257
+  type: 'test'
+  ...
+# Subtest: language switcher settings reach editor, preview, and live rendering
+ok 170 - language switcher settings reach editor, preview, and live rendering
+  ---
+  duration_ms: 6.0745
+  type: 'test'
+  ...
+# Subtest: page overlays and redirects track revisions, reject foreign ownership and deny anonymous access
+ok 171 - page overlays and redirects track revisions, reject foreign ownership and deny anonymous access
+  ---
+  duration_ms: 13675.9155
+  type: 'test'
+  ...
+# Subtest: shared replacement is atomic and old page revisions cannot be promoted
+ok 172 - shared replacement is atomic and old page revisions cannot be promoted
+  ---
+  duration_ms: 8316.4759
+  type: 'test'
+  ...
+# Subtest: page copies remap links, transitions, translations and form identities; moves retain identity
+ok 173 - page copies remap links, transitions, translations and form identities; moves retain identity
+  ---
+  duration_ms: 8084.1502
+  type: 'test'
+  ...
+# Subtest: Home replacement is atomic and preserves pages; malformed swaps roll back
+ok 174 - Home replacement is atomic and preserves pages; malformed swaps roll back
+  ---
+  duration_ms: 13848.5452
+  type: 'test'
+  ...
+# Subtest: shared slots enforce section type and survive page deletion; scoped template restore preserves other pages
+ok 175 - shared slots enforce section type and survive page deletion; scoped template restore preserves other pages
+  ---
+  duration_ms: 13708.0935
+  type: 'test'
+  ...
+# Subtest: multipage import is atomic and remaps the generated Home link without flattening
+ok 176 - multipage import is atomic and remaps the generated Home link without flattening
+  ---
+  duration_ms: 18081.8657
+  type: 'test'
+  ...
+# Subtest: 3/10/unlimited quotas guard publications and activations while drafts and downgrades are preserved
+ok 177 - 3/10/unlimited quotas guard publications and activations while drafts and downgrades are preserved
+  ---
+  duration_ms: 13507.0628
+  type: 'test'
+  ...
+# Subtest: Bronze can import a multipage draft without consuming publication quota
+ok 178 - Bronze can import a multipage draft without consuming publication quota
+  ---
+  duration_ms: 8552.9773
+  type: 'test'
+  ...
+# Subtest: imported footer references are validated and remapped across pages
+ok 179 - imported footer references are validated and remapped across pages
+  ---
+  duration_ms: 469.9688
+  type: 'test'
+  ...
+# Subtest: root, page and translated paths resolve the same stable page identities
+ok 180 - root, page and translated paths resolve the same stable page identities
+  ---
+  duration_ms: 1.542
+  type: 'test'
+  ...
+# Subtest: redirects use published page identity and locale, and platform bases cannot steal customer paths
+ok 181 - redirects use published page identity and locale, and platform bases cannot steal customer paths
+  ---
+  duration_ms: 3.7063
+  type: 'test'
+  ...
+# Subtest: multipage imports assign fresh IDs, typed targets and explicit shared slots
+ok 182 - multipage imports assign fresh IDs, typed targets and explicit shared slots
+  ---
+  duration_ms: 6.4773
+  type: 'test'
+  ...
+# Subtest: publication assembles included pages and shared content, excludes draft copy and rejects dependencies on it
+ok 183 - publication assembles included pages and shared content, excludes draft copy and rejects dependencies on it
+  ---
+  duration_ms: 24.8865
+  type: 'test'
+  ...
+# Subtest: onboarding slug normalization is ASCII, stable, and reserved-route aware
+ok 184 - onboarding slug normalization is ASCII, stable, and reserved-route aware
+  ---
+  duration_ms: 5.1396
+  type: 'test'
+  ...
+# Subtest: onboarding schemas accept international input and reject invalid Dutch KvK numbers
+ok 185 - onboarding schemas accept international input and reject invalid Dutch KvK numbers
+  ---
+  duration_ms: 9.4041
+  type: 'test'
+  ...
+# Subtest: return paths accept only internal non-authentication routes
+ok 186 - return paths accept only internal non-authentication routes
+  ---
+  duration_ms: 0.5786
+  type: 'test'
+  ...
+# Subtest: migration and bootstrap include secure resumable onboarding
+ok 187 - migration and bootstrap include secure resumable onboarding
+  ---
+  duration_ms: 7.1172
+  type: 'test'
+  ...
+# Subtest: route gating, accessible steps, slug checks, and settings integration stay connected
+ok 188 - route gating, accessible steps, slug checks, and settings integration stay connected
+  ---
+  duration_ms: 10.0835
+  type: 'test'
+  ...
+# Subtest: starter generation personalizes core sections and responds to the website goal
+ok 189 - starter generation personalizes core sections and responds to the website goal
+  ---
+  duration_ms: 2.2601
+  type: 'test'
+  ...
+# Subtest: defaults to hard enforcement
+ok 190 - defaults to hard enforcement
+  ---
+  duration_ms: 3.7712
+  type: 'test'
+  ...
+# Subtest: warn mode records violations without blocking rollout
+ok 191 - warn mode records violations without blocking rollout
+  ---
+  duration_ms: 0.9016
+  type: 'test'
+  ...
+# Subtest: off is an explicit rollback mode and invalid values fail closed
+ok 192 - off is an explicit rollback mode and invalid values fail closed
+  ---
+  duration_ms: 0.9114
+  type: 'test'
+  ...
+# Subtest: Gold is recommended in the center while plan rank remains Bronze, Silver, Gold
+ok 193 - Gold is recommended in the center while plan rank remains Bronze, Silver, Gold
+  ---
+  duration_ms: 7.9129
+  type: 'test'
+  ...
+# Subtest: pricing exposes published page quotas and VAT disclosure
+ok 194 - pricing exposes published page quotas and VAT disclosure
+  ---
+  duration_ms: 2.6835
+  type: 'test'
+  ...
+# Subtest: monthly totals include optional booking and multilingual, with languages free on Gold
+ok 195 - monthly totals include optional booking and multilingual, with languages free on Gold
+  ---
+  duration_ms: 1.7367
+  type: 'test'
+  ...
+# Subtest: Booking & Facturatie includes booking, customer and invoice features on every plan
+ok 196 - Booking & Facturatie includes booking, customer and invoice features on every plan
+  ---
+  duration_ms: 0.9593
+  type: 'test'
+  ...
+# Subtest: service mutations require entitlements in server actions and restrictive RLS
+ok 197 - service mutations require entitlements in server actions and restrictive RLS
+  ---
+  duration_ms: 10.5742
+  type: 'test'
+  ...
+# Subtest: websites cannot reference another tenant's business
+ok 198 - websites cannot reference another tenant's business
+  ---
+  duration_ms: 33.3495
+  type: 'test'
+  ...
+# Subtest: the public image bucket enforces documented formats and size
+ok 199 - the public image bucket enforces documented formats and size
+  ---
+  duration_ms: 12.508
+  type: 'test'
+  ...
+# Subtest: anonymous website reads expose only immutable live snapshots
+ok 200 - anonymous website reads expose only immutable live snapshots
+  ---
+  duration_ms: 12.0717
+  type: 'test'
+  ...
+# Subtest: the package test command uses the scoped cross-platform runner
+ok 201 - the package test command uses the scoped cross-platform runner
+  ---
+  duration_ms: 1.6347
+  type: 'test'
+  ...
+# Subtest: rate limiting is shared, atomic, hashed, and fail-closed in production
+ok 202 - rate limiting is shared, atomic, hashed, and fail-closed in production
+  ---
+  duration_ms: 11.4811
+  type: 'test'
+  ...
+# Subtest: template apply and restore use one transactional RPC
+ok 203 - template apply and restore use one transactional RPC
+  ---
+  duration_ms: 2.4843
+  type: 'test'
+  ...
+# Subtest: public snapshots do not contain private form delivery addresses
+ok 204 - public snapshots do not contain private form delivery addresses
+  ---
+  duration_ms: 2.3728
+  type: 'test'
+  ...
+# Subtest: image uploads are server validated and quota enforced
+ok 205 - image uploads are server validated and quota enforced
+  ---
+  duration_ms: 3.4469
+  type: 'test'
+  ...
+# Subtest: environment, health, and performance contracts are committed
+ok 206 - environment, health, and performance contracts are committed
+  ---
+  duration_ms: 4.5199
+  type: 'test'
+  ...
+# Subtest: every supported locale has a complete customer copy and decision confirmation
+ok 207 - every supported locale has a complete customer copy and decision confirmation
+  ---
+  duration_ms: 9.8637
+  type: 'test'
+  ...
+# Subtest: quote PDF paginates long offers, arbitrary customer text and conditions
+ok 208 - quote PDF paginates long offers, arbitrary customer text and conditions
+  ---
+  duration_ms: 2797.7962
+  type: 'test'
+  ...
+# Subtest: quotes isolate tenants and make immutable offers; conversion preserves the appointment
+ok 209 - quotes isolate tenants and make immutable offers; conversion preserves the appointment
+  ---
+  duration_ms: 15150.5178
+  type: 'test'
+  ...
+# Subtest: customer decisions validate scope, consume codes, limit attempts and create one linked invoice
+ok 210 - customer decisions validate scope, consume codes, limit attempts and create one linked invoice
+  ---
+  duration_ms: 16135.252
+  type: 'test'
+  ...
+# Subtest: bootstrap contains identical quote migration and resets every new table
+ok 211 - bootstrap contains identical quote migration and resets every new table
+  ---
+  duration_ms: 9.887
+  type: 'test'
+  ...
+# Subtest: revoked access, cross-dossier codes, withdrawn offers and exhausted codes cannot decide
+ok 212 - revoked access, cross-dossier codes, withdrawn offers and exhausted codes cannot decide
+  ---
+  duration_ms: 5505.1117
+  type: 'test'
+  ...
+# Subtest: expired quotes reject decisions without a cron, and service-role conversions retain grants
+ok 213 - expired quotes reject decisions without a cron, and service-role conversions retain grants
+  ---
+  duration_ms: 4621.7152
+  type: 'test'
+  ...
+# Subtest: production distinguishes unavailable configuration and RPC from exhausted attempts
+ok 214 - production distinguishes unavailable configuration and RPC from exhausted attempts
+  ---
+  duration_ms: 358.9657
+  type: 'test'
+  ...
+# Subtest: shared limiter sends hashed keys and preserves actual allow/deny decisions
+ok 215 - shared limiter sends hashed keys and preserves actual allow/deny decisions
+  ---
+  duration_ms: 46.4354
+  type: 'test'
+  ...
+# Subtest: development fallback still enforces its local limit
+ok 216 - development fallback still enforces its local limit
+  ---
+  duration_ms: 31.6941
+  type: 'test'
+  ...
+# Subtest: login returns 503 for limiter outages and 429 only for exhausted attempts
+ok 217 - login returns 503 for limiter outages and 429 only for exhausted attempts
+  ---
+  duration_ms: 70.3209
+  type: 'test'
+  ...
+# Subtest: shared repeating item actions expose accessible reorder, duplicate, and delete controls
+ok 218 - shared repeating item actions expose accessible reorder, duplicate, and delete controls
+  ---
+  duration_ms: 3.6554
+  type: 'test'
+  ...
+# Subtest: rich repeating section editors use the shared controls
+ok 219 - rich repeating section editors use the shared controls
+  ---
+  duration_ms: 4.8633
+  type: 'test'
+  ...
+# Subtest: FAQ entries remain editable while reviews expose the two sourced modes
+ok 220 - FAQ entries remain editable while reviews expose the two sourced modes
+  ---
+  duration_ms: 1.9603
+  type: 'test'
+  ...
+# Subtest: reservation update timestamps match across ICU punctuation and default time zones
+ok 221 - reservation update timestamps match across ICU punctuation and default time zones
+  ---
+  duration_ms: 45.2292
+  type: 'test'
+  ...
+# Subtest: reservation timestamps use Amsterdam daylight saving and a 24-hour clock
+ok 222 - reservation timestamps use Amsterdam daylight saving and a 24-hour clock
+  ---
+  duration_ms: 2.7639
+  type: 'test'
+  ...
+# Subtest: invalid update timestamps have a stable empty display
+ok 223 - invalid update timestamps have a stable empty display
+  ---
+  duration_ms: 2.197
+  type: 'test'
+  ...
+# Subtest: reservation overview is owner scoped and excludes planning-only records
+ok 224 - reservation overview is owner scoped and excludes planning-only records
+  ---
+  duration_ms: 3.8331
+  type: 'test'
+  ...
+# Subtest: reservation query keeps search, filters, counts, sorting, and pagination server side
+ok 225 - reservation query keeps search, filters, counts, sorting, and pagination server side
+  ---
+  duration_ms: 0.8186
+  type: 'test'
+  ...
+# Subtest: reservation status transitions are validated and race safe
+ok 226 - reservation status transitions are validated and race safe
+  ---
+  duration_ms: 2.3019
+  type: 'test'
+  ...
+# Subtest: reservations page uses shared editor UI and URL-backed responsive controls
+ok 227 - reservations page uses shared editor UI and URL-backed responsive controls
+  ---
+  duration_ms: 3.5579
+  type: 'test'
+  ...
+# Subtest: calendar and reservations share status presentation
+ok 228 - calendar and reservations share status presentation
+  ---
+  duration_ms: 2.8475
+  type: 'test'
+  ...
+# Subtest: editor navigation exposes reservations separately from the calendar
+ok 229 - editor navigation exposes reservations separately from the calendar
+  ---
+  duration_ms: 1.8918
+  type: 'test'
+  ...
+# Subtest: published collection with a snapshot business is repaired without crossing owners
+ok 230 - published collection with a snapshot business is repaired without crossing owners
+  ---
+  duration_ms: 4884.919
+  type: 'test'
+  ...
+# Subtest: collection copy is editable on the canvas, including the hidden form, but not in preview
+ok 231 - collection copy is editable on the canvas, including the hidden form, but not in preview
+  ---
+  duration_ms: 81.6158
+  type: 'test'
+  ...
+# Subtest: Google button can be edited before adding a link, without exposing a dead public link
+ok 232 - Google button can be edited before adding a link, without exposing a dead public link
+  ---
+  duration_ms: 2.1782
+  type: 'test'
+  ...
+# Subtest: review section honors the same background and color settings as other sections
+ok 233 - review section honors the same background and color settings as other sections
+  ---
+  duration_ms: 6.8939
+  type: 'test'
+  ...
+# Subtest: hiding the embedded form preserves the review section and standalone form
+ok 234 - hiding the embedded form preserves the review section and standalone form
+  ---
+  duration_ms: 17.811
+  type: 'test'
+  ...
+# Subtest: email invitation opens a recipient-free draft with an encoded review link
+ok 235 - email invitation opens a recipient-free draft with an encoded review link
+  ---
+  duration_ms: 2.7034
+  type: 'test'
+  ...
+# Subtest: review form settings have safe defaults and bound editable copy
+ok 236 - review form settings have safe defaults and bound editable copy
+  ---
+  duration_ms: 0.6003
+  type: 'test'
+  ...
+# Subtest: standalone form takes only presentation fields from the published collection section
+ok 237 - standalone form takes only presentation fields from the published collection section
+  ---
+  duration_ms: 0.839
+  type: 'test'
+  ...
+# Subtest: form renders required native star radios, editable labels, branding and isolated IDs
+ok 238 - form renders required native star radios, editable labels, branding and isolated IDs
+  ---
+  duration_ms: 15.7463
+  type: 'test'
+  ...
+# Subtest: submission saves the original review before sending mail and never returns secrets
+ok 239 - submission saves the original review before sending mail and never returns secrets
+  ---
+  duration_ms: 173.8596
+  type: 'test'
+  ...
+# Subtest: SMTP failure retains a retryable submission and resend rotates tokens without replacing text
+ok 240 - SMTP failure retains a retryable submission and resend rotates tokens without replacing text
+  ---
+  duration_ms: 150.0246
+  type: 'test'
+  ...
+# Subtest: duplicate submission cannot replace a review or resend email automatically
+ok 241 - duplicate submission cannot replace a review or resend email automatically
+  ---
+  duration_ms: 121.5645
+  type: 'test'
+  ...
+# Subtest: paused collection blocks submission/resend but still permits withdrawal email requests
+ok 242 - paused collection blocks submission/resend but still permits withdrawal email requests
+  ---
+  duration_ms: 92.2012
+  type: 'test'
+  ...
+# Subtest: HTTP boundary rejects cross-origin requests, oversized input and malformed JSON before mutations
+ok 243 - HTTP boundary rejects cross-origin requests, oversized input and malformed JSON before mutations
+  ---
+  duration_ms: 95.4445
+  type: 'test'
+  ...
+# Subtest: email confirmation GET cannot mutate and owner endpoints require authentication
+ok 244 - email confirmation GET cannot mutate and owner endpoints require authentication
+  ---
+  duration_ms: 68.3096
+  type: 'test'
+  ...
+# Subtest: unavailable rate limiting fails closed and honeypots create no review or email
+ok 245 - unavailable rate limiting fails closed and honeypots create no review or email
+  ---
+  duration_ms: 67.6229
+  type: 'test'
+  ...
+# Subtest: Google links allow only supported HTTPS hosts and review routes
+ok 246 - Google links allow only supported HTTPS hosts and review routes
+  ---
+  duration_ms: 2.9046
+  type: 'test'
+  ...
+# Subtest: collection follows the account's effective Gold plan
+ok 247 - collection follows the account's effective Gold plan
+  ---
+  duration_ms: 1.0592
+  type: 'test'
+  ...
+# Subtest: submissions require consent, deliberate whole-star ratings, and bounded text
+ok 248 - submissions require consent, deliberate whole-star ratings, and bounded text
+  ---
+  duration_ms: 1.8481
+  type: 'test'
+  ...
+# Subtest: review migration and database lifecycle enforce source, scope, consent and access
+    # Subtest: SQL Gold access matches the effective plan for every subscription state
+    ok 1 - SQL Gold access matches the effective plan for every subscription state
+      ---
+      duration_ms: 245.7426
+      type: 'test'
+      ...
+    # Subtest: archives originals and removes old items from drafts, translations and live locales
+    ok 2 - archives originals and removes old items from drafts, translations and live locales
+      ---
+      duration_ms: 12.2943
+      type: 'test'
+      ...
+    # Subtest: accepts only website/business matches and immutable original submissions
+    ok 3 - accepts only website/business matches and immutable original submissions
+      ---
+      duration_ms: 29.9481
+      type: 'test'
+      ...
+    # Subtest: requires confirmation, prevents replay, and scopes owner moderation
+    ok 4 - requires confirmation, prevents replay, and scopes owner moderation
+      ---
+      duration_ms: 38.4038
+      type: 'test'
+      ...
+    # Subtest: effective downgrade and mode changes immediately suppress public reviews without changing stored content
+    ok 5 - effective downgrade and mode changes immediately suppress public reviews without changing stored content
+      ---
+      duration_ms: 24.781
+      type: 'test'
+      ...
+    # Subtest: expired tokens and expired unconfirmed submissions never enter moderation
+    ok 6 - expired tokens and expired unconfirmed submissions never enter moderation
+      ---
+      duration_ms: 17.5536
+      type: 'test'
+      ...
+    # Subtest: database guards reject Silver collection snapshots and unsafe Google URLs
+    ok 7 - database guards reject Silver collection snapshots and unsafe Google URLs
+      ---
+      duration_ms: 10.97
+      type: 'test'
+      ...
+    # Subtest: withdrawal survives downgrade, immediately unpublishes, and cannot be replayed
+    ok 8 - withdrawal survives downgrade, immediately unpublishes, and cannot be replayed
+      ---
+      duration_ms: 11.3044
+      type: 'test'
+      ...
+    # Subtest: authenticated clients cannot insert reviews, rewrite content, or invoke privileged RPCs
+    ok 9 - authenticated clients cannot insert reviews, rewrite content, or invoke privileged RPCs
+      ---
+      duration_ms: 20.2371
+      type: 'test'
+      ...
+    # Subtest: owner deletion remains possible after downgrade and retains an audit event
+    ok 10 - owner deletion remains possible after downgrade and retains an audit event
+      ---
+      duration_ms: 9.8001
+      type: 'test'
+      ...
+    1..10
+ok 249 - review migration and database lifecycle enforce source, scope, consent and access
+  ---
+  duration_ms: 6105.7924
+  type: 'test'
+  ...
+# Subtest: every selectable icon has a local SVG and a unique id
+ok 250 - every selectable icon has a local SVG and a unique id
+  ---
+  duration_ms: 52.4027
+  type: 'test'
+  ...
+# Subtest: only catalogue identifiers are rendered; no icon removes its badge too
+ok 251 - only catalogue identifiers are rendered; no icon removes its badge too
+  ---
+  duration_ms: 19.7539
+  type: 'test'
+  ...
+# Subtest: feature and pricing translations preserve icons and IDs through JSON save/reload and reorder
+ok 252 - feature and pricing translations preserve icons and IDs through JSON save/reload and reorder
+  ---
+  duration_ms: 3.0355
+  type: 'test'
+  ...
+# Subtest: all contact layouts use the chosen icons and hide empty badges
+ok 253 - all contact layouts use the chosen icons and hide empty badges
+  ---
+  duration_ms: 3321.5354
+  type: 'test'
+  ...
+# Subtest: hero and CTA buttons use selected icons across their layouts
+ok 254 - hero and CTA buttons use selected icons across their layouts
+  ---
+  duration_ms: 315.7996
+  type: 'test'
+  ...
+# Subtest: footer, location, opening hours, forms, and FAQ render custom and hidden icons
+ok 255 - footer, location, opening hours, forms, and FAQ render custom and hidden icons
+  ---
+  duration_ms: 376.0016
+  type: 'test'
+  ...
+# Subtest: signup records server-timed consent atomically and protects it from metadata edits and other users
+ok 256 - signup records server-timed consent atomically and protects it from metadata edits and other users
+  ---
+  duration_ms: 13247.0338
+  type: 'test'
+  ...
+# Subtest: published download exactly matches displayed terms and bootstrap matches the migration
+ok 257 - published download exactly matches displayed terms and bootstrap matches the migration
+  ---
+  duration_ms: 435.1989
+  type: 'test'
+  ...
+# Subtest: full init.sql can rebuild an existing schema and the shared limiter works
+ok 258 - full init.sql can rebuild an existing schema and the shared limiter works
+  ---
+  duration_ms: 22706.3595
+  type: 'test'
+  ...
+# Subtest: repair migration also installs a missing limiter without rebuilding application tables
+ok 259 - repair migration also installs a missing limiter without rebuilding application tables
+  ---
+  duration_ms: 8932.2165
+  type: 'test'
+  ...
+# Subtest: missing and inactive subscriptions receive Bronze without add-ons
+ok 260 - missing and inactive subscriptions receive Bronze without add-ons
+  ---
+  duration_ms: 3.3262
+  type: 'test'
+  ...
+# Subtest: stored active plans and add-ons govern every capability without changing billing records
+ok 261 - stored active plans and add-ons govern every capability without changing billing records
+  ---
+  duration_ms: 90.722
+  type: 'test'
+  ...
+# Subtest: multilingual add-on unlocks Bronze/Silver and Gold includes it
+ok 262 - multilingual add-on unlocks Bronze/Silver and Gold includes it
+  ---
+  duration_ms: 0.8372
+  type: 'test'
+  ...
+# Subtest: inactive access notices preserve live content
+ok 263 - inactive access notices preserve live content
+  ---
+  duration_ms: 1.0433
+  type: 'test'
+  ...
+# Subtest: subscription loading fails booking closed before the add-on column exists
+ok 264 - subscription loading fails booking closed before the add-on column exists
+  ---
+  duration_ms: 5.4248
+  type: 'test'
+  ...
+# Subtest: migrated subscriptions read the booking add-on without a fallback query
+ok 265 - migrated subscriptions read the booking add-on without a fallback query
+  ---
+  duration_ms: 0.4231
+  type: 'test'
+  ...
+# Subtest: subscription schema fallback preserves real database errors
+ok 266 - subscription schema fallback preserves real database errors
+  ---
+  duration_ms: 1.7405
+  type: 'test'
+  ...
+# Subtest: additive image quota migration preserves rows and enforces 500 MiB including previews per account
+ok 267 - additive image quota migration preserves rows and enforces 500 MiB including previews per account
+  ---
+  duration_ms: 13488.7558
+  type: 'test'
+  ...
+# Subtest: small originals are preserved byte-for-byte and decoded resources are released
+ok 268 - small originals are preserved byte-for-byte and decoded resources are released
+  ---
+  duration_ms: 3.0346
+  type: 'test'
+  ...
+# Subtest: files above 5 MB are compressed before sending the original and cropped preview
+ok 269 - files above 5 MB are compressed before sending the original and cropped preview
+  ---
+  duration_ms: 62.711
+  type: 'test'
+  ...
+# Subtest: incompressible images reduce quality and dimensions until the encoded size fits
+ok 270 - incompressible images reduce quality and dimensions until the encoded size fits
+  ---
+  duration_ms: 39.3963
+  type: 'test'
+  ...
+# Subtest: small files with oversized dimensions are also resized; invalid input fails without an upload
+ok 271 - small files with oversized dimensions are also resized; invalid input fails without an upload
+  ---
+  duration_ms: 4.8249
+  type: 'test'
+  ...
+# Subtest: account image storage is 500 MiB while stored files remain at most 5 MiB
+ok 272 - account image storage is 500 MiB while stored files remain at most 5 MiB
+  ---
+  duration_ms: 0.6938
+  type: 'test'
+  ...
+# Subtest: normalizes and validates customer domain names
+ok 273 - normalizes and validates customer domain names
+  ---
+  duration_ms: 2.6212
+  type: 'test'
+  ...
+# Subtest: requires configured Vercel project credentials
+ok 274 - requires configured Vercel project credentials
+  ---
+  duration_ms: 0.5653
+  type: 'test'
+  ...
+# Subtest: treats an existing project domain as an idempotent add success
+ok 275 - treats an existing project domain as an idempotent add success
+  ---
+  duration_ms: 36.0597
+  type: 'test'
+  ...
+# Subtest: treats a Vercel 404 as an already completed removal
+ok 276 - treats a Vercel 404 as an already completed removal
+  ---
+  duration_ms: 1.8755
+  type: 'test'
+  ...
+# Subtest: page/section references follow path changes and preserve locale and section identity
+ok 277 - page/section references follow path changes and preserve locale and section identity
+  ---
+  duration_ms: 10.9845
+  type: 'test'
+  ...
+# Subtest: external/relative/contact URLs are supported and executable or malformed schemes are rejected
+ok 278 - external/relative/contact URLs are supported and executable or malformed schemes are rejected
+  ---
+  duration_ms: 0.9303
+  type: 'test'
+  ...
+# Subtest: custom navigation keeps configured page, section and URL links instead of regenerating the current page's sections
+ok 279 - custom navigation keeps configured page, section and URL links instead of regenerating the current page's sections
+  ---
+  duration_ms: 1.2298
+  type: 'test'
+  ...
+# Subtest: editor links switch tabs, respect modifier clicks, and public links navigate normally
+ok 280 - editor links switch tabs, respect modifier clicks, and public links navigate normally
+  ---
+  duration_ms: 101.3073
+  type: 'test'
+  ...
+# Subtest: publication rejects removed/excluded pages and sections on the wrong page, including nested CTA/footer links
+ok 281 - publication rejects removed/excluded pages and sections on the wrong page, including nested CTA/footer links
+  ---
+  duration_ms: 1.6835
+  type: 'test'
+  ...
+# Subtest: the rendered selector exposes page/section/URL modes and preserves external values
+ok 282 - the rendered selector exposes page/section/URL modes and preserves external values
+  ---
+  duration_ms: 189.0536
+  type: 'test'
+  ...
+# Subtest: new websites have one Home, and CRUD/order survive a separate read
+ok 283 - new websites have one Home, and CRUD/order survive a separate read
+  ---
+  duration_ms: 7026.4126
+  type: 'test'
+  ...
+# Subtest: RLS and RPCs reject foreign owners, invalid slugs and incomplete/repeated ordering
+ok 284 - RLS and RPCs reject foreign owners, invalid slugs and incomplete/repeated ordering
+  ---
+  duration_ms: 3710.663
+  type: 'test'
+  ...
+# Subtest: sections belong to their page; reordering/deleting one page leaves the other untouched
+ok 285 - sections belong to their page; reordering/deleting one page leaves the other untouched
+  ---
+  duration_ms: 3731.6643
+  type: 'test'
+  ...
+# Subtest: bootstrap mirrors the migration and migration refuses obsolete content
+ok 286 - bootstrap mirrors the migration and migration refuses obsolete content
+  ---
+  duration_ms: 2367.4435
+  type: 'test'
+  ...
+# Subtest: a structural edit is atomic, maps new IDs, and cannot delete another page's sections
+ok 287 - a structural edit is atomic, maps new IDs, and cannot delete another page's sections
+  ---
+  duration_ms: 4817.7225
+  type: 'test'
+  ...
+# Subtest: single-page template apply/restore cannot overwrite a multipage draft
+ok 288 - single-page template apply/restore cannot overwrite a multipage draft
+  ---
+  duration_ms: 3581.2508
+  type: 'test'
+  ...
+# Subtest: large page collections remain complete under a low hosted row cap
+ok 289 - large page collections remain complete under a low hosted row cap
+  ---
+  duration_ms: 13.4473
+  type: 'test'
+  ...
+# Subtest: a failed later batch cannot produce a partial publication snapshot
+ok 290 - a failed later batch cannot produce a partial publication snapshot
+  ---
+  duration_ms: 1.7215
+  type: 'test'
+  ...
+# Subtest: accepts complete versioned live snapshots
+ok 291 - accepts complete versioned live snapshots
+  ---
+  duration_ms: 3.3211
+  type: 'test'
+  ...
+# Subtest: rejects missing, partial, and future snapshots
+ok 292 - rejects missing, partial, and future snapshots
+  ---
+  duration_ms: 0.5404
+  type: 'test'
+  ...
+# Subtest: a copied live snapshot is isolated from later draft mutations
+ok 293 - a copied live snapshot is isolated from later draft mutations
+  ---
+  duration_ms: 0.49
+  type: 'test'
+  ...
+# Subtest: snapshot validation rejects foreign links, duplicate locale identities and redirect collisions
+ok 294 - snapshot validation rejects foreign links, duplicate locale identities and redirect collisions
+  ---
+  duration_ms: 2.7209
+  type: 'test'
+  ...
+1..294
+# tests 304
+# suites 0
+# pass 304
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 219207.9834

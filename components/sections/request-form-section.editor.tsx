@@ -80,7 +80,7 @@ export function RequestFormSectionEditor({ section, updateField, currentPlan, ha
       </div>
       {requestType === "booking_request" && !hasBookingAccess ? (
         <p className="rounded-md border border-warning/30 bg-warning/10 p-2 text-xs text-foreground">
-          Boekingen vereisen de Booking & Facturatie (€ 14,95 per maand). Instellen en testen kan nu; live zetten vereist de add-on.
+          Boekingen vereisen de Booking & Facturatie (€ 19,00 per maand exclusief btw). Instellen en testen kan nu; live zetten vereist de add-on.
         </p>
       ) : requestType !== "contact" && requestType !== "booking_request" && !planMeetsRequirement(currentPlan, "silver") ? (
         <p className="rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-900">

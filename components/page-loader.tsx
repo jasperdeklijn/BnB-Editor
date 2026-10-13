@@ -1,3 +1,4 @@
+import { readAllQueryRows } from "@/lib/supabase/pagination"
 import { notFound, permanentRedirect } from "next/navigation"
 import { headers } from "next/headers"
 import { customerSiteBase, resolveWebsiteRoute, snapshotRedirect } from "@/lib/website-routing"
@@ -20,6 +21,8 @@ import { getSiteMessages } from "@/lib/site-i18n/messages"
 import { WebsiteLocaleProvider } from "@/lib/site-i18n/provider"
 import { normalizeLanguageSwitcherConfig } from "@/lib/i18n/language-switcher"
 import { isMultilingualWebsitesEnabled } from "@/lib/i18n/feature"
+import { publicAnalyticsSettings } from "@/lib/analytics/public-settings"
+import { createTrackingToken } from "@/lib/analytics/server"
 import { SiteCookieConsent } from "@/components/privacy/site-cookie-consent"
 import { PLATFORM_BASE_URL } from "@/lib/platform"
 import { WebsiteLinksProvider } from "@/components/editor/website-links-context"
@@ -55,8 +58,8 @@ export async function loadPublicWebsitePage({
 
   let previewLinkPages: WebsitePage[] = []
   if (isPreview) {
-    const { data: pages, error: pagesError } = await supabase.from("website_pages")
-      .select("*").eq("website_id", website.id)
+    const { data: pages, error: pagesError } = await readAllQueryRows(supabase.from("website_pages")
+      .select("*", {count:"exact"}).eq("website_id", website.id).order("position").order("id"))
     if (pagesError || !pages?.length) return notFound()
     previewLinkPages = pages.map(mapWebsitePage)
   }
@@ -86,6 +89,10 @@ export async function loadPublicWebsitePage({
   if (liveSnapshot?.locales?.length && !liveLocale) return notFound()
 
   const adminSupabase = await createAdminClient()
+  const { analytics, advancedAllowed: advancedAnalyticsAllowed } = !isPreview
+    ? await publicAnalyticsSettings(website.id) : { analytics: null, advancedAllowed: false }
+  const trackingToken = !isPreview && livePage && analytics?.firstPartyEnabled === true ? createTrackingToken({ websiteId: website.id, pageId: livePage.id,
+    host: visitorHeaders.get("host") ?? "", path: basePath + websitePagePath(livePage, liveRoute?.locale.isDefault ? "" : liveRoute?.locale.pathSegment ?? "") }) : null
 
   const websiteBusinessId = liveSnapshot ? liveSnapshot.website.businessId : website.business_id ?? await (async () => {
     const { data: business, error: businessError } = await adminSupabase
@@ -442,7 +449,10 @@ export async function loadPublicWebsitePage({
         <SiteCookieConsent
           websiteId={website.id}
           policyUrl={`${PLATFORM_BASE_URL}/cookies`}
-          enableTracking={!isPreview}
+          enableTracking={!isPreview && Boolean(trackingToken)}
+          trackingToken={trackingToken}
+          measurementId={!isPreview && advancedAnalyticsAllowed && analytics?.provider === "google-analytics" ? analytics.measurementId : undefined}
+          consentMode={analytics?.consentMode !== false}
         />
         {jsonLd && (
           <script

@@ -1,36 +1,44 @@
-import { NextResponse } from "next/server"
-
-import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
+import { after, NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { checkRateLimit } from "@/lib/rate-limit"
+import { ANALYTICS_UUID, deviceCategory } from "@/lib/analytics/shared"
+import { analyticsRequestMatches, dailyAnalyticsHash, verifyTrackingToken } from "@/lib/analytics/server"
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-
+export const maxDuration = 15
 export async function POST(request: Request) {
-  const rateLimit = await checkRateLimit(getRateLimitKey(request, "website_visit"), 60, 60 * 60 * 1000)
-  if (!rateLimit.allowed) return new NextResponse(null, { status: 204 })
-
-  const body = await request.json().catch(() => null)
-  const websiteId = typeof body?.websiteId === "string" ? body.websiteId : ""
-  if (!UUID_PATTERN.test(websiteId)) {
-    return NextResponse.json({ error: "Ongeldige website." }, { status: 400 })
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY || Number(request.headers.get("content-length")) > 8192) return new NextResponse(null, { status: 204 })
+  const reader = request.body?.getReader()
+  if (!reader) return new NextResponse(null, { status: 400 })
+  const chunks: Uint8Array[] = []
+  let bytes = 0
+  while (true) {
+    const part = await reader.read()
+    if (part.done) break
+    bytes += part.value.byteLength
+    if (bytes > 8192) { await reader.cancel(); return new NextResponse(null, { status: 204 }) }
+    chunks.push(part.value)
   }
-
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return new NextResponse(null, { status: 204 })
-
-  const admin = await createAdminClient()
-  const { data: website, error: websiteError } = await admin
-    .from("websites")
-    .select("id")
-    .eq("id", websiteId)
-    .eq("published", true)
-    .maybeSingle()
-
-  if (websiteError || !website) return new NextResponse(null, { status: 204 })
-
-  const { error } = await admin.from("website_visits").insert({ website_id: websiteId })
-  if (error) {
-    console.warn("[Analytics] Website visit could not be recorded", { websiteId, error: error.message })
-  }
-
+  const raw = Buffer.concat(chunks).toString("utf8")
+  let body
+  try { body = JSON.parse(raw) } catch { return new NextResponse(null, { status: 400 }) }
+  const token = verifyTrackingToken(body?.token)
+  if (!token || !analyticsRequestMatches(request, token) || !ANALYTICS_UUID.test(body?.sessionId ?? "")
+    || !Array.isArray(body?.events) || body.events.length < 1 || body.events.length > 20) return new NextResponse(null, { status: 204 })
+  if (body.events.some((event: { id?: unknown; source?: unknown }) => !event || typeof event !== "object" || typeof event.id !== "string" || !ANALYTICS_UUID.test(event.id) || !["direct", "search", "social", "referral"].includes(String(event.source)))) return new NextResponse(null, { status: 400 })
+  const visitor = dailyAnalyticsHash(token.websiteId, body.sessionId)
+  const limits = await Promise.all([
+    checkRateLimit("analytics-session:" + visitor, 120, 60_000),
+    checkRateLimit("analytics-site:" + token.websiteId, 1000, 60_000),
+  ])
+  if (limits.some((limit) => !limit.allowed)) return new NextResponse(null, { status: 204 })
+  const events = body.events.map((event: { id: string; source: string }) => ({ id: dailyAnalyticsHash(token.websiteId, event.id), source: event.source }))
+  const device = deviceCategory(request.headers.get("user-agent") ?? "")
+  after(async () => {
+    try {
+      const admin = await createAdminClient()
+      const { error } = await admin.rpc("ingest_website_analytics", { p_website_id: token.websiteId, p_page_id: token.pageId, p_visitor: visitor, p_device: device, p_events: events })
+      if (error) console.warn("[Analytics] Aggregate unavailable")
+    } catch { console.warn("[Analytics] Aggregate unavailable") }
+  })
   return new NextResponse(null, { status: 204 })
 }

@@ -12,6 +12,7 @@ import { createClient } from "@/lib/supabase/client"
 import type { WebsiteAnalyticsFields, WebsiteSeoFields } from "@/lib/seo/metadata"
 
 interface SeoEssentialsClientProps {
+  advancedAllowed: boolean
   websiteId: string
   pageId?: string
   businessId?: string | null
@@ -21,6 +22,7 @@ interface SeoEssentialsClientProps {
 }
 
 export function SeoEssentialsClient({
+  advancedAllowed,
   websiteId,
   pageId,
   businessId,
@@ -98,7 +100,7 @@ export function SeoEssentialsClient({
       <div className="space-y-6">
         <Card className="p-6">
           <h2 className="text-lg font-semibold">{pageId ? "Pagina-SEO en deelinformatie" : "Websitebrede SEO-standaarden"}</h2>
-          {pageId ? <p className="mt-2 text-sm text-muted-foreground">Lege velden gebruiken de websitebrede standaard. Het canonieke webadres volgt automatisch het pagina-adres.</p> : null}
+          {pageId ? <p className="mt-2 text-sm text-muted-foreground">Lege velden gebruiken de websitebrede standaard. Een lege canonieke URL volgt automatisch het pagina-adres.</p> : null}
           <div className="mt-4 space-y-4">
             <div>
               <Label htmlFor="seo-title">SEO titel</Label>
@@ -110,11 +112,11 @@ export function SeoEssentialsClient({
             </div>
             <div>
               <Label htmlFor="seo-og">OpenGraph afbeelding URL</Label>
-              <Input id="seo-og" value={seo.ogImage ?? ""} onChange={(event) => updateSeo("ogImage", event.target.value)} />
+              <Input id="seo-og" disabled={!advancedAllowed} value={seo.ogImage ?? ""} onChange={(event) => updateSeo("ogImage", event.target.value)} />
             </div>
             <div>
               <Label htmlFor="seo-canonical">Canonieke URL</Label>
-              <Input id="seo-canonical" disabled={Boolean(pageId)} value={pageId ? "Volgt het pagina-adres" : seo.canonicalUrl ?? ""} onChange={(event) => updateSeo("canonicalUrl", event.target.value)} />
+              <Input id="seo-canonical" disabled={!advancedAllowed} value={seo.canonicalUrl ?? ""} onChange={(event) => updateSeo("canonicalUrl", event.target.value)} />
             </div>
           </div>
         </Card>
@@ -134,17 +136,21 @@ export function SeoEssentialsClient({
 
       <Card className="h-fit p-6">
         <h2 className="text-lg font-semibold">Analytics</h2>
+        <a className="inline-flex min-h-11 text-sm text-primary underline" href={`/editor/analytics?websiteId=${websiteId}`}>Statistieken bekijken</a>
+        <label className="mt-3 flex items-start gap-2 text-sm"><input type="checkbox" checked={analytics.firstPartyEnabled === true} onChange={(event) => updateAnalytics("firstPartyEnabled", event.target.checked)} />Eerste-partijstatistieken inschakelen na bezoekerstoestemming</label>
+        <p className="mt-3 text-xs text-muted-foreground">GA4 verzamelt alleen na toestemming. Een Measurement ID geeft geen toegang tot Google-rapporten. Wijzigingen in SEO verschijnen na publicatie; de statistiekenschakelaar werkt direct.</p>
+        {!advancedAllowed ? <p className="mt-3 text-sm">Uitgebreide SEO en GA4 vanaf Silver. <a className="text-primary underline" href="/editor/account/billing">Abonnement bekijken</a></p> : null}
         <div className="mt-4 space-y-4">
           <div>
             <Label htmlFor="analytics-provider">Provider</Label>
-            <Input id="analytics-provider" placeholder="google-analytics" value={analytics.provider ?? ""} onChange={(event) => updateAnalytics("provider", event.target.value)} />
+            <Input id="analytics-provider" disabled={!advancedAllowed} placeholder="google-analytics" value={analytics.provider ?? ""} onChange={(event) => updateAnalytics("provider", event.target.value)} />
           </div>
           <div>
             <Label htmlFor="analytics-id">Measurement ID</Label>
-            <Input id="analytics-id" placeholder="G-XXXXXXXXXX" value={analytics.measurementId ?? ""} onChange={(event) => updateAnalytics("measurementId", event.target.value)} />
+            <Input id="analytics-id" disabled={!advancedAllowed} placeholder="G-XXXXXXXXXX" value={analytics.measurementId ?? ""} onChange={(event) => updateAnalytics("measurementId", event.target.value)} />
           </div>
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={Boolean(analytics.consentMode)} onChange={(event) => updateAnalytics("consentMode", event.target.checked)} />
+            <input type="checkbox" disabled={!advancedAllowed} checked={analytics.consentMode !== false} onChange={(event) => updateAnalytics("consentMode", event.target.checked)} />
             Consent mode gebruiken
           </label>
           <Button onClick={handleSave} disabled={isSaving} className="w-full">

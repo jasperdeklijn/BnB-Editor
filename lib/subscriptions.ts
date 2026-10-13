@@ -1,18 +1,16 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { hasReviewCollectionAccess } from "@/lib/reviews/shared"
 
-import { getPlanById } from "@/lib/pricing"
-import { getMinimumPlanForCapability, isBookingCapability, planMeetsRequirement, type EntitlementCapability } from "@/lib/entitlements"
+import { getPublishedPageLimit, getMinimumPlanForCapability, isBookingCapability, planMeetsRequirement, type EntitlementCapability } from "@/lib/entitlements"
 import type {
   PlanId,
   SubscriptionStatus,
   UserBillingData,
 } from "@/lib/types/pricing"
 
-// Temporary product default: every account receives Gold and all add-on features.
-// Stored subscriptions govern billing and page access; other features keep temporary access.
-export const DEFAULT_PLAN_ID: PlanId = "gold"
-export const DEFAULT_ALL_FEATURES_INCLUDED = true
+// Stored subscriptions govern feature access. Paid-through cancellations retain rights.
+export const DEFAULT_PLAN_ID: PlanId = "bronze"
+export const DEFAULT_ALL_FEATURES_INCLUDED = false
 
 export type SubscriptionSource = "subscription" | "default_fallback"
 
@@ -70,7 +68,7 @@ export function isPlanId(value: unknown): value is PlanId {
 }
 
 export function resolveEffectivePlan(
-  record: SubscriptionRecord | null,
+  record: Pick<SubscriptionRecord, "plan_id" | "status" | "current_period_end"> | null,
   now = new Date(),
 ): Pick<ResolvedSubscription, "planId" | "storedPlanId" | "status" | "source"> {
   if (!record) {
@@ -92,7 +90,7 @@ export function resolveEffectivePlan(
 
   if (record.status === "active" || record.status === "trial" || canceledStillPaid) {
     return {
-      planId: DEFAULT_ALL_FEATURES_INCLUDED ? DEFAULT_PLAN_ID : storedPlanId,
+      planId: storedPlanId,
       storedPlanId,
       status: record.status,
       source: "subscription",
@@ -160,7 +158,6 @@ export async function getUserSubscription(
 }
 
 export function getSubscriptionAccessNotice(resolved: ResolvedSubscription): string | null {
-  if (DEFAULT_ALL_FEATURES_INCLUDED) return "Alle functies zijn tijdelijk gratis beschikbaar voor iedereen. Bronze blijft beperkt tot één pagina; meerdere pagina's zijn beschikbaar bij Silver en Gold."
   const paidThrough = resolved.record?.current_period_end
     ? new Date(resolved.record.current_period_end)
     : null
@@ -169,11 +166,11 @@ export function getSubscriptionAccessNotice(resolved: ResolvedSubscription): str
     : null
 
   if (resolved.status === "canceled" && resolved.source === "subscription" && formattedPaidThrough) {
-    return `Je abonnement is opgezegd. De huidige rechten blijven actief tot en met ${formattedPaidThrough}. Daarna geldt tijdelijk het standaardabonnement Gold.`
+    return `Je abonnement is opgezegd. De huidige rechten blijven actief tot en met ${formattedPaidThrough}. Daarna gelden de basisrechten van Bronze. Je live content blijft behouden; kies bij een volgende publicatie welke pagina’s live blijven.`
   }
 
   if (resolved.status === "past_due") {
-    return "De betaling is achterstallig. Voor nu geldt tijdelijk het standaardabonnement Gold."
+    return "De betaling is achterstallig. De basisrechten van Bronze gelden; bestaande live content blijft behouden."
   }
 
   if (resolved.status === "expired" || (resolved.status === "canceled" && resolved.source === "default_fallback")) {
@@ -190,10 +187,11 @@ export function hasMultilingualWebsiteAccess(resolved: ResolvedSubscription): bo
 }
 
 export function hasBookingAddonAccess(resolved: ResolvedSubscription): boolean {
-  return DEFAULT_ALL_FEATURES_INCLUDED || (resolved.source === "subscription" && resolved.record?.booking_addon_active === true)
+  return resolved.source === "subscription" && resolved.record?.booking_addon_active === true
 }
 
 export function hasSubscriptionCapability(resolved: ResolvedSubscription, capability: EntitlementCapability): boolean {
+  if (["advanced_seo", "ga4_configuration", "detailed_analytics", "advanced_analytics"].includes(capability)) return planMeetsRequirement(resolved.planId, getMinimumPlanForCapability(capability))
   if (capability === "multipage_websites") return hasMultipageWebsiteAccess(resolved)
   if (capability === "review_collection") return hasReviewCollectionAccess(resolved)
   if (isBookingCapability(capability)) return hasBookingAddonAccess(resolved)
@@ -203,11 +201,14 @@ export function hasSubscriptionCapability(resolved: ResolvedSubscription, capabi
 }
 
 export function hasMultipageWebsiteAccess(resolved: ResolvedSubscription): boolean {
-  return planMeetsRequirement(resolved.storedPlanId ?? resolved.planId, "silver")
+  return planMeetsRequirement(resolved.planId, "bronze")
+}
+
+export function getSubscriptionPageLimit(resolved: ResolvedSubscription): number | null {
+  return getPublishedPageLimit(resolved.planId)
 }
 
 export function toUserBillingData(resolved: ResolvedSubscription): UserBillingData {
-  const plan = getPlanById(resolved.planId)
   const record = resolved.record
 
   return {
@@ -219,10 +220,10 @@ export function toUserBillingData(resolved: ResolvedSubscription): UserBillingDa
     source: resolved.source,
     accessNotice: getSubscriptionAccessNotice(resolved),
     currentPrice:
-      DEFAULT_ALL_FEATURES_INCLUDED ? 0 : resolved.source === "subscription" && record
+      resolved.source === "subscription" && record
         ? Number(record.current_price)
-        : plan.monthlyPrice,
-    nextBillingDate: !DEFAULT_ALL_FEATURES_INCLUDED && record?.current_period_end ? new Date(record.current_period_end) : null,
+        : 0,
+    nextBillingDate: resolved.source === "subscription" && record?.status !== "canceled" && record?.current_period_end ? new Date(record.current_period_end) : null,
     addons: {
       bookingAddon: resolved.source === "subscription" && record?.booking_addon_active === true,
       multilingualAddon:

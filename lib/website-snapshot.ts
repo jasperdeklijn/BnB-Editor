@@ -1,3 +1,4 @@
+import { readAllQueryRows } from "@/lib/supabase/pagination"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
 import type { Section, SectionType, Transition } from "@/lib/types"
@@ -210,15 +211,15 @@ export async function buildWebsiteLiveSnapshot({
     serviceTranslationsResult,
     pagesResult,
   ] = await Promise.all([
-    supabase
+    readAllQueryRows(supabase
       .from("website_sections")
-      .select("id, page_id, scope, type, position, content, styles")
+      .select("id, page_id, scope, type, position, content, styles", {count:"exact"})
       .eq("website_id", websiteId)
-      .order("position", { ascending: true }),
-    supabase
+      .order("position", { ascending: true }).order("id")),
+    readAllQueryRows(supabase
       .from("section_transitions")
-      .select("id, from_section_id, to_section_id, transition")
-      .eq("website_id", websiteId),
+      .select("id, from_section_id, to_section_id, transition", {count:"exact"})
+      .eq("website_id", websiteId).order("id")),
     businessId
       ? supabase
           .from("businesses")
@@ -241,10 +242,10 @@ export async function buildWebsiteLiveSnapshot({
       .eq("website_id", websiteId)
       .or("is_default.eq.true,is_enabled.eq.true")
       .order("is_default", { ascending: false }),
-    supabase
+    readAllQueryRows(supabase
       .from("website_section_translations")
-      .select("section_id, locale, values, source_hash")
-      .eq("website_id", websiteId),
+      .select("section_id, locale, values, source_hash", {count:"exact"})
+      .eq("website_id", websiteId).order("section_id").order("locale")),
     businessId
       ? supabase
           .from("business_translations")
@@ -256,7 +257,7 @@ export async function buildWebsiteLiveSnapshot({
           .from("service_translations")
           .select("service_id, locale, title, description, source_hash")
       : Promise.resolve({ data: [], error: null }),
-    supabase.from("website_pages").select("*").eq("website_id", websiteId).eq("include_in_publication", true).order("position"),
+    readAllQueryRows(supabase.from("website_pages").select("*", {count:"exact"}).eq("website_id", websiteId).eq("include_in_publication", true).order("position").order("id")),
   ])
   if (pagesResult.error) throw new Error(pagesResult.error.message)
 
@@ -444,8 +445,8 @@ export async function buildWebsiteLiveSnapshot({
   const defaultLocaleBundle = locales.find((locale) => locale.isDefault) ?? locales[0]
 
   const [pageTranslations, redirectRows] = await Promise.all([
-    supabase.from("website_page_translations").select("*").eq("website_id", websiteId),
-    supabase.from("website_page_redirects").select("from_slug,to_page_id").eq("website_id", websiteId),
+    readAllQueryRows(supabase.from("website_page_translations").select("*", {count:"exact"}).eq("website_id", websiteId).order("page_id").order("locale")),
+    readAllQueryRows(supabase.from("website_page_redirects").select("from_slug,to_page_id", {count:"exact"}).eq("website_id", websiteId).order("from_slug")),
   ])
   if (pageTranslations.error || redirectRows.error) throw new Error(pageTranslations.error?.message || redirectRows.error?.message)
   const pages: WebsiteSnapshotPage[] = linkPages.map((page) => {

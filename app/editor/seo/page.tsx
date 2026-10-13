@@ -1,3 +1,4 @@
+import { getUserSubscription, hasSubscriptionCapability } from "@/lib/subscriptions"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
@@ -19,6 +20,7 @@ export default async function SeoPage({ searchParams }: { searchParams: Promise<
     redirect("/auth/login")
   }
 
+  const subscription = await getUserSubscription(supabase, data.user.id)
   let websiteQuery = supabase
     .from("websites")
     .select("id, business_id, seo, analytics")
@@ -51,6 +53,7 @@ export default async function SeoPage({ searchParams }: { searchParams: Promise<
     >
       <Link className="mb-4 inline-flex min-h-11 items-center text-sm underline" href={`/editor?websiteId=${website.id}${page ? `&pageId=${page.id}` : ""}`}>Terug naar {page?.title ?? "de editor"}</Link>
       <SeoEssentialsClient
+        advancedAllowed={hasSubscriptionCapability(subscription, "advanced_seo")}
         websiteId={website.id}
         pageId={page?.id}
         businessId={website.business_id}

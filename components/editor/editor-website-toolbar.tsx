@@ -118,6 +118,7 @@ function MobileWebsiteActions(props: EditorWebsiteToolbarProps & { onRequestRena
             <DropdownMenu.Separator className="my-1 h-px bg-border" />
             <DropdownMenu.Item asChild className={menuItemClass} disabled={editingDisabled || !props.previewHref}><a href={props.previewHref || undefined} target="_blank" rel="noreferrer"><Eye className="h-4 w-4" />Preview bekijken</a></DropdownMenu.Item>
             <DropdownMenu.Item asChild className={menuItemClass} disabled={!props.websiteId || props.busy}><Link href={`/editor/flexcheck${websiteQuery}`}><CheckCircle2 className="h-4 w-4" />FlexCheck</Link></DropdownMenu.Item>
+            <DropdownMenu.Item asChild className={menuItemClass} disabled={editingDisabled}><Link href={`/editor/analytics${websiteQuery}`}><Search className="h-4 w-4" />Statistieken</Link></DropdownMenu.Item>
             <DropdownMenu.Item asChild className={menuItemClass} disabled={editingDisabled}><Link href={`/editor/seo${websiteQuery}`}><Search className="h-4 w-4" />SEO & Analytics</Link></DropdownMenu.Item>
             {props.published && props.liveHref ? <DropdownMenu.Item asChild className={menuItemClass}><a href={props.liveHref} target="_blank" rel="noreferrer"><Globe className="h-4 w-4" />Live website bekijken</a></DropdownMenu.Item> : null}
             {props.languageControl ? <DropdownMenu.Item className={menuItemClass} onSelect={() => setLanguageOpen(true)}><Globe className="h-4 w-4" />Taal om te bewerken</DropdownMenu.Item> : null}

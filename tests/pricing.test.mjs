@@ -24,24 +24,23 @@ test("Gold is recommended in the center while plan rank remains Bronze, Silver, 
   assert.equal(limits.gold, "Onbeperkt")
 })
 
-test("pricing clearly distinguishes Bronze onepage from Silver and Gold multipage", () => {
-  const { PRICING_PLANS, FEATURE_COMPARISON } = module.exports
-  assert.ok(PRICING_PLANS.bronze.features.includes("Onepage-website (1 pagina)"))
-  assert.ok(PRICING_PLANS.silver.features.includes("Multipage-website (meerdere pagina's)"))
-  const pages = FEATURE_COMPARISON.find((row) => row.feature === "Websitepagina's")
-  assert.equal(pages.bronze, "1 pagina (onepage)")
-  assert.equal(pages.silver, "Meerdere pagina's")
-  assert.equal(pages.gold, "Meerdere pagina's")
+test("pricing exposes published page quotas and VAT disclosure", () => {
+  const { PRICING_PLANS,FEATURE_COMPARISON }=module.exports
+  assert.ok(PRICING_PLANS.bronze.features.includes("3 gepubliceerde pagina's"))
+  assert.ok(PRICING_PLANS.silver.features.includes("10 gepubliceerde pagina's"))
+  const pages=FEATURE_COMPARISON.find(row=>row.feature==="Websitepagina's")
+  assert.equal(pages.bronze,"3 gepubliceerd");assert.equal(pages.silver,"10 gepubliceerd");assert.equal(pages.gold,"Onbeperkt (fair-use)")
+  for (const file of ["components/pricing/pricing-card.tsx","components/pricing/pricing-addons.tsx","components/billing/billing-client.tsx"]) assert.match(fs.readFileSync(file,"utf8"),/exclusief btw/i)
 })
 
 test("monthly totals include optional booking and multilingual, with languages free on Gold", () => {
-  const expected = { bronze: [7.95, 22.90, 10.94, 25.89], silver: [14.95, 29.90, 17.94, 32.89], gold: [24.95, 39.90, 24.95, 39.90] }
+  const expected = { bronze: [7.95, 26.95, 10.94, 29.94], silver: [14.95, 33.95, 17.94, 36.94], gold: [24.95, 43.95, 24.95, 43.95] }
   for (const [plan, totals] of Object.entries(expected)) {
     for (let index = 0; index < 4; index++) {
       assert.equal(calculateMonthlyPrice(plan, { bookingAddon: Boolean(index & 1), multilingualAddon: Boolean(index & 2) }), totals[index])
     }
   }
-  assert.equal(formatPrice(module.exports.BOOKING_ADDON_MONTHLY_PRICE).replace(/\s/g, ""), "€14,95")
+  assert.equal(formatPrice(module.exports.BOOKING_ADDON_MONTHLY_PRICE).replace(/\s/g, ""), "€19,00")
 })
 
 test("Booking & Facturatie includes booking, customer and invoice features on every plan", () => {

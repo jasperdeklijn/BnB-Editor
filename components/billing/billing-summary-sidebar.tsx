@@ -65,7 +65,7 @@ export function BillingSummarySidebar({
 
         {/* Total */}
         <div className="flex flex-wrap justify-between items-center gap-2 text-base font-bold pt-2 border-t border-border">
-          <span className="text-foreground">Totaalbedrag</span>
+          <span className="text-foreground">Indicatief totaal</span>
           <span className="text-primary">
             {formatPrice(totalCharge)}/mnd
           </span>
@@ -116,7 +116,7 @@ export function BillingSummarySidebar({
 
       {/* Info text */}
       <p className="text-xs text-muted-foreground mt-6 text-center leading-relaxed">
-        {complimentary ? "Alle functies zijn tijdelijk gratis beschikbaar." : "Je abonnement wordt automatisch verlengd. Je kunt altijd opzeggen."}
+        {complimentary ? "Alle functies zijn tijdelijk gratis beschikbaar." : "Add-ons gebruiken catalogusprijzen. Bestaande betaalafspraken blijven gelden; controleer je factuur voor het werkelijk gefactureerde bedrag."}
       </p>
     </Card>
   )
