@@ -6,7 +6,7 @@ import { FeatureComparison, PlanId, PricingPlan } from "@/lib/types/pricing"
 
 export const PLAN_ORDER: PlanId[] = ["bronze", "silver", "gold"]
 export const PRICING_DISPLAY_ORDER: PlanId[] = ["bronze", "gold", "silver"]
-export const BOOKING_ADDON_MONTHLY_PRICE = 19
+export const BOOKING_ADDON_MONTHLY_PRICE = 14.95
 export const BOOKING_ADDON_NAME = "Booking & Facturatie"
 export const BOOKING_ADDON_FEATURES = [
   "Online boekingen",
