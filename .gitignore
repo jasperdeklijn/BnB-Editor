@@ -13,7 +13,7 @@
 # local generated media/tooling artifacts
 /artifacts/
 /tmp/
-
+/.npm-cache
 # debug
 npm-debug.log*
 yarn-debug.log*
