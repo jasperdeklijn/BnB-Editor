@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Bot, ClipboardList, Globe2, LayoutDashboard, Mail, Users, ArrowLeft, Settings } from "lucide-react"
+import { ClipboardList, Globe2, LayoutDashboard, Mail, Users, ArrowLeft, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const links = [
@@ -13,7 +13,6 @@ const links = [
   { href: "/admin/mailbox", label: "Supportmailbox", icon: Mail },
   { href: "/admin/leads", label: "Leads", icon: Users },
   { href: "/admin/leads/settings", label: "Lead-automatisering", icon: Settings },
-  { href: "/admin/agents", label: "AI-agentteam", icon: Bot },
   { href: "/admin/audit-logs", label: "Auditlogs", icon: ClipboardList },
 ]
 

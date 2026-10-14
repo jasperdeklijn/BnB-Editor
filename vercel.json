@@ -26,18 +26,6 @@
       "schedule": "15 2 * * *"
     },
     {
-      "path": "/api/cron/agents/dispatch",
-      "schedule": "0 8 * * 1"
-    },
-    {
-      "path": "/api/cron/agents/reconcile",
-      "schedule": "0 8 * * 1"
-    },
-    {
-      "path": "/api/cron/agents/daily-summary",
-      "schedule": "0 8 * * 1"
-    },
-    {
       "path": "/api/cron/analytics-cleanup",
       "schedule": "17 3 * * *"
     }

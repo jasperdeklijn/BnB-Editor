@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server"
-import { enqueueAgentJob } from "@/lib/agents/repository"
+import { runWeeklyLeadSearch } from "@/lib/leads/runWeeklyLeadSearch"
 import { getAmsterdamScheduleContext } from "@/lib/leads/amsterdamSchedule"
 import { getLeadAgentSettings } from "@/lib/leads/settings"
 import { createAdminClient } from "@/lib/supabase/admin"
 
 export const dynamic = "force-dynamic"
-export const maxDuration = 60
+export const maxDuration = 300
 
 export async function GET(request: Request) {
   const cronSecret = process.env.CRON_SECRET?.trim()
@@ -23,13 +23,15 @@ export async function GET(request: Request) {
   const remaining = Math.max(0, settings.weekly_limit - (count ?? 0))
   if (remaining === 0) return NextResponse.json({ skipped: true, reason: "weekly_limit_reached" })
 
-  const queued = await enqueueAgentJob(supabase, {
-    jobType: "marketing.lead_search",
-    source: "lead_cron",
-    deduplicationKey: schedule.weekKey,
-    payload: { weekKey: schedule.weekKey, cities: settings.cities, categories: settings.categories, limit: remaining, emailNotificationsEnabled: settings.email_notifications_enabled },
-    priority: 40,
-    riskLevel: "low",
-  })
-  return NextResponse.json({ queued: queued.created, jobId: queued.jobId, remaining })
+  try {
+    return NextResponse.json(await runWeeklyLeadSearch(supabase, {
+      weekKey: schedule.weekKey,
+      cities: settings.cities,
+      categories: settings.categories,
+      limit: remaining,
+      emailNotificationsEnabled: settings.email_notifications_enabled,
+    }))
+  } catch {
+    return NextResponse.json({ error: "De wekelijkse leadzoekopdracht is mislukt." }, { status: 500 })
+  }
 }

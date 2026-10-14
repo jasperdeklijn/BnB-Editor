@@ -2,10 +2,9 @@ import "server-only"
 
 import { ImapFlow } from "imapflow"
 import type { SupabaseClient } from "@supabase/supabase-js"
-import { enqueueAgentJob } from "@/lib/agents/repository"
+import { generatePendingMailDrafts } from "@/lib/mail/generate-pending-drafts"
 import { requireMailServerConfig } from "@/lib/mail/config"
 import { parseMailboxMessage } from "@/lib/mail/parse-message"
-import { isAutomatedMail } from "@/lib/mail/risk-policy"
 import { resolveMailThread } from "@/lib/mail/threading"
 import type { MailAccountRecord, MailDirection, ParsedMailboxMessage } from "@/lib/mail/types"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -54,7 +53,7 @@ async function saveFetchedMessage(supabase: SupabaseClient, account: MailAccount
     const { data: existing } = await supabase.from("mail_messages").select("id, thread_id").eq("mail_account_id", account.id).eq("internet_message_id", parsed.messageId).maybeSingle()
     if (existing) {
       await supabase.from("mail_messages").update({ imap_folder: folder, imap_uid: uid, is_read: parsed.isRead }).eq("id", existing.id)
-      return { created: false, messageId: existing.id as string, threadId: existing.thread_id as string, automated: true }
+      return { created: false }
     }
   }
 
@@ -83,7 +82,7 @@ async function saveFetchedMessage(supabase: SupabaseClient, account: MailAccount
   }).select("id").single()
   if (error || !data) throw new Error("Mailbericht kon niet worden opgeslagen.")
   await updateThreadAfterMessage(supabase, threadId, direction, parsed)
-  return { created: true, messageId: data.id as string, threadId, automated: isAutomatedMail(parsed.headers, parsed.fromAddress) }
+  return { created: true }
 }
 
 async function syncFolder(input: {
@@ -95,7 +94,6 @@ async function syncFolder(input: {
   cursorField: "last_inbox_uid" | "last_sent_uid"
   validityField: "inbox_uid_validity" | "sent_uid_validity"
   totals: SyncTotals
-  draftTargets: Array<{ threadId: string; messageId: string }>
 }) {
   const mailbox = await input.client.mailboxOpen(input.folder, { readOnly: true })
   const validity = mailbox.uidValidity.toString()
@@ -121,7 +119,6 @@ async function syncFolder(input: {
       const parsed = await parseMailboxMessage(fetched.source, fetched.internalDate, fetched.flags)
       const saved = await saveFetchedMessage(input.supabase, input.account, input.folder, input.direction, fetched.uid, parsed)
       if (saved.created) input.totals.created += 1
-      if (saved.created && input.direction === "inbound" && !saved.automated) input.draftTargets.push({ threadId: saved.threadId, messageId: saved.messageId })
     } catch {
       input.totals.failed += 1
     }
@@ -161,7 +158,6 @@ export async function syncMailbox(input: { trigger: "cron" | "manual"; runKey: s
     greetingTimeout: 15_000,
     socketTimeout: 45_000,
   })
-  const draftTargets: Array<{ threadId: string; messageId: string }> = []
 
   try {
     await client.connect()
@@ -174,27 +170,19 @@ export async function syncMailbox(input: { trigger: "cron" | "manual"; runKey: s
       await supabase.from("mail_accounts").update({ sent_folder: sentFolder }).eq("id", account.id)
     }
 
-    await syncFolder({ client, supabase, account, folder: account.inbox_folder, direction: "inbound", cursorField: "last_inbox_uid", validityField: "inbox_uid_validity", totals, draftTargets })
-    if (sentFolder) await syncFolder({ client, supabase, account, folder: sentFolder, direction: "outbound", cursorField: "last_sent_uid", validityField: "sent_uid_validity", totals, draftTargets })
+    await syncFolder({ client, supabase, account, folder: account.inbox_folder, direction: "inbound", cursorField: "last_inbox_uid", validityField: "inbox_uid_validity", totals })
+    if (sentFolder) await syncFolder({ client, supabase, account, folder: sentFolder, direction: "outbound", cursorField: "last_sent_uid", validityField: "sent_uid_validity", totals })
     await client.logout()
 
-    for (const target of draftTargets.slice(0, 10)) {
-      try {
-        await enqueueAgentJob(supabase, {
-          jobType: "support.reply",
-          source: "mail_message",
-          deduplicationKey: target.messageId,
-          payload: target,
-          priority: 80,
-          riskLevel: "medium",
-        })
-        totals.drafts += 1
-      } catch {
-        totals.failed += 1
-      }
+    try {
+      const generated = await generatePendingMailDrafts(supabase, account.id)
+      totals.drafts += generated.drafts
+      totals.failed += generated.failed
+    } catch {
+      totals.failed += 1
     }
 
-    const status = totals.failed === 0 ? "succeeded" : totals.created > 0 ? "partial" : "failed"
+    const status = totals.failed === 0 ? "succeeded" : totals.created > 0 || totals.drafts > 0 ? "partial" : "failed"
     await Promise.all([
       supabase.from("mail_sync_runs").update({ status, fetched_count: totals.fetched, created_count: totals.created, draft_count: totals.drafts, failed_count: totals.failed, completed_at: new Date().toISOString() }).eq("id", run.id),
       supabase.from("mail_accounts").update({ last_synced_at: new Date().toISOString(), last_error: status === "failed" ? "De synchronisatie is mislukt." : null }).eq("id", account.id),

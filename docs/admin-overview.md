@@ -1,6 +1,8 @@
 # Adminoverzicht en klantbeheer
 
-Het adminoverzicht brengt dagelijkse aandachtspunten, klantzoekwerk en platformcijfers samen. Er zijn geen nieuwe database-tabellen of migraties nodig. Het overzicht en de klantpagina's voeren uitsluitend leesacties uit; verzenden, goedkeuren, publiceren en opnieuw uitvoeren blijven in de bestaande beheerflows.
+Het adminoverzicht brengt dagelijkse aandachtspunten, klantzoekwerk en platformcijfers samen. Er zijn geen nieuwe database-tabellen of migraties nodig. Het overzicht en de klantpagina's voeren uitsluitend leesacties uit; verzenden en publiceren blijven in de bestaande beheerflows.
+
+Het AI-agentteam is verwijderd. De leadgenerator (`/admin/leads` en `/admin/leads/settings`) en supportmail-AI (`/admin/mailbox` en de kennisbank) werken zelfstandig. Zie `docs/admin-ai-automation.md` voor de overgebleven automatisering.
 
 ## Navigatie en klanten
 
@@ -28,11 +30,9 @@ Perioden zijn halfopen intervallen: vanaf de start, tot maar niet inclusief het 
 Per onderdeel worden het totale aantal en maximaal vier oudste items getoond:
 
 - Supportgesprekken met `unread_count > 0`.
-- Goedkeuringen met status `pending`, zonder verlopen vervaldatum.
-- Agenttaken met `failed` of `dead_letter`.
 - FlexStart in `requested`, `processing`, `checking`, `corrections` of `approved`, plus niet-gepubliceerde aanvragen met een onbehandeld reviewverzoek. `ready` zonder reviewverzoek wacht op de klant.
 
-Links bevatten het exacte gesprek-, goedkeuring-, taak- of aanvraag-ID. Mailbox en agentbeheer halen een geselecteerd item ook buiten hun recente lijst op. Een auditlink opent de geselecteerde auditactie met metadata. Goedkeuringen en taakherstel behouden de bestaande servercontrole en menselijke beslissingen.
+Links bevatten het exacte gesprek- of aanvraag-ID. De mailbox haalt een geselecteerd item ook buiten de recente lijst op. Een auditlink opent de geselecteerde auditactie met metadata.
 
 ## Toegang, fouten en capaciteit
 
@@ -47,12 +47,12 @@ De Auth admin API ondersteunt geen serverfilter op klantnaam of e-mailadres. Kla
 - [x] Regressies voor eigenaar-groepering, concepten, alternatieve domeinen en klanten zonder website.
 - [x] Periodegrenzen, nulvergelijking, ontbrekende gegevens en gepagineerde brongegevens getest.
 - [x] Anonieme gebruikers en gewone klanten krijgen geen service-role-client.
-- [x] Specifieke aandachtlinks en filtering op status/vervaldatum getest met gecontroleerde queryfixtures.
+- [x] Specifieke aandachtlinks en filtering op status getest met gecontroleerde queryfixtures.
 - [x] Oudere supportgesprekken halen eigen berichten en antwoordvoorstellen op, buiten de globale recente-lijstlimiet.
 - [x] TypeScript, gerichte ESLint-controle en productiebuild geslaagd.
 - [x] Vijf gerenderde schermtoestanden gecontroleerd met synthetische gegevens op 320, 375, 768, 1024, 1440 en 1920 px; geen horizontale pagina-overloop. Zoekresultaat naar geselecteerde klantwebsite gecontroleerd.
 - [ ] Authenticated hosted controle: zoek op naam, e-mailadres en secundair domein; controleer eigenaar en geselecteerde website.
-- [ ] Authenticated hosted controle: open een ouder supportgesprek, een oude mislukte taak en een goedkeuring vanuit het overzicht.
+- [ ] Authenticated hosted controle: open een ouder supportgesprek vanuit het overzicht.
 - [ ] Controleer de definities en foutmeldingen tegen het bestaande Supabase-project. Lokale fixtures zijn geen hosted databasebewijs.
 
 Gerichte regressie: `node --test tests/admin-dashboard.test.mjs`. Gebruik daarnaast de bestaande typecheck, lint, tests en productiebuild.

@@ -97,8 +97,6 @@ test("overview keeps failed counts unavailable and builds specific attention lin
           if (table === "subscriptions") { error = new Error("missing table"); count = null }
           if (table === "audit_logs") error = new Error("unavailable")
           if (table === "mail_threads" && call.filters.some(([name]) => name === "gt")) { data = [{ id: "mail-1", subject_normalized: "Help", contact_email: "a@example.com", last_message_at: "2026-09-25T00:00:00Z" }]; count = 1 }
-          if (table === "agent_approvals") { data = [{ id: "approval-1", requested_at: "2026-09-25T00:00:00Z" }]; count = 1 }
-          if (table === "agent_jobs") { data = [{ id: "job-1", status: "dead_letter", created_at: "2026-09-25T00:00:00Z" }]; count = 1 }
           if (table === "website_transfer_requests") { data = [{ id: "transfer-1", business_name: "Anna", status: "corrections", created_at: "2026-09-25T00:00:00Z" }]; count = 1 }
           resolve({ data, count, error })
         }
@@ -114,13 +112,12 @@ test("overview keeps failed counts unavailable and builds specific attention lin
   assert.equal(data.logs, null)
   assert.deepEqual(data.templates, [])
   assert.equal(data.attention[0].items[0].href, "/admin/mailbox?thread=mail-1")
-  assert.equal(data.attention[1].items[0].href, "/admin/agents?approval=approval-1#approval-approval-1")
-  assert.equal(data.attention[2].items[0].href, "/admin/agents?job=job-1#job-job-1")
-  assert.equal(data.attention[3].items[0].description, "Correcties verwerken")
+  assert.equal(data.attention.length, 2)
+  assert.equal(data.attention[1].items[0].href, "/admin/flexstart?request=transfer-1")
+  assert.equal(data.attention[1].items[0].description, "Correcties verwerken")
+  assert.ok(calls.every((call) => !call.table.startsWith("agent_")))
   const paid = calls.find((call) => call.table === "subscriptions")
   assert.ok(paid.filters.some((filter) => filter[0] === "gt" && filter[1] === "current_price" && filter[2] === 0))
-  const pending = calls.find((call) => call.table === "agent_approvals")
-  assert.ok(pending.filters.some((filter) => filter[0] === "or" && filter[1].startsWith("expires_at.is.null,expires_at.gt.")))
   const visits = calls.filter((call) => call.table === "website_visits")
   assert.equal(visits[0].filters.find((filter) => filter[0] === "gte")[2], visits[1].filters.find((filter) => filter[0] === "lt")[2])
 })

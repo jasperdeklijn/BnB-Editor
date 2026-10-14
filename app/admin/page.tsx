@@ -31,7 +31,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
     </div>
     <section aria-labelledby="attention-heading">
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2"><h2 id="attention-heading" className="text-xl font-semibold">Aandacht nodig</h2><p className="text-xs text-muted-foreground">Oudste eerst · maximaal 4 per onderdeel</p></div>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">{data.attention.map((group) => <article key={group.title} className="rounded-xl border bg-card p-4">
+      <div className="grid gap-4 md:grid-cols-2">{data.attention.map((group) => <article key={group.title} className="rounded-xl border bg-card p-4">
         <Link href={group.href} className="flex items-start justify-between gap-3 text-sm font-semibold text-primary hover:underline"><span>{group.title}</span><span className="rounded-md bg-secondary px-2 py-1">{group.count ?? "—"}</span></Link>
         {group.error ? <p role="alert" className="mt-4 text-sm text-destructive">Dit onderdeel kon niet worden geladen.</p> : group.items.length ? <ul className="mt-3 divide-y">{group.items.map((item) => <li key={item.id} className="py-3"><Link href={item.href} className="block rounded-md focus-visible:ring-2 focus-visible:ring-ring"><p className="break-words text-sm font-medium hover:text-primary">{item.title}</p><p className="mt-1 break-words text-xs text-muted-foreground">{item.description}</p><time className="mt-1 block text-xs text-muted-foreground" dateTime={item.createdAt}>{formatAdminDate(item.createdAt)}</time></Link></li>)}</ul> : <p className="mt-4 text-sm text-muted-foreground">Geen open aandachtspunten.</p>}
       </article>)}</div>
