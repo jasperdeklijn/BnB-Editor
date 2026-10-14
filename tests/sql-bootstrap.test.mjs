@@ -42,6 +42,27 @@ async function checkWindow(db) {
   }
 }
 
+async function checkDemos(db) {
+  assert.equal((await db.query("select relrowsecurity from pg_class where oid='public.demo_websites'::regclass")).rows[0].relrowsecurity, true)
+  const triggers = (await db.query("select tgname from pg_trigger where tgfoid='public.guard_demo_subdomain()'::regprocedure order by tgname")).rows.map((row) => row.tgname)
+  assert.deepEqual(triggers, ["demos_check_customer_subdomain", "websites_reserve_demo_subdomain"])
+  await db.exec("set role service_role")
+  await db.query(`insert into public.demo_websites(id,title,slug,source_filename,design,live_design,request_hash,published)
+    values (gen_random_uuid(),'Live demo','demo-bootstrap-live','live.json','{"private":true}','{"title":"Live"}',$1,true),
+      (gen_random_uuid(),'Draft demo','demo-bootstrap-draft','draft.json','{"private":true}','{"title":"Draft"}',$1,false)`, ["a".repeat(64)])
+  for (const role of ["anon", "authenticated"]) {
+    await db.exec(`set role ${role}`)
+    assert.deepEqual((await db.query("select slug,live_design from public.demo_websites")).rows,
+      [{ slug: "demo-bootstrap-live", live_design: { title: "Live" } }])
+    await assert.rejects(db.query("select design,source_filename,created_by from public.demo_websites"), /permission denied/)
+    await assert.rejects(db.query("update public.demo_websites set published=true"), /permission denied/)
+    assert.equal((await db.query("select has_function_privilege(current_user,'public.guard_demo_subdomain()','EXECUTE') as allowed")).rows[0].allowed, false)
+  }
+  await db.exec("set role service_role; update public.demo_websites set published=false; set role anon")
+  assert.equal((await db.query("select slug from public.demo_websites")).rows.length, 0)
+  await db.exec("reset role")
+}
+
 test("full init.sql can rebuild an existing schema and the shared limiter works", async () => {
   const db = new PGlite({ extensions: { pgcrypto } })
   try {
@@ -54,8 +75,11 @@ test("full init.sql can rebuild an existing schema and the shared limiter works"
       order by table_name, conname
     `)).rows
     const initialForeignKeys = await foreignKeys()
+    await checkDemos(db)
     await db.exec(read("supabase/init.sql"))
     assert.deepEqual(await foreignKeys(), initialForeignKeys, "rebuild must restore all foreign keys")
+    assert.equal((await db.query("select count(*)::integer as count from public.demo_websites")).rows[0].count, 0, "rebuild must reset demo data too")
+    await checkDemos(db)
     await checkWindow(db)
     const before = (await db.query("select * from public.rate_limit_buckets")).rows
     await db.exec(repair)

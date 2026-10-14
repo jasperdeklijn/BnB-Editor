@@ -2,13 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ClipboardList, Globe2, LayoutDashboard, Mail, Users, ArrowLeft, Settings } from "lucide-react"
+import { ClipboardList, Globe2, LayoutDashboard, Mail, Users, ArrowLeft, Settings, Presentation } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const links = [
   { href: "/admin", label: "Overzicht", icon: LayoutDashboard },
   { href: "/admin/customers", label: "Klanten", icon: Users },
   { href: "/admin/websites", label: "Websites", icon: Globe2 },
+  { href: "/admin/demos", label: "Demowebsites", icon: Presentation },
   { href: "/admin/flexstart", label: "FlexStart", icon: ClipboardList },
   { href: "/admin/mailbox", label: "Supportmailbox", icon: Mail },
   { href: "/admin/leads", label: "Leads", icon: Users },
