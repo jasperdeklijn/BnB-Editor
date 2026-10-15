@@ -1,3 +1,4 @@
+import { renderFlexPaginaEmail } from "@/lib/mail/template"
 import "server-only"
 
 import { createHash } from "node:crypto"
@@ -26,10 +27,6 @@ type NotificationRow = {
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-function escapeHtml(value: string) {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")
-}
 
 function formatRange(payload: Record<string, unknown>, locale: string) {
   const start = typeof payload.proposedStartAt === "string" ? payload.proposedStartAt : String(payload.startAt || "")
@@ -85,7 +82,7 @@ async function deliverNotification(row: NotificationRow) {
       to: row.recipient_email,
       subject: copy.subject,
       text: `${copy.heading}\n\n${copy.body}${range ? `\n\n${range}` : ""}\n\n${link}`,
-      html: `<div lang="${emailLocale}" style="background:#f3f4f6;padding:32px 16px;font-family:Arial,sans-serif;color:#16302b"><div style="max-width:620px;margin:auto;background:#fff;border-radius:18px;padding:28px"><h1 style="font-size:24px">${escapeHtml(copy.heading)}</h1><p style="line-height:1.7">${escapeHtml(copy.body)}</p>${range ? `<p style="font-weight:700">${escapeHtml(range)}</p>` : ""}<a href="${escapeHtml(link)}" style="display:inline-block;background:#16302b;color:#fff;padding:12px 18px;border-radius:999px;text-decoration:none">${escapeHtml(actionLabel)}</a></div></div>`,
+      html: renderFlexPaginaEmail({ title: copy.heading, text: `${copy.body}${range ? `\n\n${range}` : ""}`, locale: emailLocale, action: { label: actionLabel, url: link } }),
       messageId,
       headers: { "X-FlexPagina-Booking-Notification": row.id },
     })

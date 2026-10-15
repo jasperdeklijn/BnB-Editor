@@ -1,3 +1,4 @@
+import { renderFlexPaginaEmail } from "@/lib/mail/template"
 import "server-only"
 
 import nodemailer from "nodemailer"
@@ -75,9 +76,8 @@ export async function sendLeadRunNotification(input: LeadRunNotification) {
         input.errorMessage ? `Melding: ${input.errorMessage}` : "",
         "Bekijk de resultaten in /admin/leads.",
       ].filter(Boolean).join("\n"),
-      html: `
+      html: renderFlexPaginaEmail({ title: `Wekelijkse lead-agent ${statusLabel}`, contentHtml: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1d2c24;line-height:1.6;">
-          <h1 style="font-size:24px;">Wekelijkse lead-agent ${statusLabel}</h1>
           <p>De automatische zoekronde voor week ${escapeHtml(input.weekKey)} is afgerond.</p>
           <table style="width:100%;border-collapse:collapse;">
             <tr><td style="padding:8px;border-bottom:1px solid #ddd;">Gevonden</td><td style="padding:8px;border-bottom:1px solid #ddd;"><strong>${input.found}</strong></td></tr>
@@ -88,7 +88,7 @@ export async function sendLeadRunNotification(input: LeadRunNotification) {
           ${errorRow}
           <p style="margin-top:24px;color:#52645a;">Bekijk en controleer outreach altijd handmatig in het beheer.</p>
         </div>
-      `,
+      ` }),
     })
     return { sent: true, reason: null }
   } catch {

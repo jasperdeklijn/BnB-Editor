@@ -1,3 +1,4 @@
+import { renderFlexPaginaEmail } from "@/lib/mail/template"
 import "server-only"
 
 import nodemailer from "nodemailer"
@@ -493,10 +494,6 @@ export async function updateInquiryWorkflow(input: {
   return normalizeRecord(data as Record<string, unknown>)
 }
 
-function escapeHtml(value: string) {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;")
-}
-
 function mailTransporter() {
   if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) return null
   return nodemailer.createTransport({
@@ -565,7 +562,7 @@ export async function sendInquiryReply(input: {
       replyTo: inquiry.recipient_email || fromEmail,
       subject,
       text: body,
-      html: `<div style="font-family:Arial,Helvetica,sans-serif;white-space:pre-wrap;line-height:1.6">${escapeHtml(body)}</div>`,
+      html: renderFlexPaginaEmail({ title: subject, text: body, locale: inquiry.locale }),
     })
     providerMessageId = result.messageId || null
   } catch (error) {

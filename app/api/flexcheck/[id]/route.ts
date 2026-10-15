@@ -1,3 +1,4 @@
+import { renderFlexPaginaEmail } from "@/lib/mail/template"
 import { z } from "zod"
 import nodemailer from "nodemailer"
 import { flexContext, flexResponse, FlexError, loadWebsiteCheck, sameOrigin } from "@/lib/flexstart/server"
@@ -28,8 +29,10 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       secure: process.env.SMTP_SECURE === "true", auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
       connectionTimeout: 10000, socketTimeout: 15000 })
     try {
+      const subject = `FlexCheck testaanvraag — ${current.website.title}`
+      const text = `Dit is een testaanvraag voor ${current.website.title}.\nKenmerk: ${inquiry.id}\nControleer ook de aanvragen-inbox in FlexPagina. Er is geen boeking aangemaakt.`
       const result = await transport.sendMail({ from: process.env.SMTP_FROM || process.env.SMTP_USER, to: current.destination,
-        subject: `FlexCheck testaanvraag — ${current.website.title}`, text: `Dit is een testaanvraag voor ${current.website.title}.\nKenmerk: ${inquiry.id}\nControleer ook de aanvragen-inbox in FlexPagina. Er is geen boeking aangemaakt.` })
+        subject, text, html: renderFlexPaginaEmail({ title: subject, text }) })
       if (!result.accepted?.length || result.rejected?.length) throw new Error("Niet geaccepteerd")
     } catch { throw new FlexError("De aanvraag staat in je inbox, maar de testmail is niet geaccepteerd. Controleer de e-mailinstellingen en probeer opnieuw.", 502) }
     const { error: evidenceError } = await db.from("website_check_evidence").upsert({ website_id: id, tested_version: current.check.version, tested_at: new Date().toISOString() })

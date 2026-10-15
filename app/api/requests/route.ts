@@ -1,3 +1,4 @@
+import { renderFlexPaginaEmail } from "@/lib/mail/template"
 import { recordAnalyticsConversion } from "@/lib/analytics/server"
 import { after, NextRequest, NextResponse } from "next/server"
 import nodemailer from "nodemailer"
@@ -258,32 +259,25 @@ function buildEmailHtml(input: {
     ["Taal", input.locale],
   ].filter(([, value]) => value)
 
-  return `
-    <div style="margin:0;padding:32px 20px;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
-      <div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:20px;overflow:hidden;box-shadow:0 18px 60px rgba(15,23,42,0.10);">
-        <div style="padding:32px;background:linear-gradient(135deg,#2563eb,#7c3aed);color:#ffffff;">
-          <p style="margin:0 0 10px 0;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;opacity:.85;">${input.requestLabel}</p>
-          <h1 style="margin:0;font-size:30px;line-height:1.15;">Nieuwe aanvraag via ${input.businessName}</h1>
-        </div>
-        <div style="padding:30px;">
+  return renderFlexPaginaEmail({
+    label: input.requestLabel,
+    contentHtml: `
+    <h1 style="margin:0 0 24px;font-size:24px;line-height:1.3;color:#24382d;">Nieuwe aanvraag via ${input.businessName}</h1>
           <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
             ${rows
               .map(
                 ([label, value]) => `
                   <tr>
-                    <td style="width:155px;padding:10px 0;color:#64748b;font-weight:700;vertical-align:top;">${label}</td>
-                    <td style="padding:10px 0;color:#0f172a;">${value}</td>
+                    <td style="width:155px;padding:10px 0;color:#66766d;font-weight:700;vertical-align:top;">${label}</td>
+                    <td style="padding:10px 0;color:#20342a;">${value}</td>
                   </tr>
                 `,
               )
               .join("")}
           </table>
-          <div style="padding:20px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;white-space:pre-wrap;line-height:1.7;">${input.message || "Geen bericht ingevuld."}</div>
-          <p style="margin:24px 0 0 0;color:#64748b;font-size:12px;line-height:1.7;">Ontvangen door: ${input.recipientEmail}<br/>Verzonden vanaf: ${FROM_EMAIL}</p>
-        </div>
-      </div>
-    </div>
-  `
+          <div style="padding:20px;border-radius:14px;background:#f6f8f5;border:1px solid #d6e0d9;white-space:pre-wrap;line-height:1.7;">${input.message || "Geen bericht ingevuld."}</div>
+          <p style="margin:24px 0 0 0;color:#66766d;font-size:12px;line-height:1.7;">Ontvangen door: ${input.recipientEmail}<br/>Verzonden vanaf: ${escapeHtml(FROM_EMAIL)}</p>
+  ` })
 }
 
 export async function POST(request: NextRequest) {

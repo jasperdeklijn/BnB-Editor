@@ -1,3 +1,4 @@
+import { renderFlexPaginaEmail } from "@/lib/mail/template"
 import "server-only"
 import { createHash, randomBytes } from "node:crypto"
 import nodemailer from "nodemailer"
@@ -71,10 +72,10 @@ export async function offerQuote(id: string, revision: number) {
   const { error } = await admin.rpc("transition_quote",{p_id:id,p_revision:revision,p_action:"offer",p_pdf:Buffer.from(bytes).toString("base64"),p_hash:createHash("sha256").update(bytes).digest("hex")})
   if (error) throw new Error("Aanbieden mislukt. Vernieuw de pagina.")
 }
-export async function sendPortalMail(to: string, subject: string, text: string, attachment?: {filename:string; content:Buffer}) {
+export async function sendPortalMail(to: string, subject: string, text: string, attachment?: {filename:string; content:Buffer}, locale?: string) {
   if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) throw new Error("SMTP is niet ingesteld.")
   const transport = nodemailer.createTransport({host:process.env.SMTP_HOST,port:Number(process.env.SMTP_PORT)||465,secure:process.env.SMTP_SECURE!=="false",auth:{user:process.env.SMTP_USER,pass:process.env.SMTP_PASS},connectionTimeout:15000,socketTimeout:30000})
-  try { await transport.sendMail({from:process.env.SMTP_FROM||process.env.SMTP_USER,to,subject,text,attachments:attachment?[{...attachment,contentType:"application/pdf"}]:[]}) }
+  try { await transport.sendMail({from:process.env.SMTP_FROM||process.env.SMTP_USER,to,subject,text,html:renderFlexPaginaEmail({title:subject,text,locale}),attachments:attachment?[{...attachment,contentType:"application/pdf"}]:[]}) }
   finally { transport.close() }
 }
 export async function createRequestLink(requestId: string) {
@@ -106,7 +107,7 @@ export async function emailQuote(id: string) {
     const { data: pdf } = await admin.from("quote_versions").select("pdf_base64").eq("id",id).single()
     if (!pdf?.pdf_base64) throw new Error("PDF ontbreekt.")
     const copy=portalCopy(version.snapshot.locale)
-    await sendPortalMail(link.email,`${copy.quoteSubject} · O-${quote.number} · ${version.snapshot.seller.legal_name}`,`${copy.receiptBody}\n${link.url}`,{filename:`offerte-${quote.number}-v${version.version}.pdf`,content:Buffer.from(pdf.pdf_base64,"base64")})
+    await sendPortalMail(link.email,`${copy.quoteSubject} · O-${quote.number} · ${version.snapshot.seller.legal_name}`,`${copy.receiptBody}\n${link.url}`,{filename:`offerte-${quote.number}-v${version.version}.pdf`,content:Buffer.from(pdf.pdf_base64,"base64")},version.snapshot.locale)
     const { error: finishError } = await admin.from("quote_deliveries").update({status:"sent",finished_at:new Date().toISOString()}).eq("id",delivery.id)
     if (finishError) throw new Error("Verzending niet te bevestigen; controleer de mailbox voordat u opnieuw verstuurt.")
   } catch(error) { await admin.from("quote_deliveries").update({status:"failed",finished_at:new Date().toISOString()}).eq("id",delivery.id); throw error }
@@ -125,7 +126,7 @@ export async function sendRequestLink(requestId:string,receipt=false) {
   try {
     const link=await createRequestLink(requestId)
     const copy=portalCopy(request.locale)
-    await sendPortalMail(link.email,receipt?copy.received:copy.receiptSubject,`${copy.receiptBody}\n${link.url}`)
+    await sendPortalMail(link.email,receipt?copy.received:copy.receiptSubject,`${copy.receiptBody}\n${link.url}`,undefined,request.locale)
     const {error:finishError}=await admin.from("contact_request_messages").update({delivery_status:"sent",sent_at:new Date().toISOString()}).eq("id",delivery.id)
     if(finishError)throw new Error("Verzendresultaat onbekend; controleer de mailbox.")
   }catch(error){await admin.from("contact_request_messages").update({delivery_status:"failed",error_message:"Klantlink niet verzonden of resultaat onbekend. Controleer voordat u opnieuw verstuurt."}).eq("id",delivery.id);throw error}

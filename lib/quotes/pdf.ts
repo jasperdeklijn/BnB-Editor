@@ -1,4 +1,6 @@
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib"
+import { PDFDocument, StandardFonts, type PDFPage } from "pdf-lib"
+import { documentColor, drawDocumentHeader, drawDocumentFooter } from "../documents/branding"
+import { FLEXPAGINA_STYLE } from "../communication-style"
 import type { QuoteSnapshot } from "./types"
 import { portalCopy, quoteDocumentCopy } from "./i18n"
 
@@ -8,46 +10,69 @@ export async function createQuotePdf(snapshot: QuoteSnapshot, number: string, un
   const labels=quoteDocumentCopy(snapshot.locale)
   const pdf = await PDFDocument.create()
   const font = await pdf.embedFont(StandardFonts.Helvetica)
-  let page = pdf.addPage([595, 842]), y = 790
+  const bold = await pdf.embedFont(StandardFonts.HelveticaBold)
+  const primary = documentColor()
+  const textColor = documentColor(FLEXPAGINA_STYLE.text)
+  let page!: PDFPage
+  let y!: number
+  function addPage() {
+    page = pdf.addPage([595, 842])
+    drawDocumentHeader(page, bold)
+    y = 780
+  }
+  addPage()
   const clean = (s: string) => s.replace(/[^\x20-\x7e\xa0-\xff]/g, " ")
-  function line(text: string, size = 11) {
+  function line(text: string, size = 11, strong = false) {
+    const face = strong ? bold : font
     const words = clean(text).split(/\s+/)
     let row = ""
     const draw = () => {
-      if (y < 55) { page = pdf.addPage([595, 842]); y = 790 }
-      page.drawText(row, { x: 48, y, size, font, color: rgb(0.08, 0.18, 0.16) }); y -= size + 7
+      if (y < 65) addPage()
+      page.drawText(row, { x: 48, y, size, font: face, color: strong ? primary : textColor }); y -= size + 7
     }
     for (const word of words) {
       let remaining=word
       // Measure glyph widths: a fixed character count overflows for wide letters.
-      while(font.widthOfTextAtSize(remaining,size)>495) {
+      while(face.widthOfTextAtSize(remaining,size)>495) {
         if(row){draw();row=""}
         let cut=remaining.length-1
-        while(cut>1&&font.widthOfTextAtSize(remaining.slice(0,cut),size)>495)cut--
+        while(cut>1&&face.widthOfTextAtSize(remaining.slice(0,cut),size)>495)cut--
         row=remaining.slice(0,cut);draw();row="";remaining=remaining.slice(cut)
       }
-      if (row && font.widthOfTextAtSize(`${row} ${remaining}`, size) > 495) { draw(); row = remaining }
+      if (row && face.widthOfTextAtSize(`${row} ${remaining}`, size) > 495) { draw(); row = remaining }
       else row = `${row} ${remaining}`.trim()
     }
     draw()
   }
-  line(`${copy.quote.toUpperCase()} ${number}`, 22)
-  line(snapshot.title, 15)
+  line(`${copy.quote.toUpperCase()} ${number}`, 22, true)
+  line(snapshot.title, 15, true)
   line(snapshot.seller.legal_name || "")
   line([snapshot.seller.address_line1, snapshot.seller.postal_code, snapshot.seller.city].join(" "))
   line(`${snapshot.customer.name || ""} (${snapshot.customer.email || ""})`)
   line([snapshot.customer.address_line1, snapshot.customer.postal_code, snapshot.customer.city].join(" "))
   line(`${copy.valid}: ${new Date(until).toISOString().slice(0, 10)}`)
+  y -= 12
   const money = (n: number) => `EUR ${(n / 100).toFixed(2)}`
   for (const item of snapshot.lines) {
-    line(item.description, 12)
+    if (y < 110) addPage()
+    line(item.description, 12, true)
     line(`${item.quantity_milli / 1000} x ${money(item.unit_price_minor)} | ${labels.discount} ${money(item.discount_minor)} | ${labels.vat} ${item.vat_rate_basis_points / 100}% | ${money(item.total_minor)}`)
+    y -= 8
   }
+  if (y < 160) addPage()
+  page.drawLine({ start: { x: 48, y: y + 5 }, end: { x: 547, y: y + 5 }, thickness: 1, color: primary })
+  y -= 16
   line(`${labels.subtotal}: ${money(snapshot.subtotalMinor)}`)
   line(`${labels.vat}: ${money(snapshot.vatTotalMinor)}`)
-  line(`${copy.total}: ${money(snapshot.totalMinor)}`, 16)
-  line(labels.terms, 14)
+  line(`${copy.total}: ${money(snapshot.totalMinor)}`, 16, true)
+  y -= 14
+  line(labels.terms, 14, true)
   for (const paragraph of snapshot.terms.split("\n")) line(paragraph)
   line(copy.statement)
+  pdf.setTitle(clean(`${copy.quote} ${number}`))
+  pdf.setAuthor(clean(snapshot.seller.legal_name || ""))
+  pdf.setCreator("FlexPagina")
+  const pages = pdf.getPages()
+  pages.forEach((current, index) => drawDocumentFooter(current, font, index, pages.length))
   return pdf.save()
 }

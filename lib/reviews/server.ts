@@ -1,3 +1,4 @@
+import { renderFlexPaginaEmail } from "@/lib/mail/template"
 import "server-only"
 import { createHash, randomBytes } from "node:crypto"
 import nodemailer from "nodemailer"
@@ -68,9 +69,10 @@ async function sendReviewEmail(email: string, websiteTitle: string, confirmation
     secure: process.env.SMTP_SECURE === "true", auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
     connectionTimeout: 10000, socketTimeout: 15000 })
   const base = reviewBaseUrl()
+  const text = `Je recensie voor ${websiteTitle}.\n\n${confirmation ? `Bevestig binnen 24 uur je e-mailadres via:\n${base}/reviews/confirm#token=${confirmation}\n\nNa bevestiging wordt je recensie beoordeeld. Dit bevestigt je e-mailadres, niet een aankoop.\n\n` : ""}Je toestemming intrekken kan via deze persoonlijke link (1 jaar geldig):\n${base}/reviews/withdraw#token=${withdrawal}\n\nBewaar deze link. Je kunt via de recensiepagina een nieuwe intreklink aanvragen. Heb je geen recensie geschreven? Gebruik de intreklink om de aanvraag te verwijderen.`
   await transport.sendMail({ from: process.env.SMTP_FROM || PLATFORM_EMAILS.info, to: email,
     subject: confirmation ? "Bevestig je recensie" : "Je recensie intrekken",
-    text: `Je recensie voor ${websiteTitle}.\n\n${confirmation ? `Bevestig binnen 24 uur je e-mailadres via:\n${base}/reviews/confirm#token=${confirmation}\n\nNa bevestiging wordt je recensie beoordeeld. Dit bevestigt je e-mailadres, niet een aankoop.\n\n` : ""}Je toestemming intrekken kan via deze persoonlijke link (1 jaar geldig):\n${base}/reviews/withdraw#token=${withdrawal}\n\nBewaar deze link. Je kunt via de recensiepagina een nieuwe intreklink aanvragen. Heb je geen recensie geschreven? Gebruik de intreklink om de aanvraag te verwijderen.` })
+    text, html: renderFlexPaginaEmail({ title: `Je recensie voor ${websiteTitle}`, text }) })
 }
 export async function submitReview(request: Request, input: Record<string, unknown>) {
   const websiteId = requireWebsiteId(input.websiteId)

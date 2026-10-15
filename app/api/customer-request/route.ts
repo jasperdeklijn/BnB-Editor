@@ -28,7 +28,7 @@ export async function POST(request:Request) {
       const {error} = await context.admin.from("quote_decision_codes").insert({id,access_id:context.access.id,version_id:version.id,decision:input.decision,code_hash:hashSecret(`${id}:${code}`),expires_at:new Date(Date.now()+600000).toISOString()})
       if (error) throw new Error("Code kon niet worden gemaakt.")
       const copy=portalCopy(context.request.locale)
-      await sendPortalMail(context.access.email,copy.codeSubject,`${copy.codePurpose}: ${copy[input.decision]}. ${copy.codeBody}: ${code}`)
+      await sendPortalMail(context.access.email,copy.codeSubject,`${copy.codePurpose}: ${copy[input.decision]}. ${copy.codeBody}: ${code}`,undefined,context.request.locale)
       return Response.json({codeId:id},{headers:privateHeaders})
     }
     if (input.action==="decide") {

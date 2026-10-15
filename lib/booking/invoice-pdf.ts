@@ -1,4 +1,6 @@
-import { PDFDocument, StandardFonts, rgb, type PDFImage, type PDFFont, type PDFPage } from "pdf-lib"
+import { PDFDocument, StandardFonts, type PDFImage, type PDFFont, type PDFPage } from "pdf-lib"
+import { documentColor, drawDocumentHeader } from "../documents/branding"
+import { FLEXPAGINA_STYLE } from "../communication-style"
 
 import type { BookingFinancialLine, InvoiceParty } from "./pricing"
 
@@ -43,12 +45,6 @@ function safePdfText(value: unknown) {
 
 function vatLabel(value: number) {
   return `${(value / 100).toFixed(2).replace(/[,.]00$/, "")}%`
-}
-
-function colorFromHex(value = "#16302B") {
-  const match = /^#([0-9a-f]{6})$/i.exec(value)
-  const hex = match?.[1] || "16302B"
-  return rgb(Number.parseInt(hex.slice(0, 2), 16) / 255, Number.parseInt(hex.slice(2, 4), 16) / 255, Number.parseInt(hex.slice(4, 6), 16) / 255)
 }
 
 function money(value: number, currency: string, negative = false) {
@@ -105,10 +101,10 @@ export async function createInvoicePdf(snapshot: InvoicePdfSnapshot) {
   const pdf = await PDFDocument.create()
   const regular = await pdf.embedFont(StandardFonts.Helvetica)
   const bold = await pdf.embedFont(StandardFonts.HelveticaBold)
-  const accent = colorFromHex(snapshot.accentColor)
-  const dark = rgb(0.10, 0.16, 0.15)
-  const muted = rgb(0.38, 0.43, 0.42)
-  const lineColor = rgb(0.84, 0.87, 0.86)
+  const accent = documentColor(snapshot.accentColor)
+  const dark = documentColor(FLEXPAGINA_STYLE.text)
+  const muted = documentColor(FLEXPAGINA_STYLE.muted)
+  const lineColor = documentColor(FLEXPAGINA_STYLE.border)
   const negative = snapshot.documentType === "credit_note"
   let logoImage: PDFImage | null = null
   if (snapshot.logo) {
@@ -127,7 +123,7 @@ export async function createInvoicePdf(snapshot: InvoicePdfSnapshot) {
   const addPage = (continued = false) => {
     page = pdf.addPage([A4.width, A4.height])
     pages.push(page)
-    page.drawRectangle({ x: 0, y: A4.height - 18, width: A4.width, height: 18, color: accent })
+    drawDocumentHeader(page, bold, accent)
     let companyNameX = MARGIN
     if (logoImage) {
       const fitted = logoImage.scaleToFit(55, 20)
@@ -150,7 +146,7 @@ export async function createInvoicePdf(snapshot: InvoicePdfSnapshot) {
   }
 
   const drawTableHeader = () => {
-    page.drawRectangle({ x: MARGIN, y: y - 21, width: CONTENT_WIDTH, height: 25, color: rgb(0.94, 0.96, 0.95) })
+    page.drawRectangle({ x: MARGIN, y: y - 21, width: CONTENT_WIDTH, height: 25, color: documentColor(FLEXPAGINA_STYLE.background) })
     page.drawText("Omschrijving", { x: MARGIN + 6, y: y - 12, size: 8, font: bold, color: dark })
     const labels = [["Aantal", 360], ["Prijs", 438], ["Btw", 482], ["Totaal", A4.width - MARGIN]] as const
     for (const [label, rightX] of labels) {

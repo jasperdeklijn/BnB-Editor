@@ -1,3 +1,5 @@
+import { renderFlexPaginaEmail } from "@/lib/mail/template"
+import { FLEXPAGINA_STYLE } from "@/lib/communication-style"
 import "server-only"
 
 import { createHash, randomUUID } from "node:crypto"
@@ -105,15 +107,6 @@ type OwnedBooking = {
 function numberValue(value: unknown) {
   const parsed = Number(value)
   return Number.isFinite(parsed) ? parsed : 0
-}
-
-function escapeHtml(value: unknown) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;")
 }
 
 type AdminClient = Awaited<ReturnType<typeof createAdminClient>>
@@ -259,7 +252,7 @@ function defaultProfile(business: Record<string, unknown>): BookingInvoiceProfil
     country_code: String(business.country || "NL").slice(0, 2).toUpperCase(),
     email: String(business.email || ""), vat_id: "", kvk_number: "", iban: "",
     default_vat_basis_points: 2100, invoice_prefix: "F", credit_note_prefix: "CR",
-    payment_term_days: 14, accent_color: "#16302B",
+    payment_term_days: 14, accent_color: FLEXPAGINA_STYLE.primary,
   }
 }
 
@@ -427,7 +420,7 @@ export async function saveBookingInvoiceDraft(invoiceId: string, input: {
     invoice_prefix: String(input.profile.invoice_prefix || "F").toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 12) || "F",
     credit_note_prefix: String(input.profile.credit_note_prefix || "CR").toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 12) || "CR",
     payment_term_days: Math.max(0, Math.min(365, Number(input.profile.payment_term_days ?? 14))),
-    accent_color: /^#[0-9A-Fa-f]{6}$/.test(String(input.profile.accent_color)) ? input.profile.accent_color : "#16302B",
+    accent_color: /^#[0-9A-Fa-f]{6}$/.test(String(input.profile.accent_color)) ? input.profile.accent_color : FLEXPAGINA_STYLE.primary,
   }
   const { error: profileError } = await admin.from("booking_invoice_profiles").upsert(profile, { onConflict: "business_id" })
   if (profileError) throw new Error("Factuurprofiel kon niet worden opgeslagen.")
@@ -577,7 +570,7 @@ export async function emailIssuedInvoice(invoiceId: string) {
       to: recipient,
       subject: copy.subject,
       text: `${copy.greeting}\n\n${copy.attachment}\n\n${copy.manualDelivery}`,
-      html: `<div lang="${emailLocale}"><p>${escapeHtml(copy.greeting)}</p><p>${escapeHtml(copy.attachment)}</p><p>${escapeHtml(copy.manualDelivery)}</p></div>`,
+      html: renderFlexPaginaEmail({ title: copy.subject, text: `${copy.greeting}\n\n${copy.attachment}\n\n${copy.manualDelivery}`, locale: emailLocale }),
       attachments: [{ filename: `${storedInvoice.invoice_number}.pdf`, content: Buffer.from(bytes), contentType: "application/pdf" }],
       messageId,
       headers: { "X-FlexPagina-Invoice-Delivery": delivery.id },

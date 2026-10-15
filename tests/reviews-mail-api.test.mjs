@@ -3,6 +3,8 @@ import fs from "node:fs"
 import { createRequire } from "node:module"
 import test from "node:test"
 import ts from "typescript"
+import { loadTypeScript } from "./helpers/load-typescript.mjs"
+const mailTemplate = loadTypeScript("lib/mail/template.ts")
 const require = createRequire(import.meta.url)
 const websiteId = "20000000-0000-0000-0000-000000000001"
 function compile(file, imports = {}, env = {}) {
@@ -39,6 +41,7 @@ function fixture() {
   }
   const client = { from: query, auth: { getUser: async () => ({ data: { user: state.authenticated ? { id: "owner" } : null } }) }, rpc: async (name) => ({ data: name === "review_collection_live" ? state.collection : null, error: null }) }
   const server = compile("lib/reviews/server.ts", {
+    "@/lib/mail/template": mailTemplate,
     "server-only": {}, "./shared": shared, "./presentation": presentation,
     "@/lib/supabase/admin": { createAdminClient: async () => client },
     "@/lib/supabase/server": { createClient: async () => client },
@@ -61,6 +64,9 @@ test("submission saves the original review before sending mail and never returns
   const mail = state.messages[0].text
   assert.match(mail,/Published title/); assert.doesNotMatch(mail,/PRIVATE DRAFT TITLE/)
   const confirmation = mail.match(/confirm#token=([a-f0-9]{64})/)[1], withdrawal = mail.match(/withdraw#token=([a-f0-9]{64})/)[1]
+  assert.ok(state.messages[0].html.includes(`href="https://platform.example.test/reviews/confirm#token=${confirmation}"`))
+  assert.ok(state.messages[0].html.includes(`href="https://platform.example.test/reviews/withdraw#token=${withdrawal}"`))
+  assert.match(state.messages[0].html, /logo_klein\.png/)
   assert.notEqual(confirmation,withdrawal)
   assert.equal(state.rows[0].confirmation_hash,server.hashReviewToken(confirmation))
   assert.equal(state.rows[0].withdrawal_hash,server.hashReviewToken(withdrawal))
