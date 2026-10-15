@@ -28,7 +28,7 @@ Version 3 snapshots contain `website`, `business`, `services`, `availabilityWind
 
 The complete contract is validated before live rendering. Live page paths, locale content, navigation, SEO and redirects come from the snapshot. Draft/excluded-page copy cannot become live or block publication unless included content references it. Preflight checks Home, translations, ownership, links, unsafe URLs and redirect collisions. Redirects target page IDs rather than other redirects, preventing chains/loops. Publication aggregates existing feature entitlements across included content; no new page pricing is introduced. Promotion retains the existing expected-draft/subscription revision locks, rejecting concurrent edits. One publication exposes all included pages and the shared shell together. Version 2 snapshots have no compatibility adapter.
 
-Canonical URLs use the verified preferred customer domain or the platform site path, with page-specific metadata and equivalent-page language alternates. Customer sitemap/robots routes enumerate only immutable published pages/locales; the platform sitemap remains separate. Preview hosts disallow indexing.
+Canonical URLs use the verified preferred customer domain or the public customer subdomain, with page-specific metadata and equivalent-page language alternates. Direct platform `/site/{slug}` paths share that canonical origin. Customer sitemap/robots routes enumerate only immutable published pages/locales; the platform sitemap remains separate. Preview hosts disallow indexing.
 
 ## Creation, imports, templates and retention
 

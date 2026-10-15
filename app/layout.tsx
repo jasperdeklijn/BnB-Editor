@@ -12,6 +12,9 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL(PLATFORM_BASE_URL),
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+  },
   title: {
     default: `Website maken voor je bedrijf | ${PLATFORM_BRAND_NAME}`,
     template: `%s | ${PLATFORM_BRAND_NAME}`,

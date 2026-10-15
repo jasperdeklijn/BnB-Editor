@@ -8,7 +8,7 @@ import { websitePagePath } from "@/lib/website-links"
 import { getSeoDescription, getSeoTitle, type WebsiteSeoFields } from "@/lib/seo/metadata"
 import { publicAnalyticsSettings } from "@/lib/analytics/public-settings"
 import { safeMetadataUrl } from "@/lib/seo/metadata"
-import { PLATFORM_BASE_URL } from "@/lib/platform"
+import { publishedWebsiteBaseUrl } from "@/lib/seo/site-urls"
 import { isMultilingualWebsitesEnabled } from "@/lib/i18n/feature"
 import { headers } from "next/headers"
 import { publicDemo } from "@/lib/demos/server"
@@ -36,14 +36,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { advancedAllowed: advanced } = await publicAnalyticsSettings(snapshot.website.id)
   const savedSeo = bundle?.seo as WebsiteSeoFields | undefined
   const seo = advanced ? savedSeo : { title: savedSeo?.title, description: savedSeo?.description }
-  const base = snapshot.website.customDomain ? `https://${snapshot.website.customDomain}` : `${PLATFORM_BASE_URL}/site/${slug}`
+  const base = publishedWebsiteBaseUrl(slug, snapshot.website.customDomain)
   const url = `${base}${websitePagePath(page, route.locale.isDefault ? "" : route.locale.pathSegment)}`
   const title = getSeoTitle(seo, bundle?.title || page.title)
   const description = getSeoDescription(seo, localeBundle.business?.description)
   const languages = Object.fromEntries(snapshot.locales.filter((locale) => locale.isDefault || isMultilingualWebsitesEnabled())
     .map((locale) => [locale.locale, `${base}${websitePagePath(page, locale.isDefault ? "" : locale.pathSegment)}`]))
   languages["x-default"] = `${base}${websitePagePath(page)}`
-  return { title, description, alternates: { canonical: advanced ? safeMetadataUrl(seo?.canonicalUrl) || url : url, languages },
+  return { title, description, robots: { index: true, follow: true }, alternates: { canonical: advanced ? safeMetadataUrl(seo?.canonicalUrl) || url : url, languages },
     openGraph: { title, description, url, images: safeMetadataUrl(seo?.ogImage) ? [{ url: safeMetadataUrl(seo?.ogImage) }] : undefined },
     twitter: { card: seo?.ogImage ? "summary_large_image" : "summary", title, description, images: seo?.ogImage ? [seo.ogImage] : undefined } }
 }

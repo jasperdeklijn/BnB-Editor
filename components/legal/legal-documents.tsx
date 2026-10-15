@@ -428,6 +428,7 @@ export function getLegalMetadata(key: LegalDocumentKey) {
   return {
     title: `${document.title} | ${PLATFORM_BRAND_NAME}`,
     description: document.description,
+    alternates: { canonical: document.path },
   }
 }
 

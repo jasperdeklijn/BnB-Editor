@@ -7,6 +7,7 @@ import { PLATFORM_BRAND_NAME, PLATFORM_EMAILS } from "@/lib/platform"
 export const metadata = {
   title: `Juridisch | ${PLATFORM_BRAND_NAME}`,
   description: `Juridische documenten van ${PLATFORM_BRAND_NAME}.`,
+  alternates: { canonical: "/legal" },
 }
 
 const pages = [

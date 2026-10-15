@@ -16,7 +16,13 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const demo = MARKETING_DEMOS.find((item) => item.slug === slug)
-  return { title: demo ? `${demo.name} | FlexPagina voorbeeldwebsite` : "Voorbeeld niet gevonden", robots: { index: false, follow: true } }
+  if (!demo) notFound()
+  return {
+    title: `${demo.name} | FlexPagina voorbeeldwebsite`,
+    description: demo.description,
+    alternates: { canonical: `/voorbeelden/${demo.slug}` },
+    robots: { index: true, follow: true },
+  }
 }
 
 export default async function ExamplePage({ params }: Props) {

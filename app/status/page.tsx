@@ -22,6 +22,7 @@ const statusLabels = {
 export const metadata = {
   title: `Status | ${PLATFORM_BRAND_NAME}`,
   description: `Statuspagina van ${PLATFORM_BRAND_NAME}.`,
+  alternates: { canonical: "/status" },
 }
 
 export default function StatusPage() {
