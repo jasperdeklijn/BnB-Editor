@@ -928,6 +928,7 @@ export function SelectionEditor({
                     <option value="diagonal">Diagonaal</option>
                     <option value="zigzag">Zigzag</option>
                     <option value="split">Splitsen</option>
+                    <option value="paint">Verfvlekken</option>
                   </select>
                   {currentType !== "none" ? (
                     <div className="mt-3 p-2 rounded bg-muted border border-border">

@@ -26,6 +26,7 @@ export type TransitionType =
   | "diagonal"
   | "zigzag"
   | "split"
+  | "paint"
 
 export interface SectionStyles {
   fontFamily?: string

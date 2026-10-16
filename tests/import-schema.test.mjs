@@ -16,6 +16,14 @@ test("both documented examples normalize into editable native sections", () => {
     assert.equal(native.theme.spacing, "comfortable")
   }
 })
+
+test("decorative section styles survive import normalization", () => {
+  for (const styleType of ["paint", "pattern"]) {
+    const doc = parse({ ...example, sections: [{ key: "hero", type: "hero", content: { title: "Welkom", styleType } }] })
+    const native = normalizeImport(doc, () => "decorated-hero")
+    assert.equal(native.sections[0].data.styleType, styleType)
+  }
+})
 test("fragment/nav links and repeating ids map to fresh native identities", () => {
   const doc = parse(example)
   let id = 0

@@ -4,10 +4,50 @@
 /*
  * Section style types are intentionally separate from layouts.
  * Layouts control structure; these shared rules provide a visual treatment
- * without requiring every section renderer to duplicate the same six skins.
+ * without requiring every section renderer to duplicate the same skins.
  */
 .section-style-shell {
   width: 100%;
+}
+
+/* Decorations live inside the section, behind its content. Nav keeps its
+ * sticky positioning and menus remain free to extend beyond section bounds. */
+:is(.section-decoration:not(.sticky), .section-style-shell:is([data-section-style-type="paint"], [data-section-style-type="pattern"]) > *) {
+  position: relative;
+}
+
+:is(.section-decoration, .section-style-shell:is([data-section-style-type="paint"], [data-section-style-type="pattern"]) > *) {
+  isolation: isolate;
+}
+
+:is(.section-decoration, .section-style-shell:is([data-section-style-type="paint"], [data-section-style-type="pattern"]) > *)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-color: var(--section-accent, #b45309);
+}
+
+:is(.section-decoration, .section-style-shell:is([data-section-style-type="paint"], [data-section-style-type="pattern"]) > *) > :where(:not(.absolute, .fixed, .sticky, [class*="z-"])) {
+  position: relative;
+  z-index: 1;
+}
+
+:is(.section-decoration--paint, .section-style-shell[data-section-style-type="paint"] > *)::after {
+  opacity: 0.16;
+  mask-image: url('/section-decorations/paint-splatter.svg'), url('/section-decorations/paint-splatter.svg');
+  mask-size: clamp(200px, 36vw, 480px), clamp(180px, 30vw, 400px);
+  mask-position: left -100px top -100px, right -80px bottom -110px;
+  mask-repeat: no-repeat;
+}
+
+:is(.section-decoration--pattern, .section-style-shell[data-section-style-type="pattern"] > *)::after {
+  opacity: 0.12;
+  mask-image: url('/section-decorations/pattern.svg');
+  mask-size: 48px 48px;
+  mask-repeat: repeat;
 }
 
 .section-style-shell[data-section-style-type="bold"] > * {

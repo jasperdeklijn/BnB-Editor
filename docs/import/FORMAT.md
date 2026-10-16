@@ -30,7 +30,7 @@ The validator looks up the actual theme catalogues. No custom font URL or arbitr
 ## Shared section fields
 Inside every `content`:
 - `layout`: classic (default), split, showcase, compact, card, banner.
-- `styleType`: clean (default), bold, elegant, soft, dark, outline.
+- `styleType`: clean (default), bold, elegant, soft, dark, outline, paint (verfvlekken), pattern (patroon).
 
 Optional `styles` fields:
 - `backgroundColor`, `textColor`, `accentColor`, `surfaceColor`: six-digit hex colors such as #385344.

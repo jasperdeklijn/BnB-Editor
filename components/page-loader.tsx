@@ -337,9 +337,11 @@ export async function loadPublicWebsitePage({
     if (item.type === "section") {
       const section = item.data
 
-      // Check if the previous item was a transition
-      const prevWasTransition = i > 0 && sequence[i - 1].type === "transition"
-      const nextIsTransition = i < sequence.length - 1 && sequence[i + 1].type === "transition"
+      // Paint separators render once in document flow, just like the canvas.
+      const prevWasTransition = i > 0 &&
+        sequence[i - 1].type === "transition" && sequence[i - 1].data.type !== "paint"
+      const nextIsTransition = i < sequence.length - 1 &&
+        sequence[i + 1].type === "transition" && sequence[i + 1].data.type !== "paint"
 
       // Determine wrapper ID for anchor navigation (not for nav/footer)
       const needsAnchorId = section.type !== "nav" && section.type !== "footer"
@@ -427,7 +429,20 @@ export async function loadPublicWebsitePage({
         )
       }
     }
-    // Transition items don't render themselves; they're handled by wrapping sections
+    if (item.type === "transition" && item.data.type === "paint") {
+      const previousSection = sections.find((section) => section.id === item.data.fromSectionId)
+      const nextSection = sections.find((section) => section.id === item.data.toSectionId)
+      nodes.push(
+        <TransitionWrapper
+          key={item.data.id}
+          type="paint"
+          position="center"
+          fromColor={previousSection?.styles?.backgroundColor || "#ffffff"}
+          toColor={nextSection?.styles?.backgroundColor || "#fafaf9"}
+        />,
+      )
+    }
+    // Other transition types are handled by wrapping sections above.
   }
 
   const jsonLd = buildLocalBusinessJsonLd(

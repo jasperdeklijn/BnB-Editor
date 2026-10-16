@@ -706,6 +706,7 @@ export function EditorCanvas({
                 diagonal: "Diagonaal",
                 zigzag: "Zigzag",
                 split: "Splitsen",
+                paint: "Verfvlekken",
               }
               const fromColor = section.styles?.backgroundColor || "#ffffff"
               const toColor = next.styles?.backgroundColor || "#fafaf9"

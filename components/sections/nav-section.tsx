@@ -9,7 +9,7 @@ import { normalizeSectionLayout } from "@/lib/section-layouts"
 import { resolveNavigationLinks } from "@/lib/i18n/section-translations"
 import { getSectionColorVars } from "@/lib/section-colors"
 import { normalizeLanguageSwitcherConfig } from "@/lib/i18n/language-switcher"
-import { normalizeSectionStyleType } from "@/lib/section-style-types"
+import { getSectionDecorationClass, normalizeSectionStyleType } from "@/lib/section-style-types"
 import { WebsiteLink, useWebsiteLinks } from "@/components/editor/website-links-context"
 import { encodeWebsiteLink } from "@/lib/website-links"
 
@@ -260,7 +260,7 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
 
   return (
     <nav
-      className={`${navClass} ${styleTypeClass} ${isSticky ? "sticky top-0 z-50" : ""}`}
+      className={`${navClass} ${styleTypeClass} ${getSectionDecorationClass(styleType)} ${isSticky ? "sticky top-0 z-50" : ""}`}
       style={sectionStyle}
     >
       <div className={containerClass}>

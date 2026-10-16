@@ -11,7 +11,7 @@ import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
 import { normalizeSectionLayout } from "@/lib/section-layouts"
 import { getSectionColorVars } from "@/lib/section-colors"
-import { normalizeSectionStyleType } from "@/lib/section-style-types"
+import { getSectionDecorationClass, normalizeSectionStyleType } from "@/lib/section-style-types"
 
 export type HeroLayout = "centered" | "split" | "fullwidth" | "minimal" | "card" | "split-reverse"
 
@@ -52,7 +52,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             ? "bg-slate-950 text-white"
             : styleType === "outline"
               ? "ring-4 ring-inset ring-current"
-              : ""
+              : getSectionDecorationClass(styleType)
 
   const styleTypeTitleClass =
     styleType === "bold"
@@ -102,7 +102,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             ? "!bg-slate-950"
             : styleType === "outline"
               ? "border-4 border-current bg-transparent"
-              : ""
+              : getSectionDecorationClass(styleType)
 
   const styleBackgroundColor =
     styleType === "dark"

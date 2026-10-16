@@ -5,6 +5,7 @@ import type { Section } from "@/lib/types"
 import type { BusinessCategory } from "@/lib/business/categories"
 import { getSectionDefinition } from "@/components/editor/section-registry"
 import { normalizeSectionStyleType } from "@/lib/section-style-types"
+import { getSectionColorVars } from "@/lib/section-colors"
 
 interface SectionRendererProps {
   section: Section
@@ -143,6 +144,39 @@ export function TransitionWrapper({
         </div>
       )
     }
+    if (t === "paint") {
+      return (
+        <svg
+          aria-hidden="true"
+          focusable="false"
+          className="block w-full pointer-events-none"
+          viewBox="0 0 1200 140"
+          preserveAspectRatio="none"
+          style={{ height: "clamp(64px, 8vw, 112px)" }}
+        >
+          <rect width="1200" height="140" fill={toColor} />
+          <path
+            d="M0 0H1200V38C1180 24 1178 54 1162 49C1152 46 1158 94 1144 93C1127 90 1139 42 1118 49C1098 58 1093 26 1072 39C1058 48 1064 72 1048 67C1029 60 1016 40 996 49C978 56 985 117 967 113C951 108 965 67 943 64C922 60 924 40 900 46C881 52 883 79 864 70C843 59 830 46 808 52C789 58 793 91 778 85C760 78 777 43 751 47C726 52 722 30 701 39C681 49 693 101 674 99C654 97 668 61 643 63C619 67 612 45 591 52C569 60 580 121 561 119C541 116 556 71 533 68C511 66 503 42 481 47C459 53 468 80 450 76C430 71 438 39 413 46C391 52 384 32 362 41C341 50 354 105 334 101C314 98 330 65 306 61C285 57 280 41 257 48C233 55 241 88 223 83C205 79 214 46 189 50C166 56 163 33 141 44C122 54 135 115 116 110C95 105 110 67 88 64C68 61 63 42 43 49C25 55 14 40 0 48Z"
+            fill={fromColor}
+          />
+          <g fill={fromColor}>
+            <ellipse cx="104" cy="109" rx="12" ry="7" transform="rotate(-22 104 109)" />
+            <circle cx="136" cy="123" r="4" />
+            <circle cx="360" cy="112" r="6" />
+            <ellipse cx="576" cy="116" rx="15" ry="8" transform="rotate(18 576 116)" />
+            <circle cx="604" cy="130" r="3" />
+            <ellipse cx="854" cy="113" rx="10" ry="6" />
+            <circle cx="1090" cy="117" r="8" />
+            <circle cx="1116" cy="129" r="3" />
+          </g>
+          <g fill={toColor}>
+            <ellipse cx="244" cy="30" rx="8" ry="5" />
+            <circle cx="690" cy="25" r="5" />
+            <ellipse cx="1060" cy="28" rx="11" ry="5" />
+          </g>
+        </svg>
+      )
+    }
     return null
   }
 
@@ -200,7 +234,7 @@ function SectionRendererComponent({
   const styleType = normalizeSectionStyleType(section.data.styleType)
   const rendererHandlesStyleType = section.type === "hero" || section.type === "nav"
   const styledInner = inner && !rendererHandlesStyleType ? (
-    <div className="section-style-shell" data-section-style-type={styleType}>
+    <div className="section-style-shell" data-section-style-type={styleType} style={getSectionColorVars(section.styles)}>
       {inner}
     </div>
   ) : inner
