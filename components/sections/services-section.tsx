@@ -403,7 +403,7 @@ function GridLayout({
           key={service.id}
           className="group overflow-hidden rounded-2xl border border-border bg-[var(--section-surface)] shadow-sm transition-shadow hover:shadow-md"
         >
-          <div className="relative h-52 overflow-hidden">
+          <div className="relative aspect-square overflow-hidden">
             <ServiceImage
               serviceId={service.id} images={service.images}
               name={service.name}
@@ -468,7 +468,7 @@ function ListLayout({
           key={service.id}
           className="group flex overflow-hidden rounded-2xl border border-border bg-[var(--section-surface)] shadow-sm transition-shadow hover:shadow-md"
         >
-          <div className="relative w-2/5 flex-shrink-0 min-h-[180px] overflow-hidden">
+          <div className="relative aspect-square w-2/5 flex-shrink-0 self-start overflow-hidden">
             <ServiceImage
               serviceId={service.id} images={service.images}
               name={service.name}
@@ -536,7 +536,7 @@ function FeaturedLayout({
     <div className="space-y-6">
       {/* Featured hero card */}
       <div className="group relative flex min-h-[380px] overflow-hidden rounded-3xl border border-border bg-[var(--section-surface)] shadow-md transition-shadow hover:shadow-xl">
-        <div className="relative w-1/2 overflow-hidden">
+        <div className="relative aspect-square w-1/2 shrink-0 self-start overflow-hidden">
           <ServiceImage
             serviceId={featured.id} images={featured.images}
             name={featured.name}
@@ -593,7 +593,7 @@ function FeaturedLayout({
               key={service.id}
               className="group overflow-hidden rounded-2xl border border-border bg-[var(--section-surface)] shadow-sm transition-shadow hover:shadow-md"
             >
-              <div className="relative h-44 overflow-hidden">
+              <div className="relative aspect-square overflow-hidden">
                 <ServiceImage
                   serviceId={service.id} images={service.images}
                   name={service.name}
@@ -654,7 +654,7 @@ function MagazineLayout({
               isReversed ? "sm:flex-row-reverse" : "sm:flex-row"
             }`}
           >
-            <div className="relative h-64 sm:h-auto sm:w-1/2 overflow-hidden">
+            <div className="relative aspect-square w-full shrink-0 self-start overflow-hidden sm:w-1/2">
               <ServiceImage
                 serviceId={service.id} images={service.images}
                 name={service.name}
@@ -810,7 +810,7 @@ function CarouselLayout({
             className="group w-72 flex-shrink-0 overflow-hidden rounded-2xl border border-border bg-[var(--section-surface)] shadow-sm transition-shadow hover:shadow-md"
             style={{ scrollSnapAlign: "start" }}
           >
-            <div className="relative h-48 overflow-hidden">
+            <div className="relative aspect-square overflow-hidden">
               <ServiceImage
                 serviceId={service.id} images={service.images}
                 name={service.name}
@@ -1154,7 +1154,7 @@ function ServiceInfoPopup({
                     <img
                       src={activeImage}
                       alt={`${service.name} ${activeImageIndex + 1}`}
-                      className="h-64 w-full object-cover md:h-80"
+                      className="aspect-square w-full object-cover"
                     />
                     {service.images.length > 1 ? (
                       <>

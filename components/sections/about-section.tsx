@@ -18,12 +18,12 @@ export function AboutSection({ data, isPreview, styles, onUpdate }: { data: Reco
   const sectionStyle: React.CSSProperties = { ...getSectionColorVars(styles), backgroundColor: styles?.backgroundColor, backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined, backgroundSize: "cover", backgroundPosition: styles?.backgroundPosition || "center" }
 
   const imageGallery = images.length > 0 ? (
-    <div className={`grid gap-3 ${images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+    <div className={`mx-auto grid w-full gap-3 ${images.length === 1 ? "max-w-lg grid-cols-1" : "max-w-4xl grid-cols-2"}`}>
       {images.map((image, index) => (
         <div
           key={`${image}-${index}`}
           data-about-image-index={index}
-          className={`${images.length > 2 && index === 0 ? "col-span-2 h-64" : "h-44"} overflow-hidden rounded-2xl border border-[var(--section-accent)] shadow-sm`}
+          className="aspect-square overflow-hidden rounded-2xl border border-[var(--section-accent)] shadow-sm"
         >
           <img src={image} alt={`${title} ${index + 1}`} className="h-full w-full object-cover" />
         </div>

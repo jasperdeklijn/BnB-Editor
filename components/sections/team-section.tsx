@@ -60,7 +60,7 @@ export function TeamSection({ data, isPreview, styles, onUpdate }: TeamSectionPr
                 className={`${isHorizontal ? "min-w-[260px] snap-start" : ""} ${isList ? "flex items-center gap-4" : "text-center"} overflow-hidden rounded-2xl border border-border p-5 text-[var(--section-surface-foreground)] shadow-sm`}
                 style={{ backgroundColor: "var(--section-surface)" }}
               >
-                <div className={`${isList ? "h-24 w-24 shrink-0" : layout.layout === "showcase" ? "h-80" : "mx-auto h-44 w-full"} overflow-hidden rounded-xl bg-muted`}>
+                <div className={`${isList ? "h-24 w-24 shrink-0" : "mx-auto aspect-square w-full"} overflow-hidden rounded-xl bg-muted`}>
                   {member.image ? <img src={member.image} alt={member.name} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center"><UserRound className="h-12 w-12 text-muted-foreground/50" /></div>}
                 </div>
                 <div className={isList ? "min-w-0 text-left" : "mt-4"}>
