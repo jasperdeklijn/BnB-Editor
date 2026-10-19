@@ -29,6 +29,7 @@ import { getSectionDefinition } from "@/components/editor/section-registry"
 import { getSectionEditor } from "@/components/editor/section-editor-registry"
 import { SectionRenderer } from "@/components/editor/section-renderer"
 import { SectionImagePicker } from "@/components/editor/section-image-picker"
+import { SectionDecorationSettings } from "@/components/editor/section-decoration-settings"
 import type { SectionTargetOption } from "@/components/editor/section-editor-types"
 import type { BusinessCategory } from "@/lib/business/categories"
 import type { Section, SectionStyles, SectionType, Transition } from "@/lib/types"
@@ -625,13 +626,15 @@ export function SelectionEditor({
                 </span>
                 <span className="min-w-0">
                   <span className="block truncate font-medium">{selectedStyleTypeOption.label}</span>
-                  <span className="block text-xs text-muted-foreground">Kies een visuele stijl · 6 opties</span>
+                  <span className="block text-xs text-muted-foreground">Kies een visuele stijl · {SECTION_STYLE_TYPE_OPTIONS.length} opties</span>
                 </span>
               </span>
               <Eye className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
             </button>
           </Card>
         ) : null}
+
+        <SectionDecorationSettings section={selectedSection} onChange={updateFields} />
 
         {styleTypeDialogOpen && supportsStyleTypes && typeof document !== "undefined"
           ? createPortal(

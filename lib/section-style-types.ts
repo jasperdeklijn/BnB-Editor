@@ -13,8 +13,8 @@ export const SECTION_STYLE_TYPE_OPTIONS: SectionStyleTypeOption[] = [
   { value: "soft", label: "Zacht", description: "Ronde vormen en vriendelijke details" },
   { value: "dark", label: "Donker", description: "Donkere basis met helder contrast" },
   { value: "outline", label: "Omlijnd", description: "Lijnen, kaders en transparante accenten" },
-  { value: "paint", label: "Verfvlekken", description: "Speelse verfspetters in de accentkleur" },
-  { value: "pattern", label: "Patroon", description: "Een subtiel ritme van stippen en boogjes" },
+  { value: "paint", label: "Verfvlekken", description: "Vier verfvormen met instelbare grootte en zichtbaarheid" },
+  { value: "pattern", label: "Patroon", description: "Zes patronen met instelbare grootte en zichtbaarheid" },
 ]
 
 /** Also used by hero and nav, which render their own style treatments. */

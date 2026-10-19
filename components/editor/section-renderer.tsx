@@ -6,6 +6,7 @@ import type { BusinessCategory } from "@/lib/business/categories"
 import { getSectionDefinition } from "@/components/editor/section-registry"
 import { normalizeSectionStyleType } from "@/lib/section-style-types"
 import { getSectionColorVars } from "@/lib/section-colors"
+import { getSectionDecorationVars } from "@/lib/section-decorations"
 
 interface SectionRendererProps {
   section: Section
@@ -234,7 +235,7 @@ function SectionRendererComponent({
   const styleType = normalizeSectionStyleType(section.data.styleType)
   const rendererHandlesStyleType = section.type === "hero" || section.type === "nav"
   const styledInner = inner && !rendererHandlesStyleType ? (
-    <div className="section-style-shell" data-section-style-type={styleType} style={getSectionColorVars(section.styles)}>
+    <div className="section-style-shell" data-section-style-type={styleType} style={{ ...getSectionColorVars(section.styles), ...getSectionDecorationVars(section.data) }}>
       {inner}
     </div>
   ) : inner

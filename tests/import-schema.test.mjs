@@ -24,6 +24,20 @@ test("decorative section styles survive import normalization", () => {
     assert.equal(native.sections[0].data.styleType, styleType)
   }
 })
+
+test("decoration options survive import and invalid settings are rejected", () => {
+  for (const [styleType, decorationVariant] of [["paint", "watercolor"], ["pattern", "waves"]]) {
+    const content = { title: "Welkom", styleType, decorationVariant, decorationScale: 150, decorationOpacity: 0 }
+    const doc = parse({ ...example, sections: [{ key: "hero", type: "hero", content }] })
+    const native = normalizeImport(doc, () => "decorated-hero")
+    for (const field of ["decorationVariant", "decorationScale", "decorationOpacity"]) {
+      assert.equal(native.sections[0].data[field], content[field])
+    }
+  }
+  for (const invalid of [{ decorationVariant: "unknown" }, { decorationScale: 0 }, { decorationScale: 201 }, { decorationOpacity: -1 }, { decorationOpacity: 41 }]) {
+    assert.throws(() => parse({ ...example, sections: [{ key: "hero", type: "hero", content: { title: "Welkom", styleType: "paint", ...invalid } }] }))
+  }
+})
 test("fragment/nav links and repeating ids map to fresh native identities", () => {
   const doc = parse(example)
   let id = 0

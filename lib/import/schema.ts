@@ -36,6 +36,9 @@ const styles = z.object({
 const common = {
   layout: z.enum(["classic", "split", "showcase", "compact", "card", "banner"]).default("classic"),
   styleType: z.enum(["clean", "bold", "elegant", "soft", "dark", "outline", "paint", "pattern"]).default("clean"),
+  decorationVariant: z.enum(["splatter", "brush", "watercolor", "organic", "arches", "dots", "grid", "diagonal", "waves", "diamonds"]).optional(),
+  decorationScale: z.number().min(50).max(200).optional(),
+  decorationOpacity: z.number().min(0).max(40).optional(),
 }
 const section = <T extends string, S extends z.ZodRawShape>(type: T, shape: S) => z.object({
   key, type: z.literal(type), content: z.object({ ...common, ...shape }).strict(),

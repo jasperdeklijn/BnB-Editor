@@ -36,17 +36,17 @@
 }
 
 :is(.section-decoration--paint, .section-style-shell[data-section-style-type="paint"] > *)::after {
-  opacity: 0.16;
-  mask-image: url('/section-decorations/paint-splatter.svg'), url('/section-decorations/paint-splatter.svg');
-  mask-size: clamp(200px, 36vw, 480px), clamp(180px, 30vw, 400px);
-  mask-position: left -100px top -100px, right -80px bottom -110px;
+  opacity: var(--section-decoration-opacity, 0.16);
+  mask-image: var(--section-decoration-image, url('/section-decorations/paint-splatter.svg'), url('/section-decorations/paint-splatter.svg'));
+  mask-size: var(--section-decoration-size, clamp(200px, 36vw, 480px), clamp(180px, 30vw, 400px));
+  mask-position: var(--section-decoration-position, left -100px top -100px, right -80px bottom -110px);
   mask-repeat: no-repeat;
 }
 
 :is(.section-decoration--pattern, .section-style-shell[data-section-style-type="pattern"] > *)::after {
-  opacity: 0.12;
-  mask-image: url('/section-decorations/pattern.svg');
-  mask-size: 48px 48px;
+  opacity: var(--section-decoration-opacity, 0.12);
+  mask-image: var(--section-decoration-image, url('/section-decorations/pattern.svg'));
+  mask-size: var(--section-decoration-size, 48px 48px);
   mask-repeat: repeat;
 }
 

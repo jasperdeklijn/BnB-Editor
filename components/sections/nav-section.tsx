@@ -8,6 +8,7 @@ import { EditableText } from "@/components/editor/inline-editable-text"
 import { normalizeSectionLayout } from "@/lib/section-layouts"
 import { resolveNavigationLinks } from "@/lib/i18n/section-translations"
 import { getSectionColorVars } from "@/lib/section-colors"
+import { getSectionDecorationVars } from "@/lib/section-decorations"
 import { normalizeLanguageSwitcherConfig } from "@/lib/i18n/language-switcher"
 import { getSectionDecorationClass, normalizeSectionStyleType } from "@/lib/section-style-types"
 import { WebsiteLink, useWebsiteLinks } from "@/components/editor/website-links-context"
@@ -156,6 +157,7 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
 
   const sectionStyle: React.CSSProperties = {
     ...getSectionColorVars(styles),
+    ...getSectionDecorationVars(data),
     backgroundColor:
       styleType === "dark"
         ? "#111827"
