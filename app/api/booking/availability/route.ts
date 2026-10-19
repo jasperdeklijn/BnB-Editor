@@ -72,6 +72,7 @@ export async function GET(request: NextRequest) {
     const range = queryRange(rangeStartDate, rangeEndDate)
     const entries = await getBusyEntries(context, range.start, range.end)
     const availabilityInput = {
+      resource: context.resource,
       settings: context.settings,
       windows: context.snapshot.availabilityWindows,
       entries,

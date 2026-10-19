@@ -102,6 +102,8 @@ export function parseReservationOverviewFilters(
 
 function parseEntry(row: Record<string, unknown>): CalendarEntry {
   return {
+    booking_group_id: typeof row.booking_group_id === "string" ? row.booking_group_id : null,
+    booking_group_primary: row.booking_group_primary === true,
     id: String(row.id),
     business_id: String(row.business_id),
     service_id: typeof row.service_id === "string" ? row.service_id : null,
@@ -228,10 +230,11 @@ export async function getReservationsOverview(
       .eq("business_id", businessId)
       .in("entry_type", ["appointment", "booking"])
       .neq("source", "import")
+      .or("booking_group_id.is.null,booking_group_primary.eq.true")
 
     if (forceEmpty) query = query.eq("id", "00000000-0000-0000-0000-000000000000")
     if (status) query = query.eq("status", status)
-    if (filters.serviceId) query = query.eq("service_id", filters.serviceId)
+    if (filters.serviceId) query = query.or(`service_id.eq.${filters.serviceId},metadata->bookingServiceIds.cs.["${filters.serviceId}"]`)
     if (filters.source !== "all") query = query.eq("source", filters.source)
     if (filters.type !== "all") query = query.eq("entry_type", filters.type)
     if (filters.dateFrom) query = query.gte("end_at", `${filters.dateFrom}T00:00:00.000Z`)

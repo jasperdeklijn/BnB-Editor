@@ -22,6 +22,7 @@
     "test:onboarding": "node --test tests/onboarding.test.mjs",
     "test:section-editors": "node --test tests/repeating-section-editors.test.mjs",
     "test:booking-availability": "node --test tests/booking-availability.test.mjs",
+    "test:booking-cart": "node --test tests/booking-cart.test.mjs tests/booking-cart-concurrency.test.mjs",
     "test:booking-public-flow": "node --test tests/booking-public-flow.test.mjs",
     "test:booking-lifecycle": "node --test tests/booking-lifecycle.test.mjs",
     "test:booking-calendar-sync": "node --test tests/booking-calendar-interoperability.test.mjs",

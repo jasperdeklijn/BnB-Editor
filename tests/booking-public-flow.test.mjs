@@ -39,7 +39,8 @@ test("public context requires a published calendar section, service membership, 
   assert.match(context, /selected\.length === 0 \|\| selected\.includes\(serviceId\)/)
   assert.match(context, /!hasBookingAddonAccess\(subscription\)/)
   assert.match(context, /shouldEnforcePlanEntitlements\(\)/)
-  assert.match(context, /booking_holds/)
+  assert.match(context, /loadBookingPlanning/)
+  assert.match(read("lib/booking/planning-data.ts"), /booking_holds/)
 })
 
 test("availability, hold, and confirmation endpoints are rate limited and revalidate availability", () => {

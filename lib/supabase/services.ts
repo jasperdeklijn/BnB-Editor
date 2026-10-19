@@ -2,8 +2,10 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { assertCurrentUserRuntimeEntitlement } from "@/lib/runtime-entitlements"
+import { bookingCatalogSchema, type BookingCatalog } from "@/lib/booking/cart"
 
 export interface Service {
+  booking_catalog?: BookingCatalog | null
   id: string
   business_id: string
   title: string
@@ -20,6 +22,7 @@ export interface Service {
 export type ServiceInput = Omit<Service, "id" | "business_id" | "created_at" | "updated_at">
 
 type ServiceRow = {
+  booking_catalog?: BookingCatalog | null
   id: string
   business_id: string
   title: string
@@ -35,6 +38,7 @@ type ServiceRow = {
 
 function parseService(row: ServiceRow): Service {
   return {
+    booking_catalog: row.booking_catalog,
     id: row.id,
     business_id: row.business_id,
     title: row.title,
@@ -59,6 +63,7 @@ function toServicePayload(service: Partial<ServiceInput>): Record<string, unknow
   if (service.capacity !== undefined) payload.capacity = service.capacity
   if (service.image_urls !== undefined) payload.image_urls = service.image_urls
   if (service.position !== undefined) payload.position = service.position
+  if (service.booking_catalog !== undefined) payload.booking_catalog = service.booking_catalog === null ? null : bookingCatalogSchema.parse(service.booking_catalog)
 
   return payload
 }
@@ -70,6 +75,7 @@ export async function getServices(businessId: string): Promise<Service[]> {
     .from("services")
     .select("*")
     .eq("business_id", businessId)
+    .is("archived_at", null)
     .order("position", { ascending: true })
 
   if (error) throw error
@@ -110,6 +116,7 @@ export async function updateService(
 ): Promise<Service> {
   const supabase = await createClient()
   await assertCurrentUserRuntimeEntitlement(supabase, "service_management")
+  if (updates.booking_catalog !== undefined) await assertCurrentUserRuntimeEntitlement(supabase, "booking_management")
 
   const { data, error } = await supabase
     .from("services")
@@ -126,7 +133,7 @@ export async function deleteService(serviceId: string): Promise<void> {
   const supabase = await createClient()
   await assertCurrentUserRuntimeEntitlement(supabase, "service_management")
 
-  const { error } = await supabase.from("services").delete().eq("id", serviceId)
+  const { error } = await supabase.from("services").update({ archived_at: new Date().toISOString() }).eq("id", serviceId)
   if (error) throw error
 }
 

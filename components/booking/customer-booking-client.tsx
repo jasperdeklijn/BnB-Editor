@@ -96,6 +96,7 @@ export function CustomerBookingClient({ initialBooking }: { initialBooking: Cust
           </div>
         </section>
 
+        {booking.group ? <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm sm:p-8"><h2 className="text-xl font-bold">Alle onderdelen van je boeking</h2><ol className="mt-4 space-y-4">{booking.group.items.map((item) => <li key={item.service_id} className="border-b pb-3"><p className="font-semibold">{item.description}</p><p className="mt-1 text-sm text-black/65">{rangeLabel(item.start_at, item.end_at, booking.entry.timezone)}</p></li>)}</ol><p className="mt-4 text-sm">{booking.group.paymentInstructions}</p><p className="mt-2 text-xs text-black/55">Annuleren en verplaatsen gelden voor de volledige boeking.</p></section> : null}
         {booking.financial ? (
           <section className="rounded-3xl border border-black/10 bg-white p-6 shadow-sm sm:p-8">
             <h2 className="text-xl font-bold">Reservering en facturen</h2>

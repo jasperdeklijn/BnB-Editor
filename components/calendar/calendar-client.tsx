@@ -2006,6 +2006,8 @@ function EntryForm({
     )
   }
 
+  if (form.metadata?.source === "booking_group_child" && typeof form.metadata.leaderId === "string") return <section className="space-y-3 rounded-lg border border-border bg-card p-5"><h2 className="font-semibold">Onderdeel van een gezamenlijke boeking</h2><p className="text-sm text-muted-foreground">Bevestigen, annuleren, verplaatsen en factureren gelden voor de volledige boeking.</p><Button asChild><Link href={`/editor/calendar?booking=${encodeURIComponent(form.metadata.leaderId)}`}>Volledige boeking openen</Link></Button><Button type="button" variant="ghost" onClick={onCancel}>Sluiten</Button></section>
+  const groupPlan = form.metadata?.bookingGroupPlan as import("@/lib/booking/cart").CartPlan | undefined
   const isOnlineBooking = form.metadata?.source === "booking_engine"
   const openCustomerRequests = changeRequests.filter((request) => request.status === "pending" && request.requested_by === "customer")
 
@@ -2033,6 +2035,7 @@ function EntryForm({
         </Button>
       </div>
       <div className="grid gap-4 p-4">
+        {groupPlan ? <div className="space-y-2 rounded-lg border p-3"><h3 className="text-sm font-semibold">Gezamenlijke boeking · {groupPlan.items.length} diensten</h3><p className="text-xs text-muted-foreground">Statuswijzigingen en verplaatsingen gelden voor alle onderdelen.</p><ol className="space-y-2 text-xs">{groupPlan.items.map((item) => <li key={item.service_id}><span className="font-medium">{item.description}</span><br />{new Intl.DateTimeFormat("nl-NL", { dateStyle: "short", timeStyle: "short", timeZone: groupPlan.timezone }).format(new Date(item.start_at))}–{new Intl.DateTimeFormat("nl-NL", { timeStyle: "short", timeZone: groupPlan.timezone }).format(new Date(item.end_at))}</li>)}</ol></div> : null}
         {form.id && form.status === "pending" ? (
           <div className="flex flex-col gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-amber-900">Deze aanvraag wacht op bevestiging.</p>

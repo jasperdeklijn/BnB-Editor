@@ -47,6 +47,7 @@ async function fetchServicesForBusiness(
     .from("services")
     .select("*")
     .eq("business_id", businessId)
+    .is("archived_at", null)
     .order("position", { ascending: true })
 
   return (data ?? []) as ServiceRow[]

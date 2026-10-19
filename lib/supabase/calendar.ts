@@ -8,6 +8,8 @@ export type CalendarEntryStatus = "pending" | "confirmed" | "cancelled" | "compl
 export type CalendarEntrySource = "manual" | "website_form" | "contact_request" | "import"
 
 export interface CalendarEntry {
+  booking_group_id?: string | null
+  booking_group_primary?: boolean
   id: string
   business_id: string
   service_id: string | null
@@ -80,6 +82,8 @@ export interface CalendarEntryFilters {
 }
 
 type CalendarEntryRow = {
+  booking_group_id?: string | null
+  booking_group_primary?: boolean
   id: string
   business_id: string
   service_id: string | null
@@ -118,6 +122,8 @@ const DEFAULT_TIMEZONE = "Europe/Amsterdam"
 
 function parseCalendarEntry(row: CalendarEntryRow): CalendarEntry {
   return {
+    booking_group_id: row.booking_group_id,
+    booking_group_primary: row.booking_group_primary,
     id: row.id,
     business_id: row.business_id,
     service_id: row.service_id,
@@ -343,9 +349,9 @@ export async function updateCalendarEntry(
   await assertLinkedServiceBelongsToBusiness(nextServiceId, existing.business_id, supabase)
   await assertLinkedContactRequestBelongsToBusiness(nextContactRequestId, existing.business_id, supabase)
 
-  const { data, error } = await supabase
-    .from("calendar_entries")
-    .update(toCalendarEntryPayload(updates))
+  const { data, error } = existing.booking_group_id
+    ? await supabase.rpc("update_owned_booking_group", { p_entry: entryId, p_changes: toCalendarEntryPayload(updates), p_expected_status: null })
+    : await supabase.from("calendar_entries").update(toCalendarEntryPayload(updates))
     .eq("id", entryId)
     .select("*")
     .single()
@@ -372,9 +378,9 @@ export async function transitionCalendarEntryStatus(
   const existing = await getOwnedCalendarEntryRow(entryId, supabase)
   if (existing.status !== expectedStatus) throw new Error("De reserveringsstatus is intussen gewijzigd. Vernieuw de pagina en probeer opnieuw.")
 
-  const { data, error } = await supabase
-    .from("calendar_entries")
-    .update({ status, ...(metadata ? { metadata } : {}) })
+  const { data, error } = existing.booking_group_id
+    ? await supabase.rpc("update_owned_booking_group", { p_entry: entryId, p_changes: { status, ...(metadata ? { metadata } : {}) }, p_expected_status: expectedStatus })
+    : await supabase.from("calendar_entries").update({ status, ...(metadata ? { metadata } : {}) })
     .eq("id", entryId)
     .eq("status", expectedStatus)
     .select("*")

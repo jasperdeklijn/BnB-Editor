@@ -2,6 +2,7 @@ export type BookingMode = "appointment" | "stay"
 export type BookingConfirmationMode = "request" | "instant"
 
 export interface ServiceBookingSettings {
+  resource_id?: string | null
   service_id: string
   business_id: string
   booking_enabled: boolean
@@ -86,6 +87,8 @@ function normalizeTime(value: string, label: string) {
 export function validateServiceBookingSettingsInput(
   input: ServiceBookingSettingsInput,
 ): ServiceBookingSettingsInput {
+  if (typeof input.booking_enabled !== "boolean") throw new Error("Invalid booking enabled setting.")
+  if (input.resource_id != null && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.resource_id)) throw new Error("Invalid booking resource.")
   if (!isValidTimeZone(input.timezone)) throw new Error("Unknown booking timezone.")
   if (!(["appointment", "stay"] as string[]).includes(input.booking_mode)) throw new Error("Unknown booking mode.")
   if (!(["request", "instant"] as string[]).includes(input.confirmation_mode)) throw new Error("Unknown confirmation mode.")
@@ -95,7 +98,11 @@ export function validateServiceBookingSettingsInput(
   if (maximumNights < minimumNights) throw new Error("Maximum nights cannot be lower than minimum nights.")
 
   return {
-    ...input,
+    booking_enabled: input.booking_enabled,
+    booking_mode: input.booking_mode,
+    confirmation_mode: input.confirmation_mode,
+    timezone: input.timezone,
+    ...(input.resource_id !== undefined ? { resource_id: input.resource_id } : {}),
     duration_minutes: integerBetween(input.duration_minutes, 5, 1440, "Duration"),
     slot_interval_minutes: integerBetween(input.slot_interval_minutes, 5, 1440, "Slot interval"),
     buffer_before_minutes: integerBetween(input.buffer_before_minutes, 0, 1440, "Buffer before"),

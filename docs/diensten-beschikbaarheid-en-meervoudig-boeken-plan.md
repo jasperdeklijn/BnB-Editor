@@ -1,6 +1,6 @@
 # Implementatieplan: beschikbaarheid en meerdere diensten boeken
 
-Status: voorstel voor implementatie; nog niet gebouwd.
+Status: fase 1 t/m 4 in code uitgewerkt en lokaal getest; database-uitrol en controle op een verbonden Supabase-omgeving staan nog open.
 Datum: 19 oktober 2026.
 
 ## Doel en afbakening
@@ -23,7 +23,7 @@ Deze uitbreiding valt onder de bestaande **boekingsadd-on**. De boekingslijst, h
 
 De boekingsadd-on reserveert afspraken en verwerkt geen online betalingen. Noem het overzicht voor klanten **Jouw afspraak** of **Jouw boeking**, met als laatste actie **Boeking aanvragen** of **Afspraak bevestigen**. Een bevestigde boeking is geen betaalbevestiging.
 
-## Wat al bestaat en wat ontbreekt
+## Uitgangspunten van de uitbreiding
 
 | Onderdeel | Huidige basis | Benodigde uitbreiding |
 | --- | --- | --- |
@@ -37,7 +37,7 @@ De boekingsadd-on reserveert afspraken en verwerkt geen online betalingen. Noem 
 | Klantbeheer en berichten | `customer-access.ts`, `lifecycle.ts`, `notifications.ts` | Beheerlink, bevestiging en annulering voor de hele groep |
 | Financieel | `invoicing.ts`, `pricing.ts` | Eén reserveringsnummer en totaal op groepsniveau |
 
-De huidige boeking, tijdelijke reservering, klantlink en financiële administratie zijn gekoppeld aan één agenda-item. Alleen een meervoudige keuzelijst toevoegen is daarom onvoldoende.
+De bestaande boeking, tijdelijke reservering, klantlink en financiële administratie zijn gekoppeld aan één agenda-item. De uitbreiding gebruikt daarom een boekingsgroep met één hoofdafspraak voor klantbeheer, berichten en financiën, en afzonderlijke agendaonderdelen voor planning.
 
 ## Gebruikerservaring voor de ondernemer
 
@@ -100,23 +100,21 @@ Toon de betaalinstructies vóór het bevestigen en in de bevestigingsmail. De pr
 
 ## Gegevensmodel
 
-Onderstaande namen zijn voorgesteld; definitieve SQL wordt in de bouwfase opgesteld.
+De implementatie gebruikt het onderstaande model. Varianten en extra's zijn samen opgeslagen als gevalideerde JSON-catalogus; hierdoor zijn voor de eerste versie geen afzonderlijke optie- en compatibiliteitstabellen nodig.
 
 | Gegeven | Doel en belangrijkste relaties |
 | --- | --- |
-| `service_option_groups` | Variant- en extragroepen per dienst, selectiegrenzen en volgorde |
-| `service_options` | Opties per groep, vaste variantprijs/-duur of toeslag/-duur, actief/inactief |
-| `service_option_compatibility` | Toegestane variant-extra-combinaties, met bedrijfs- en dienstgrenzen |
-| `booking_resources` | Gedeelde agenda/capaciteitsbron per bedrijf |
-| `service_booking_resources` | Koppeling dienst-bron; aanvankelijk maximaal één bron per dienst |
-| `booking_resource_windows` | Wekelijkse beschikbaarheid van de bron |
+| `services.booking_catalog` | Varianten, extra's, vaste prijzen/duur, compatibiliteit, exclusieve groepen en combineerbaarheid |
+| `booking_resources` | Gedeelde agenda/capaciteitsbron per bedrijf, met weekrooster |
+| `service_booking_settings.resource_id` | Maximaal één gedeelde bron per dienst |
 | `booking_availability_exceptions` | Datumuitzonderingen op bedrijfs-, dienst- of bronniveau |
-| `booking_groups` | Website, bedrijf, klant, status, reserveringsnummer en idempotentiesleutel |
-| `booking_items` | Dienst, gekozen opties, volgorde, tijdvak en onveranderlijke prijs-/duursnapshot |
-| `booking_resource_allocations` | Gereserveerde bron, tijdvak inclusief buffers en capaciteitsgebruik per item |
-| `booking_group_holds` en hold-items | Tijdelijk vastzetten van het hele mandje met één vervaltijd en token |
+| `booking_groups` | Website, bedrijf, hoofdafspraak, status, geboekte plan-snapshot en bevestigings-/betaaltekst |
+| `booking_groups.plan.items` en `calendar_entries` | Gekozen opties, volgorde, prijs/duur en één agenda-item per dienst |
+| `calendar_entries.booking_resource_id` | Vastgelegde bron per geboekt onderdeel; blijft behouden als de dienst later een andere bron krijgt |
+| `booking_cart_holds` en `booking_holds` | Gezamenlijke selectie, plan, publicatieversie, idempotentiesleutel en tijdelijke reserveringen per onderdeel |
+| `booking_reservation_financials.booking_group_id` en `booking_invoices.booking_group_id` | Eén financieel record en bestaande factuurflow via de hoofdafspraak |
 
-Een `booking_item` hoort bij één `booking_group` en één `calendar_entry`. Een extra zonder eigen planning is een prijs-/optieselectie binnen hetzelfde item, geen afzonderlijke agenda-afspraak. Bedrijfsgrenzen worden met samengestelde relaties en servervalidatie afgedwongen.
+Een geboekt onderdeel hoort bij één groep en één agenda-item. Een extra zonder eigen planning is een prijs-/optieselectie binnen hetzelfde onderdeel. Bedrijfsgrenzen worden met samengestelde relaties en servervalidatie afgedwongen. De migratie staat in `supabase/migrations/20261019090552_booking_cart_and_service_planning.sql` en is gespiegeld in `supabase/init.sql`.
 
 Prijzen worden gestructureerd opgeslagen in centen met valuta en bestaande btw-/factuurregels. De huidige vrije tekst `services.price` blijft bruikbaar voor weergave, maar wordt niet stilzwijgend als betrouwbare prijsbron gebruikt. Niet eenduidig omzetbare prijzen vereisen een expliciete instelling voordat een berekend totaal kan worden aangeboden.
 
@@ -140,7 +138,7 @@ De agenda, publieke routes, handmatige invoer, verplaatsingen en import/synchron
 ### Eén transactie voor het hele mandje
 
 - Maak een hold voor alle onderdelen tegelijk; de eerste versie kan de bestaande duur van tien minuten aanhouden.
-- Vergrendel alle betrokken bronnen en diensten in een vaste volgorde om gelijktijdige boekingen en deadlocks te beheersen. Bestaande boekingsroutes en nieuwe routes gebruiken hetzelfde vergrendelingsprotocol.
+- Vergrendel per bedrijf vóór het wijzigen van boekingsrijen. Deze gedeelde transactievergrendeling houdt bestaande boekingsroutes, groepsboekingen en planningswijzigingen onderling consistent. Onafhankelijke bedrijven kunnen gelijktijdig blijven boeken.
 - Hercontroleer onder die vergrendeling de actuele boekregels, capaciteit, publicatiestatus en abonnementsrechten. Alle mutaties die capaciteit of beschikbaarheid wijzigen moeten dezelfde regels respecteren.
 - Leg de groep, items, agendaonderdelen en financiële snapshot gezamenlijk vast, of draai alles terug.
 - Een herhaalde bevestiging met dezelfde idempotentiesleutel retourneert dezelfde boeking. Hergebruik met een andere selectie wordt geweigerd.
@@ -165,44 +163,44 @@ Gebruik aparte mandjeroutes onder bijvoorbeeld `/api/booking/cart/availability`,
 
 ### Fase 1 — Basis en bestaande boekingen behouden
 
-- [ ] Voeg modellen, validatie en migraties toe; spiegel definitieve wijzigingen in `supabase/init.sql`.
-- [ ] Voeg optieprijzen en -duur toe; modelleer bestaande diensten als standaardvariant zonder verplichte bulkconversie.
-- [ ] Voeg groepsrelaties toe aan agenda, klantbeheer en financiën zonder bestaande boekingen te herschrijven.
-- [ ] Test eigenaarschap, bedrijfsgrenzen, ongeldige combinaties en minimale databasegrants.
-- [ ] Koppel de nieuwe functies aan de bestaande boekingsadd-on en test servercontrole op toegang voor beheer en publieke routes.
+- [x] Voeg modellen, validatie en migraties toe; spiegel definitieve wijzigingen in `supabase/init.sql`.
+- [x] Voeg optieprijzen en -duur toe; modelleer bestaande diensten als standaardvariant zonder verplichte bulkconversie.
+- [x] Voeg groepsrelaties toe aan agenda, klantbeheer en financiën zonder bestaande boekingen te herschrijven.
+- [x] Test eigenaarschap, bedrijfsgrenzen, ongeldige combinaties en minimale databasegrants.
+- [x] Koppel de nieuwe functies aan de bestaande boekingsadd-on en test servercontrole op toegang voor beheer en publieke routes.
 
 Gereed wanneer bestaande enkelvoudige afspraken, verblijven, klantlinks en uitgegeven facturen ongewijzigd werken en een boekingsgroep met meerdere items geldig opgeslagen kan worden.
 
 ### Fase 2 — Beschikbaarheid beheren bij de dienst
 
-- [ ] Bouw weekrooster, meerdere tijdvakken, datumuitzonderingen en kopiëren van dagen.
-- [ ] Voeg bronkeuze met expliciete gedeelde/afzonderlijke agenda's toe.
-- [ ] Breid de engine en alle schrijvende boekingspaden uit met gedeelde capaciteit.
-- [ ] Laat een voorbeeld van boekbare momenten zien; verwerk wijzigingen direct in de publieke beschikbaarheid.
+- [x] Bouw weekrooster, meerdere tijdvakken, datumuitzonderingen en kopiëren van dagen.
+- [x] Voeg bronkeuze met expliciete gedeelde/afzonderlijke agenda's toe.
+- [x] Breid de engine en alle schrijvende boekingspaden uit met gedeelde capaciteit.
+- [x] Laat een voorbeeld van boekbare momenten zien; verwerk wijzigingen direct in de publieke beschikbaarheid.
 
 Gereed wanneer een sluitingsdag nergens boekbaar is, een afwijkende openingsdag wel werkt en een boeking voor dienst A de juiste capaciteit voor dienst B inneemt wanneer ze een bron delen.
 
 ### Fase 3 — Opties en aansluitend boeken
 
-- [ ] Bouw variant-/extrabeheer, compatibiliteitsregels en publicatiesnapshotvelden.
-- [ ] Bouw selectie, mandje, serverberekening en zoeken naar gezamenlijke starttijden.
-- [ ] Voeg instellingen voor **Jouw boeking** toe aan de bestaande website-editor: vormgeving, teksten, aangeboden diensten/extra's, prijsweergave, betaalinstructies en indeling, met de websitestijl als standaard.
-- [ ] Neem de instellingen mee in preview en publicatie en koppel het aanpassen ervan aan de boekingsadd-on.
-- [ ] Bouw groepsholds en atomische bevestiging, inclusief idempotentie en foutmeldingen per onderdeel.
-- [ ] Stel expliciete grenzen in voor aantal diensten, opties en zoekperiode zodat beschikbaarheid berekenbaar blijft.
+- [x] Bouw variant-/extrabeheer, compatibiliteitsregels en publicatiesnapshotvelden.
+- [x] Bouw selectie, mandje, serverberekening en zoeken naar gezamenlijke starttijden.
+- [x] Voeg instellingen voor **Jouw boeking** toe aan de bestaande website-editor: vormgeving, teksten, aangeboden diensten/extra's, prijsweergave, betaalinstructies en indeling, met de websitestijl als standaard.
+- [x] Neem de instellingen mee in preview en publicatie en koppel het aanpassen ervan aan de boekingsadd-on.
+- [x] Bouw groepsholds en atomische bevestiging, inclusief idempotentie en foutmeldingen per onderdeel.
+- [x] Stel expliciete grenzen in voor aantal diensten, opties en zoekperiode zodat beschikbaarheid berekenbaar blijft.
 
 Gereed wanneer het voorbeeld van 65 + 30 minuten alleen verschijnt waar 95 minuten passen, buffers correct meetellen en twee gelijktijdige klanten de laatste plek niet allebei kunnen vastleggen.
 
 ### Fase 4 — Eén complete boekingservaring
 
-- [ ] Koppel agenda, reserveringsoverzicht, aanvraaginbox en klantbeheer aan de groep.
-- [ ] Voeg één bevestiging, groepsstatus, groepsannulering en verplaatsingsverzoek toe.
-- [ ] Koppel één financiële snapshot, reserveringsnummer en factuurflow aan de groep.
-- [ ] Controleer desktop en mobiel, alle relevante dienstsectie-indelingen, preview en gepubliceerde website.
-- [ ] Controleer dat **Jouw boeking** standaard de websitestijl overneemt, alle genoemde instellingen aanpasbaar zijn en het overzicht naast of onder de selectie werkt; op mobiel staat het onder de selectie.
-- [ ] Controleer dat conceptwijzigingen pas na publiceren zichtbaar worden op de boekingspagina en betaalinstructies vóór bevestiging en in de bevestigingsmail verschijnen.
-- [ ] Controleer de aanduiding van de boekingsadd-on in het beheer en het blokkeren van nieuwe boekingen bij ontbrekende of vervallen toegang, ook met een oude publicatie of actieve hold.
-- [ ] Test de volledige flow met echte lokale databasefuncties en gelijktijdige transacties; controles op broncode alleen zijn onvoldoende.
+- [x] Koppel agenda, reserveringsoverzicht, aanvraaginbox en klantbeheer aan de groep.
+- [x] Voeg één bevestiging, groepsstatus, groepsannulering en verplaatsingsverzoek toe.
+- [x] Koppel één financiële snapshot, reserveringsnummer en factuurflow aan de groep.
+- [ ] Controleer alle dienstsectie-indelingen en de gepubliceerde website op de verbonden omgeving. Desktop en mobiel zijn lokaal met een preview en gesimuleerde bevestiging gecontroleerd.
+- [x] Controleer dat **Jouw boeking** standaard de websitestijl overneemt, alle genoemde instellingen aanpasbaar zijn en het overzicht naast of onder de selectie werkt; op mobiel staat het onder de selectie.
+- [ ] Controleer concept/publicatie en daadwerkelijke e-mailbezorging op een verbonden omgeving. Snapshotgebruik, opgeslagen betaalteksten en berichtvorming zijn aangesloten; lokale controles versturen geen echte e-mail.
+- [x] Controleer de aanduiding van de boekingsadd-on in het beheer en het blokkeren van nieuwe boekingen bij ontbrekende of vervallen toegang, ook met een oude publicatie of actieve hold.
+- [x] Test de volledige flow met echte lokale databasefuncties en gelijktijdige transacties; controles op broncode alleen zijn onvoldoende.
 
 Gereed wanneer de klant één boeking beheert, de ondernemer alle onderdelen kan terugvinden en een mislukte combinatie geen losse boekingen of dubbele berichten achterlaat.
 
@@ -214,6 +212,8 @@ Gereed wanneer de klant één boeking beheert, de ondernemer alle onderdelen kan
 - [ ] Onderzoek gecombineerde verblijven en aanvullende diensten met hun afzonderlijke regels.
 
 ## Verificatie en invoering
+
+De uitgevoerde controles, activering in de editor en nog openstaande controles op een verbonden omgeving staan in [Boekingsadd-on: oplevering en verificatie](boekingsadd-on-verificatie.md). Aangevinkte taken hierboven beschrijven de code en lokale controles; de productie-uitrol is nog niet uitgevoerd.
 
 Verplicht te testen: exclusieve varianten, ongeldige extra's, gemanipuleerde prijzen, verschillende dienstroosters, gedeelde versus onafhankelijke capaciteit, pauzes en buffers, datumsluitingen, zomertijd, verlopen holds, dubbele bevestiging, concurrency, rollback bij één bezet onderdeel, gemengde bevestigingsregels, concept versus gepubliceerde opties, directe uitschakeling, groepsannulering en behoud van oude facturen/klantlinks.
 

@@ -3,6 +3,7 @@ import "server-only"
 import { createHmac, timingSafeEqual } from "node:crypto"
 
 import { createAdminClient } from "@/lib/supabase/admin"
+import type { CartPlan } from "@/lib/booking/cart"
 
 interface CustomerTokenPayload {
   entryId: string
@@ -32,6 +33,7 @@ export interface CustomerBookingChangeRequest {
 }
 
 export interface CustomerBookingView {
+  group?: { id: string; items: CartPlan["items"]; paymentInstructions: string }
   entry: {
     id: string
     title: string
@@ -140,7 +142,7 @@ export async function getCustomerBookingView(token: string): Promise<CustomerBoo
 
   const { data: entry, error: entryError } = await supabase
     .from("calendar_entries")
-    .select("id, business_id, service_id, title, status, entry_type, customer_name, customer_email, start_at, end_at, timezone")
+    .select("id, business_id, service_id, title, status, entry_type, customer_name, customer_email, start_at, end_at, timezone, booking_group_id")
     .eq("id", payload.entryId)
     .maybeSingle()
   if (entryError || !entry || !entry.service_id || !["appointment", "booking"].includes(entry.entry_type)) return null
@@ -189,13 +191,27 @@ export async function getCustomerBookingView(token: string): Promise<CustomerBoo
     }] : []
   ))
 
-  const cutoff = Number(settingsResult.data?.cancellation_cutoff_minutes ?? 0)
+  let group: CustomerBookingView["group"]
+  let cutoff = Number(settingsResult.data?.cancellation_cutoff_minutes ?? 0)
+  if (entry.booking_group_id) {
+    const { data: bookingGroup, error } = await supabase.from("booking_groups").select("id,leader_id,plan,payment_instructions").eq("id", entry.booking_group_id).eq("business_id", entry.business_id).maybeSingle()
+    if (error || !bookingGroup || bookingGroup.leader_id !== entry.id) return null
+    const plan = bookingGroup.plan as CartPlan
+    group = { id: bookingGroup.id, items: plan.items, paymentInstructions: bookingGroup.payment_instructions }
+    const { data: rules, error: rulesError } = await supabase.from("service_booking_settings").select("service_id,cancellation_cutoff_minutes").in("service_id", plan.items.map((item) => item.service_id))
+    if (rulesError || rules?.length !== plan.items.length) return null
+    const deadline = Math.min(...plan.items.map((item) => new Date(item.start_at).getTime() - Number(rules.find((rule) => rule.service_id === item.service_id)?.cancellation_cutoff_minutes ?? 0) * 60000))
+    cutoff = Math.max(0, (new Date(plan.start_at).getTime() - deadline) / 60000)
+    entry.start_at = plan.start_at
+    entry.end_at = plan.end_at
+  }
   const active = entry.status === "pending" || entry.status === "confirmed"
   const beforeCutoff = Date.now() <= new Date(entry.start_at).getTime() - cutoff * 60_000
 
   return {
+    group,
     entry: entry as CustomerBookingView["entry"],
-    serviceTitle: serviceResult.data?.title || entry.title,
+    serviceTitle: group ? "Jouw boeking" : serviceResult.data?.title || entry.title,
     businessName: businessResult.data?.name || "",
     history: (historyResult.data ?? []) as CustomerBookingHistoryItem[],
     changeRequests: (changesResult.data ?? []) as CustomerBookingChangeRequest[],

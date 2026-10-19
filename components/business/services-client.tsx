@@ -46,8 +46,10 @@ import {
   Settings2,
 } from "lucide-react"
 import Link from "next/link"
+import { ServicePlanningEditor } from "@/components/business/service-planning-editor"
 
 interface ServicesClientProps {
+  hasBookingAccess: boolean
   userId: string
   businessId: string
   businessCategory?: BusinessCategory | string | null
@@ -148,6 +150,7 @@ function SidebarImageCard({ name, url, previewUrl, isDragging, onDragStart, onDr
 
 // ---- Service card ----
 interface ServiceCardProps {
+  hasBookingAccess: boolean
   service: Service
   onUpdate: (id: string, updates: Partial<ServiceInput>) => void
   onDelete: (id: string) => void
@@ -326,7 +329,10 @@ function ServiceCard({
   availabilityPreview,
   bookingSettingsUnavailable,
   onUpdateBookingSettings,
+  hasBookingAccess,
 }: ServiceCardProps) {
+  const [tab, setTab] = useState<"general" | "options" | "availability">("general")
+  const [planningDirty, setPlanningDirty] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
   const [localTitle, setLocalTitle] = useState(service.title)
   const [localDescription, setLocalDescription] = useState(service.description ?? "")
@@ -419,6 +425,8 @@ function ServiceCard({
           variant="ghost"
           size="icon"
           onClick={() => onDelete(service.id)}
+          aria-label={`${offeringCopy.singular} archiveren`}
+          title="Archiveren bewaart bestaande boekingen."
           className="h-7 w-7 text-destructive hover:bg-destructive/10 flex-shrink-0"
           disabled={isSaving}
         >
@@ -426,7 +434,10 @@ function ServiceCard({
         </Button>
       </div>
 
-      <div className="p-5 space-y-4">
+      <div role="tablist" aria-label={`Instellingen ${service.title}`} className="flex gap-1 border-b px-3 py-2">
+        {([{ id: "general", label: "Algemeen" }, { id: "options", label: "Opties" }, { id: "availability", label: "Beschikbaarheid" }] as const).map((item) => <button key={item.id} type="button" role="tab" id={`${service.id}-${item.id}-tab`} aria-selected={tab === item.id} aria-controls={`${service.id}-${item.id}-panel`} className={`rounded-md px-3 py-2 text-xs font-medium ${tab === item.id ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`} onClick={() => { if (item.id === "general" && planningDirty && !window.confirm("Er zijn niet opgeslagen wijzigingen in de dienstenplanning. Toch sluiten?")) return; if (item.id === "general") setPlanningDirty(false); setTab(item.id) }}>{item.label}</button>)}
+      </div>
+      <div hidden={tab !== "general"} role="tabpanel" id={`${service.id}-general-panel`} aria-labelledby={`${service.id}-general-tab`} className="p-5 space-y-4">
         {/* Title */}
         <div className="space-y-1.5">
           <Label
@@ -553,13 +564,6 @@ function ServiceCard({
           )}
         </div>
 
-        <BookingSettingsPanel
-          settings={bookingSettings}
-          preview={availabilityPreview}
-          unavailable={bookingSettingsUnavailable}
-          onSave={(settings) => onUpdateBookingSettings(service.id, settings)}
-        />
-
         {/* Images drop zone */}
         <div className="space-y-2">
           <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
@@ -611,12 +615,17 @@ function ServiceCard({
           </div>
         </div>
       </div>
+      {tab !== "general" ? <div role="tabpanel" id={`${service.id}-${tab}-panel`} aria-labelledby={`${service.id}-${tab}-tab`}>
+        {tab === "availability" && hasBookingAccess ? <div className="px-5 pt-5"><BookingSettingsPanel settings={bookingSettings} preview={availabilityPreview} unavailable={bookingSettingsUnavailable} onSave={(settings) => onUpdateBookingSettings(service.id, settings)} /></div> : null}
+        <ServicePlanningEditor serviceId={service.id} mode={tab} onDirtyChange={setPlanningDirty} />
+      </div> : null}
     </div>
   )
 }
 
 // ---- Main client component ----
 export function ServicesClient({
+  hasBookingAccess,
   userId,
   businessId,
   businessCategory,
@@ -742,12 +751,12 @@ export function ServicesClient({
     let failed = false
     try {
       await apiDeleteService(id)
-      toast.success(`${offeringCopy.singular[0].toUpperCase()}${offeringCopy.singular.slice(1)} verwijderd`)
+      toast.success(`${offeringCopy.singular[0].toUpperCase()}${offeringCopy.singular.slice(1)} gearchiveerd`)
     } catch (err) {
       console.error(err)
       setServices(prev)
       failed = true
-      toast.error("Verwijderen mislukt")
+      toast.error("Archiveren mislukt")
     } finally {
       setIsSaving(false)
       if (failed) setSaveState("error")
@@ -865,6 +874,7 @@ export function ServicesClient({
             <div className="grid gap-5 grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 max-w-7xl mx-auto">
               {services.map((service) => (
                 <ServiceCard
+                  hasBookingAccess={hasBookingAccess}
                   key={service.id}
                   service={service}
                   onUpdate={handleUpdateService}

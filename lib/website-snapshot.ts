@@ -31,6 +31,7 @@ export interface SnapshotBusiness {
 }
 
 export interface SnapshotService {
+  booking_catalog?: import("@/lib/booking/cart").BookingCatalog | null
   id: string
   business_id: string
   title: string
@@ -228,7 +229,7 @@ export async function buildWebsiteLiveSnapshot({
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
     businessId
-      ? supabase.from("services").select("*").eq("business_id", businessId).order("position", { ascending: true })
+      ? supabase.from("services").select("*").eq("business_id", businessId).is("archived_at", null).order("position", { ascending: true })
       : Promise.resolve({ data: [], error: null }),
     businessId
       ? supabase

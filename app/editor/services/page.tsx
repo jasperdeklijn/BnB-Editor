@@ -23,6 +23,7 @@ import {
 } from "@/lib/booking/availability"
 import { getServices } from "@/lib/supabase/services"
 import { ServicesClient } from "@/components/business/services-client"
+import { loadBookingPlanning, servicePlanningInput } from "@/lib/booking/planning-data"
 
 export const metadata = {
   title: "Aanbod | Website Maker",
@@ -53,6 +54,8 @@ export default async function ServicesPage() {
     )
   }
   const services = await getServices(business.id)
+  const bookingAccess = await getUserRuntimeEntitlement(supabase, data.user.id, "booking_management")
+  let livePlanning: Awaited<ReturnType<typeof loadBookingPlanning>> | null = null
   let calendarEntries: CalendarEntry[] = []
   let availabilityWindows: CalendarAvailabilityWindow[] = []
   let storedBookingSettings: ServiceBookingSettings[] = []
@@ -77,6 +80,7 @@ export default async function ServicesPage() {
   }
 
   const storedSettingsByService = new Map(storedBookingSettings.map((settings) => [settings.service_id, settings]))
+  try { livePlanning = await loadBookingPlanning(supabase, business.id) } catch (error) { console.error("[services] Live planning unavailable", error) }
   const bookingSettings = services.map((service) => storedSettingsByService.get(service.id)
     ?? createDefaultServiceBookingSettings(service.id, business.id, business.category === "bnb" ? "stay" : "appointment"))
   const now = new Date()
@@ -84,9 +88,7 @@ export default async function ServicesPage() {
     bookingSettings.map((settings) => {
       const dateFrom = localDateForInstant(now, settings.timezone)
       return [settings.service_id, getServiceAvailabilityPreview({
-        settings,
-        windows: availabilityWindows,
-        entries: calendarEntries,
+        ...(livePlanning ? servicePlanningInput(livePlanning, settings) : { settings, windows: availabilityWindows, entries: calendarEntries }),
         date_from: dateFrom,
         date_to: addLocalDays(dateFrom, 14),
         now,
@@ -99,6 +101,7 @@ export default async function ServicesPage() {
     <ServicesClient
       userId={data.user.id}
       businessId={business.id}
+      hasBookingAccess={bookingAccess.allowed || !shouldEnforcePlanEntitlements()}
       businessCategory={business.category}
       initialServices={services}
       initialCalendarEntries={calendarEntries}

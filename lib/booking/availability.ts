@@ -1,6 +1,7 @@
 import type { ServiceBookingSettings } from "@/lib/booking/types"
 
 export interface AvailabilityWindowInput {
+  date?: string
   service_id: string | null
   weekday: number
   start_time: string
@@ -10,6 +11,9 @@ export interface AvailabilityWindowInput {
 }
 
 export interface BusyCalendarEntryInput {
+  resource_id?: string | null
+  buffer_before_minutes?: number
+  buffer_after_minutes?: number
   service_id: string | null
   entry_type: "appointment" | "booking" | "blocked" | "note"
   status: "pending" | "confirmed" | "cancelled" | "completed" | "blocked"
@@ -49,6 +53,7 @@ export interface AvailabilityDaySummary {
 }
 
 interface AvailabilityInput {
+  resource?: { capacity: number; windows: AvailabilityWindowInput[]; entries: BusyCalendarEntryInput[] }
   settings: ServiceBookingSettings
   windows: AvailabilityWindowInput[]
   entries: BusyCalendarEntryInput[]
@@ -185,11 +190,17 @@ function effectiveWindows(
   windows: AvailabilityWindowInput[],
   serviceId: string,
   weekday: number,
+  date?: string,
 ) {
-  const serviceRows = windows.filter((window) => window.service_id === serviceId && window.weekday === weekday)
+  const datedBusiness = windows.filter((window) => date && window.date === date && window.service_id === null)
+  if (datedBusiness.some((window) => !window.is_active)) return []
+  const datedService = windows.filter((window) => date && window.date === date && window.service_id === serviceId)
+  if (datedService.length) return datedService.filter((window) => window.is_active)
+  if (datedBusiness.length) return datedBusiness.filter((window) => window.is_active)
+  const serviceRows = windows.filter((window) => !window.date && window.service_id === serviceId && window.weekday === weekday)
   const selected = serviceRows.length > 0
     ? serviceRows
-    : windows.filter((window) => window.service_id === null && window.weekday === weekday)
+    : windows.filter((window) => !window.date && window.service_id === null && window.weekday === weekday)
   return selected.filter((window) => window.is_active)
 }
 
@@ -202,10 +213,11 @@ function isCapacityAvailable(
   end: Date,
   settings: ServiceBookingSettings,
   entries: BusyCalendarEntryInput[],
+  includeCandidateBuffers = entries.some((entry) => entry.buffer_before_minutes !== undefined || entry.buffer_after_minutes !== undefined),
 ) {
   const bufferedStart = start.getTime() - settings.buffer_before_minutes * MINUTE_MS
   const bufferedEnd = end.getTime() + settings.buffer_after_minutes * MINUTE_MS
-  let occupancy = 0
+  const events: Array<[number, number]> = []
 
   for (const entry of entries) {
     if (entry.status === "cancelled" || entry.status === "completed" || entry.entry_type === "note") continue
@@ -219,14 +231,20 @@ function isCapacityAvailable(
       continue
     }
     if (entry.service_id === settings.service_id && (entry.status === "pending" || entry.status === "confirmed")) {
-      const occupiedStart = entryStart - settings.buffer_before_minutes * MINUTE_MS
-      const occupiedEnd = entryEnd + settings.buffer_after_minutes * MINUTE_MS
-      if (!overlaps(start.getTime(), end.getTime(), occupiedStart, occupiedEnd)) continue
-      occupancy += 1
-      if (occupancy >= settings.capacity) return false
+      const occupiedStart = entryStart - (entry.buffer_before_minutes ?? settings.buffer_before_minutes) * MINUTE_MS
+      const occupiedEnd = entryEnd + (entry.buffer_after_minutes ?? settings.buffer_after_minutes) * MINUTE_MS
+      const candidateStart = includeCandidateBuffers ? bufferedStart : start.getTime()
+      const candidateEnd = includeCandidateBuffers ? bufferedEnd : end.getTime()
+      if (!overlaps(candidateStart, candidateEnd, occupiedStart, occupiedEnd)) continue
+      events.push([Math.max(candidateStart, occupiedStart), 1], [Math.min(candidateEnd, occupiedEnd), -1])
     }
   }
 
+  let occupancy = 0
+  for (const [, delta] of events.sort((a, b) => a[0] - b[0] || a[1] - b[1])) {
+    occupancy += delta
+    if (occupancy >= settings.capacity) return false
+  }
   return true
 }
 
@@ -321,9 +339,10 @@ export function getAppointmentAvailability(input: AvailabilityInput): Appointmen
   const lastDate = effectiveDateTo(input)
   const limit = Math.max(1, input.limit ?? 12)
   const slots: AppointmentAvailabilitySlot[] = []
+  const seenStarts = new Set<string>()
 
   for (let dateId = input.date_from; dateId <= lastDate && slots.length < limit; dateId = addLocalDays(dateId, 1)) {
-    const windows = effectiveWindows(input.windows, input.settings.service_id, isoWeekday(dateId))
+    const windows = effectiveWindows(input.windows, input.settings.service_id, isoWeekday(dateId), dateId).sort((a, b) => a.start_time.localeCompare(b.start_time))
     for (const window of windows) {
       const windowStart = zonedDateTimeToUtc(dateId, window.start_time, window.timezone || input.settings.timezone)
       const windowEnd = zonedDateTimeToUtc(dateId, window.end_time, window.timezone || input.settings.timezone)
@@ -336,8 +355,11 @@ export function getAppointmentAvailability(input: AvailabilityInput): Appointmen
       ) {
         const start = new Date(slotStart)
         const end = new Date(slotStart + input.settings.duration_minutes * MINUTE_MS)
+        if (seenStarts.has(start.toISOString())) continue
         if (start.getTime() < noticeBoundary) continue
         if (!isCapacityAvailable(start, end, input.settings, input.entries)) continue
+        if (input.resource && !isAppointmentRangeAvailable({ settings: { ...input.settings, capacity: input.resource.capacity }, windows: input.resource.windows, entries: input.resource.entries, now, start_at: start.toISOString(), end_at: end.toISOString() })) continue
+        seenStarts.add(start.toISOString())
         slots.push({
           local_date: dateId,
           start_at: start.toISOString(),
@@ -349,6 +371,20 @@ export function getAppointmentAvailability(input: AvailabilityInput): Appointmen
   }
 
   return slots
+}
+
+export function isAppointmentRangeAvailable(input: Pick<AvailabilityInput, "settings" | "windows" | "entries" | "now"> & { start_at: string; end_at: string }): boolean {
+  const start = new Date(input.start_at), end = new Date(input.end_at), now = input.now ?? new Date()
+  if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || end <= start || !input.settings.booking_enabled || input.settings.booking_mode !== "appointment") return false
+  const date = localDateForInstant(start, input.settings.timezone)
+  if (date > addLocalDays(localDateForInstant(now, input.settings.timezone), input.settings.booking_horizon_days) || start.getTime() < now.getTime() + input.settings.minimum_notice_minutes * MINUTE_MS) return false
+  if ((end.getTime() - start.getTime()) / MINUTE_MS !== input.settings.duration_minutes) return false
+  const inside = effectiveWindows(input.windows, input.settings.service_id, isoWeekday(date), date).some((window) => {
+    const from = zonedDateTimeToUtc(date, window.start_time, window.timezone || input.settings.timezone)
+    const to = zonedDateTimeToUtc(date, window.end_time, window.timezone || input.settings.timezone)
+    return from && to && start >= from && end <= to
+  })
+  return Boolean(inside) && isCapacityAvailable(start, end, input.settings, input.entries, true)
 }
 
 export function getStayAvailability(input: AvailabilityInput): StayAvailabilityOption[] {
@@ -408,10 +444,10 @@ export function checkStayAvailability(input: {
     return { available: false, reason: "booking_horizon", nights }
   }
 
-  if (effectiveWindows(input.windows, input.settings.service_id, isoWeekday(input.arrival_date)).length === 0) {
+  if (effectiveWindows(input.windows, input.settings.service_id, isoWeekday(input.arrival_date), input.arrival_date).length === 0) {
     return { available: false, reason: "closed_arrival", nights }
   }
-  if (effectiveWindows(input.windows, input.settings.service_id, isoWeekday(input.departure_date)).length === 0) {
+  if (effectiveWindows(input.windows, input.settings.service_id, isoWeekday(input.departure_date), input.departure_date).length === 0) {
     return { available: false, reason: "closed_departure", nights }
   }
 

@@ -7,6 +7,8 @@ import { shouldEnforcePlanEntitlements } from "@/lib/plan-enforcement"
 import { getUserSubscription, hasBookingAddonAccess } from "@/lib/subscriptions"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { isWebsiteLiveSnapshot, type SnapshotService, type WebsiteLiveSnapshot } from "@/lib/website-snapshot"
+import { loadBookingPlanning, servicePlanningInput } from "@/lib/booking/planning-data"
+import type { AvailabilityWindowInput } from "@/lib/booking/availability"
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
@@ -22,6 +24,8 @@ export class PublicBookingError extends Error {
 }
 
 export interface PublicBookingContext {
+  planning: Awaited<ReturnType<typeof loadBookingPlanning>>
+  resource?: { capacity: number; windows: AvailabilityWindowInput[]; entries: BusyCalendarEntryInput[] }
   supabase: SupabaseClient
   snapshot: WebsiteLiveSnapshot
   websiteId: string
@@ -131,9 +135,13 @@ export async function resolvePublicBookingContext(input: {
     ? { data: null }
     : await supabase.auth.admin.getUserById(website.user_id)
 
+  const planning = await loadBookingPlanning(supabase, businessId)
+  const live = servicePlanningInput(planning, settings as ServiceBookingSettings)
   return {
+    planning,
+    resource: live.resource,
     supabase,
-    snapshot,
+    snapshot: { ...snapshot, availabilityWindows: live.windows as WebsiteLiveSnapshot["availabilityWindows"] },
     websiteId: website.id,
     businessId,
     userId: website.user_id,
@@ -150,43 +158,7 @@ export async function getBusyEntries(
   rangeStart: Date,
   rangeEnd: Date,
 ): Promise<BusyCalendarEntryInput[]> {
-  const [calendarResult, holdsResult] = await Promise.all([
-    context.supabase
-      .from("calendar_entries")
-      .select("service_id, entry_type, status, start_at, end_at")
-      .eq("business_id", context.businessId)
-      .or(`service_id.is.null,service_id.eq.${context.service.id}`)
-      .lt("start_at", rangeEnd.toISOString())
-      .gt("end_at", rangeStart.toISOString()),
-    context.supabase
-      .from("booking_holds")
-      .select("service_id, booking_mode, start_at, end_at")
-      .eq("service_id", context.service.id)
-      .eq("status", "active")
-      .gt("expires_at", new Date().toISOString())
-      .lt("start_at", rangeEnd.toISOString())
-      .gt("end_at", rangeStart.toISOString()),
-  ])
-
-  if (calendarResult.error) {
-    console.error("[booking] Could not read calendar entries", calendarResult.error)
-    throw new PublicBookingError("Beschikbaarheid kon niet worden geladen.", 500)
-  }
-  if (holdsResult.error) {
-    console.error("[booking] Could not read active holds", holdsResult.error)
-    throw new PublicBookingError("De boekingsmodule is nog niet beschikbaar.", 503, "BOOKING_SCHEMA_UNAVAILABLE")
-  }
-
-  const calendarEntries = (calendarResult.data ?? []) as BusyCalendarEntryInput[]
-  const holdEntries: BusyCalendarEntryInput[] = (holdsResult.data ?? []).map((hold) => ({
-    service_id: hold.service_id,
-    entry_type: hold.booking_mode === "stay" ? "booking" : "appointment",
-    status: "pending",
-    start_at: hold.start_at,
-    end_at: hold.end_at,
-  }))
-
-  return [...calendarEntries, ...holdEntries]
+  return context.planning.entries.filter((entry) => (entry.service_id === null || entry.service_id === context.service.id) && new Date(entry.start_at) < rangeEnd && new Date(entry.end_at) > rangeStart)
 }
 
 export function bookingErrorResponse(error: unknown) {

@@ -1,6 +1,7 @@
 "use client"
 
 import { SectionLinkSelect } from "@/components/editor/section-link-select"
+import { BookingCartSettings } from "@/components/editor/booking-cart-settings"
 
 import { SectionIconPicker } from "@/components/editor/section-icon-picker"
 
@@ -15,6 +16,7 @@ import { getOfferingCopy, type BusinessCategory } from "@/lib/business/categorie
 import type { SectionEditorProps } from "@/components/editor/section-editor-types"
 
 interface AvailableService {
+  booking_catalog?: unknown
   id: string
   name: string
   images: string[]
@@ -88,8 +90,9 @@ export function ServicesSectionEditor({
 
         const { data: serviceRows } = await supabase
           .from("services")
-          .select("id, title, image_urls, price")
+          .select("id, title, image_urls, price, booking_catalog")
           .eq("business_id", resolvedBusinessId)
+          .is("archived_at", null)
           .order("position", { ascending: true })
 
         if (!cancelled) {
@@ -99,6 +102,7 @@ export function ServicesSectionEditor({
               name: service.title,
               images: Array.isArray(service.image_urls) ? service.image_urls : [],
               price: service.price,
+              booking_catalog: service.booking_catalog,
             })),
           )
         }
@@ -436,6 +440,7 @@ export function ServicesSectionEditor({
                 Beschikbaarheid controleert tijden en verblijven vóór de aanvraag wordt opgeslagen. Stel de regels en openingstijden eerst in bij {offeringCopy.title} en in de kalender.
               </p>
             )}
+            {section.data.bookingSpaceMode === "calendar" ? <BookingCartSettings data={section.data} updateField={updateField} hasBookingAccess={hasBookingAccess} services={availableServices} /> : null}
             <div>
               <Label className="text-xs mb-1.5 block">Titel</Label>
               <Input

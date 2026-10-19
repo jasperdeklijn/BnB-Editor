@@ -1,6 +1,8 @@
 "use client"
 
 import { WebsiteLink } from "@/components/editor/website-links-context"
+import { BookingCart } from "@/components/booking/booking-cart"
+import type { BookingCatalog } from "@/lib/booking/cart"
 
 import type React from "react"
 import { SectionIcon } from "./section-icon"
@@ -30,6 +32,7 @@ const servicesLayoutMap = {
 } as const
 
 interface ServicesSectionProps {
+  allSections?: import("@/lib/types").Section[]
   data: Record<string, unknown>
   isPreview: boolean
   styles?: SectionStyles
@@ -59,6 +62,7 @@ export function ServicesSection(props: ServicesSectionProps) {
 }
 
 interface ServiceDisplay {
+  booking_catalog?: BookingCatalog | null
   id: string
   name: string
   description: string | null
@@ -1885,6 +1889,7 @@ function ServicesSectionContent({
   businessId: runtimeBusinessId,
   businessCategory: runtimeBusinessCategory,
   activeLocale: runtimeActiveLocale,
+  allSections,
 }: ServicesSectionProps) {
   const { messages } = useWebsiteLocale()
   const title = (data.title as string) || messages.offering
@@ -1928,6 +1933,7 @@ function ServicesSectionContent({
         if (data.services) {
           let result = (data.services as any[]).map((service): ServiceDisplay => ({
             id: service.id,
+            booking_catalog: service.booking_catalog,
             name: service.title ?? service.name ?? "",
             description: service.description ?? null,
             price: service.price ?? null,
@@ -1986,12 +1992,14 @@ function ServicesSectionContent({
           .from("services")
           .select("*")
           .eq("business_id", resolvedBusinessId)
+          .is("archived_at", null)
           .order("position", { ascending: true })
 
         if (cancelled) return
 
         let result = ((serviceData ?? []) as any[]).map((service): ServiceDisplay => ({
           id: service.id,
+          booking_catalog: service.booking_catalog,
           
           name: service.title ?? "",
           description: service.description ?? null,
@@ -2154,7 +2162,7 @@ function ServicesSectionContent({
             onMoreInfo={setActiveService}
           />
         )}
-        <ServicesBookingSpace
+        {bookingSettings.enabled && bookingSettings.mode === "calendar" && data.bookingCartEnabled === true ? <BookingCart data={{ ...data, bookingCartLogo: data.bookingCartLogo || allSections?.find((section) => section.type === "nav")?.styles?.logo || "" }} services={(bookingSettings.serviceIds.length ? services.filter((service) => bookingSettings.serviceIds.includes(service.id)) : services).map((service) => ({ id: service.id, title: service.name, booking_catalog: service.booking_catalog }))} websiteId={websiteId} sectionId={formDestinationKey} locale={activeLocale} isPreview={isPreview} /> : <ServicesBookingSpace
           settings={bookingSettings}
           services={bookingSettings.serviceIds.length > 0
             ? services.filter((service) => bookingSettings.serviceIds.includes(service.id))
@@ -2164,7 +2172,7 @@ function ServicesSectionContent({
           formDestinationKey={formDestinationKey}
           locale={activeLocale}
           isPreview={isPreview}
-        />
+        />}
         {activeService ? (
           <ServiceInfoPopup
             service={activeService}

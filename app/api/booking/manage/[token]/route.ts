@@ -74,7 +74,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       const proposal = view.changeRequests.find((item) => item.id === requestId && item.status === "pending" && item.requested_by === "owner" && item.request_kind === "alternative_proposal")
       if (!proposal) return NextResponse.json({ error: "Dit voorstel is niet meer beschikbaar." }, { status: 409 })
       await validateBookingReplacementById(view.entry.id, proposal.proposed_start_at, proposal.proposed_end_at)
-      const { data: entryId, error } = await admin.rpc("apply_booking_change_request", { p_request_id: proposal.id, p_actor: "customer", p_resolved_by: null })
+      const { data: entryId, error } = await admin.rpc(view.group ? "apply_booking_group_change_request" : "apply_booking_change_request", { p_request_id: proposal.id, p_actor: "customer", p_resolved_by: null })
       if (error || !entryId) return NextResponse.json({ error: error?.message.includes("SLOT_UNAVAILABLE") ? "Dit tijdstip is niet meer beschikbaar." : "Het voorstel kon niet worden geaccepteerd." }, { status: 409 })
       const notification = await dispatch(entryId)
       return NextResponse.json({ success: true, notification })

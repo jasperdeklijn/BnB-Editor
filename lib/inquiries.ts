@@ -321,7 +321,7 @@ export async function getInquiryOverview(businessId: string, filters: Required<I
   const inquiries = inquiryRows.map((row) => normalizeRecord(row))
   const ids = inquiries.map((item) => item.id)
   const calendarRows = ids.length
-    ? await supabase.from("calendar_entries").select("id, contact_request_id, status, entry_type, start_at, end_at").eq("business_id", businessId).in("contact_request_id", ids)
+    ? await supabase.from("calendar_entries").select("id, contact_request_id, status, entry_type, start_at, end_at").eq("business_id", businessId).in("contact_request_id", ids).or("booking_group_id.is.null,booking_group_primary.eq.true")
     : { data: [], error: null }
   if (calendarRows.error) throw calendarRows.error
   const calendarItems = (calendarRows.data ?? []) as Array<Record<string, unknown>>
@@ -354,7 +354,7 @@ export async function getInquiryDetail(businessId: string, inquiryId: string): P
   const [messagesResult, activitiesResult, calendarResult] = await Promise.all([
     supabase.from("contact_request_messages").select("*").eq("contact_request_id", inquiryId).eq("business_id", businessId).order("created_at", { ascending: true }),
     supabase.from("contact_request_activities").select("*").eq("contact_request_id", inquiryId).eq("business_id", businessId).order("created_at", { ascending: true }),
-    supabase.from("calendar_entries").select("id, status, entry_type, start_at, end_at").eq("contact_request_id", inquiryId).eq("business_id", businessId).maybeSingle(),
+    supabase.from("calendar_entries").select("id, status, entry_type, start_at, end_at").eq("contact_request_id", inquiryId).eq("business_id", businessId).or("booking_group_id.is.null,booking_group_primary.eq.true").maybeSingle(),
   ])
   if (messagesResult.error) throw messagesResult.error
   if (activitiesResult.error) throw activitiesResult.error

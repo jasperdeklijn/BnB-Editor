@@ -57,6 +57,7 @@ export async function POST(request: NextRequest) {
       const entries = await getBusyEntries(context, range.start, range.end)
       const date = localDateForInstant(new Date(startAt), context.settings.timezone)
       const exactSlot = getAppointmentAvailability({
+        resource: context.resource,
         settings: context.settings,
         windows: context.snapshot.availabilityWindows,
         entries,

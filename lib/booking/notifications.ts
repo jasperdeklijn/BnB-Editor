@@ -62,6 +62,16 @@ async function deliverNotification(row: NotificationRow) {
   const title = String(row.payload.title || getBookingEmailFallbackTitle(emailLocale))
   const copy = getBookingNotificationCopy(row.notification_type, title, emailLocale)
   const range = formatRange(row.payload, emailLocale)
+  let groupDetails = ""
+  const { data: linkedEntry } = await supabase.from("calendar_entries").select("booking_group_id").eq("id", row.calendar_entry_id).maybeSingle()
+  if (linkedEntry?.booking_group_id) {
+    const { data: group } = await supabase.from("booking_groups").select("plan,payment_instructions,confirmation_text").eq("id", linkedEntry.booking_group_id).maybeSingle()
+    if (group) {
+      const items = Array.isArray(group.plan?.items) ? group.plan.items as Array<{ description: string; start_at: string; end_at: string }> : []
+      groupDetails = "\n\n" + items.map((item) => `${item.description}\n${formatRange({ startAt: item.start_at, endAt: item.end_at, timezone: group.plan.timezone }, emailLocale)}`).join("\n\n") + (group.payment_instructions ? `\n\n${group.payment_instructions}` : "")
+      if (group.confirmation_text && ["confirmed", "request_received"].includes(row.notification_type)) groupDetails += `\n\n${group.confirmation_text}`
+    }
+  }
   const actionLabel = getBookingEmailActionLabel(row.recipient_type, emailLocale)
   const messageId = `<booking-${createHash("sha256").update(row.idempotency_key).digest("hex").slice(0, 28)}@${(process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || "flexpagina.nl").toLowerCase()}>`
   const transporter = nodemailer.createTransport({
@@ -81,8 +91,8 @@ async function deliverNotification(row: NotificationRow) {
       from: `${process.env.SMTP_FROM_NAME?.trim() || "FlexPagina boekingen"} <${process.env.SMTP_FROM?.trim() || user || PLATFORM_EMAILS.info}>`,
       to: row.recipient_email,
       subject: copy.subject,
-      text: `${copy.heading}\n\n${copy.body}${range ? `\n\n${range}` : ""}\n\n${link}`,
-      html: renderFlexPaginaEmail({ title: copy.heading, text: `${copy.body}${range ? `\n\n${range}` : ""}`, locale: emailLocale, action: { label: actionLabel, url: link } }),
+      text: `${copy.heading}\n\n${copy.body}${groupDetails || (range ? `\n\n${range}` : "")}\n\n${link}`,
+      html: renderFlexPaginaEmail({ title: copy.heading, text: `${copy.body}${groupDetails || (range ? `\n\n${range}` : "")}`, locale: emailLocale, action: { label: actionLabel, url: link } }),
       messageId,
       headers: { "X-FlexPagina-Booking-Notification": row.id },
     })

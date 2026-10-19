@@ -9,6 +9,7 @@ import {
   type ServiceBookingSettingsInput,
 } from "@/lib/booking/types"
 import { createClient } from "@/lib/supabase/server"
+import { assertCurrentUserRuntimeEntitlement } from "@/lib/runtime-entitlements"
 
 type ServiceBookingSettingsRow = {
   service_id: string
@@ -88,6 +89,7 @@ export async function upsertServiceBookingSettings(
   if (serviceError) throw serviceError
   if (!service) throw new Error("Offering not found")
   await requireOwnedBusiness((service as { business_id: string }).business_id, supabase)
+  await assertCurrentUserRuntimeEntitlement(supabase, "booking_management")
 
   const settings = validateServiceBookingSettingsInput(input)
   const { data, error } = await supabase
