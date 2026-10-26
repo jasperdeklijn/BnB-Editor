@@ -63,13 +63,6 @@ export default async function HomePage() {
       operatingSystem: "Web",
       url: PLATFORM_BASE_URL,
       description: homepageDescription,
-      offers: {
-        "@type": "AggregateOffer",
-        priceCurrency: "EUR",
-        lowPrice: "7.95",
-        offerCount: "3",
-        url: `${PLATFORM_BASE_URL}/pricing`,
-      },
     },
     {
       "@context": "https://schema.org",

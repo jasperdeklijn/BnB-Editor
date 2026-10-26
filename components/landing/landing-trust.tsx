@@ -1,9 +1,8 @@
 import { Coins, PanelsTopLeft, PencilRuler } from "lucide-react"
-import { formatPrice, PRICING_PLANS } from "@/lib/pricing"
 
 const reasons = [
   { title: "Zelf aanpassen, zonder techniek", description: "Werk met kant-en-klare onderdelen. Teksten, foto's en kleuren pas je zelf aan in de visuele editor.", icon: PencilRuler },
-  { title: "Klein beginnen, gericht uitbreiden", description: `Je websitepakket begint bij ${formatPrice(PRICING_PLANS.bronze.monthlyPrice)} per maand exclusief btw. Kies extra functies als je ze nodig hebt.`, icon: Coins },
+  { title: "Klein beginnen, gericht uitbreiden", description: "Kies de functies die passen bij je bedrijf en breid uit wanneer je ze nodig hebt. De officiële tarieven worden na de testfase bekendgemaakt.", icon: Coins },
   { title: "Je website en werk bij elkaar", description: "Beheer je website en aanvragen in dezelfde omgeving. Met Booking & Facturatie komen daar je boekingen en facturen bij.", icon: PanelsTopLeft },
 ]
 

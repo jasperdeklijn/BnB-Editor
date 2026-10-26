@@ -18,13 +18,13 @@ export function PricingSection() {
             Prijzen
           </p>
           <h2 className="text-balance text-4xl font-bold tracking-tight text-[var(--landing-secondary)] md:text-5xl">
-            Kies het plan dat past bij je bedrijf
+            Bekijk de pakketten voor je bedrijf
           </h2>
           <p className="mt-4 text-lg leading-relaxed text-[var(--landing-muted)]">
             Kies je websitepakket en breid uit met Booking & Facturatie of meertaligheid wanneer je daar klaar voor bent.
           </p>
           <p className="mt-3 text-sm font-semibold text-[var(--landing-primary)]">
-            Alle vermelde prijzen zijn exclusief btw.
+            De officiële tarieven volgen na de testfase. Daarom zijn de prijzen voorlopig vervaagd.
           </p>
         </div>
 
@@ -43,7 +43,7 @@ export function PricingSection() {
             className="gap-2 rounded-full bg-[var(--landing-primary)] px-8 py-6 text-white hover:bg-[var(--landing-primary-dark)]"
           >
             <Link href="/pricing">
-              Alle prijzen bekijken
+              Pakketten vergelijken
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>

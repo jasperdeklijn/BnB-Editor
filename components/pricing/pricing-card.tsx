@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowRight, CheckCircle2 } from "lucide-react"
 import type { PlanId, PricingPlan } from "@/lib/types/pricing"
 import { cn } from "@/lib/utils"
-import { formatPrice } from "@/lib/pricing"
+import { PricePreview } from "@/components/pricing/price-preview"
 import Link from "next/link"
 
 interface PricingCardProps {
@@ -64,12 +64,7 @@ export function PricingCard({
         </div>
 
         <div className="mb-8">
-          <div className="flex flex-wrap items-baseline gap-1">
-            <span className="text-4xl font-bold text-[var(--landing-secondary)]">
-              {formatPrice(plan.monthlyPrice)}
-            </span>
-            <span className="text-sm text-[var(--landing-muted)]">/maand</span>
-          </div>
+          <PricePreview className="text-4xl font-bold text-[var(--landing-secondary)]" />
           <p className="mt-1 text-xs font-medium text-[var(--landing-muted)]">
             Exclusief btw
           </p>
@@ -99,14 +94,14 @@ export function PricingCard({
         ) : (
           <Button asChild className={buttonClasses}>
             <Link href={`/auth/sign-up?plan=${plan.id}`}>
-              Gratis starten
+              Testversie proberen
               <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
             </Link>
           </Button>
         )}
 
         <p className="mt-4 text-center text-xs text-[var(--landing-muted)]">
-          Maandelijks gefactureerd. Upgraden of downgraden wanneer je wilt.
+          Officiële tarieven worden later bekendgemaakt.
         </p>
       </div>
     </div>

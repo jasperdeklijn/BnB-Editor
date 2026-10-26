@@ -176,6 +176,7 @@ export const FEATURE_COMPARISON: FeatureComparison[] = [
 ]
 
 export const PRICING_FAQ = [
+  { question: "Wanneer worden de officiële tarieven bekend?", answer: "FlexPagina is nog in de testfase. De officiële tarieven worden later bekendgemaakt; daarom zijn de prijzen voorlopig vervaagd. Je kunt de pakketten en hun mogelijkheden alvast vergelijken." },
   { question: "Wat betekent fair-use bij Gold?", answer: "Gold heeft geen vaste paginalimiet. Bestaande technische upload- en importgrenzen blijven gelden. Statistieken verwerken maximaal 20 gebeurtenissen per aanvraag, 120 aanvragen per browsersessie per minuut en 1.000 per website per minuut; pieken kunnen worden overgeslagen. Je gepubliceerde pagina's blijven bereikbaar." },
   {
     question: "Welk abonnement heb ik nodig voor meerdere pagina's?",
@@ -184,12 +185,12 @@ export const PRICING_FAQ = [
   {
     question: "Wat zit er in Booking & Facturatie?",
     answer:
-      `${BOOKING_ADDON_NAME} kost ${formatPrice(BOOKING_ADDON_MONTHLY_PRICE)} per maand exclusief btw en is beschikbaar bij Bronze, Silver en Gold. De add-on bevat online boekingen, beschikbaarheid, boekingsbeheer, automatische bevestigingen, facturen vanuit boekingen, PDF-facturen, klantgegevens en factuurhistorie. Ook het beheer van de boekbare diensten is inbegrepen.`,
+      `${BOOKING_ADDON_NAME} is beschikbaar bij Bronze, Silver en Gold. De officiële tarieven worden na de testfase bekendgemaakt. De add-on bevat online boekingen, beschikbaarheid, boekingsbeheer, automatische bevestigingen, facturen vanuit boekingen, PDF-facturen, klantgegevens en factuurhistorie. Ook het beheer van de boekbare diensten is inbegrepen.`,
   },
   {
     question: "Kan ik een meertalige website maken?",
     answer:
-      "Ja. Meertaligheid is inbegrepen bij Gold. Bij Bronze en Silver kunt u het talenpakket voor € 2,99 per maand exclusief btw toevoegen.",
+      "Ja. Meertaligheid is inbegrepen bij Gold. Bij Bronze en Silver kunt u het talenpakket toevoegen. Het officiële tarief wordt na de testfase bekendgemaakt.",
   },
   {
     question: "Kan ik later van abonnement wisselen?",

@@ -14,7 +14,7 @@ export const homepageFaqItems = [
   {
     question: "Wat kan ik gratis doen?",
     answer:
-      "Je kunt zonder creditcard een account aanmaken en beginnen met je website. Om je website te publiceren kies je een betaald websitepakket. Je vindt de prijzen en extra mogelijkheden bij de pakketten op deze pagina.",
+      "Je kunt zonder creditcard een account aanmaken en beginnen met je website. Om je website te publiceren kies je een betaald websitepakket. De pakketten en extra mogelijkheden vind je op deze pagina; de officiële tarieven worden na de testfase bekendgemaakt.",
   },
   {
     question: "Kan ik mijn eigen domeinnaam gebruiken?",

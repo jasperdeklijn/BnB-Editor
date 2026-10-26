@@ -1,7 +1,8 @@
 import Link from "next/link"
 import { CalendarCheck, LayoutDashboard, FilePlus2, FileDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { BOOKING_ADDON_MONTHLY_PRICE, BOOKING_ADDON_NAME, formatPrice } from "@/lib/pricing"
+import { BOOKING_ADDON_NAME } from "@/lib/pricing"
+import { PricePreview } from "@/components/pricing/price-preview"
 
 const steps = [
   { title: "Klant boekt", text: "Je klant kiest een beschikbaar moment op je website.", icon: CalendarCheck },
@@ -22,7 +23,7 @@ export function LandingBooking() {
           </div>
           <div className="rounded-3xl border border-[var(--landing-border)] bg-[var(--landing-primary-light)] p-6 lg:max-w-xs">
             <p className="text-sm font-semibold">Breid elk websitepakket uit</p>
-            <p className="mt-3 text-3xl font-bold text-[var(--landing-primary)]">+ {formatPrice(BOOKING_ADDON_MONTHLY_PRICE)}<span className="text-sm font-normal"> /maand</span></p>
+            <p className="mt-3"><PricePreview className="text-3xl font-bold text-[var(--landing-primary)]" /></p>
             <p className="mt-2 text-sm text-[var(--landing-muted)]">Exclusief btw. Bij Bronze, Silver en Gold.</p>
             <Button asChild className="mt-5 w-full rounded-full bg-[var(--landing-primary)] text-white hover:bg-[var(--landing-primary-dark)]"><Link href="/auth/sign-up">Gratis starten</Link></Button>
           </div>

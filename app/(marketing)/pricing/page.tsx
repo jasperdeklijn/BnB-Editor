@@ -3,16 +3,17 @@ import { ArrowLeft, ArrowRight, CheckCircle2, ShieldCheck, X } from "lucide-reac
 
 import { PricingCard } from "@/components/pricing/pricing-card"
 import { PricingAddons } from "@/components/pricing/pricing-addons"
+import { PricePreview } from "@/components/pricing/price-preview"
 import { PricingFaq } from "@/components/pricing/pricing-faq"
 import { SharedFooter } from "@/components/layout/shared-footer"
-import { FEATURE_COMPARISON, formatPrice, getMainPlans } from "@/lib/pricing"
+import { FEATURE_COMPARISON, getMainPlans } from "@/lib/pricing"
 import { PLATFORM_BRAND_INITIALS, PLATFORM_BRAND_NAME } from "@/lib/platform"
 import type { PlanId } from "@/lib/types/pricing"
 
 export const metadata = {
   title: "Prijzen",
   description:
-    "Transparante abonnementen voor je website: Bronze, Silver en Gold. Kies de functies die passen bij je bedrijf.",
+    "Vergelijk Bronze, Silver en Gold tijdens de testfase van FlexPagina. De officiële tarieven worden later bekendgemaakt.",
   alternates: {
     canonical: "/pricing",
   },
@@ -20,7 +21,7 @@ export const metadata = {
     url: "/pricing",
     title: `Prijzen | ${PLATFORM_BRAND_NAME}`,
     description:
-      "Vergelijk Bronze, Silver en Gold voor je bedrijfswebsite.",
+      "Vergelijk de websitepakketten van FlexPagina. Officiële tarieven volgen na de testfase.",
   },
 }
 
@@ -86,12 +87,12 @@ export default function PricingPage() {
                 Prijzen
               </p>
               <h1 className="text-balance text-5xl font-extrabold leading-[1.05] text-[var(--landing-secondary)] md:text-6xl">
-                Duidelijke abonnementen voor elke groeifase
+                Ontdek de pakketten tijdens de testfase
               </h1>
               <p className="mt-5 text-lg leading-relaxed text-[var(--landing-muted)]">
                 Bronze zet je bedrijf online met 3 pagina&apos;s en basisstatistieken. Silver biedt 10 pagina&apos;s en gedetailleerde statistieken. Gold biedt onbeperkte pagina&apos;s (fair-use), conversies en meertaligheid. Booking & Facturatie voeg je aan elk plan toe. </p>
               <p className="mt-3 text-sm font-semibold text-[var(--landing-primary)]">
-                Alle vermelde prijzen zijn exclusief btw.
+                De officiële tarieven volgen na de testfase. Daarom zijn de prijzen voorlopig vervaagd.
               </p>
             </div>
 
@@ -129,7 +130,7 @@ export default function PricingPage() {
                       <th key={plan.id} className="px-6 py-5 text-center text-sm font-bold text-[var(--landing-secondary)]">
                         <span>{plan.name}</span>
                         <span className="mt-1 block text-xs font-semibold text-[var(--landing-muted)]">
-                          {formatPrice(plan.monthlyPrice)}/maand
+                          <PricePreview />
                         </span>
                         <span className="mt-0.5 block text-[10px] font-medium text-[var(--landing-muted)]">
                           Excl. btw
