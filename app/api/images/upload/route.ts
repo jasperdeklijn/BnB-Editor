@@ -5,6 +5,7 @@ import { inspectImage } from "@/lib/server-image-validation"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { MAX_USER_IMAGE_SIZE, USER_IMAGES_BUCKET } from "@/lib/user-images"
+import { handleMediaUpload } from "@/lib/media-upload"
 
 const MAX_PREVIEW_SIZE = 1024 * 1024
 
@@ -13,11 +14,23 @@ export async function POST(request: NextRequest) {
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const limit = await checkRateLimit(getRateLimitKey(request, `image_upload:${user.id}`), 30, 60 * 60 * 1000)
-  if (!limit.allowed) return NextResponse.json({ error: "Te veel uploads. Probeer het later opnieuw." }, { status: 429 })
-
   try {
+    const direct = request.headers.get("content-type")?.includes("application/json")
+    let input: unknown
+    if (direct) {
+      const text = await request.text()
+      if (new TextEncoder().encode(text).length > 4096) return NextResponse.json({ error: "Ongeldige uploadgegevens." }, { status: 413 })
+      try { input = JSON.parse(text) } catch { return NextResponse.json({ error: "Ongeldige uploadgegevens." }, { status: 400 }) }
+    }
+    // Finalizing a reserved file must remain possible after the upload limit.
+    const finishing = input && typeof input === "object" && "action" in input && ["complete", "cancel"].includes(String(input.action))
+    const limit = await checkRateLimit(getRateLimitKey(request, finishing ? `image_upload_finish:${user.id}` : `image_upload:${user.id}`), finishing ? 120 : 30, 60 * 60 * 1000)
+    if (!limit.allowed) return NextResponse.json({ error: "Te veel uploads. Probeer het later opnieuw." }, { status: 429 })
     const storage = await createAdminClient()
+    if (direct) {
+      const result = await handleMediaUpload(storage, user.id, input)
+      return NextResponse.json(result.body, { status: result.status })
+    }
     const form = await request.formData()
     const original = form.get("original")
     const preview = form.get("preview")

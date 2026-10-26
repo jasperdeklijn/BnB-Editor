@@ -57,11 +57,11 @@ export function SectionQuickEditor({ section, onUpdate, onStyleUpdate, userId, a
   const top = selected ? Math.max(12, Math.min(selected.rect.bottom + 8, window.innerHeight - 400)) : 12
   const left = selected ? Math.max(12, Math.min(selected.rect.left, window.innerWidth - 332)) : 12
   return <div ref={wrapper} onClickCapture={(event) => {
-    if (!(event.target instanceof Element) || event.target.closest("[data-element-controls], [data-section-elements], [data-quick-controls]")) return
+    if (!(event.target instanceof Element) || event.target.closest("[data-element-controls], [data-section-elements], [data-quick-controls], [data-media-controls]")) return
     const target = event.target
     const link = target.closest<HTMLAnchorElement>("a[data-link-target]")
     const text = target.closest<HTMLElement>("[data-editor-path]")
-    const image = target.closest<HTMLImageElement>("img[data-editor-image-path]")
+    const image = target.closest<HTMLElement>("img[data-editor-image-path], video[data-editor-image-path]")
     const background = target.closest<HTMLElement>("[data-editor-background]")
     if (link) {
       const labelPath = parsePath(link.querySelector<HTMLElement>("[data-editor-path]")?.dataset.editorPath)

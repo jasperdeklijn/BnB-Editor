@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import Image from "next/image"
+import { MediaImage } from "./media-image"
+import { isVideoSource } from "@/lib/media"
 import { Check, ImageIcon, Pencil, Trash2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { UserImageAsset } from "@/lib/user-images"
@@ -42,7 +43,8 @@ export function ImageGrid({ images, isLoading, onDelete, onCopyUrl, onRename, fo
       {images.map((image) => (
         <div key={image.originalPath} className="overflow-hidden rounded-lg border border-border bg-muted">
           <div className="group relative aspect-square">
-            <Image src={image.previewUrl} alt={image.name} fill className="object-cover transition-transform group-hover:scale-105" sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw" />
+            <MediaImage src={image.previewUrl} alt={image.name} className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-105" />
+            {isVideoSource(image.url) || /\.gif(?:$|[?#])/i.test(image.url) ? <span className="absolute left-2 top-2 rounded bg-black/70 px-2 py-1 text-xs font-medium text-white">{isVideoSource(image.url) ? "Video" : "GIF"}</span> : null}
             <div className="absolute inset-0 flex flex-col justify-between bg-black/0 p-2 opacity-0 transition-all group-hover:bg-black/50 group-hover:opacity-100 group-focus-within:bg-black/50 group-focus-within:opacity-100">
               <div className="flex justify-end">
                 <Button variant="destructive" size="icon" className="h-7 w-7" onClick={() => void handleDelete(image)} disabled={deletingImage === image.originalPath} aria-label={`${image.name} verwijderen`}>

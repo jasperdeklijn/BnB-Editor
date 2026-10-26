@@ -1,5 +1,7 @@
 "use client"
 
+import { MediaImage } from "@/components/images/media-image"
+
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import {
@@ -167,7 +169,7 @@ function ImageCard({ name, url, previewUrl, collapsed, isDragging, onDragStart, 
       }`}
       title={name}
     >
-      <img
+      <MediaImage
         src={previewUrl}
         alt={name}
         loading="lazy"

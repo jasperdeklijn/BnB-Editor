@@ -1,4 +1,8 @@
 "use client"
+
+import { isVideoSource } from "@/lib/media"
+
+import { BackgroundMedia } from "@/components/images/background-media"
 import { useEffect, useState } from "react"
 import { Star } from "lucide-react"
 import type { SectionRenderProps } from "@/components/editor/section-registry"
@@ -32,7 +36,7 @@ export function TestimonialsSection({ data, isPreview, styles, onUpdate, website
   const sectionStyle = {
     ...getSectionColorVars(styles),
     backgroundColor: styles?.backgroundColor,
-    backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
+    backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
     backgroundPosition: styles?.backgroundPosition || "center",
     color: styles?.textColor,
@@ -58,8 +62,8 @@ export function TestimonialsSection({ data, isPreview, styles, onUpdate, website
     </div>}
     {collection?.failed && !preview && <button type="button" className="mt-3 min-h-11 text-sm underline underline-offset-4" onClick={() => setAttempt((value) => value + 1)}>Opnieuw proberen</button>}
   </div>
-  return <section className={`px-4 sm:px-6 ${layout.section} ${styles?.fontFamily ?? ""}`} style={sectionStyle}>
-    <div data-section-content className={`mx-auto ${layout.container}`}>
+  return <section className={`px-4 sm:px-6 ${layout.section} ${styles?.fontFamily ?? ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+    <div data-section-content className={`mx-auto ${layout.container}`} data-media-content>
       <div className={`mb-10 ${layout.heading}`}>
         <EditableText as="h2" data={data} path={["title"]} value={String(data.title || "Ervaringen van klanten")} isPreview={isPreview} onUpdate={onUpdate} className="mb-3 text-balance text-3xl font-bold md:text-4xl" />
         {(Boolean(data.subtitle) || editing) && <EditableText as="p" data={data} path={["subtitle"]} value={String(data.subtitle || "")} fallback="" isPreview={isPreview} onUpdate={onUpdate} className={`opacity-75 ${editing && !data.subtitle ? "min-h-6" : ""}`} multiline />}

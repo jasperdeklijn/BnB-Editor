@@ -1,5 +1,9 @@
 "use client"
 
+import { isVideoSource } from "@/lib/media"
+
+import { BackgroundMedia } from "@/components/images/background-media"
+
 import { ImageIcon, ArrowUpRight } from "lucide-react"
 import { EditableText } from "@/components/editor/inline-editable-text"
 import { SectionImage } from "@/components/editor/section-content-context"
@@ -21,8 +25,8 @@ export function ProjectsSection({ data, isPreview, styles, onUpdate }: SectionRe
   const layout = getLayoutClasses(data.layout)
   if (isPreview && projects.length === 0) return null
   const textStyle = { color: styles?.textColor }
-  return <section className={`px-4 sm:px-6 ${layout.section} ${styles?.fontFamily ?? ""}`} style={{ ...getSectionColorVars(styles), backgroundColor: styles?.backgroundColor, backgroundImage: styles?.backgroundImage ? `url("${styles.backgroundImage}")` : undefined, backgroundSize: "cover", backgroundPosition: styles?.backgroundPosition || "center" }}>
-    <div data-section-content className={`mx-auto ${layout.container} ${css.container}`}>
+  return <section className={`px-4 sm:px-6 ${layout.section} ${styles?.fontFamily ?? ""}`} style={{ ...getSectionColorVars(styles), backgroundColor: styles?.backgroundColor, backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url("${styles.backgroundImage}")` : undefined, backgroundSize: "cover", backgroundPosition: styles?.backgroundPosition || "center" }} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+    <div data-section-content className={`mx-auto ${layout.container} ${css.container}`} data-media-content>
       <div className={`mb-10 ${layout.heading}`}>
         <EditableText as="h2" data={data} path={["title"]} value={typeof data.title === "string" ? data.title : messages.projects} isPreview={isPreview} onUpdate={onUpdate} className="text-3xl font-bold md:text-4xl" style={textStyle} />
         {typeof data.subtitle === "string" && data.subtitle ? <EditableText as="p" data={data} path={["subtitle"]} value={data.subtitle} isPreview={isPreview} onUpdate={onUpdate} multiline className="mt-3 text-muted-foreground" style={textStyle} /> : null}

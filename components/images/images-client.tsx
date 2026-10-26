@@ -1,5 +1,7 @@
 "use client"
 
+import { MEDIA_UPLOAD_HELP, isSupportedMediaFile } from "@/lib/media"
+
 import { useCallback, useEffect, useState } from "react"
 import { HardDrive, ImageIcon, Upload as UploadIcon } from "lucide-react"
 import { toast } from "sonner"
@@ -54,9 +56,9 @@ export function ImagesClient({ userId }: ImagesClientProps) {
 
     try {
       for (const file of files) {
-        if (!file.type.startsWith("image/")) {
+        if (!isSupportedMediaFile(file)) {
           failed = true
-          toast.error(`${file.name} is geen afbeelding`)
+          toast.error(`${file.name} is geen ondersteunde afbeelding, GIF of video`)
           continue
         }
 
@@ -143,7 +145,7 @@ export function ImagesClient({ userId }: ImagesClientProps) {
   const usagePercentage = (totalUsage / MAX_USER_IMAGE_TOTAL_SIZE) * 100
 
   return (
-    <EditorPageShell title="Afbeeldingen" description="Upload en beheer afbeeldingen voor je website en editorsecties." maxWidth="4xl">
+    <EditorPageShell title="Afbeeldingen" description="Upload en beheer afbeeldingen, GIF’s en video’s voor je website." maxWidth="4xl">
       <div className="rounded-xl border border-border bg-card shadow-sm">
         <div className="flex items-center gap-3 rounded-t-xl border-b border-border bg-secondary/40 px-6 py-4">
           <div className="rounded-md bg-primary/15 p-1.5 text-primary"><HardDrive className="h-4 w-4" /></div>
@@ -154,14 +156,14 @@ export function ImagesClient({ userId }: ImagesClientProps) {
         </div>
         <div className="px-6 py-4">
           <div className="h-2 w-full overflow-hidden rounded-full bg-muted"><div className="h-full bg-primary transition-all duration-300" style={{ width: `${Math.min(usagePercentage, 100)}%` }} /></div>
-          <p className="mt-2 text-xs text-muted-foreground">Automatisch verkleind tot maximaal 5 MB per afbeelding · 500 MB totaal, inclusief snelle voorbeelden</p>
+          <p className="mt-2 text-xs text-muted-foreground">{MEDIA_UPLOAD_HELP}</p>
         </div>
       </div>
 
       <div className="rounded-xl border border-border bg-card shadow-sm">
         <div className="flex items-center gap-3 rounded-t-xl border-b border-border bg-secondary/40 px-6 py-4">
           <div className="rounded-md bg-primary/15 p-1.5 text-primary"><UploadIcon className="h-4 w-4" /></div>
-          <div><h2 className="font-semibold text-foreground">Afbeeldingen uploaden</h2><p className="text-xs text-muted-foreground">PNG, JPG, GIF of WEBP · grote afbeeldingen worden automatisch verkleind</p></div>
+          <div><h2 className="font-semibold text-foreground">Afbeeldingen uploaden</h2><p className="text-xs text-muted-foreground">{MEDIA_UPLOAD_HELP}</p></div>
         </div>
         <div className="p-6"><ImageUploadZone onUpload={handleUpload} isUploading={isUploading} disabled={totalUsage >= MAX_USER_IMAGE_TOTAL_SIZE} /></div>
       </div>

@@ -1,5 +1,9 @@
 "use client"
 
+import { isVideoSource } from "@/lib/media"
+
+import { BackgroundMedia } from "@/components/images/background-media"
+
 import { WebsiteLink } from "@/components/editor/website-links-context"
 
 import { SectionIcon } from "./section-icon"
@@ -43,7 +47,7 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
   const sectionStyle: React.CSSProperties = {
     ...getSectionColorVars(styles),
     backgroundColor: styles?.backgroundColor,
-    backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
+    backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
     backgroundPosition: styles?.backgroundPosition || "center",
   }
@@ -56,13 +60,13 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
         style={{
           ...getSectionColorVars(styles),
           backgroundColor: styles?.backgroundColor || "#78350f",
-          backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
+          backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url(${styles.backgroundImage})` : undefined,
           backgroundSize: "cover",
           backgroundPosition: styles?.backgroundPosition || "center",
         }}
-      >
+       data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
         {styles?.backgroundImage && <div className="absolute inset-0 bg-black/50" />}
-        <div className="relative z-10 flex flex-col items-center justify-between gap-6 px-6 py-10 text-center sm:flex-row sm:text-left md:px-16">
+        <div className="relative z-10 flex flex-col items-center justify-between gap-6 px-6 py-10 text-center sm:flex-row sm:text-left md:px-16" data-media-content>
           <div>
             <EditableText as="h2" data={data} path={["title"]} value={title} isPreview={isPreview} onUpdate={onUpdate} className="text-2xl font-bold text-white md:text-3xl" style={textStyle} />
             {subtitle && (
@@ -96,8 +100,8 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
       <section
         className={`px-4 py-12 sm:px-6 md:py-20 ${styles?.fontFamily || ""}`}
         style={sectionStyle}
-      >
-        <div data-section-content className="mx-auto max-w-5xl">
+       data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+        <div data-section-content className="mx-auto max-w-5xl" data-media-content>
           <div className="flex flex-col items-center gap-8 rounded-2xl border border-border bg-[var(--section-surface)] px-8 py-12 text-[var(--section-surface-foreground)] shadow-sm backdrop-blur md:flex-row md:justify-between">
             <div className="max-w-lg text-center md:text-left">
               <EditableText
@@ -143,8 +147,8 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
     <section
       className={`px-4 py-16 sm:px-6 md:py-24 ${styles?.fontFamily || ""}`}
       style={sectionStyle}
-    >
-      <div data-section-content className="mx-auto max-w-2xl text-center">
+     data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+      <div data-section-content className="mx-auto max-w-2xl text-center" data-media-content>
         <EditableText
           as="h2"
           data={data}

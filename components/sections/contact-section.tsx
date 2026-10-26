@@ -1,5 +1,9 @@
 "use client"
 
+import { isVideoSource } from "@/lib/media"
+
+import { BackgroundMedia } from "@/components/images/background-media"
+
 import type React from "react"
 import { useState } from "react"
 import { Send, CheckCircle, AlertCircle, MessageSquare, Clock } from "lucide-react"
@@ -254,15 +258,15 @@ function ClassicLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps
   const sectionStyle: React.CSSProperties = {
     ...getSectionColorVars(styles),
     backgroundColor: styles?.backgroundColor,
-    backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
+    backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
     backgroundPosition: styles?.backgroundPosition || "center",
   }
   const textStyle: React.CSSProperties = { color: styles?.textColor }
 
   return (
-    <section className={`bg-background px-4 py-12 sm:px-6 md:py-20 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-      <div data-section-content className="mx-auto max-w-6xl">
+    <section className={`bg-background px-4 py-12 sm:px-6 md:py-20 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+      <div data-section-content className="mx-auto max-w-6xl" data-media-content>
         <EditableText as="h2" data={data} path={["title"]} value={data.title as string} isPreview={isPreview} onUpdate={onUpdate} className="mb-10 text-balance text-center text-3xl font-bold text-amber-950 md:text-4xl" style={textStyle} />
         <div data-section-columns className="grid gap-10 md:grid-cols-2 md:gap-16">
           <div>
@@ -281,8 +285,8 @@ function ClassicLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps
 function SplitLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps) {
   const { messages } = useWebsiteLocale()
   return (
-    <section className={`overflow-hidden ${styles?.fontFamily || ""}`} style={getSectionColorVars(styles)}>
-      <div data-section-columns className="flex flex-col md:flex-row min-h-[520px]">
+    <section className={`overflow-hidden ${styles?.fontFamily || ""}`} style={getSectionColorVars(styles)} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+      <div data-section-columns className="flex flex-col md:flex-row min-h-[520px]" data-media-content>
         {/* Left dark panel */}
         <div
           className="flex flex-col justify-center px-8 py-12 md:w-2/5 md:px-12"
@@ -328,14 +332,14 @@ function MinimalLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps
   const sectionStyle: React.CSSProperties = {
     ...getSectionColorVars(styles),
     backgroundColor: styles?.backgroundColor,
-    backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
+    backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
     backgroundPosition: styles?.backgroundPosition || "center",
   }
   const textStyle: React.CSSProperties = { color: styles?.textColor }
   return (
-    <section className={`px-4 py-16 sm:px-6 md:py-24 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-      <div data-section-content className="mx-auto max-w-2xl text-center">
+    <section className={`px-4 py-16 sm:px-6 md:py-24 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+      <div data-section-content className="mx-auto max-w-2xl text-center" data-media-content>
         <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[var(--section-accent)]">{messages.contact}</p>
         <EditableText as="h2" data={data} path={["title"]} value={data.title as string} isPreview={isPreview} onUpdate={onUpdate} className="mb-4 text-3xl font-bold text-amber-950 md:text-5xl" style={textStyle} />
         <EditableText as="p" data={data} path={["subtitle"]} value={(data.subtitle as string) || "We horen graag van je."} isPreview={isPreview} onUpdate={onUpdate} className="mb-10 text-muted-foreground" style={textStyle} multiline />
@@ -375,13 +379,13 @@ function CardLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps) {
   const sectionStyle: React.CSSProperties = {
     ...getSectionColorVars(styles),
     backgroundColor: styles?.backgroundColor || "#fef9f0",
-    backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
+    backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
     backgroundPosition: styles?.backgroundPosition || "center",
   }
   return (
-    <section className={`px-4 py-16 sm:px-6 md:py-24 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-      <div data-section-content className="mx-auto max-w-5xl">
+    <section className={`px-4 py-16 sm:px-6 md:py-24 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+      <div data-section-content className="mx-auto max-w-5xl" data-media-content>
         <div className="overflow-hidden rounded-3xl bg-[var(--section-surface)] text-[var(--section-surface-foreground)] shadow-xl">
           <div className="grid md:grid-cols-5">
             {/* Info sidebar */}
@@ -433,17 +437,17 @@ function FullwidthLayout({ data, isPreview, styles, onUpdate }: ContactLayoutPro
   const { messages } = useWebsiteLocale()
 
   return (
-    <section className={`${styles?.fontFamily || ""}`} style={getSectionColorVars(styles)}>
+    <section className={`${styles?.fontFamily || ""}`} style={getSectionColorVars(styles)} data-media-host>
       {/* Hero banner */}
       <div
         className="relative flex items-center justify-center px-4 py-20 text-center text-[var(--section-accent-foreground)]"
         style={{
           backgroundColor: styles?.accentColor || styles?.backgroundColor || "var(--section-accent)",
-          backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
+          backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url(${styles.backgroundImage})` : undefined,
           backgroundSize: "cover",
           backgroundPosition: styles?.backgroundPosition || "center",
         }}
-      >
+       data-media-content data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
         {styles?.backgroundImage && (
           <div className="absolute inset-0 bg-black/50" />
         )}
@@ -465,7 +469,7 @@ function FullwidthLayout({ data, isPreview, styles, onUpdate }: ContactLayoutPro
         </div>
       </div>
       {/* Form below */}
-      <div className="bg-[var(--section-surface)] px-4 py-12 text-[var(--section-surface-foreground)] sm:px-6">
+      <div className="bg-[var(--section-surface)] px-4 py-12 text-[var(--section-surface-foreground)] sm:px-6" data-media-content>
         <div data-section-content className="mx-auto max-w-2xl">
           <ContactForm formDestinationKey={data.formDestinationKey as string} businessId={data.businessId as string} websiteId={data.websiteId as string} locale={data.activeLocale as string} isPreview={isPreview} />
         </div>
@@ -481,15 +485,15 @@ function CenteredLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProp
   const sectionStyle: React.CSSProperties = {
     ...getSectionColorVars(styles),
     backgroundColor: styles?.backgroundColor,
-    backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
+    backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
     backgroundPosition: styles?.backgroundPosition || "center",
   }
   const textStyle: React.CSSProperties = { color: styles?.textColor }
 
   return (
-    <section className={`px-4 py-16 sm:px-6 md:py-20 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-      <div data-section-content className="mx-auto max-w-4xl">
+    <section className={`px-4 py-16 sm:px-6 md:py-20 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+      <div data-section-content className="mx-auto max-w-4xl" data-media-content>
         <div className="mb-12 text-center">
           <EditableText as="h2" data={data} path={["title"]} value={data.title as string} isPreview={isPreview} onUpdate={onUpdate} className="mb-3 text-3xl font-bold text-amber-950 md:text-4xl" style={textStyle} />
           <EditableText as="p" data={data} path={["subtitle"]} value={(data.subtitle as string) || "Neem contact met ons op."} isPreview={isPreview} onUpdate={onUpdate} className="text-muted-foreground" style={textStyle} multiline />

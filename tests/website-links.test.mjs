@@ -16,7 +16,8 @@ function load(file, dependencies = {}) {
 }
 const helpers = load("lib/website-links.ts")
 const composition = load("lib/section-composition.ts")
-const sectionContent = load("components/editor/section-content-context.tsx", { "@/lib/section-composition": composition })
+const mediaImage = load("components/images/media-image.tsx", { "@/lib/media": load("lib/media.ts") })
+const sectionContent = load("components/editor/section-content-context.tsx", { "@/lib/section-composition": composition, "@/components/images/media-image": mediaImage })
 const { encodeWebsiteLink, parseWebsiteLink, resolveWebsiteLink, safeWebsiteUrl, invalidWebsiteLinks } = helpers
 const { resolveNavigationLinks, materializeNavigationTranslationSource, applySectionTranslation } = load("lib/i18n/section-translations.ts")
 const pages = [

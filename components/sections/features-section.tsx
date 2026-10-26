@@ -1,5 +1,9 @@
 "use client"
 
+import { isVideoSource } from "@/lib/media"
+
+import { BackgroundMedia } from "@/components/images/background-media"
+
 import type React from "react"
 
 import { EditableText } from "@/components/editor/inline-editable-text"
@@ -24,7 +28,7 @@ export function FeaturesSection({ data, isPreview, styles, onUpdate }: FeaturesS
   const sectionStyle: React.CSSProperties = {
     ...getSectionColorVars(styles),
     backgroundColor: styles?.backgroundColor,
-    backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
+    backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
     backgroundPosition: styles?.backgroundPosition || "center",
   }
@@ -34,8 +38,8 @@ export function FeaturesSection({ data, isPreview, styles, onUpdate }: FeaturesS
   }
 
   return (
-    <section className={`bg-amber-50/50 px-4 ${layout.section} ${styles?.fontFamily || ""}`} style={sectionStyle}>
-      <div data-section-content className={`mx-auto ${layout.container}`}>
+    <section className={`bg-amber-50/50 px-4 ${layout.section} ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+      <div data-section-content className={`mx-auto ${layout.container}`} data-media-content>
         <EditableText
           as="h2"
           data={data}

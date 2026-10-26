@@ -1,5 +1,7 @@
 "use client"
 
+import { MEDIA_ACCEPT, MEDIA_UPLOAD_HELP, isVideoSource } from "@/lib/media"
+
 import { useEffect, useMemo, useState } from "react"
 import { Check, ImageIcon, Loader2, Search, Upload } from "lucide-react"
 import { toast } from "sonner"
@@ -83,7 +85,7 @@ export function SectionImagePicker({ userId, label, value, onSelect }: SectionIm
         <AlertDialogContent className="flex max-h-[85vh] flex-col overflow-hidden sm:max-w-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle>{label}</AlertDialogTitle>
-            <AlertDialogDescription>Kies een bestaande afbeelding of upload direct een nieuw bestand. Grote afbeeldingen worden automatisch verkleind tot maximaal 5 MB.</AlertDialogDescription>
+            <AlertDialogDescription>Kies een afbeelding, GIF of video. {MEDIA_UPLOAD_HELP}</AlertDialogDescription>
           </AlertDialogHeader>
 
           <div className="relative">
@@ -104,7 +106,7 @@ export function SectionImagePicker({ userId, label, value, onSelect }: SectionIm
                         <img src={image.previewUrl} alt={image.name} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
                         {selected ? <span className="absolute right-2 top-2 rounded-full bg-primary p-1 text-primary-foreground"><Check className="h-3.5 w-3.5" /></span> : null}
                       </span>
-                      <span className="block truncate px-2 py-2 text-xs font-medium text-foreground">{image.name}</span>
+                      <span className="block truncate px-2 py-2 text-xs font-medium text-foreground">{isVideoSource(image.url) ? "▶ " : /\.gif(?:$|[?#])/i.test(image.url) ? "GIF · " : ""}{image.name}</span>
                     </button>
                   )
                 })}
@@ -122,7 +124,7 @@ export function SectionImagePicker({ userId, label, value, onSelect }: SectionIm
             <label className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90">
               {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               {uploading ? "Uploaden..." : "Nieuwe uploaden"}
-              <input type="file" accept="image/*" className="sr-only" disabled={uploading} onChange={(event) => { void upload(event.target.files?.[0]); event.target.value = "" }} />
+              <input type="file" accept={MEDIA_ACCEPT} className="sr-only" disabled={uploading} onChange={(event) => { void upload(event.target.files?.[0]); event.target.value = "" }} />
             </label>
             <AlertDialogCancel>Sluiten</AlertDialogCancel>
           </AlertDialogFooter>

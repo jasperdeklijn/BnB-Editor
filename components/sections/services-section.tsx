@@ -1,5 +1,11 @@
 "use client"
 
+import { isVideoSource } from "@/lib/media"
+
+import { BackgroundMedia } from "@/components/images/background-media"
+
+import { MediaImage } from "@/components/images/media-image"
+
 import { WebsiteLink } from "@/components/editor/website-links-context"
 import { BookingCart } from "@/components/booking/booking-cart"
 import type { BookingCatalog } from "@/lib/booking/cart"
@@ -373,7 +379,7 @@ function ServiceImage({
   const icons = useContext(ServiceIconsContext)
   if (images.length > 0) {
     return (
-      <img
+      <MediaImage
         src={images[0]}
         alt={name}
         className={className ?? "w-full h-full object-cover"}
@@ -1155,7 +1161,7 @@ function ServiceInfoPopup({
               {activeImage ? (
                 <div className="space-y-3">
                   <div className="group relative overflow-hidden rounded-xl bg-secondary">
-                    <img
+                    <MediaImage
                       src={activeImage}
                       alt={`${service.name} ${activeImageIndex + 1}`}
                       className="aspect-square w-full object-cover"
@@ -1203,7 +1209,7 @@ function ServiceInfoPopup({
                           aria-label={`Bekijk afbeelding ${index + 1} van ${service.images.length}`}
                           aria-current={index === activeImageIndex ? "true" : undefined}
                         >
-                          <img
+                          <MediaImage
                             src={image}
                             alt=""
                             className="aspect-square w-full object-cover"
@@ -2032,7 +2038,7 @@ function ServicesSectionContent({
   const sectionStyle: React.CSSProperties = {
     ...getSectionColorVars(styles, { accent: "hsl(var(--primary))", surface: "#ffffff" }),
     backgroundColor: styles?.backgroundColor,
-    backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
+    backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
     backgroundPosition: styles?.backgroundPosition || "center",
   }
@@ -2044,7 +2050,7 @@ function ServicesSectionContent({
       <section
         className={`bg-secondary/60 px-4 py-16 ${styles?.fontFamily ?? ""}`}
         style={sectionStyle}
-      >
+       data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
         <PageLoadingIndicator variant="section" />
       </section>
     )
@@ -2056,7 +2062,7 @@ function ServicesSectionContent({
      <section
       className={`relative overflow-hidden bg-secondary/70 px-4 py-20 ${styles?.fontFamily ?? ""}`}
       style={sectionStyle}
-    >
+     data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
       <div
         className="absolute inset-0 opacity-[0.08]"
         style={{
@@ -2067,7 +2073,7 @@ function ServicesSectionContent({
           backgroundSize: "48px 48px",
         }}
       />
-      <div data-section-content className="relative mx-auto max-w-4xl text-center">
+      <div data-section-content className="relative mx-auto max-w-4xl text-center" data-media-content>
         <div className="mb-5 inline-flex items-center rounded-full border border-border bg-[var(--section-surface)] px-4 py-2 text-sm font-medium text-[var(--section-accent)] shadow-sm">
           Aanbod beheren
         </div>
@@ -2101,8 +2107,8 @@ function ServicesSectionContent({
     <section
       className={`bg-secondary/60 px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily ?? ""}`}
       style={sectionStyle}
-    >
-      <div data-section-content className="mx-auto max-w-6xl">
+     data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+      <div data-section-content className="mx-auto max-w-6xl" data-media-content>
         <EditableText
           as="h2"
           data={data}

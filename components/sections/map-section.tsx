@@ -1,5 +1,9 @@
 "use client"
 
+import { isVideoSource } from "@/lib/media"
+
+import { BackgroundMedia } from "@/components/images/background-media"
+
 import { SectionIcon } from "./section-icon"
 
 import { ExternalLink } from "lucide-react"
@@ -43,7 +47,7 @@ export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProp
   const sectionStyle: React.CSSProperties = {
     ...getSectionColorVars(styles),
     backgroundColor: styles?.backgroundColor,
-    backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
+    backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
     backgroundPosition: styles?.backgroundPosition || "center",
   }
@@ -53,8 +57,8 @@ export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProp
     <section
       className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`}
       style={sectionStyle}
-    >
-      <div data-section-content className={`mx-auto ${layout.container}`}>
+     data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+      <div data-section-content className={`mx-auto ${layout.container}`} data-media-content>
         <div className={`mb-10 ${layout.heading}`}>
           <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[var(--section-accent)]">
             {messages.location}

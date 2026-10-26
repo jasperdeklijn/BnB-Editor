@@ -1,5 +1,7 @@
 "use client"
 
+import { MediaImage } from "@/components/images/media-image"
+
 import { ImageIcon, Trash2, Type } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -25,7 +27,7 @@ export function AboutSectionEditor({ section, updateField }: SectionEditorProps)
         {images.length === 0 ? <div className="rounded-lg border border-dashed p-3 text-center text-xs text-muted-foreground">Nog geen afbeeldingen toegevoegd.</div> : null}
         {images.map((image, index) => (
           <div key={`${image}-${index}`} className="flex items-center gap-2 rounded-lg border border-border p-2">
-            <img src={image} alt={`Over ons afbeelding ${index + 1}`} className="h-12 w-16 rounded object-cover" />
+            <MediaImage mediaControls={false} src={image} alt={`Over ons afbeelding ${index + 1}`} className="h-12 w-16 rounded object-cover" />
             <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">Afbeelding {index + 1}</span>
             <Button type="button" variant="ghost" size="icon" aria-label={`Afbeelding ${index + 1} verwijderen`} onClick={() => updateField("images", images.filter((_, imageIndex) => imageIndex !== index))}><Trash2 className="h-4 w-4" /></Button>
           </div>

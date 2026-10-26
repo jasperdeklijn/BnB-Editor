@@ -1,5 +1,9 @@
 "use client"
 
+import { isVideoSource } from "@/lib/media"
+
+import { BackgroundMedia } from "@/components/images/background-media"
+
 import { SectionImage } from "@/components/editor/section-content-context"
 
 import { ImageIcon } from "lucide-react"
@@ -17,7 +21,7 @@ export function AboutSection({ data, isPreview, styles, onUpdate }: { data: Reco
   const layout = getLayoutClasses(data.layout)
   const isSplit = layout.layout === "split" || layout.layout === "showcase"
   const textStyle: React.CSSProperties = { color: styles?.textColor }
-  const sectionStyle: React.CSSProperties = { ...getSectionColorVars(styles), backgroundColor: styles?.backgroundColor, backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined, backgroundSize: "cover", backgroundPosition: styles?.backgroundPosition || "center" }
+  const sectionStyle: React.CSSProperties = { ...getSectionColorVars(styles), backgroundColor: styles?.backgroundColor, backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url(${styles.backgroundImage})` : undefined, backgroundSize: "cover", backgroundPosition: styles?.backgroundPosition || "center" }
 
   const imageGallery = images.length > 0 ? (
     <div data-section-content className={`mx-auto grid w-full gap-3 ${images.length === 1 ? "max-w-lg grid-cols-1" : "max-w-4xl grid-cols-2"}`}>
@@ -36,8 +40,8 @@ export function AboutSection({ data, isPreview, styles, onUpdate }: { data: Reco
   )
 
   return (
-    <section className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-      <div data-section-columns={isSplit || undefined} data-section-content className={`mx-auto ${layout.container} ${isSplit ? "grid items-center gap-10 md:grid-cols-2" : ""} ${layout.layout === "card" ? "rounded-2xl border border-border bg-[var(--section-surface)] p-8 text-[var(--section-surface-foreground)] shadow-sm" : ""}`}>
+    <section className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+      <div data-section-columns={isSplit || undefined} data-section-content className={`mx-auto ${layout.container} ${isSplit ? "grid items-center gap-10 md:grid-cols-2" : ""} ${layout.layout === "card" ? "rounded-2xl border border-border bg-[var(--section-surface)] p-8 text-[var(--section-surface-foreground)] shadow-sm" : ""}`} data-media-content>
         {isSplit && layout.layout === "showcase" ? imageGallery : null}
         <div className={layout.heading}>
           <EditableText as="h2" data={data} path={["title"]} value={title} isPreview={isPreview} onUpdate={onUpdate} className="mb-5 text-3xl font-bold md:text-4xl" style={textStyle} />

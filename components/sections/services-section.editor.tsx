@@ -1,5 +1,7 @@
 "use client"
 
+import { MediaImage } from "@/components/images/media-image"
+
 import { SectionLinkSelect } from "@/components/editor/section-link-select"
 import { BookingCartSettings } from "@/components/editor/booking-cart-settings"
 
@@ -184,7 +186,7 @@ export function ServicesSectionEditor({
             >
               <div className="relative h-9 w-9 flex-shrink-0 overflow-hidden rounded-md bg-primary/10">
                 {service.images.length > 0 ? (
-                  <img src={service.images[0]} alt={service.name} className="h-full w-full object-cover" />
+                  <MediaImage mediaControls={false} src={service.images[0]} alt={service.name} className="h-full w-full object-cover" />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
                     <Briefcase className="h-4 w-4 text-primary" />

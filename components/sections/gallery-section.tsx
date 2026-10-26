@@ -1,5 +1,9 @@
 "use client"
 
+import { isVideoSource } from "@/lib/media"
+
+import { BackgroundMedia } from "@/components/images/background-media"
+
 import { SectionImage } from "@/components/editor/section-content-context"
 
 import type React from "react"
@@ -50,7 +54,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
   const sectionStyle: React.CSSProperties = {
     ...getSectionColorVars(styles),
     backgroundColor: styles?.backgroundColor,
-    backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined,
+    backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url(${styles.backgroundImage})` : undefined,
     backgroundSize: "cover",
     backgroundPosition: styles?.backgroundPosition || "center",
   }
@@ -143,8 +147,8 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
   // Layout: Grid (default)
   if (layout === "grid") {
     return (
-      <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-        <div data-section-content className="mx-auto max-w-6xl">
+      <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+        <div data-section-content className="mx-auto max-w-6xl" data-media-content>
           <EditableText
             as="h2"
             data={data}
@@ -186,8 +190,8 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
   // Layout: Vertical Carousel on Right with Text on Left
   if (layout === "vertical-carousel") {
     return (
-      <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-        <div data-section-content className="mx-auto max-w-6xl">
+      <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+        <div data-section-content className="mx-auto max-w-6xl" data-media-content>
           <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
             {/* Text Side */}
             <div className="flex-1">
@@ -252,8 +256,8 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
   // Layout: Horizontal Carousel
   if (layout === "horizontal-carousel") {
     return (
-      <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-        <div data-section-content className="mx-auto max-w-6xl">
+      <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+        <div data-section-content className="mx-auto max-w-6xl" data-media-content>
           <EditableText
             as="h2"
             data={data}
@@ -297,8 +301,8 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
   // Layout: Masonry Grid
   if (layout === "masonry") {
     return (
-      <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-        <div data-section-content className="mx-auto max-w-6xl">
+      <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+        <div data-section-content className="mx-auto max-w-6xl" data-media-content>
           <EditableText
             as="h2"
             data={data}
@@ -340,8 +344,8 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
   // Layout: Single Large Image with Thumbnails
   if (layout === "single-with-thumbs") {
     return (
-      <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-        <div data-section-content className="mx-auto max-w-6xl">
+      <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+        <div data-section-content className="mx-auto max-w-6xl" data-media-content>
           <EditableText
             as="h2"
             data={data}
@@ -387,7 +391,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
                   onDrop={!isPreview ? (e) => handleDrop(e, index) : undefined}
                 >
                   <SectionImage data-section-image contentPath={["images", index]}
-                    src={image}
+                    src={image} mediaControls={false}
                     alt={`Thumbnail ${index + 1}`}
                     draggable={!isPreview}
                     className={`h-full w-full object-cover ${!isPreview ? "cursor-move" : "cursor-default"}`}
@@ -405,8 +409,8 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
   // Layout: Square Slider
   if (layout === "full-slider") {
     return (
-      <section className={`relative overflow-hidden ${styles?.fontFamily || ""}`} style={sectionStyle}>
-        <div data-section-content className="relative mx-auto aspect-square w-full max-w-2xl">
+      <section className={`relative overflow-hidden ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+        <div data-section-content className="relative mx-auto aspect-square w-full max-w-2xl" data-media-content>
           {images.map((image, index) => (
             <div
               key={index}

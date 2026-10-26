@@ -1,5 +1,7 @@
 "use client"
 
+import { MediaImage } from "@/components/images/media-image"
+
 import type React from "react"
 import { useId, useState } from "react"
 import type { Section, SectionStyles } from "@/lib/types"
@@ -273,7 +275,7 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
               className={`flex cursor-pointer items-center gap-3 font-bold text-[var(--section-accent)] ${brandClass} ${styleTypeBrandClass}`}
             >
               {logo ? (
-                <img
+                <MediaImage mediaControls={false}
                   src={logo}
                   alt={styles?.logoAlt?.trim() || `${brandName} logo`}
                   className={`${layout === "compact" ? "h-6" : layout === "showcase" ? "h-10" : "h-9"} w-auto max-w-[9rem] flex-shrink-0 object-contain`}

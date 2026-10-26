@@ -1,5 +1,7 @@
 "use client"
 
+import { MediaImage } from "@/components/images/media-image"
+
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
@@ -142,7 +144,7 @@ function SidebarImageCard({ name, url, previewUrl, isDragging, onDragStart, onDr
         isDragging ? "ring-2 ring-primary shadow-lg scale-105 opacity-70" : ""
       }`}
     >
-      <img src={previewUrl} alt={name} className="w-full h-20 object-cover rounded" />
+      <MediaImage mediaControls={false} src={previewUrl} alt={name} className="w-full h-20 object-cover rounded" />
       <div className="text-[10px] text-muted-foreground truncate text-center mt-1 px-1">{name}</div>
     </div>
   )
@@ -594,7 +596,7 @@ function ServiceCard({
               <div className="grid grid-cols-3 gap-1.5">
                 {service.image_urls.map((url) => (
                   <div key={url} className="relative group rounded overflow-hidden aspect-square">
-                    <img src={url} alt="" className="w-full h-full object-cover" />
+                    <MediaImage mediaControls={false} src={url} alt="" className="w-full h-full object-cover" />
                     <button
                       type="button"
                       onClick={() => removeImage(url)}

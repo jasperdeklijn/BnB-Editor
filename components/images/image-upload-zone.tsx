@@ -1,5 +1,7 @@
 "use client"
 
+import { MEDIA_ACCEPT, MEDIA_UPLOAD_HELP, isSupportedMediaFile } from "@/lib/media"
+
 import { useCallback, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 
@@ -32,7 +34,7 @@ export function ImageUploadZone({ onUpload, isUploading, disabled }: ImageUpload
       if (disabled || isUploading) return
 
       const files = Array.from(e.dataTransfer.files).filter((file) =>
-        file.type.startsWith("image/")
+        isSupportedMediaFile(file)
       )
 
       if (files.length > 0) {
@@ -91,19 +93,19 @@ export function ImageUploadZone({ onUpload, isUploading, disabled }: ImageUpload
           <div className="text-center">
             <p className="text-sm font-medium text-foreground">
               {isUploading
-                ? "Verkleinen en uploaden..."
+                ? "Verwerken en uploaden..."
                 : disabled
                 ? "Opslaglimiet bereikt"
-                : "Sleep afbeeldingen hierheen of klik om te uploaden"}
+                : "Sleep afbeeldingen, GIF’s of video’s hierheen of klik om te uploaden"}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              PNG, JPG, GIF of WEBP · automatisch verkleind tot maximaal 5 MB
+              {MEDIA_UPLOAD_HELP}
             </p>
           </div>
           <input
             id="file-upload"
             type="file"
-            accept="image/*"
+            accept={MEDIA_ACCEPT}
             multiple
             className="sr-only"
             onChange={handleFileSelect}

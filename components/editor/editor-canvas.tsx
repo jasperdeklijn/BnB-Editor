@@ -576,12 +576,12 @@ export function EditorCanvas({
                       event.stopPropagation()
                       return
                     }
-                    const directEdit = event.target instanceof Element && Boolean(event.target.closest("[data-inline-editable], [data-editor-image-path], a[data-link-target], [data-editor-background], [data-element-controls], [data-section-elements]"))
+                    const directEdit = event.target instanceof Element && Boolean(event.target.closest("[data-inline-editable], [data-editor-image-path], a[data-link-target], [data-editor-background], [data-element-controls], [data-section-elements], [data-media-controls]"))
                     selectSection(section.id, directEdit)
                   }}
                   onFocus={(event) => {
                     if (!isPreview && selectedSectionId !== section.id) {
-                      const directEdit = event.target instanceof Element && Boolean(event.target.closest("[data-inline-editable], [data-editor-image-path], a[data-link-target], [data-element-controls], [data-section-elements]"))
+                      const directEdit = event.target instanceof Element && Boolean(event.target.closest("[data-inline-editable], [data-editor-image-path], a[data-link-target], [data-element-controls], [data-section-elements], [data-media-controls]"))
                       onSectionSelect(section.id, directEdit)
                     }
                   }}
@@ -668,7 +668,7 @@ export function EditorCanvas({
                         ? "ring-2 ring-primary ring-offset-2 shadow-lg"
                         : ""
                     }`}
-                    onClick={(event) => selectSection(section.id, event.target instanceof Element && Boolean(event.target.closest("[data-element-controls], [data-section-elements], [data-editor-background]")))}
+                    onClick={(event) => selectSection(section.id, event.target instanceof Element && Boolean(event.target.closest("[data-element-controls], [data-section-elements], [data-media-controls], [data-editor-background]")))}
                   >
                     <SectionRenderer
                       userId={userId}

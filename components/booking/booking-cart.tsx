@@ -1,5 +1,7 @@
 "use client"
 
+import { MediaImage } from "@/components/images/media-image"
+
 import {
   useEffect,
   useRef,
@@ -312,7 +314,7 @@ export function BookingCart({
     >
       <header className="mb-7 space-y-2">
         {presentation.logo ? (
-          <img
+          <MediaImage mediaControls={false}
             src={presentation.logo}
             alt="Bedrijfslogo"
             className="mb-4 h-14 max-w-48 object-contain"

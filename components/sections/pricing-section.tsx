@@ -1,5 +1,9 @@
 "use client"
 
+import { isVideoSource } from "@/lib/media"
+
+import { BackgroundMedia } from "@/components/images/background-media"
+
 import { WebsiteLink } from "@/components/editor/website-links-context"
 
 import { SectionIcon } from "./section-icon"
@@ -33,15 +37,15 @@ export function PricingSection({ data, isPreview, styles, onUpdate }: { data: Re
   const editableData = { ...data, plans, tariffs }
   const layout = getLayoutClasses(data.layout)
   const textStyle: React.CSSProperties = { color: styles?.textColor }
-  const sectionStyle: React.CSSProperties = { ...getSectionColorVars(styles), backgroundColor: styles?.backgroundColor, backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined, backgroundSize: "cover", backgroundPosition: styles?.backgroundPosition || "center" }
+  const sectionStyle: React.CSSProperties = { ...getSectionColorVars(styles), backgroundColor: styles?.backgroundColor, backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url(${styles.backgroundImage})` : undefined, backgroundSize: "cover", backgroundPosition: styles?.backgroundPosition || "center" }
   const accent = "var(--section-accent)"
   const accentForeground = "var(--section-accent-foreground)"
   const surface = "var(--section-surface)"
   const surfaceForeground = "var(--section-surface-foreground)"
 
   return (
-    <section className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-      <div data-section-content className={`mx-auto ${layout.container}`}>
+    <section className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+      <div data-section-content className={`mx-auto ${layout.container}`} data-media-content>
         <div className={`mb-10 ${layout.heading}`}><p className="mb-2 text-xs font-semibold uppercase tracking-widest" style={{ color: accent }}>{messages.pricing}</p><EditableText as="h2" data={data} path={["title"]} value={title} isPreview={isPreview} onUpdate={onUpdate} className="text-3xl font-bold md:text-4xl" style={textStyle} />{subtitle ? <EditableText as="p" data={data} path={["subtitle"]} value={subtitle} isPreview={isPreview} onUpdate={onUpdate} multiline className="mx-auto mt-3 max-w-xl text-muted-foreground" style={textStyle} /> : null}</div>
 
         {displayMode !== "menu" ? <div className={`grid gap-6 ${layout.grid}`}>

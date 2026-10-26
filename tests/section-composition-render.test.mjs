@@ -196,3 +196,28 @@ test("project translations follow stable ids while preserving photos, links and 
   const changed = structuredClone(source); changed.data.projects[0].description = "Nieuwe tekst"
   assert.notEqual(getSectionSourceHash(source), getSectionSourceHash(changed))
 })
+
+test("existing images render GIFs unchanged and video files as inline players", async () => {
+  const html = await render({ id: "gallery", type: "gallery", data: { title: "Ons werk", layout: "classic", images: ["/animated.gif", "/tour.mp4", "/clip.webm"] } })
+  assert.match(html, /<img[^>]*src="\/animated.gif"/)
+  assert.match(html, /<video[^>]*src="\/tour.mp4"[^>]*controls=""[^>]*playsInline=""/i)
+  assert.match(html, /<video[^>]*src="\/clip.webm"/)
+  assert.doesNotMatch(html, /<img[^>]*src="\/(tour.mp4|clip.webm)"/)
+  const project = await render({ id: "work", type: "projects", data: { title: "Projecten", projects: [{ id: "video", title: "Rondleiding", image: "/project.mp4" }] } })
+  assert.match(project, /<video[^>]*src="\/project.mp4"/)
+  const custom = await render({ id: "free", type: "freeform", data: { elements: [{ ...createSectionElement("image", "clip"), src: "/custom.mp4" }] } })
+  assert.match(custom, /<video[^>]*src="\/custom.mp4"/)
+})
+
+test("video backgrounds occupy the existing image location and include pause controls", async () => {
+  for (const layout of ["classic", "split", "showcase", "card", "banner"]) {
+    const html = await render({ id: "intro", type: "hero", data: { title: "Welkom", subtitle: "Een rondleiding", layout }, styles: { backgroundImage: "/background.mp4" } })
+    assert.equal((html.match(/data-media-background=/g) ?? []).length, 1, layout)
+    assert.match(html, /<video[^>]*src="\/background.mp4"[^>]*muted=""[^>]*loop=""/)
+    assert.match(html, /Achtergrondvideo afspelen/)
+    assert.doesNotMatch(html, /url\(\/background.mp4\)/)
+  }
+  const ordinary = await render({ id: "intro", type: "hero", data: { title: "Welkom", layout: "classic" }, styles: { backgroundImage: "/background.gif" } })
+  assert.match(ordinary, /url\(\/background.gif\)/)
+  assert.doesNotMatch(ordinary, /<video/)
+})

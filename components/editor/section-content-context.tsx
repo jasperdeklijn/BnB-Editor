@@ -2,6 +2,7 @@
 
 import { Children, createContext, isValidElement, useContext, type ImgHTMLAttributes, type ReactNode } from "react"
 import { contentAtPath, contentStyleKey, findContentPath, type ContentPath } from "@/lib/section-composition"
+import { MediaImage } from "@/components/images/media-image"
 
 export const SectionContentContext = createContext<Record<string, unknown>>({})
 
@@ -18,7 +19,7 @@ export function linkCopyPath(children: ReactNode): ContentPath | null {
 }
 
 /** Images use the same stored per-image settings in editor, preview and live site. */
-export function SectionImage({ style, contentPath, ...props }: ImgHTMLAttributes<HTMLImageElement> & { contentPath?: ContentPath }) {
+export function SectionImage({ style, contentPath, ...props }: ImgHTMLAttributes<HTMLImageElement> & { contentPath?: ContentPath; mediaControls?: boolean }) {
   const data = useContext(SectionContentContext)
   const path = contentPath && contentAtPath(data, contentPath) === props.src ? contentPath : typeof props.src === "string" ? findContentPath(data, props.src, "image") : null
   const allStyles = data.imageStyles as Record<string, Record<string, unknown>> | undefined
@@ -28,5 +29,5 @@ export function SectionImage({ style, contentPath, ...props }: ImgHTMLAttributes
   const aspects: Record<string, string> = { square: "1", landscape: "4/3", portrait: "3/4" }
   const aspect = aspects[String(settings?.aspect)]
   const customAspect = Boolean(aspect) || settings?.aspect === "original"
-  return <img {...props} data-custom-width={width !== undefined || undefined} data-custom-aspect={customAspect || undefined} data-custom-position={Boolean(position) || undefined} data-custom-image={Boolean(width || customAspect) || undefined} data-editor-image-path={path ? JSON.stringify(path) : undefined} style={{ ...style, ...(width !== undefined && { width: `${width}%`, height: "auto", marginInline: "auto" }), ...(customAspect && { aspectRatio: aspect ?? "auto", height: "auto", objectFit: "cover" }), ...(position && { objectPosition: position }) }} />
+  return <MediaImage {...props} data-custom-width={width !== undefined || undefined} data-custom-aspect={customAspect || undefined} data-custom-position={Boolean(position) || undefined} data-custom-image={Boolean(width || customAspect) || undefined} data-editor-image-path={path ? JSON.stringify(path) : undefined} style={{ ...style, ...(width !== undefined && { width: `${width}%`, height: "auto", marginInline: "auto" }), ...(customAspect && { aspectRatio: aspect ?? "auto", height: "auto", objectFit: "cover" }), ...(position && { objectPosition: position }) }} />
 }

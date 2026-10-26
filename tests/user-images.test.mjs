@@ -81,3 +81,45 @@ test("account image storage is 500 MiB while stored files remain at most 5 MiB",
   assert.equal(MAX_USER_IMAGE_TOTAL_SIZE, 500 * 1024 * 1024)
   assert.equal(MAX_USER_IMAGE_SIZE, 5 * 1024 * 1024)
 })
+
+test("GIF originals bypass recompression so every animation frame survives unchanged", async (t) => {
+  const browser = browserFixture(t, { width: 6000, height: 4000 })
+  const file = new File([new Uint8Array(6_000_000)], "animatie.gif", { type: "image/gif" })
+  assert.equal(await prepareUserImage(file), file)
+  assert.equal(browser.encodings.length, 0)
+  assert.equal(browser.closed(), 0)
+  await assert.rejects(prepareUserImage(new File([new Uint8Array(21 * 1024 * 1024)], "groot.gif", { type: "image/gif" })), /20 MB/)
+})
+
+test("videos upload originals and posters directly while only small JSON requests reach the existing API", async (t) => {
+  const browser = browserFixture(t)
+  const originalCreate = globalThis.document.createElement
+  const originalWindow = globalThis.window
+  let released = false
+  globalThis.window = { setTimeout, clearTimeout }
+  globalThis.document.createElement = (tag) => tag === "video" ? {
+    videoWidth: 1920, videoHeight: 1080,
+    set src(_value) { queueMicrotask(() => this.onloadeddata?.()) },
+    pause() { released = true }, removeAttribute() {}, load() {},
+  } : originalCreate(tag)
+  t.after(() => { globalThis.window = originalWindow })
+  const file = new File([new Uint8Array(6_000_000)], "video.mp4")
+  const uploaded = []
+  const actions = []
+  const supabase = { storage: { from: (bucket) => { assert.equal(bucket, "user-images"); return { uploadToSignedUrl: async (path, token, body) => { uploaded.push({ path, token, body }); return { error: null } } } } } }
+  t.mock.method(globalThis, "fetch", async (url, { body, headers }) => {
+    assert.equal(url, "/api/images/upload")
+    assert.equal(headers["Content-Type"], "application/json")
+    assert.ok(body.length < 4096)
+    const input = JSON.parse(body); actions.push(input.action)
+    if (input.action === "prepare") return Response.json({ id: "video-id", extension: "mp4", original: { path: "owner/original.mp4", token: "original-token" }, preview: { path: "owner/preview.webp", token: "preview-token" } })
+    return Response.json({ id: "video-id" })
+  })
+  assert.equal((await uploadUserImage(supabase, "owner", file)).id, "video-id")
+  assert.deepEqual(actions, ["prepare", "complete"])
+  assert.equal(uploaded[0].body.size, file.size)
+  assert.equal(uploaded[0].body.type, "video/mp4")
+  assert.equal(uploaded[1].body.type, "image/webp")
+  assert.equal(browser.encodings.length, 1)
+  assert.equal(released, true)
+})

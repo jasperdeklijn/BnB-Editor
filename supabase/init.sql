@@ -6917,3 +6917,19 @@ revoke all on function public.confirm_booking_cart(uuid,text,jsonb,jsonb,text,te
 grant execute on function public.create_booking_cart_hold(uuid,uuid,text,text,jsonb,jsonb,text,uuid),public.cancel_booking_cart_hold(uuid,text),public.confirm_booking_cart(uuid,text,jsonb,jsonb,text,text) to service_role;
 commit;
 -- END BOOKING CART AND SERVICE PLANNING
+
+-- Image library video/GIF support
+begin;
+
+-- Existing assets remain ready. Pending reservations consume the same atomic
+-- 500 MiB account quota while their originals and posters upload directly.
+alter table public.user_images
+  add column if not exists upload_status text not null default 'ready'
+  check (upload_status in ('pending', 'ready'));
+
+update storage.buckets set
+  file_size_limit = 52428800,
+  allowed_mime_types = array['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm']
+where id = 'user-images';
+
+commit;

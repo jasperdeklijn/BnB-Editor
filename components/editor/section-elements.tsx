@@ -1,5 +1,7 @@
 "use client"
 
+import { MediaImage } from "@/components/images/media-image"
+
 import { useState } from "react"
 import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
@@ -24,7 +26,7 @@ function ElementContent({ element, index, data, isPreview, onUpdate }: {
   if (element.type === "image") {
     const src = safeElementImage(element.src)
     const aspectRatio = { original: undefined, square: "1", landscape: "4/3", portrait: "3/4" }[element.aspect]
-    return src ? <img src={src} alt={element.alt} loading="lazy" style={{ width: `${element.width}%`, aspectRatio, objectFit: "cover", objectPosition: element.position, marginInline: element.alignment === "center" ? "auto" : undefined, marginLeft: element.alignment === "right" ? "auto" : undefined }} /> : isPreview ? null : <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">Klik op Aanpassen om een afbeelding te kiezen</div>
+    return src ? <MediaImage src={src} alt={element.alt} loading="lazy" style={{ width: `${element.width}%`, aspectRatio, objectFit: "cover", objectPosition: element.position, marginInline: element.alignment === "center" ? "auto" : undefined, marginLeft: element.alignment === "right" ? "auto" : undefined }} /> : isPreview ? null : <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">Klik op Aanpassen om een afbeelding te kiezen</div>
   }
   const validTarget = parseWebsiteLink(element.href).type !== "url" || Boolean(safeWebsiteUrl(element.href))
   const className = element.buttonStyle === "outline" ? "border border-current px-6 py-3" : element.buttonStyle === "link" ? "underline underline-offset-4" : "bg-[var(--section-accent)] px-6 py-3 text-[var(--section-accent-foreground)]"

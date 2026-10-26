@@ -1,5 +1,9 @@
 "use client"
 
+import { isVideoSource } from "@/lib/media"
+
+import { BackgroundMedia } from "@/components/images/background-media"
+
 import { WebsiteLink } from "@/components/editor/website-links-context"
 
 import { SectionIcon } from "./section-icon"
@@ -124,14 +128,14 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
         style={{
           ...colorVars,
           backgroundColor: styleBackgroundColor || "#fffbeb",
-          backgroundImage: styles?.backgroundImage ? `linear-gradient(to bottom right, rgba(255,251,235,0.9), rgba(254,243,199,0.9)), url(${styles.backgroundImage})` : undefined,
+          backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `linear-gradient(to bottom right, rgba(255,251,235,0.9), rgba(254,243,199,0.9)), url(${styles.backgroundImage})` : undefined,
           backgroundSize: "cover",
           backgroundPosition: styles?.backgroundPosition || "center",
         }}
-      >
+       data-media-host><BackgroundMedia src={["split", "split-reverse", "minimal"].includes(layout) ? undefined : styles?.backgroundImage} position={styles?.backgroundPosition} />
         {/* Subtle decorative element */}
         <div className={`absolute inset-0 ${styleType === "dark" ? "bg-gradient-to-br from-slate-950 to-slate-800 opacity-95" : styleType === "bold" ? "bg-[linear-gradient(135deg,transparent_65%,var(--section-accent)_65%)] opacity-30" : "bg-gradient-to-br from-amber-50 to-orange-100 opacity-80"}`} />
-        <div data-section-content className="relative z-10 max-w-3xl px-2 text-center">
+        <div data-section-content className="relative z-10 max-w-3xl px-2 text-center" data-media-content>
           <EditableText
             as="h1"
             data={data}
@@ -167,21 +171,20 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
       <section data-editor-background
         className={`relative min-h-[400px] overflow-hidden sm:min-h-[500px] lg:min-h-[600px] ${styles?.fontFamily || ""} ${styleTypeRootClass}`}
         style={colorVars}
-      >
-        <div data-section-content data-section-columns className="flex min-h-[inherit] flex-col md:flex-row">
+       data-media-host><BackgroundMedia src={["split", "split-reverse", "minimal"].includes(layout) ? undefined : styles?.backgroundImage} position={styles?.backgroundPosition} />
+        <div data-section-content data-section-columns className="flex min-h-[inherit] flex-col md:flex-row" data-media-content>
           {/* Image Side - Full left half */}
           <div
-            data-section-image data-editor-background
+            data-section-image data-editor-background data-media-host
             className="relative min-h-[280px] w-full sm:min-h-[400px] md:min-h-[500px] lg:min-h-[600px] md:w-1/2"
             style={{
-              backgroundImage: styles?.backgroundImage
-                ? `url(${styles.backgroundImage})`
+              backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url(${styles.backgroundImage})`
                 : "url('/placeholder.svg?height=800&width=800')",
               backgroundSize: "cover",
               backgroundPosition: styles?.backgroundPosition || "center",
             }}
           >
-            {/* Subtle overlay for depth */}
+            <BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />{/* Subtle overlay for depth */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/5" />
           </div>
 
@@ -225,18 +228,17 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
         className={`relative flex min-h-[500px] items-center justify-center overflow-hidden sm:min-h-[600px] md:min-h-[700px] ${styles?.fontFamily || ""} ${styleTypeRootClass}`}
         style={{
           ...colorVars,
-          backgroundImage: styles?.backgroundImage
-            ? `url(${styles.backgroundImage})`
+          backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url(${styles.backgroundImage})`
             : "url('/placeholder.svg?height=900&width=1600')",
           backgroundSize: "cover",
           backgroundPosition: styles?.backgroundPosition || "center",
         }}
-      >
+       data-media-host><BackgroundMedia src={["split", "split-reverse", "minimal"].includes(layout) ? undefined : styles?.backgroundImage} position={styles?.backgroundPosition} />
         {/* Gradient Overlay for readability */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-black/60" />
 
         {/* Content */}
-        <div data-section-content className="relative z-10 mx-auto max-w-4xl px-6 text-center">
+        <div data-section-content className="relative z-10 mx-auto max-w-4xl px-6 text-center" data-media-content>
           <EditableText
             as="h1"
             data={data}
@@ -273,8 +275,8 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
           ...colorVars,
           backgroundColor: styleBackgroundColor || "#ffffff",
         }}
-      >
-        <div data-section-content className="max-w-3xl px-2 text-center">
+       data-media-host><BackgroundMedia src={["split", "split-reverse", "minimal"].includes(layout) ? undefined : styles?.backgroundImage} position={styles?.backgroundPosition} />
+        <div data-section-content className="max-w-3xl px-2 text-center" data-media-content>
           <EditableText
             as="h1"
             data={data}
@@ -309,18 +311,17 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
         className={`relative flex min-h-[500px] items-center justify-center overflow-hidden sm:min-h-[600px] md:min-h-[700px] ${styles?.fontFamily || ""} ${styleTypeRootClass}`}
         style={{
           ...colorVars,
-          backgroundImage: styles?.backgroundImage
-            ? `url(${styles.backgroundImage})`
+          backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url(${styles.backgroundImage})`
             : "url('/placeholder.svg?height=900&width=1600')",
           backgroundSize: "cover",
           backgroundPosition: styles?.backgroundPosition || "center",
         }}
-      >
+       data-media-host><BackgroundMedia src={["split", "split-reverse", "minimal"].includes(layout) ? undefined : styles?.backgroundImage} position={styles?.backgroundPosition} />
         {/* Overlay for readability */}
         <div className="absolute inset-0 bg-black/30" />
 
         {/* Content Card */}
-        <div data-section-content className={`relative z-10 mx-auto max-w-lg rounded-lg bg-[var(--section-surface)] p-8 text-[var(--section-surface-foreground)] shadow-xl backdrop-blur-sm ${styleTypePanelClass}`}>
+        <div data-section-content className={`relative z-10 mx-auto max-w-lg rounded-lg bg-[var(--section-surface)] p-8 text-[var(--section-surface-foreground)] shadow-xl backdrop-blur-sm ${styleTypePanelClass}`} data-media-content>
           <EditableText
             as="h1"
             data={data}
@@ -354,8 +355,8 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
       <section data-editor-background
         className={`relative min-h-[400px] overflow-hidden sm:min-h-[500px] lg:min-h-[600px] ${styles?.fontFamily || ""} ${styleTypeRootClass}`}
         style={colorVars}
-      >
-        <div data-section-content data-section-columns className="flex min-h-[inherit] flex-col md:flex-row">
+       data-media-host><BackgroundMedia src={["split", "split-reverse", "minimal"].includes(layout) ? undefined : styles?.backgroundImage} position={styles?.backgroundPosition} />
+        <div data-section-content data-section-columns className="flex min-h-[inherit] flex-col md:flex-row" data-media-content>
           {/* Text Side - Clean background */}
           <div
             className={`flex w-full flex-col justify-center px-8 py-12 md:w-1/2 md:px-12 lg:px-16 ${styleTypePanelClass}`}
@@ -387,17 +388,16 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
 
           {/* Image Side - Full right half */}
           <div
-            data-section-image data-editor-background
+            data-section-image data-editor-background data-media-host
             className={`relative min-h-[280px] w-full sm:min-h-[400px] md:min-h-[500px] lg:min-h-[600px] md:w-1/2`}
             style={{
-              backgroundImage: styles?.backgroundImage
-                ? `url(${styles.backgroundImage})`
+              backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url(${styles.backgroundImage})`
                 : "url('/placeholder.svg?height=800&width=800')",
               backgroundSize: "cover",
               backgroundPosition: styles?.backgroundPosition || "center",
             }}
           >
-            {/* Subtle overlay for depth */}
+            <BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />{/* Subtle overlay for depth */}
             <div className="absolute inset-0 bg-gradient-to-l from-transparent to-black/5" />
           </div>
         </div>

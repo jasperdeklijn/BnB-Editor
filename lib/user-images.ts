@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { isGifFile, isSupportedMediaFile, MAX_USER_GIF_SIZE, MAX_USER_VIDEO_SIZE, videoMime } from "./media"
 
 export const USER_IMAGES_BUCKET = "user-images"
 export const IMAGE_PREVIEW_WIDTH = 480
@@ -11,6 +12,11 @@ const UPLOAD_IMAGE_TARGET_SIZE = 4_000_000
 const UPLOAD_IMAGE_MAX_DIMENSION = 4_000
 
 export async function prepareUserImage(file: File): Promise<File> {
+  if (isGifFile(file)) {
+    if (!file.size || file.size > MAX_USER_GIF_SIZE) throw new Error("Een GIF mag maximaal 20 MB zijn.")
+    // Recompressing through canvas erases animation.
+    return file
+  }
   if (!file.type.startsWith("image/") || file.size === 0) {
     throw new Error("Kies een geldig afbeeldingsbestand.")
   }
@@ -93,6 +99,7 @@ export async function loadUserImages(supabase: SupabaseClient, userId: string): 
     .from("user_images")
     .select("id, display_name, original_path, thumbnail_path, original_size, thumbnail_size, created_at")
     .eq("user_id", userId)
+    .eq("upload_status", "ready")
     .order("created_at", { ascending: false })
 
   if (error) throw error
@@ -114,6 +121,7 @@ export async function loadUserImages(supabase: SupabaseClient, userId: string): 
 }
 
 export async function createCroppedImagePreview(file: File): Promise<Blob> {
+  if (videoMime(file)) return createVideoPreview(file)
   const bitmap = await createImageBitmap(file)
   try {
     const canvas = document.createElement("canvas")
@@ -161,13 +169,65 @@ export async function createCroppedImagePreview(file: File): Promise<Blob> {
   }
 }
 
+async function createVideoPreview(file: File): Promise<Blob> {
+  const player = document.createElement("video")
+  const url = URL.createObjectURL(file)
+  const canvas = document.createElement("canvas")
+  canvas.width = IMAGE_PREVIEW_WIDTH; canvas.height = IMAGE_PREVIEW_HEIGHT
+  try {
+    player.muted = true; player.playsInline = true; player.preload = "auto"
+    await new Promise<void>((resolve, reject) => {
+      const timer = window.setTimeout(() => { player.onloadeddata = null; player.onerror = null; reject(new Error("De video kon niet worden gelezen. Gebruik MP4 (H.264) of WebM.")) }, 15000)
+      player.onloadeddata = () => { window.clearTimeout(timer); resolve() }
+      player.onerror = () => { window.clearTimeout(timer); reject(new Error("De video kon niet worden gelezen. Gebruik MP4 (H.264) of WebM.")) }
+      player.src = url
+    })
+    const context = canvas.getContext("2d")
+    if (!context || !player.videoWidth || !player.videoHeight) throw new Error("Videovoorbeeld kon niet worden gemaakt.")
+    const ratio = Math.max(IMAGE_PREVIEW_WIDTH / player.videoWidth, IMAGE_PREVIEW_HEIGHT / player.videoHeight)
+    const width = player.videoWidth * ratio, height = player.videoHeight * ratio
+    context.drawImage(player, (IMAGE_PREVIEW_WIDTH - width) / 2, (IMAGE_PREVIEW_HEIGHT - height) / 2, width, height)
+    return await new Promise<Blob>((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("Videovoorbeeld kon niet worden gemaakt.")), "image/webp", 0.8))
+  } finally {
+    player.pause(); player.removeAttribute("src"); player.load()
+    URL.revokeObjectURL(url); canvas.width = 0; canvas.height = 0
+  }
+}
+
+async function uploadDirectMedia(supabase: SupabaseClient, original: File, preview: Blob): Promise<UserImageAsset> {
+  const mimeType = videoMime(original) ?? "image/gif"
+  const request = async (body: Record<string, unknown>) => {
+    const response = await fetch("/api/images/upload", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+    const result = await response.json()
+    if (!response.ok) throw new Error(result.error || "Uploaden is mislukt.")
+    return result
+  }
+  const prepared = await request({ action: "prepare", name: original.name, mimeType, size: original.size, previewSize: preview.size })
+  try {
+    const storage = supabase.storage.from(USER_IMAGES_BUCKET)
+    const body = original.type === mimeType ? original : new File([original], original.name, { type: mimeType, lastModified: original.lastModified })
+    const originalResult = await storage.uploadToSignedUrl(prepared.original.path, prepared.original.token, body, { contentType: mimeType, cacheControl: "31536000" })
+    if (originalResult.error) throw originalResult.error
+    const previewResult = await storage.uploadToSignedUrl(prepared.preview.path, prepared.preview.token, preview, { contentType: "image/webp", cacheControl: "31536000" })
+    if (previewResult.error) throw previewResult.error
+    return await request({ action: "complete", id: prepared.id, extension: prepared.extension })
+  } catch (error) {
+    await request({ action: "cancel", id: prepared.id, extension: prepared.extension }).catch(() => {})
+    throw error
+  }
+}
+
 export async function uploadUserImage(
-  _supabase: SupabaseClient,
+  supabase: SupabaseClient,
   _userId: string,
   file: File,
 ): Promise<UserImageAsset> {
-  const original = await prepareUserImage(file)
+  if (!isSupportedMediaFile(file) || file.size <= 0) throw new Error("Kies JPG, PNG, GIF, WebP, MP4 of WebM.")
+  const video = videoMime(file)
+  if (video && file.size > MAX_USER_VIDEO_SIZE) throw new Error("Een video mag maximaal 50 MB zijn.")
+  const original = video ? file : await prepareUserImage(file)
   const preview = await createCroppedImagePreview(original)
+  if (video || isGifFile(original) && original.size > UPLOAD_IMAGE_TARGET_SIZE) return uploadDirectMedia(supabase, original, preview)
   const form = new FormData()
   form.set("original", original)
   form.set("preview", new File([preview], "preview.webp", { type: "image/webp" }))

@@ -1,5 +1,7 @@
 "use client"
 
+import { MediaImage } from "@/components/images/media-image"
+
 import { useState } from "react"
 import dynamic from "next/dynamic"
 import { createPortal } from "react-dom"
@@ -850,7 +852,7 @@ export function SelectionEditor({
                 </Label>
                 {selectedSection.styles?.backgroundImage ? (
                   <div className="mb-2 aspect-[16/7] overflow-hidden rounded-lg border border-border bg-muted">
-                    <img src={selectedSection.styles.backgroundImage} alt="Gekozen achtergrond" className="h-full w-full object-cover" style={{ objectPosition: selectedSection.styles.backgroundPosition || "center" }} />
+                    <MediaImage src={selectedSection.styles.backgroundImage} alt="Gekozen achtergrond" className="h-full w-full object-cover" style={{ objectPosition: selectedSection.styles.backgroundPosition || "center" }} />
                   </div>
                 ) : null}
                 <div className="flex flex-wrap gap-2">
@@ -885,7 +887,7 @@ export function SelectionEditor({
                   <ImageIcon className="h-3 w-3" />
                   Logo (optioneel)
                 </Label>
-                {selectedSection.styles?.logo ? <div className="mb-2 flex h-20 items-center justify-center rounded-lg border border-border bg-muted p-3"><img src={selectedSection.styles.logo} alt={selectedSection.styles.logoAlt || "Gekozen logo"} className="max-h-full max-w-full object-contain" /></div> : null}
+                {selectedSection.styles?.logo ? <div className="mb-2 flex h-20 items-center justify-center rounded-lg border border-border bg-muted p-3"><MediaImage src={selectedSection.styles.logo} alt={selectedSection.styles.logoAlt || "Gekozen logo"} className="max-h-full max-w-full object-contain" /></div> : null}
                 <div className="flex flex-wrap gap-2">
                   <SectionImagePicker userId={userId} label="Logo kiezen" value={selectedSection.styles?.logo} onSelect={(url) => updateStyleValue("logo", url)} />
                   {selectedSection.styles?.logo ? (
