@@ -7,6 +7,8 @@ export interface TranslatableFieldDefinition {
 }
 
 const DEFAULT_NAVIGATION_LABELS: Partial<Record<SectionType, string>> = {
+  projects: "Projecten",
+  freeform: "Vrije sectie",
   hero: "Home",
   about: "Over",
   services: "Aanbod",
@@ -76,7 +78,13 @@ export function materializeNavigationTranslationSource(section: Section, allSect
   }
 }
 
-export const SECTION_TRANSLATABLE_FIELDS = {
+export const SECTION_TRANSLATABLE_FIELDS: Record<SectionType, TranslatableFieldDefinition[]> = {
+  projects: [
+    { key: "title", label: "Titel", required: true },
+    { key: "subtitle", label: "Introductie" },
+    { key: "projects", label: "Projecten", required: true },
+  ],
+  freeform: [{ key: "title", label: "Sectienaam", required: true }],
   nav: [
     { key: "brandName", label: "Bedrijfsnaam", required: true },
     { key: "navLinks", label: "Navigatielinks", required: true },
@@ -171,6 +179,10 @@ export const SECTION_TRANSLATABLE_FIELDS = {
   ],
 } satisfies Record<SectionType, TranslatableFieldDefinition[]>
 
+for (const [type, fields] of Object.entries(SECTION_TRANSLATABLE_FIELDS)) {
+  if (type !== "nav" && type !== "footer") fields.push({ key: "elements", label: "Eigen elementen", required: true })
+}
+
 type TranslationItem = Record<string, unknown>
 
 function itemId(item: TranslationItem, fallback: unknown) {
@@ -180,6 +192,16 @@ function itemId(item: TranslationItem, fallback: unknown) {
 
 function extractRepeaterValue(type: SectionType, key: string, value: unknown): unknown {
   if (!Array.isArray(value)) return value
+  if (type === "projects" && key === "projects") return value.filter((item) => item && typeof item === "object").map((item) => {
+    const source = item as TranslationItem
+    return Object.fromEntries([["id", itemId(source, source)], ...["title", "description", "imageAlt", "category", "location", "ctaText"].map((field) => [field, source[field] ?? ""])])
+  })
+  if (key === "elements") return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return []
+    const source = item as TranslationItem
+    const field = source.type === "image" ? "alt" : ["heading", "text", "button"].includes(String(source.type)) ? "text" : null
+    return field && typeof source[field] === "string" && String(source[field]).trim() ? [{ id: source.id, [field]: source[field] }] : []
+  })
   if (type === "features" && key === "features") {
     return value.map((item) => typeof item === "string"
       ? { id: `generated-${getTranslationSourceHash(item)}`, text: item }
@@ -237,6 +259,8 @@ function extractRepeaterValue(type: SectionType, key: string, value: unknown): u
 }
 
 function repeaterAllowedFields(type: SectionType, key: string) {
+  if (type === "projects" && key === "projects") return ["title", "description", "imageAlt", "category", "location", "ctaText"]
+  if (key === "elements") return ["text", "alt"]
   if (type === "features" && key === "features") return ["text"]
   if (type === "nav" && key === "navLinks") return ["label"]
   if (type === "footer" && key === "columns") return ["title", "links"]
@@ -337,11 +361,19 @@ export function getSectionTranslationStatus(
   sourceHash?: string | null,
 ) {
   const required = SECTION_TRANSLATABLE_FIELDS[section.type].filter(
-    (field) => field.required && hasValue(section.data[field.key]),
+    (field) => field.required && hasValue(extractRepeaterValue(section.type, field.key, section.data[field.key])),
   )
   const missing = required.filter(({ key }) => (
     section.type === "nav" && key === "navLinks"
       ? !hasCompleteNavigationTranslation(section.data[key], values?.[key])
+      : section.type === "projects" && key === "projects" ? !(extractRepeaterValue(section.type, key, section.data[key]) as TranslationItem[]).every((source) => {
+          const translated = Array.isArray(values?.[key]) ? (values[key] as TranslationItem[]).find((item) => item && item.id === source.id) : null
+          return Object.keys(source).filter((field) => field !== "id" && hasValue(source[field])).every((field) => typeof translated?.[field] === "string" && String(translated[field]).trim())
+        })
+      : key === "elements" ? !(extractRepeaterValue(section.type, key, section.data[key]) as TranslationItem[]).every((source) => {
+          const translated = Array.isArray(values?.[key]) ? (values[key] as TranslationItem[]).find((item) => item.id === source.id) : null
+          return Object.keys(source).filter((field) => field !== "id").every((field) => typeof translated?.[field] === "string" && String(translated[field]).trim())
+        })
       : !hasValue(values?.[key])
   )).map(({ key }) => key)
   if (missing.length > 0) return { status: "missing" as const, missing }

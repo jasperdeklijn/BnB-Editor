@@ -1,14 +1,24 @@
 "use client"
 
 import React, { useEffect, useState, useRef } from "react"
-import type { Section } from "@/lib/types"
+import dynamic from "next/dynamic"
+import type { Section, SectionStyles } from "@/lib/types"
 import type { BusinessCategory } from "@/lib/business/categories"
 import { getSectionDefinition } from "@/components/editor/section-registry"
 import { normalizeSectionStyleType } from "@/lib/section-style-types"
 import { getSectionColorVars } from "@/lib/section-colors"
 import { getSectionDecorationVars } from "@/lib/section-decorations"
+import { readPresentation, presentationVariables } from "@/lib/section-composition"
+import { SectionElements } from "./section-elements"
+import { SectionContentContext } from "./section-content-context"
+import compositionStyles from "./section-composition.module.css"
+
+const SectionQuickEditor = dynamic(() => import("./section-quick-editor").then((module) => module.SectionQuickEditor))
 
 interface SectionRendererProps {
+  userId?: string
+  isSelected?: boolean
+  onStyleUpdate?: (styles: SectionStyles) => void
   section: Section
   isPreview: boolean
   onUpdate?: (newData: Record<string, unknown>) => void // Made onUpdate optional
@@ -205,10 +215,12 @@ export function TransitionWrapper({
 }
 
 function SectionRendererComponent({
+  userId,
+  isSelected,
+  onStyleUpdate,
   section,
   isPreview,
   onUpdate,
-  wrapTransition,
   allSections,
   device,
   websiteId,
@@ -216,10 +228,13 @@ function SectionRendererComponent({
   businessCategory,
   activeLocale,
 }: SectionRendererProps) {
+  // Canvas saves replace the content document; composition controls emit patches.
+  const updateContent = onUpdate ? (patch: Record<string, unknown>) => onUpdate({ ...section.data, ...patch }) : undefined
   const commonProps = {
+    userId,
     data: section.data,
     isPreview,
-    ...(onUpdate && { onUpdate }), // Only include onUpdate if it exists
+    ...(updateContent && { onUpdate: updateContent }),
     styles: section.styles,
     websiteId,
     businessId,
@@ -240,17 +255,38 @@ function SectionRendererComponent({
     </div>
   ) : inner
 
-  // If wrapTransition is explicitly false, don't wrap
-  if (wrapTransition === false) return styledInner
-
-  // Otherwise just render the inner component
-  return styledInner
+  const presentation = readPresentation(section.data.presentation)
+  const supportsElements = !["nav", "footer", "freeform"].includes(section.type)
+  const content = <SectionContentContext.Provider value={section.data}>
+    <div className={`${compositionStyles.root} ${section.styles?.fontFamily ?? ""}`}
+      data-container={section.type !== "services" || undefined}
+      data-align={presentation.alignment || undefined}
+      data-width={presentation.contentWidth || undefined}
+      data-heading={presentation.headingSize !== undefined || undefined}
+      data-body={presentation.bodySize !== undefined || undefined}
+      data-top={presentation.paddingTop !== undefined || undefined}
+      data-bottom={presentation.paddingBottom !== undefined || undefined}
+      data-ratio={presentation.columnRatio || undefined}
+      data-image-width={presentation.imageWidth !== undefined || undefined}
+      data-image-aspect={presentation.imageAspect || undefined}
+      data-image-position={presentation.imagePosition || undefined}
+      style={{ ...getSectionColorVars(section.styles), ...presentationVariables(presentation), textAlign: presentation.alignment, backgroundColor: section.styles?.backgroundColor, color: section.styles?.textColor }}>
+      {supportsElements ? <SectionElements data={section.data} isPreview={isPreview} onUpdate={updateContent} userId={userId} placement="before" /> : null}
+      {styledInner}
+      {supportsElements ? <SectionElements data={section.data} isPreview={isPreview} onUpdate={updateContent} userId={userId} placement="after" /> : null}
+    </div>
+  </SectionContentContext.Provider>
+  // Keep shared navigation's sticky positioning relative to the full page.
+  if (["nav", "footer"].includes(section.type)) return styledInner
+  return !isPreview && updateContent ? <SectionQuickEditor section={section} onUpdate={updateContent} onStyleUpdate={onStyleUpdate} userId={userId} active={isSelected}>{content}</SectionQuickEditor> : content
 }
 
 export const SectionRenderer = React.memo(
   SectionRendererComponent,
   (previous, next) =>
     previous.section === next.section &&
+    previous.userId === next.userId &&
+    previous.isSelected === next.isSelected &&
     previous.isPreview === next.isPreview &&
     previous.wrapTransition === next.wrapTransition &&
     previous.allSections === next.allSections &&

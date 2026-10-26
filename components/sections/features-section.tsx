@@ -35,7 +35,7 @@ export function FeaturesSection({ data, isPreview, styles, onUpdate }: FeaturesS
 
   return (
     <section className={`bg-amber-50/50 px-4 ${layout.section} ${styles?.fontFamily || ""}`} style={sectionStyle}>
-      <div className={`mx-auto ${layout.container}`}>
+      <div data-section-content className={`mx-auto ${layout.container}`}>
         <EditableText
           as="h2"
           data={data}

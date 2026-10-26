@@ -41,7 +41,7 @@ export function PricingSection({ data, isPreview, styles, onUpdate }: { data: Re
 
   return (
     <section className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-      <div className={`mx-auto ${layout.container}`}>
+      <div data-section-content className={`mx-auto ${layout.container}`}>
         <div className={`mb-10 ${layout.heading}`}><p className="mb-2 text-xs font-semibold uppercase tracking-widest" style={{ color: accent }}>{messages.pricing}</p><EditableText as="h2" data={data} path={["title"]} value={title} isPreview={isPreview} onUpdate={onUpdate} className="text-3xl font-bold md:text-4xl" style={textStyle} />{subtitle ? <EditableText as="p" data={data} path={["subtitle"]} value={subtitle} isPreview={isPreview} onUpdate={onUpdate} multiline className="mx-auto mt-3 max-w-xl text-muted-foreground" style={textStyle} /> : null}</div>
 
         {displayMode !== "menu" ? <div className={`grid gap-6 ${layout.grid}`}>
@@ -56,7 +56,7 @@ export function PricingSection({ data, isPreview, styles, onUpdate }: { data: Re
         </div> : null}
 
         {displayMode === "both" ? <h3 className="mb-5 mt-14 text-center text-2xl font-semibold" style={textStyle}>{messages.individualRates}</h3> : null}
-        {displayMode !== "packages" ? <div className="mx-auto max-w-3xl overflow-hidden rounded-2xl border shadow-sm" style={{ backgroundColor: surface, color: surfaceForeground }}>
+        {displayMode !== "packages" ? <div data-section-content className="mx-auto max-w-3xl overflow-hidden rounded-2xl border shadow-sm" style={{ backgroundColor: surface, color: surfaceForeground }}>
           {tariffs.map((item, index) => <div key={item.id ?? index} className="flex items-start gap-4 border-b border-border px-5 py-4 last:border-b-0">
             <div className="min-w-0 flex-1">{item.category ? <EditableText data={editableData} path={["tariffs", index, "category"]} value={item.category} isPreview={isPreview} onUpdate={onUpdate} className="text-xs font-semibold uppercase tracking-wide" style={{ color: accent }} /> : null}<EditableText as="h3" data={editableData} path={["tariffs", index, "name"]} value={item.name} isPreview={isPreview} onUpdate={onUpdate} className="font-semibold" style={textStyle} />{item.description ? <EditableText as="p" data={editableData} path={["tariffs", index, "description"]} value={item.description} isPreview={isPreview} onUpdate={onUpdate} className="mt-1 text-sm text-muted-foreground" multiline /> : null}</div>
             <span className="mt-1 border-b border-dotted px-1 font-semibold" style={{ color: accent }}><EditableText data={editableData} path={["tariffs", index, "price"]} value={item.price} isPreview={isPreview} onUpdate={onUpdate} /></span>

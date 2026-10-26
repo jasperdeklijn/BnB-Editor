@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import dynamic from "next/dynamic"
 import { createPortal } from "react-dom"
 import {
   AlignCenter,
@@ -45,6 +46,9 @@ import {
   planMeetsRequirement,
 } from "@/lib/entitlements"
 import { TierBadge } from "@/components/editor/tier-badge"
+import { SectionPresentationControls } from "./section-presentation-controls"
+
+const SectionElementsEditor = dynamic(() => import("./section-elements-editor").then((module) => module.SectionElementsEditor))
 
 interface SelectionEditorProps {
   userId: string
@@ -85,6 +89,8 @@ const SECTION_STYLE_CONTROLS: Partial<Record<SectionType, StyleControl[]>> = {
 }
 
 const SECTION_TARGET_LABELS: Record<SectionType, string> = {
+  projects: "Projecten",
+  freeform: "Vrije sectie",
   hero: "Home",
   about: "Over",
   services: "Aanbod",
@@ -104,6 +110,8 @@ const SECTION_TARGET_LABELS: Record<SectionType, string> = {
 }
 
 const SECTION_TARGET_TYPES: SectionType[] = [
+  "projects",
+  "freeform",
   "hero",
   "about",
   "services",
@@ -344,6 +352,14 @@ export function SelectionEditor({
   }
 
   const selectedLayout = normalizeSectionLayout((selectedSection.data as any).layout)
+  const columnLayouts: Partial<Record<SectionType, string[]>> = {
+    hero: ["split", "banner"], about: ["split", "showcase"], contact: ["classic", "split"], request_form: ["split", "showcase"],
+  }
+  const supportsColumnRatio = selectedSection.type === "freeform"
+    ? Number(selectedSection.data.columns) === 2
+    : Boolean(columnLayouts[selectedSection.type]?.includes(selectedLayout))
+  const supportsImageSizing = ["about", "gallery", "team", "projects"].includes(selectedSection.type)
+    || selectedSection.type === "hero" && ["split", "banner"].includes(selectedLayout)
   const selectedStyleType = normalizeSectionStyleType((selectedSection.data as any).styleType)
   const selectedSectionLabel = getSectionDefinition(selectedSection.type)?.label ?? selectedSection.type.replace("_", " ")
   const selectedSectionBasePlan = getMinimumPlanForSection(selectedSection.type)
@@ -463,6 +479,7 @@ export function SelectionEditor({
           <AccordionContent className="pb-3">
             <SectionSpecificEditor
               section={selectedSection}
+              userId={userId}
               sections={sections}
               transitions={transitions}
               websiteId={websiteId}
@@ -480,6 +497,20 @@ export function SelectionEditor({
           </AccordionContent>
         </AccordionItem>
 
+        {!["nav", "footer"].includes(selectedSection.type) ? <AccordionItem value="composition" className="px-3">
+          <AccordionTrigger className="py-3 hover:no-underline"><span className="text-sm font-semibold">Formaat en ruimte</span></AccordionTrigger>
+          <AccordionContent className="pb-3">
+            <SectionPresentationControls value={selectedSection.data.presentation}
+              onChange={(presentation) => updateField("presentation", presentation)}
+              split={supportsColumnRatio} images={supportsImageSizing} />
+          </AccordionContent>
+        </AccordionItem> : null}
+
+        {selectedSection.type !== "freeform" && !["nav", "footer"].includes(selectedSection.type) ? <AccordionItem value="elements" className="px-3">
+          <AccordionTrigger className="py-3 hover:no-underline"><span className="text-sm font-semibold">Eigen elementen</span></AccordionTrigger>
+          <AccordionContent className="pb-3"><SectionElementsEditor data={selectedSection.data} onUpdate={updateFields} userId={userId} /></AccordionContent>
+        </AccordionItem> : null}
+
         <AccordionItem value="layout" className="px-3">
           <AccordionTrigger className="py-3 hover:no-underline">
             <span className="min-w-0">
@@ -490,7 +521,7 @@ export function SelectionEditor({
             </span>
           </AccordionTrigger>
           <AccordionContent className="space-y-3 pb-3">
-        <Card className="space-y-3 border-0 bg-transparent p-0 shadow-none">
+        {selectedSection.type !== "freeform" ? <Card className="space-y-3 border-0 bg-transparent p-0 shadow-none">
           <Label className="flex items-center gap-2">
             <Type className="h-3.5 w-3.5" />
             Layout
@@ -511,7 +542,7 @@ export function SelectionEditor({
             </span>
             <Eye className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
           </button>
-        </Card>
+        </Card> : null}
 
         {layoutDialogOpen && typeof document !== "undefined"
           ? createPortal(

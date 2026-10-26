@@ -128,7 +128,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
         className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`}
         style={sectionStyle}
       >
-        <div className={`mx-auto ${layout.container} text-center`}>
+        <div data-section-content className={`mx-auto ${layout.container} text-center`}>
           <div className="mb-4 inline-flex items-center justify-center gap-2 rounded-full bg-green-100 px-4 py-2 text-sm font-medium text-green-800">
             <SectionIcon icon={data.headingIcon} fallback="tabler:phone" className="h-4 w-4" />
             WhatsApp
@@ -165,7 +165,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
       className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`}
       style={sectionStyle}
     >
-      <div className={`mx-auto ${layout.layout === "split" || layout.layout === "showcase" ? "grid max-w-6xl gap-8 md:grid-cols-[0.8fr_1.2fr] md:items-start" : layout.container}`}>
+      <div data-section-columns={layout.layout === "split" || layout.layout === "showcase" || undefined} data-section-content className={`mx-auto ${layout.layout === "split" || layout.layout === "showcase" ? "grid max-w-6xl gap-8 md:grid-cols-[0.8fr_1.2fr] md:items-start" : layout.container}`}>
         <div className={`mb-10 ${layout.layout === "split" || layout.layout === "showcase" ? "md:mb-0 md:text-left" : layout.heading}`}>
           <div className="mb-3 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--section-accent)] px-4 py-2 text-sm font-medium text-[var(--section-accent-foreground)]">
             <SectionIcon icon={data.headingIcon} fallback={requestFormIcon(requestType)} className="h-4 w-4" />

@@ -56,6 +56,7 @@ export interface SectionDefaultContext {
 }
 
 export interface SectionRenderProps {
+  userId?: string
   data: Record<string, unknown>
   isPreview: boolean
   onUpdate?: (newData: Record<string, unknown>) => void
@@ -85,7 +86,19 @@ export interface SectionDefinition {
 
 const currentYear = new Date().getFullYear()
 
+const FreeformSection = dynamic<SectionRenderProps>(() => import("@/components/sections/freeform-section").then((module) => module.FreeformSection), { loading: SectionLoadingIndicator })
+
 export const sectionDefinitions = {
+  projects: {
+    type: "projects", label: SECTION_COPY.projects.label, description: SECTION_COPY.projects.description, icon: Briefcase, category: "content",
+    defaultData: () => ({ title: SECTION_COPY.projects.defaultTitle, subtitle: "Een selectie van ons werk.", projects: [], layout: getDefaultLayoutForSection("projects") }),
+    Renderer: dynamic<SectionRenderProps>(() => import("@/components/sections/projects-section").then((module) => module.ProjectsSection), { loading: SectionLoadingIndicator }),
+  },
+  freeform: {
+    type: "freeform", label: "Vrije sectie", description: "Eigen elementen in één, twee of drie kolommen", icon: Layout, category: "content",
+    defaultData: () => ({ title: "Vrije sectie", columns: 2, elements: [], layout: "classic" }),
+    Renderer: FreeformSection,
+  },
   nav: {
     type: "nav",
     label: SECTION_COPY.nav.label,

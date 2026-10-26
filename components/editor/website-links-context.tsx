@@ -3,6 +3,8 @@
 import { createContext, useContext, type AnchorHTMLAttributes, type ReactNode } from "react"
 import type { WebsitePage } from "@/lib/website-pages"
 import { parseWebsiteLink, resolveWebsiteLink } from "@/lib/website-links"
+import { contentStyleKey, findContentPath } from "@/lib/section-composition"
+import { linkCopyPath, SectionContentContext } from "./section-content-context"
 import type { SectionTargetOption } from "./section-editor-types"
 
 export interface WebsiteLinksContextValue {
@@ -28,6 +30,14 @@ export function WebsiteLinksProvider({ value, children }: { value: WebsiteLinksC
 /** Resolves saved references without replacing them in editable section data. */
 export function WebsiteLink({ href = "", onClick, children, ...props }: AnchorHTMLAttributes<HTMLAnchorElement>) {
   const context = useWebsiteLinks()
+  const data = useContext(SectionContentContext)
+  const copyPath = linkCopyPath(children)
+  const path = copyPath ? [...copyPath.slice(0, -1), String(copyPath.at(-1)).replace(/Text$/, "Href")] : findContentPath(data, href, "link")
+  const variant = path ? (data.buttonStyles as Record<string, string> | undefined)?.[contentStyleKey(data, path)] : undefined
+  const buttonStyle = variant === "outline" ? { backgroundColor: "transparent", color: "var(--section-accent)", border: "1px solid currentColor" }
+    : variant === "link" ? { backgroundColor: "transparent", color: "var(--section-accent)", border: "none", boxShadow: "none", textDecoration: "underline" }
+    : variant === "solid" ? { backgroundColor: "var(--section-accent)", color: "var(--section-accent-foreground)", border: "1px solid transparent" } : {}
+  props.style = { ...props.style, ...buttonStyle }
   const target = parseWebsiteLink(href)
   const resolved = resolveWebsiteLink(context?.sectionAliases?.[href] ?? href, context?.pages ?? [], context?.activePageId, context?.localePath)
   const contextualHref = target.type !== "url" && context?.basePath && resolved.startsWith("/")

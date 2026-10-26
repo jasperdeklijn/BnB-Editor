@@ -1,5 +1,15 @@
 # Section Components Reference
 
+## Projecten
+
+De sectie `projects` toont uitgevoerd werk en is beschikbaar vanaf Bronze. Voeg haar toe via **Projecten** in de sectiekeuze. Onder **Inhoud** kunnen projecten worden toegevoegd, gedupliceerd, verplaatst en verwijderd. Elk project heeft een titel, beschrijving en foto uit de beeldbank, met optioneel een afbeeldingsbeschrijving, categorie, plaats, jaartal en knop naar een pagina, sectie of webadres. Er worden geen aparte projectpagina's aangemaakt.
+
+De zes indelingen zijn een projectenraster, foto naast tekst, een uitgelicht eerste project, een compacte lijst, projectkaarten en een horizontale projectrij. De indelingen reageren op de beschikbare breedte, ook in het mobiele editorvoorbeeld. Een lege sectie en lege afbeeldingsvakken worden op de publieke site niet getoond. De bestaande opmaak-, element-, opslag- en publicatiefunctionaliteit blijft van toepassing.
+
+Projecten staan met stabiele ID's in `content.projects`. Vertalingen omvatten titel, beschrijving, foto-omschrijving, categorie, plaats en knoptekst. Afbeeldingen, jaartallen en linkdoelen blijven gedeeld. De bestaande JSON-opslag en publicatiesnapshots ondersteunen deze sectie zonder nieuwe databasetabel of migratie. De beperkte externe JSON-import is niet uitgebreid.
+
+Controle: projectweergaven, editorhandelingen, onveilige/uitgeschakelde links en vertaalbehoud in `tests/section-composition-render.test.mjs`.
+
 This document describes the website sections users can add from `components/sections`, what each section renders, what the editor exposes as editable content, and how a stored database entry looks.
 
 ## Storage model

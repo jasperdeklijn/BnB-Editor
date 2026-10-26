@@ -125,7 +125,7 @@ export function FaqSection({ data, isPreview, styles, onUpdate }: FaqSectionProp
       className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`}
       style={sectionStyle}
     >
-      <div className={`mx-auto ${layout.container}`}>
+      <div data-section-content className={`mx-auto ${layout.container}`}>
         <div className={`mb-12 ${layout.heading}`}>
           <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[var(--section-accent)]">
             FAQ

@@ -2067,7 +2067,7 @@ function ServicesSectionContent({
           backgroundSize: "48px 48px",
         }}
       />
-      <div className="relative mx-auto max-w-4xl text-center">
+      <div data-section-content className="relative mx-auto max-w-4xl text-center">
         <div className="mb-5 inline-flex items-center rounded-full border border-border bg-[var(--section-surface)] px-4 py-2 text-sm font-medium text-[var(--section-accent)] shadow-sm">
           Aanbod beheren
         </div>
@@ -2102,7 +2102,7 @@ function ServicesSectionContent({
       className={`bg-secondary/60 px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily ?? ""}`}
       style={sectionStyle}
     >
-      <div className="mx-auto max-w-6xl">
+      <div data-section-content className="mx-auto max-w-6xl">
         <EditableText
           as="h2"
           data={data}

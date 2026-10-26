@@ -15,6 +15,8 @@ function load(file, dependencies = {}) {
   return module.exports
 }
 const helpers = load("lib/website-links.ts")
+const composition = load("lib/section-composition.ts")
+const sectionContent = load("components/editor/section-content-context.tsx", { "@/lib/section-composition": composition })
 const { encodeWebsiteLink, parseWebsiteLink, resolveWebsiteLink, safeWebsiteUrl, invalidWebsiteLinks } = helpers
 const { resolveNavigationLinks, materializeNavigationTranslationSource, applySectionTranslation } = load("lib/i18n/section-translations.ts")
 const pages = [
@@ -63,9 +65,10 @@ test("custom navigation keeps configured page, section and URL links instead of 
 test("editor links switch tabs, respect modifier clicks, and public links navigate normally", async () => {
   let context
   const calls = []
-  const mockedReact = {createContext:()=>({}),useContext:()=>context}
+  const mockedReact = {createContext:()=>({}),useContext:(selected)=>selected === sectionContent.SectionContentContext ? {} : context}
   const { WebsiteLink } = load("components/editor/website-links-context.tsx", {
     react:mockedReact,"@/lib/website-links":helpers,
+    "@/lib/section-composition":composition, "./section-content-context":sectionContent,
   })
   context = {pages,activePageId:"home-id",websiteId:"website",localePath:"en",editor:true,navigate:async(...args)=>{calls.push(args);return true}}
   const link = WebsiteLink({href:"section:about-id:team-id",children:"Team"})
@@ -107,7 +110,7 @@ test("publication rejects removed/excluded pages and sections on the wrong page,
 test("the rendered selector exposes page/section/URL modes and preserves external values", () => {
   const React = require("react")
   const {renderToStaticMarkup} = require("react-dom/server")
-  const context = load("components/editor/website-links-context.tsx",{"@/lib/website-links":helpers})
+  const context = load("components/editor/website-links-context.tsx",{"@/lib/website-links":helpers,"@/lib/section-composition":composition,"./section-content-context":sectionContent})
   const { SectionLinkSelect } = load("components/editor/section-link-select.tsx",{
     "./website-links-context":context,"@/lib/website-links":helpers,
     "@/components/ui/input":{Input:(props)=>React.createElement("input",props)},

@@ -1,4 +1,6 @@
 export type SectionType =
+  | "projects"
+  | "freeform"
   | "hero"
   | "gallery"
   | "services"

@@ -119,7 +119,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
   // Layout: Simple/Centered (clean, text-focused, no image)
   if (layout === "centered") {
     return (
-      <section
+      <section data-editor-background
         className={`relative flex min-h-[400px] items-center justify-center overflow-hidden px-4 py-12 sm:min-h-[500px] sm:px-6 sm:py-16 md:min-h-[600px] md:py-24 ${styles?.fontFamily || ""} ${styleTypeRootClass}`}
         style={{
           ...colorVars,
@@ -131,7 +131,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
       >
         {/* Subtle decorative element */}
         <div className={`absolute inset-0 ${styleType === "dark" ? "bg-gradient-to-br from-slate-950 to-slate-800 opacity-95" : styleType === "bold" ? "bg-[linear-gradient(135deg,transparent_65%,var(--section-accent)_65%)] opacity-30" : "bg-gradient-to-br from-amber-50 to-orange-100 opacity-80"}`} />
-        <div className="relative z-10 max-w-3xl px-2 text-center">
+        <div data-section-content className="relative z-10 max-w-3xl px-2 text-center">
           <EditableText
             as="h1"
             data={data}
@@ -164,13 +164,14 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
   // Layout: Split (image on left half, text on right half)
   if (layout === "split") {
     return (
-      <section
+      <section data-editor-background
         className={`relative min-h-[400px] overflow-hidden sm:min-h-[500px] lg:min-h-[600px] ${styles?.fontFamily || ""} ${styleTypeRootClass}`}
         style={colorVars}
       >
-        <div className="flex min-h-[inherit] flex-col md:flex-row">
+        <div data-section-content data-section-columns className="flex min-h-[inherit] flex-col md:flex-row">
           {/* Image Side - Full left half */}
           <div
+            data-section-image data-editor-background
             className="relative min-h-[280px] w-full sm:min-h-[400px] md:min-h-[500px] lg:min-h-[600px] md:w-1/2"
             style={{
               backgroundImage: styles?.backgroundImage
@@ -220,7 +221,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
   // Layout: Full Image (full background with elegant overlay)
   if (layout === "fullwidth") {
     return (
-      <section
+      <section data-editor-background
         className={`relative flex min-h-[500px] items-center justify-center overflow-hidden sm:min-h-[600px] md:min-h-[700px] ${styles?.fontFamily || ""} ${styleTypeRootClass}`}
         style={{
           ...colorVars,
@@ -235,7 +236,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-black/60" />
 
         {/* Content */}
-        <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
+        <div data-section-content className="relative z-10 mx-auto max-w-4xl px-6 text-center">
           <EditableText
             as="h1"
             data={data}
@@ -266,14 +267,14 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
   // Layout: Minimal (text-only, no image)
   if (layout === "minimal") {
     return (
-      <section
+      <section data-editor-background
         className={`relative flex min-h-[400px] items-center justify-center px-4 py-12 sm:px-6 sm:py-16 md:py-24 ${styles?.fontFamily || ""} ${styleTypeRootClass}`}
         style={{
           ...colorVars,
           backgroundColor: styleBackgroundColor || "#ffffff",
         }}
       >
-        <div className="max-w-3xl px-2 text-center">
+        <div data-section-content className="max-w-3xl px-2 text-center">
           <EditableText
             as="h1"
             data={data}
@@ -304,7 +305,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
   // Layout: Card (image background with text card)
   if (layout === "card") {
     return (
-      <section
+      <section data-editor-background
         className={`relative flex min-h-[500px] items-center justify-center overflow-hidden sm:min-h-[600px] md:min-h-[700px] ${styles?.fontFamily || ""} ${styleTypeRootClass}`}
         style={{
           ...colorVars,
@@ -319,7 +320,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
         <div className="absolute inset-0 bg-black/30" />
 
         {/* Content Card */}
-        <div className={`relative z-10 mx-auto max-w-lg rounded-lg bg-[var(--section-surface)] p-8 text-[var(--section-surface-foreground)] shadow-xl backdrop-blur-sm ${styleTypePanelClass}`}>
+        <div data-section-content className={`relative z-10 mx-auto max-w-lg rounded-lg bg-[var(--section-surface)] p-8 text-[var(--section-surface-foreground)] shadow-xl backdrop-blur-sm ${styleTypePanelClass}`}>
           <EditableText
             as="h1"
             data={data}
@@ -350,11 +351,11 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
   // Layout: Split Reverse (text on left, image on right)
   if (layout === "split-reverse") {
     return (
-      <section
+      <section data-editor-background
         className={`relative min-h-[400px] overflow-hidden sm:min-h-[500px] lg:min-h-[600px] ${styles?.fontFamily || ""} ${styleTypeRootClass}`}
         style={colorVars}
       >
-        <div className="flex min-h-[inherit] flex-col md:flex-row">
+        <div data-section-content data-section-columns className="flex min-h-[inherit] flex-col md:flex-row">
           {/* Text Side - Clean background */}
           <div
             className={`flex w-full flex-col justify-center px-8 py-12 md:w-1/2 md:px-12 lg:px-16 ${styleTypePanelClass}`}
@@ -386,6 +387,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
 
           {/* Image Side - Full right half */}
           <div
+            data-section-image data-editor-background
             className={`relative min-h-[280px] w-full sm:min-h-[400px] md:min-h-[500px] lg:min-h-[600px] md:w-1/2`}
             style={{
               backgroundImage: styles?.backgroundImage

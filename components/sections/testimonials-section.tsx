@@ -59,7 +59,7 @@ export function TestimonialsSection({ data, isPreview, styles, onUpdate, website
     {collection?.failed && !preview && <button type="button" className="mt-3 min-h-11 text-sm underline underline-offset-4" onClick={() => setAttempt((value) => value + 1)}>Opnieuw proberen</button>}
   </div>
   return <section className={`px-4 sm:px-6 ${layout.section} ${styles?.fontFamily ?? ""}`} style={sectionStyle}>
-    <div className={`mx-auto ${layout.container}`}>
+    <div data-section-content className={`mx-auto ${layout.container}`}>
       <div className={`mb-10 ${layout.heading}`}>
         <EditableText as="h2" data={data} path={["title"]} value={String(data.title || "Ervaringen van klanten")} isPreview={isPreview} onUpdate={onUpdate} className="mb-3 text-balance text-3xl font-bold md:text-4xl" />
         {(Boolean(data.subtitle) || editing) && <EditableText as="p" data={data} path={["subtitle"]} value={String(data.subtitle || "")} fallback="" isPreview={isPreview} onUpdate={onUpdate} className={`opacity-75 ${editing && !data.subtitle ? "min-h-6" : ""}`} multiline />}
@@ -67,13 +67,13 @@ export function TestimonialsSection({ data, isPreview, styles, onUpdate, website
       {mode === "google" ? <div className={layout.heading}>{(url || editing) && <a href={url || "#"} target="_blank" rel="noopener noreferrer" onClick={preview ? (event) => event.preventDefault() : undefined} className="inline-flex max-w-full rounded-xl bg-[var(--section-accent)] px-6 py-3 text-center text-sm font-semibold text-[var(--section-accent-foreground)] shadow-sm"><EditableText data={data} path={["googleButtonText"]} value={String(data.googleButtonText || "Lees onze recensies op Google")} isPreview={isPreview} onUpdate={onUpdate} /></a>}{!url && <p className="mt-4 rounded-lg border border-dashed border-current/20 p-5 text-sm">{preview ? "Voeg een Google-recensielink toe in de sectie-instellingen." : "Recensies volgen binnenkort."}</p>}</div>
         : <div className={`grid items-start gap-8 ${layout.layout === "split" && showWebsiteForm ? "lg:grid-cols-2" : "grid-cols-1"}`}>
           {reviewList}
-          {showWebsiteForm && (preview || collection) && <div className={`min-w-0 w-full ${layout.layout === "split" ? "" : "mx-auto max-w-2xl"} ${formFirst ? "order-1" : ""}`}>
+          {showWebsiteForm && (preview || collection) && <div data-section-content className={`min-w-0 w-full ${layout.layout === "split" ? "" : "mx-auto max-w-2xl"} ${formFirst ? "order-1" : ""}`}>
             <ReviewForm websiteId={websiteId ?? ""} available={preview || !collection?.failed} preview={preview} data={data} styles={styles} onUpdate={formUpdate} />
           </div>}
         </div>}
       {mode === "collection" && !showWebsiteForm && editing && <details className="mt-6 rounded-lg border border-dashed border-current/25 p-4">
         <summary className="cursor-pointer text-sm font-medium">Formulier verborgen op website · voorbeeld losse recensiepagina</summary>
-        <div className="mx-auto mt-4 max-w-2xl"><ReviewForm websiteId={websiteId ?? ""} available preview data={data} styles={styles} onUpdate={formUpdate} /></div>
+        <div data-section-content className="mx-auto mt-4 max-w-2xl"><ReviewForm websiteId={websiteId ?? ""} available preview data={data} styles={styles} onUpdate={formUpdate} /></div>
       </details>}
     </div>
   </section>

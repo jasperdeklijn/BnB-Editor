@@ -62,6 +62,8 @@ export interface WebsiteEntitlementResult {
 }
 
 const SECTION_MINIMUM_PLAN = {
+  projects: "bronze",
+  freeform: "bronze",
   nav: "bronze",
   hero: "bronze",
   about: "bronze",
@@ -129,6 +131,8 @@ const CAPABILITY_LABELS = {
 } as const satisfies Record<EntitlementCapability, string>
 
 const SECTION_LABELS = {
+  projects: "Projecten",
+  freeform: "Vrije sectie",
   nav: "Navigatie",
   hero: "Hero",
   about: "Over ons",

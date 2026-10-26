@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionImage } from "@/components/editor/section-content-context"
+
 import type React from "react"
 import { useState } from "react"
 import { toast } from "sonner"
@@ -142,7 +144,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
   if (layout === "grid") {
     return (
       <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-        <div className="mx-auto max-w-6xl">
+        <div data-section-content className="mx-auto max-w-6xl">
           <EditableText
             as="h2"
             data={data}
@@ -167,7 +169,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, index)}
               >
-                <img
+                <SectionImage data-section-image contentPath={["images", index]}
                   src={image}
                   alt={`Gallery image ${index + 1}`}
                   draggable={!isPreview}
@@ -185,7 +187,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
   if (layout === "vertical-carousel") {
     return (
       <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-        <div className="mx-auto max-w-6xl">
+        <div data-section-content className="mx-auto max-w-6xl">
           <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
             {/* Text Side */}
             <div className="flex-1">
@@ -230,7 +232,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
                       onDragLeave={handleDragLeave}
                       onDrop={(e) => handleDrop(e, index)}
                     >
-                      <img
+                      <SectionImage data-section-image contentPath={["images", index]}
                         src={image}
                         alt={`Gallery image ${index + 1}`}
                         draggable={!isPreview}
@@ -251,7 +253,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
   if (layout === "horizontal-carousel") {
     return (
       <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-        <div className="mx-auto max-w-6xl">
+        <div data-section-content className="mx-auto max-w-6xl">
           <EditableText
             as="h2"
             data={data}
@@ -277,7 +279,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
                   onDragLeave={handleDragLeave}
                   onDrop={(e) => handleDrop(e, index)}
                 >
-                  <img
+                  <SectionImage data-section-image contentPath={["images", index]}
                     src={image}
                     alt={`Gallery image ${index + 1}`}
                     draggable={!isPreview}
@@ -296,7 +298,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
   if (layout === "masonry") {
     return (
       <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-        <div className="mx-auto max-w-6xl">
+        <div data-section-content className="mx-auto max-w-6xl">
           <EditableText
             as="h2"
             data={data}
@@ -321,7 +323,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, index)}
               >
-                <img
+                <SectionImage data-section-image contentPath={["images", index]}
                   src={image}
                   alt={`Gallery image ${index + 1}`}
                   draggable={!isPreview}
@@ -339,7 +341,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
   if (layout === "single-with-thumbs") {
     return (
       <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-        <div className="mx-auto max-w-6xl">
+        <div data-section-content className="mx-auto max-w-6xl">
           <EditableText
             as="h2"
             data={data}
@@ -350,7 +352,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
             className="mb-8 text-balance text-center text-2xl font-bold text-amber-950 sm:mb-10 sm:text-3xl md:mb-12 md:text-4xl"
             style={textStyle}
           />
-          <div className="mx-auto max-w-2xl space-y-4">
+          <div data-section-content className="mx-auto max-w-2xl space-y-4">
             {/* Main Image */}
             <div
               data-gallery-image-index={activeIndex}
@@ -361,7 +363,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
               onDragLeave={!isPreview ? handleDragLeave : undefined}
               onDrop={!isPreview ? (e) => handleDrop(e, activeIndex) : undefined}
             >
-              <img
+              <SectionImage data-section-image contentPath={["images", activeIndex]}
                 src={images[activeIndex]}
                 alt={`Gallery image ${activeIndex + 1}`}
                 draggable={!isPreview}
@@ -384,7 +386,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
                   onDragLeave={!isPreview ? handleDragLeave : undefined}
                   onDrop={!isPreview ? (e) => handleDrop(e, index) : undefined}
                 >
-                  <img
+                  <SectionImage data-section-image contentPath={["images", index]}
                     src={image}
                     alt={`Thumbnail ${index + 1}`}
                     draggable={!isPreview}
@@ -404,7 +406,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
   if (layout === "full-slider") {
     return (
       <section className={`relative overflow-hidden ${styles?.fontFamily || ""}`} style={sectionStyle}>
-        <div className="relative mx-auto aspect-square w-full max-w-2xl">
+        <div data-section-content className="relative mx-auto aspect-square w-full max-w-2xl">
           {images.map((image, index) => (
             <div
               key={index}
@@ -413,7 +415,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
                 index === currentIndex ? "opacity-100" : "opacity-0"
               }`}
             >
-              <img
+              <SectionImage data-section-image contentPath={["images", index]}
                 src={image}
                 alt={`Gallery image ${index + 1}`}
                 draggable={!isPreview}

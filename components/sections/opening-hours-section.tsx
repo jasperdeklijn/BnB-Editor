@@ -117,7 +117,7 @@ export function OpeningHoursSection({ data, isPreview, styles, onUpdate }: Openi
       className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`}
       style={sectionStyle}
     >
-      <div className={`mx-auto ${layout.layout === "split" || layout.layout === "showcase" ? "max-w-4xl" : layout.container}`}>
+      <div data-section-content className={`mx-auto ${layout.layout === "split" || layout.layout === "showcase" ? "max-w-4xl" : layout.container}`}>
         <div className={`mb-10 ${layout.heading}`}>
           <div className="mb-3 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--section-accent)] px-4 py-2 text-sm font-medium text-[var(--section-accent-foreground)]">
             <SectionIcon icon={data.headingIcon} fallback="tabler:clock" className="h-4 w-4" />

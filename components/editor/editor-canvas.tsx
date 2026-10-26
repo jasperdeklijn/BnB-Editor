@@ -14,6 +14,7 @@ import { applyThemeDefaultsToSection, resolveWebsiteTheme, type ResolvedTheme, t
 import type { BusinessCategory } from "@/lib/business/categories"
 
 interface EditorCanvasProps {
+  userId?: string
   sections: Section[]
   persistSections: (sections: Section[]) => void
   onSectionUpdate: (id: string, updates: Partial<Section>) => void
@@ -22,7 +23,7 @@ interface EditorCanvasProps {
   themeConfig?: ThemeConfig | null
   isPreview: boolean
   selectedSectionId: string | null
-  onSectionSelect: (id: string | null) => void
+  onSectionSelect: (id: string | null, stayOnCanvas?: boolean) => void
   device: "desktop" | "tablet" | "mobile"
   websiteId?: string | null
   businessId?: string | null
@@ -34,6 +35,7 @@ interface EditorCanvasProps {
 }
 
 export function EditorCanvas({
+  userId,
   sections,
   persistSections,
   onSectionUpdate,
@@ -283,9 +285,9 @@ export function EditorCanvas({
   const getDefaultSectionData = (type: SectionType): Record<string, unknown> =>
     getRegistryDefaultSectionData(type, { businessId })
 
-  const selectSection = (id: string) => {
+  const selectSection = (id: string, stayOnCanvas = false) => {
     if (isPreview) return
-    onSectionSelect(id)
+    onSectionSelect(id, stayOnCanvas)
   }
 
   const updateAboutImage = (section: Section, imageUrl: string, targetIndex?: number) => {
@@ -574,14 +576,22 @@ export function EditorCanvas({
                       event.stopPropagation()
                       return
                     }
-                    selectSection(section.id)
+                    const directEdit = event.target instanceof Element && Boolean(event.target.closest("[data-inline-editable], [data-editor-image-path], a[data-link-target], [data-editor-background], [data-element-controls], [data-section-elements]"))
+                    selectSection(section.id, directEdit)
                   }}
-                  onFocus={() => {
+                  onFocus={(event) => {
                     if (!isPreview && selectedSectionId !== section.id) {
-                      onSectionSelect(section.id)
+                      const directEdit = event.target instanceof Element && Boolean(event.target.closest("[data-inline-editable], [data-editor-image-path], a[data-link-target], [data-element-controls], [data-section-elements]"))
+                      onSectionSelect(section.id, directEdit)
                     }
                   }}
-                  onDragStart={(e) => handleDragStart(e, i)}
+                  onDragStart={(event) => {
+                    if (event.target instanceof Element && event.target.closest("input, textarea, select, [contenteditable=true], [data-element-controls]")) {
+                      event.preventDefault()
+                      return
+                    }
+                    handleDragStart(event, i)
+                  }}
                   onDragEnd={handleDragEnd}
                   onDragOver={handleDragOverSection}
                   onDrop={(e) => handleDropOnSection(e, section.id)}
@@ -658,9 +668,12 @@ export function EditorCanvas({
                         ? "ring-2 ring-primary ring-offset-2 shadow-lg"
                         : ""
                     }`}
-                    onClick={() => selectSection(section.id)}
+                    onClick={(event) => selectSection(section.id, event.target instanceof Element && Boolean(event.target.closest("[data-element-controls], [data-section-elements], [data-editor-background]")))}
                   >
                     <SectionRenderer
+                      userId={userId}
+                      isSelected={isSelected}
+                      onStyleUpdate={(styles) => updateSection(section.id, { styles: { ...sections.find((item) => item.id === section.id)?.styles, backgroundImage: styles.backgroundImage, backgroundPosition: styles.backgroundPosition } })}
                       section={section}
                       isPreview={isPreview}
                       onUpdate={(data) => updateSection(section.id, { data })}

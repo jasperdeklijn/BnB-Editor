@@ -1,6 +1,10 @@
 import type { SupportedWebsiteLocale } from "@/lib/i18n/locales"
 
 export interface SiteMessages {
+  projects: string
+  viewProject: string
+  addProjects: string
+  projectImagePlaceholder: string
   language: string
   menu: string
   closeMenu: string
@@ -75,6 +79,7 @@ export interface SiteMessages {
 
 export const SITE_MESSAGES: Record<SupportedWebsiteLocale, SiteMessages> = {
   "nl-NL": {
+    projects: "Onze projecten", viewProject: "Bekijk project", addProjects: "Voeg projecten toe in de editor.", projectImagePlaceholder: "Kies een projectfoto in de editor",
     language: "Taal", menu: "Menu openen", closeMenu: "Menu sluiten", name: "Naam",
     email: "E-mailadres", phone: "Telefoonnummer", message: "Bericht", date: "Gewenste datum",
     service: "Gewenste dienst", budget: "Budget", submit: "Versturen", submitting: "Versturen...",
@@ -89,6 +94,7 @@ export const SITE_MESSAGES: Record<SupportedWebsiteLocale, SiteMessages> = {
     contactSoon: "We nemen zo snel mogelijk contact met je op.", previewNoRequest: "Er is geen aanvraag opgeslagen of verzonden.",
   },
   "en-GB": {
+    projects: "Our projects", viewProject: "View project", addProjects: "Add projects in the editor.", projectImagePlaceholder: "Choose a project photo in the editor",
     language: "Language", menu: "Open menu", closeMenu: "Close menu", name: "Name",
     email: "Email address", phone: "Phone number", message: "Message", date: "Preferred date",
     service: "Preferred service", budget: "Budget", submit: "Send", submitting: "Sending...",
@@ -103,6 +109,7 @@ export const SITE_MESSAGES: Record<SupportedWebsiteLocale, SiteMessages> = {
     contactSoon: "We will contact you as soon as possible.", previewNoRequest: "No request was stored or sent.",
   },
   "fr-FR": {
+    projects: "Nos réalisations", viewProject: "Voir le projet", addProjects: "Ajoutez des projets dans l’éditeur.", projectImagePlaceholder: "Choisissez une photo du projet dans l’éditeur",
     language: "Langue", menu: "Ouvrir le menu", closeMenu: "Fermer le menu", name: "Nom",
     email: "Adresse e-mail", phone: "Numéro de téléphone", message: "Message", date: "Date souhaitée",
     service: "Service souhaité", budget: "Budget", submit: "Envoyer", submitting: "Envoi en cours...",
@@ -117,6 +124,7 @@ export const SITE_MESSAGES: Record<SupportedWebsiteLocale, SiteMessages> = {
     contactSoon: "Nous vous contacterons dès que possible.", previewNoRequest: "Aucune demande n’a été enregistrée ni envoyée.",
   },
   "de-DE": {
+    projects: "Unsere Projekte", viewProject: "Projekt ansehen", addProjects: "Fügen Sie Projekte im Editor hinzu.", projectImagePlaceholder: "Wählen Sie ein Projektfoto im Editor",
     language: "Sprache", menu: "Menü öffnen", closeMenu: "Menü schließen", name: "Name",
     email: "E-Mail-Adresse", phone: "Telefonnummer", message: "Nachricht", date: "Wunschtermin",
     service: "Gewünschte Leistung", budget: "Budget", submit: "Senden", submitting: "Wird gesendet...",

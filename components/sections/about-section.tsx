@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionImage } from "@/components/editor/section-content-context"
+
 import { ImageIcon } from "lucide-react"
 import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
@@ -18,14 +20,14 @@ export function AboutSection({ data, isPreview, styles, onUpdate }: { data: Reco
   const sectionStyle: React.CSSProperties = { ...getSectionColorVars(styles), backgroundColor: styles?.backgroundColor, backgroundImage: styles?.backgroundImage ? `url(${styles.backgroundImage})` : undefined, backgroundSize: "cover", backgroundPosition: styles?.backgroundPosition || "center" }
 
   const imageGallery = images.length > 0 ? (
-    <div className={`mx-auto grid w-full gap-3 ${images.length === 1 ? "max-w-lg grid-cols-1" : "max-w-4xl grid-cols-2"}`}>
+    <div data-section-content className={`mx-auto grid w-full gap-3 ${images.length === 1 ? "max-w-lg grid-cols-1" : "max-w-4xl grid-cols-2"}`}>
       {images.map((image, index) => (
         <div
           key={`${image}-${index}`}
           data-about-image-index={index}
           className="aspect-square overflow-hidden rounded-2xl border border-[var(--section-accent)] shadow-sm"
         >
-          <img src={image} alt={`${title} ${index + 1}`} className="h-full w-full object-cover" />
+          <SectionImage data-section-image contentPath={["images", index]} src={image} alt={`${title} ${index + 1}`} className="h-full w-full object-cover" />
         </div>
       ))}
     </div>
@@ -35,7 +37,7 @@ export function AboutSection({ data, isPreview, styles, onUpdate }: { data: Reco
 
   return (
     <section className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-      <div className={`mx-auto ${layout.container} ${isSplit ? "grid items-center gap-10 md:grid-cols-2" : ""} ${layout.layout === "card" ? "rounded-2xl border border-border bg-[var(--section-surface)] p-8 text-[var(--section-surface-foreground)] shadow-sm" : ""}`}>
+      <div data-section-columns={isSplit || undefined} data-section-content className={`mx-auto ${layout.container} ${isSplit ? "grid items-center gap-10 md:grid-cols-2" : ""} ${layout.layout === "card" ? "rounded-2xl border border-border bg-[var(--section-surface)] p-8 text-[var(--section-surface-foreground)] shadow-sm" : ""}`}>
         {isSplit && layout.layout === "showcase" ? imageGallery : null}
         <div className={layout.heading}>
           <EditableText as="h2" data={data} path={["title"]} value={title} isPreview={isPreview} onUpdate={onUpdate} className="mb-5 text-3xl font-bold md:text-4xl" style={textStyle} />

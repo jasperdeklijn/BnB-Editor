@@ -1,5 +1,7 @@
 "use client"
 
+import { SectionImage } from "@/components/editor/section-content-context"
+
 import { UserRound } from "lucide-react"
 import { EditableText } from "@/components/editor/inline-editable-text"
 import type { SectionStyles } from "@/lib/types"
@@ -41,7 +43,7 @@ export function TeamSection({ data, isPreview, styles, onUpdate }: TeamSectionPr
 
   return (
     <section className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-      <div className={`mx-auto ${layout.container}`}>
+      <div data-section-content className={`mx-auto ${layout.container}`}>
         <div className={`mb-10 ${layout.heading}`}>
           <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[var(--section-accent)]">{messages.team}</p>
           <EditableText as="h2" data={data} path={["title"]} value={title} isPreview={isPreview} onUpdate={onUpdate} className="text-3xl font-bold md:text-4xl" style={textStyle} />
@@ -61,7 +63,7 @@ export function TeamSection({ data, isPreview, styles, onUpdate }: TeamSectionPr
                 style={{ backgroundColor: "var(--section-surface)" }}
               >
                 <div className={`${isList ? "h-24 w-24 shrink-0" : "mx-auto aspect-square w-full"} overflow-hidden rounded-xl bg-muted`}>
-                  {member.image ? <img src={member.image} alt={member.name} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center"><UserRound className="h-12 w-12 text-muted-foreground/50" /></div>}
+                  {member.image ? <SectionImage data-section-image contentPath={["members", index, "image"]} src={member.image} alt={member.name} className="h-full w-full object-cover" /> : <div className="flex h-full w-full items-center justify-center"><UserRound className="h-12 w-12 text-muted-foreground/50" /></div>}
                 </div>
                 <div className={isList ? "min-w-0 text-left" : "mt-4"}>
                   <EditableText as="h3" data={data} path={["members", index, "name"]} value={member.name} isPreview={isPreview} onUpdate={onUpdate} className="text-lg font-semibold" style={textStyle} />

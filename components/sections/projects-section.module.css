@@ -1,0 +1,25 @@
+.container { container-type: inline-size; }
+.collection { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.75rem; }
+.project { min-width: 0; overflow-wrap: anywhere; }
+.image { aspect-ratio: 4 / 3; overflow: hidden; border-radius: .75rem; }
+.copy { min-width: 0; padding-block: 1.25rem; }
+.project:not(:has(> .image)) > .copy { grid-column: 1 / -1; }
+.collection[data-project-layout="card"] .project { overflow: hidden; border: 1px solid color-mix(in srgb, currentColor 15%, transparent); border-radius: 1rem; background: var(--section-surface); color: var(--section-surface-foreground); }
+.collection[data-project-layout="card"] .image { border-radius: 0; }
+.collection[data-project-layout="card"] .copy { padding: 1.25rem; }
+.collection[data-project-layout="showcase"] .image { aspect-ratio: 16 / 10; }
+.collection[data-project-layout="compact"] .project { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent); }
+.collection[data-project-layout="compact"] .copy { padding-block: 0; }
+.collection[data-project-layout="banner"] { display: flex; overflow-x: auto; gap: 1.25rem; padding-bottom: 1rem; scroll-snap-type: x proximity; }
+.collection[data-project-layout="banner"] .project { flex: 0 0 min(85cqi, 22rem); scroll-snap-align: start; }
+@container (min-width: 480px) {
+  .collection[data-project-layout="compact"] .project { grid-template-columns: minmax(0, 140px) minmax(0, 1fr); }
+}
+@container (min-width: 640px) {
+  .collection:is([data-project-layout="classic"], [data-project-layout="card"], [data-project-layout="showcase"]) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .collection[data-project-layout="split"] .project { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 1.5rem; align-items: center; }
+  .collection[data-project-layout="showcase"] .project:first-child { grid-column: 1 / -1; }
+}
+@container (min-width: 1000px) {
+  .collection:is([data-project-layout="classic"], [data-project-layout="card"]) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

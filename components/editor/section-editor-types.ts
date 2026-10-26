@@ -9,6 +9,7 @@ export interface SectionTargetOption {
 }
 
 export interface SectionEditorProps {
+  userId?: string
   section: Section
   sections: Section[]
   transitions: Transition[]

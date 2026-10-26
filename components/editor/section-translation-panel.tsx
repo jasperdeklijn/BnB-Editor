@@ -30,6 +30,9 @@ function toInputValue(value: unknown) {
 }
 
 const STRUCTURED_FIELD_LABELS: Record<string, string> = {
+  imageAlt: "Afbeeldingsbeschrijving",
+  location: "Plaats",
+  alt: "Afbeeldingsbeschrijving",
   answer: "Antwoord",
   bio: "Beschrijving",
   category: "Categorie",

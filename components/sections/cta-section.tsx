@@ -97,7 +97,7 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
         className={`px-4 py-12 sm:px-6 md:py-20 ${styles?.fontFamily || ""}`}
         style={sectionStyle}
       >
-        <div className="mx-auto max-w-5xl">
+        <div data-section-content className="mx-auto max-w-5xl">
           <div className="flex flex-col items-center gap-8 rounded-2xl border border-border bg-[var(--section-surface)] px-8 py-12 text-[var(--section-surface-foreground)] shadow-sm backdrop-blur md:flex-row md:justify-between">
             <div className="max-w-lg text-center md:text-left">
               <EditableText
@@ -144,7 +144,7 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
       className={`px-4 py-16 sm:px-6 md:py-24 ${styles?.fontFamily || ""}`}
       style={sectionStyle}
     >
-      <div className="mx-auto max-w-2xl text-center">
+      <div data-section-content className="mx-auto max-w-2xl text-center">
         <EditableText
           as="h2"
           data={data}

@@ -1393,10 +1393,10 @@ export function EditorClient({
     addSectionAt(pendingMobileSectionType, index)
   }
 
-  const handleSectionSelect = (id: string | null) => {
+  const handleSectionSelect = (id: string | null, stayOnCanvas = false) => {
     setSelectedSectionId(id)
     // On mobile, jump to the style panel when a section is tapped
-    if (id && typeof window !== "undefined" && window.innerWidth < 768) {
+    if (id && !stayOnCanvas && typeof window !== "undefined" && window.innerWidth < 768) {
       setMobilePanel("style")
     }
   }
@@ -1862,6 +1862,7 @@ export function EditorClient({
           />
         )}
         <EditorCanvas
+          userId={userId}
           sections={displayedSections}
           persistSections={persistSections}
           onSectionUpdate={handleCanvasSectionUpdate}
@@ -1932,6 +1933,7 @@ export function EditorClient({
           )}
           {(mobilePanel === "canvas" || isPreview) && (
             <EditorCanvas
+              userId={userId}
               sections={displayedSections}
               persistSections={persistSections}
               onSectionUpdate={handleCanvasSectionUpdate}

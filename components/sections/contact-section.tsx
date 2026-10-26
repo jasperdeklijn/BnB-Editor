@@ -262,9 +262,9 @@ function ClassicLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps
 
   return (
     <section className={`bg-background px-4 py-12 sm:px-6 md:py-20 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-      <div className="mx-auto max-w-6xl">
+      <div data-section-content className="mx-auto max-w-6xl">
         <EditableText as="h2" data={data} path={["title"]} value={data.title as string} isPreview={isPreview} onUpdate={onUpdate} className="mb-10 text-balance text-center text-3xl font-bold text-amber-950 md:text-4xl" style={textStyle} />
-        <div className="grid gap-10 md:grid-cols-2 md:gap-16">
+        <div data-section-columns className="grid gap-10 md:grid-cols-2 md:gap-16">
           <div>
             <EditableText as="p" data={data} path={["subtitle"]} value={(data.subtitle as string) || "Neem gerust contact met ons op. We helpen je graag verder."} isPreview={isPreview} onUpdate={onUpdate} className="mb-6 text-muted-foreground" style={textStyle} multiline />
             <InfoBlock data={data} address={data.address as string} phone={data.phone as string} email={data.email as string} textStyle={textStyle} />
@@ -282,7 +282,7 @@ function SplitLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps) 
   const { messages } = useWebsiteLocale()
   return (
     <section className={`overflow-hidden ${styles?.fontFamily || ""}`} style={getSectionColorVars(styles)}>
-      <div className="flex flex-col md:flex-row min-h-[520px]">
+      <div data-section-columns className="flex flex-col md:flex-row min-h-[520px]">
         {/* Left dark panel */}
         <div
           className="flex flex-col justify-center px-8 py-12 md:w-2/5 md:px-12"
@@ -335,7 +335,7 @@ function MinimalLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps
   const textStyle: React.CSSProperties = { color: styles?.textColor }
   return (
     <section className={`px-4 py-16 sm:px-6 md:py-24 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-      <div className="mx-auto max-w-2xl text-center">
+      <div data-section-content className="mx-auto max-w-2xl text-center">
         <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[var(--section-accent)]">{messages.contact}</p>
         <EditableText as="h2" data={data} path={["title"]} value={data.title as string} isPreview={isPreview} onUpdate={onUpdate} className="mb-4 text-3xl font-bold text-amber-950 md:text-5xl" style={textStyle} />
         <EditableText as="p" data={data} path={["subtitle"]} value={(data.subtitle as string) || "We horen graag van je."} isPreview={isPreview} onUpdate={onUpdate} className="mb-10 text-muted-foreground" style={textStyle} multiline />
@@ -381,7 +381,7 @@ function CardLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProps) {
   }
   return (
     <section className={`px-4 py-16 sm:px-6 md:py-24 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-      <div className="mx-auto max-w-5xl">
+      <div data-section-content className="mx-auto max-w-5xl">
         <div className="overflow-hidden rounded-3xl bg-[var(--section-surface)] text-[var(--section-surface-foreground)] shadow-xl">
           <div className="grid md:grid-cols-5">
             {/* Info sidebar */}
@@ -466,7 +466,7 @@ function FullwidthLayout({ data, isPreview, styles, onUpdate }: ContactLayoutPro
       </div>
       {/* Form below */}
       <div className="bg-[var(--section-surface)] px-4 py-12 text-[var(--section-surface-foreground)] sm:px-6">
-        <div className="mx-auto max-w-2xl">
+        <div data-section-content className="mx-auto max-w-2xl">
           <ContactForm formDestinationKey={data.formDestinationKey as string} businessId={data.businessId as string} websiteId={data.websiteId as string} locale={data.activeLocale as string} isPreview={isPreview} />
         </div>
       </div>
@@ -489,7 +489,7 @@ function CenteredLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProp
 
   return (
     <section className={`px-4 py-16 sm:px-6 md:py-20 ${styles?.fontFamily || ""}`} style={sectionStyle}>
-      <div className="mx-auto max-w-4xl">
+      <div data-section-content className="mx-auto max-w-4xl">
         <div className="mb-12 text-center">
           <EditableText as="h2" data={data} path={["title"]} value={data.title as string} isPreview={isPreview} onUpdate={onUpdate} className="mb-3 text-3xl font-bold text-amber-950 md:text-4xl" style={textStyle} />
           <EditableText as="p" data={data} path={["subtitle"]} value={(data.subtitle as string) || "Neem contact met ons op."} isPreview={isPreview} onUpdate={onUpdate} className="text-muted-foreground" style={textStyle} multiline />
@@ -517,7 +517,7 @@ function CenteredLayout({ data, isPreview, styles, onUpdate }: ContactLayoutProp
             ))}
         </div>
         {/* Form */}
-        <div className="mx-auto max-w-xl rounded-2xl border border-border bg-[var(--section-surface)] p-8 text-[var(--section-surface-foreground)] shadow-sm backdrop-blur">
+        <div data-section-content className="mx-auto max-w-xl rounded-2xl border border-border bg-[var(--section-surface)] p-8 text-[var(--section-surface-foreground)] shadow-sm backdrop-blur">
           <ContactForm formDestinationKey={data.formDestinationKey as string} businessId={data.businessId as string} websiteId={data.websiteId as string} locale={data.activeLocale as string} isPreview={isPreview} />
         </div>
       </div>

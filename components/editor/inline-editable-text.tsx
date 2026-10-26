@@ -1,12 +1,15 @@
 "use client"
 
 import React, { useEffect, useRef, useState } from "react"
+import { readTextStyle } from "@/lib/section-composition"
 
 export type EditablePath = Array<string | number>
 
 type EditableTag = "span" | "p" | "h1" | "h2" | "h3" | "h4"
 
 interface EditableTextProps {
+  "data-element-heading"?: string
+  "data-element-text"?: string
   as?: EditableTag
   data: Record<string, unknown>
   path: EditablePath
@@ -57,11 +60,14 @@ export function EditableText({
   className,
   style,
   multiline = false,
+  "data-element-heading": elementHeading,
+  "data-element-text": elementText,
 }: EditableTextProps) {
   const editable = !isPreview && Boolean(onUpdate)
   const [isEditing, setIsEditing] = useState(false)
   const ref = useRef<HTMLElement | null>(null)
   const displayValue = String(value ?? fallback)
+  const textStyle = readTextStyle(data, path)
 
   useEffect(() => {
     if (!isEditing || !ref.current) return
@@ -100,7 +106,12 @@ export function EditableText({
         isEditing ? "rounded outline outline-2 outline-primary/60 outline-offset-2" : ""
       }`,
       "data-inline-editable": editable ? "true" : undefined,
-      style,
+      "data-editor-path": editable ? JSON.stringify(path) : undefined,
+      "data-element-heading": elementHeading,
+      "data-element-text": elementText,
+      style: { ...style, ...(textStyle.size && { fontSize: textStyle.size }), ...(textStyle.alignment && { textAlign: textStyle.alignment }) },
+      "data-custom-size": Boolean(textStyle.size) || undefined,
+      "data-custom-align": Boolean(textStyle.alignment) || undefined,
       contentEditable: isEditing,
       suppressContentEditableWarning: true,
       tabIndex: editable ? 0 : undefined,

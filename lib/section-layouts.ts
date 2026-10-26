@@ -18,6 +18,9 @@ export const SECTION_LAYOUT_OPTIONS: SectionLayoutOption[] = [
 ]
 
 const sectionLayoutLabels: Partial<Record<SectionType, Record<SectionLayout, string>>> = {
+  projects: {
+    classic: "Projectenraster", split: "Foto naast tekst", showcase: "Uitgelicht project", compact: "Compacte projectlijst", card: "Projectkaarten", banner: "Horizontale projectrij",
+  },
   hero: {
     classic: "Gecentreerd",
     split: "Afbeelding links",
@@ -149,6 +152,14 @@ const sectionLayoutLabels: Partial<Record<SectionType, Record<SectionLayout, str
 }
 
 const sectionLayoutDescriptions: Partial<Record<SectionType, Record<SectionLayout, string>>> = {
+  projects: {
+    classic: "Projectfoto's met informatie in een raster",
+    split: "Per project een grote foto naast de beschrijving",
+    showcase: "Het eerste project groot boven de overige projecten",
+    compact: "Een overzichtelijke lijst met kleinere foto's",
+    card: "Projectfoto's en tekst in afzonderlijke kaarten",
+    banner: "Een horizontaal scrollbare rij met projecten",
+  },
   testimonials: {
     classic: "Recensies in een raster met het formulier eronder",
     split: "Recensies links en het formulier rechts op brede schermen",

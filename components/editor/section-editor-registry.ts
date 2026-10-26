@@ -21,6 +21,8 @@ const TestimonialsSectionEditor = dynamic<SectionEditorProps>(() => import("@/co
 const TeamSectionEditor = dynamic<SectionEditorProps>(() => import("@/components/sections/team-section.editor").then((module) => module.TeamSectionEditor), { loading: SectionLoadingIndicator })
 
 const sectionEditors: Record<SectionType, SectionEditorComponent> = {
+  projects: dynamic<SectionEditorProps>(() => import("@/components/sections/projects-section.editor").then((module) => module.ProjectsSectionEditor), { loading: SectionLoadingIndicator }),
+  freeform: dynamic<SectionEditorProps>(() => import("@/components/sections/freeform-section.editor").then((module) => module.FreeformSectionEditor), { loading: SectionLoadingIndicator }),
   hero: HeroSectionEditor,
   gallery: GallerySectionEditor,
   services: ServicesSectionEditor,

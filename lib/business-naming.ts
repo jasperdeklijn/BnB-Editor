@@ -8,6 +8,8 @@ export const SECTION_COPY: Record<
   SectionType,
   { label: string; description: string; defaultTitle?: string }
 > = {
+  projects: { label: "Projecten", description: "Laat uitgevoerd werk zien met foto's en projectinformatie", defaultTitle: "Onze projecten" },
+  freeform: { label: "Vrije sectie", description: "Bouw zelf met elementen en één tot drie kolommen", defaultTitle: "Vrije sectie" },
   nav: {
     label: "Navigatie",
     description: "Bovenste navigatiebalk",
