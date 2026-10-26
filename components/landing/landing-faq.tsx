@@ -3,6 +3,10 @@ import { PLATFORM_EMAILS } from "@/lib/platform"
 
 export const homepageFaqItems = [
   {
+    question: "Wat betekent het dat FlexPagina een testversie is?",
+    answer: `FlexPagina is in ontwikkeling. Je kunt de editor uitproberen en een website opbouwen, terwijl we functies en vormgeving verder verbeteren. Je kunt nog onvolkomenheden tegenkomen. Deel je ervaringen of meld een probleem via ${PLATFORM_EMAILS.support}. Een account aanmaken is gratis; voor publiceren en betaalde uitbreidingen gelden de vermelde pakketten.`,
+  },
+  {
     question: "Kan ik zelf een website maken zonder technische kennis?",
     answer:
       "Ja. Je kiest kant-en-klare secties en past tekst, afbeeldingen, kleuren en contactgegevens aan in een visuele editor. Je hoeft geen code te schrijven.",

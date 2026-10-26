@@ -75,6 +75,9 @@ export function LandingNav() {
               priority
               className="h-12 w-auto object-contain"
             />
+            <span className="rounded-full border border-[var(--landing-border)] bg-[var(--landing-primary-light)] px-2.5 py-1 text-xs font-semibold text-[var(--landing-primary-dark)]">
+              Testversie
+            </span>
           </Link>
         </div>
 
@@ -121,7 +124,7 @@ export function LandingNav() {
                     <Link href="/auth/login">Inloggen</Link>
                   </Button>
                   <Button asChild className="rounded-full bg-[var(--landing-primary)] text-white shadow-sm hover:bg-[var(--landing-primary-dark)]">
-                    <Link href="/auth/sign-up">Gratis starten</Link>
+                    <Link href="/auth/sign-up">Testversie proberen</Link>
                   </Button>
                 </>
               )}
@@ -180,7 +183,7 @@ export function LandingNav() {
                         <Link href="/auth/login">Inloggen</Link>
                       </Button>
                       <Button asChild className="flex-1 rounded-full bg-[var(--landing-primary)] text-white hover:bg-[var(--landing-primary-dark)]">
-                        <Link href="/auth/sign-up">Gratis starten</Link>
+                        <Link href="/auth/sign-up">Testversie proberen</Link>
                       </Button>
                     </>
                   )}

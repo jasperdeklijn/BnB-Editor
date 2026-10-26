@@ -13,20 +13,21 @@ import { LandingTrust } from "@/components/landing/landing-trust"
 import { LandingFaq, homepageFaqItems } from "@/components/landing/landing-faq"
 import { PLATFORM_BASE_URL, PLATFORM_BRAND_NAME } from "@/lib/platform"
 
+const homepageTitle = `Probeer de testversie | ${PLATFORM_BRAND_NAME}`
+const homepageDescription = "Probeer de testversie van FlexPagina: maak je bedrijfswebsite en ontdek aanvragen, boekingen en facturatie. Deel je feedback en help ons verbeteren."
+
 export const metadata: Metadata = {
   title: {
-    absolute: `Website maken voor je bedrijf | ${PLATFORM_BRAND_NAME}`,
+    absolute: homepageTitle,
   },
-  description:
-    "Je website, aanvragen en boekingen op één plek. Maak zonder technische kennis een bedrijfswebsite en breid uit met boekingen en facturatie.",
+  description: homepageDescription,
   alternates: {
     canonical: "/",
   },
   openGraph: {
     url: "/",
-    title: `Website maken voor je bedrijf | ${PLATFORM_BRAND_NAME}`,
-    description:
-      "Maak zonder technische kennis een bedrijfswebsite. Beheer je website, aanvragen en boekingen op één plek met FlexPagina.",
+    title: homepageTitle,
+    description: homepageDescription,
     images: [
       {
         url: "/logo_klein.png",
@@ -38,8 +39,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `Website maken voor je bedrijf | ${PLATFORM_BRAND_NAME}`,
-    description: "Je website, aanvragen en boekingen. Alles op één plek. Begin gratis met FlexPagina.",
+    title: homepageTitle,
+    description: homepageDescription,
     images: ["/logo_klein.png"],
   },
 }
@@ -61,8 +62,7 @@ export default async function HomePage() {
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       url: PLATFORM_BASE_URL,
-      description:
-        "Nederlands platform voor kleine ondernemers: maak en beheer je bedrijfswebsite, ontvang aanvragen en breid uit met boekingen en facturatie.",
+      description: homepageDescription,
       offers: {
         "@type": "AggregateOffer",
         priceCurrency: "EUR",
