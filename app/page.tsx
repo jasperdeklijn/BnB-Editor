@@ -12,38 +12,13 @@ import { LandingBooking } from "@/components/landing/landing-booking"
 import { LandingTrust } from "@/components/landing/landing-trust"
 import { LandingFaq, homepageFaqItems } from "@/components/landing/landing-faq"
 import { PLATFORM_BASE_URL, PLATFORM_BRAND_NAME } from "@/lib/platform"
+import { LandingDiscovery } from "@/components/landing/landing-discovery"
+import { marketingMetadata } from "@/lib/seo/marketing"
 
-const homepageTitle = `Probeer de testversie | ${PLATFORM_BRAND_NAME}`
-const homepageDescription = "Probeer de testversie van FlexPagina: maak je bedrijfswebsite en ontdek aanvragen, boekingen en facturatie. Deel je feedback en help ons verbeteren."
+const homepageTitle = "Website maken voor je bedrijf zonder code"
+const homepageDescription = "Maak zelf je bedrijfswebsite met FlexPagina, de Nederlandse websitebouwer voor zzp en kleine bedrijven. Ontdek eigen domein, aanvragen en optionele boekingen in de testversie."
 
-export const metadata: Metadata = {
-  title: {
-    absolute: homepageTitle,
-  },
-  description: homepageDescription,
-  alternates: {
-    canonical: "/",
-  },
-  openGraph: {
-    url: "/",
-    title: homepageTitle,
-    description: homepageDescription,
-    images: [
-      {
-        url: "/logo_klein.png",
-        width: 1536,
-        height: 1024,
-        alt: `${PLATFORM_BRAND_NAME} websitebouwer voor kleine bedrijven`,
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: homepageTitle,
-    description: homepageDescription,
-    images: ["/logo_klein.png"],
-  },
-}
+export const metadata: Metadata = marketingMetadata("/", homepageTitle, homepageDescription)
 
 export default async function HomePage() {
   const structuredData = [
@@ -57,11 +32,10 @@ export default async function HomePage() {
     },
     {
       "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
+      "@type": "WebSite",
       name: PLATFORM_BRAND_NAME,
-      applicationCategory: "BusinessApplication",
-      operatingSystem: "Web",
       url: PLATFORM_BASE_URL,
+      inLanguage: "nl-NL",
       description: homepageDescription,
     },
     {
@@ -79,7 +53,7 @@ export default async function HomePage() {
   ]
 
   return (
-    <main className="bg-white text-[var(--landing-secondary)]">
+    <div className="bg-white text-[var(--landing-secondary)]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -87,9 +61,11 @@ export default async function HomePage() {
         }}
       />
       <LandingNav />
+      <main id="inhoud">
       <LandingHero />
       <LandingDemo />
       <LandingFeatures />
+      <LandingDiscovery />
       <LandingExamples />
       <LandingHowItWorks />
       <LandingBooking />
@@ -97,7 +73,8 @@ export default async function HomePage() {
       <PricingSection />
       <LandingFaq />
       <LandingCta />
+      </main>
       <SharedFooter />
-    </main>
+    </div>
   )
 }

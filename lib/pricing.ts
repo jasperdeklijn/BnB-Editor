@@ -3,6 +3,7 @@
  */
 
 import { FeatureComparison, PlanId, PricingPlan } from "@/lib/types/pricing"
+import { PUBLISHED_PAGE_LIMIT_BY_PLAN } from "@/lib/entitlements"
 
 export const PLAN_ORDER: PlanId[] = ["bronze", "silver", "gold"]
 export const PRICING_DISPLAY_ORDER: PlanId[] = ["bronze", "gold", "silver"]
@@ -20,6 +21,11 @@ export const BOOKING_ADDON_FEATURES = [
 ]
 export const MULTILINGUAL_ADDON_MONTHLY_PRICE = 2.99
 
+export function getPublishedPageLabel(planId: PlanId) {
+  const limit = PUBLISHED_PAGE_LIMIT_BY_PLAN[planId]
+  return limit === null ? "Onbeperkte pagina's (fair-use)" : `${limit} gepubliceerde pagina's`
+}
+
 export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
   bronze: {
     id: "bronze",
@@ -27,7 +33,7 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
     description: "Ga online met je bedrijf.",
     monthlyPrice: 7.95,
     currency: "EUR",
-    features: ["3 gepubliceerde pagina's", "Alle websitebouwfuncties en hosting", "Eigen domein en SSL", "SEO-basis en social links", "Contactformulier", "Bezoekers en paginaweergaven", "Onbeperkte secties"],
+    features: [getPublishedPageLabel("bronze"), "Alle websitebouwfuncties en hosting", "Eigen domein en SSL", "SEO-basis en social links", "Contactformulier", "Bezoekers en paginaweergaven", "Onbeperkte secties"],
     isAddon: false,
     isPopular: false,
     cta: "Start met Bronze",
@@ -38,7 +44,7 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
     description: "Laat je bedrijf groeien.",
     monthlyPrice: 14.95,
     currency: "EUR",
-    features: ["Alles uit Bronze", "10 gepubliceerde pagina's", "Onbeperkte secties", "Aanvragen beheren", "Uitgebreide pagina-SEO en GA4", "Populaire pagina's, bronnen en apparaten", "Trends en 30/90 dagen"],
+    features: ["Alles uit Bronze", getPublishedPageLabel("silver"), "Onbeperkte secties", "Aanvragen beheren", "Uitgebreide pagina-SEO en GA4", "Populaire pagina's, bronnen en apparaten", "Trends en 30/90 dagen"],
     isAddon: false,
     isPopular: false,
     cta: "Kies Silver",
@@ -49,7 +55,7 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
     description: "Begrijp je bezoekers en verbeter je website.",
     monthlyPrice: 24.95,
     currency: "EUR",
-    features: ["Alles uit Silver", "Onbeperkte pagina's (fair-use)", "Recensies verzamelen en beheren", "Diensten beheren", "Meertaligheid", "Conversies en maandrapport", "Tot 12 maanden historie"],
+    features: ["Alles uit Silver", getPublishedPageLabel("gold"), "Recensies verzamelen en beheren", "Diensten beheren", "Meertaligheid", "Conversies en maandrapport", "Tot 12 maanden historie"],
     badge: "AANBEVOLEN",
     isAddon: false,
     isPopular: true,
@@ -58,7 +64,7 @@ export const PRICING_PLANS: Record<PlanId, PricingPlan> = {
 }
 
 export const FEATURE_COMPARISON: FeatureComparison[] = [
-  { feature: "Websitepagina's", bronze: "3 gepubliceerd", silver: "10 gepubliceerd", gold: "Onbeperkt (fair-use)" },
+  { feature: "Websitepagina's", bronze: `${PUBLISHED_PAGE_LIMIT_BY_PLAN.bronze} gepubliceerd`, silver: `${PUBLISHED_PAGE_LIMIT_BY_PLAN.silver} gepubliceerd`, gold: "Onbeperkt (fair-use)" },
   { feature: "Bezoekers en paginaweergaven", bronze: true, silver: true, gold: true },
   { feature: "Bronnen, apparaten en trends", bronze: false, silver: true, gold: true },
   { feature: "Conversies en maandrapport", bronze: false, silver: false, gold: true },
@@ -168,8 +174,8 @@ export const FEATURE_COMPARISON: FeatureComparison[] = [
   },
   {
     feature: "Meertalige website",
-    bronze: "Add-on € 2,99/mnd",
-    silver: "Add-on € 2,99/mnd",
+    bronze: "Optionele add-on",
+    silver: "Optionele add-on",
     gold: "Inbegrepen",
   },
 
@@ -180,7 +186,7 @@ export const PRICING_FAQ = [
   { question: "Wat betekent fair-use bij Gold?", answer: "Gold heeft geen vaste paginalimiet. Bestaande technische upload- en importgrenzen blijven gelden. Statistieken verwerken maximaal 20 gebeurtenissen per aanvraag, 120 aanvragen per browsersessie per minuut en 1.000 per website per minuut; pieken kunnen worden overgeslagen. Je gepubliceerde pagina's blijven bereikbaar." },
   {
     question: "Welk abonnement heb ik nodig voor meerdere pagina's?",
-    answer: "Bronze ondersteunt 3 gepubliceerde pagina's per website, Silver 10 en Gold onbeperkt (fair-use). Conceptpagina's, ontwerpen en secties tellen niet mee. Add-ons veranderen de paginalimiet niet.",
+    answer: `Bronze: ${getPublishedPageLabel("bronze")}. Silver: ${getPublishedPageLabel("silver")}. Gold: ${getPublishedPageLabel("gold")}. Conceptpagina's, ontwerpen en secties tellen niet mee. Add-ons veranderen de paginalimiet niet.`,
   },
   {
     question: "Wat zit er in Booking & Facturatie?",
@@ -195,7 +201,7 @@ export const PRICING_FAQ = [
   {
     question: "Kan ik later van abonnement wisselen?",
     answer:
-      "Ja. U kunt starten met Bronze en later overstappen naar Silver of Gold wanneer uw website meer functies nodig heeft.",
+      "In het beoogde betaalde aanbod kunt u van pakket veranderen wanneer uw website meer functies nodig heeft. Tijdens de tijdelijke testtoegang zijn betaalde abonnementen en pakketwijzigingen nog niet beschikbaar.",
   },
   {
     question: "Voor wie is Silver bedoeld?",

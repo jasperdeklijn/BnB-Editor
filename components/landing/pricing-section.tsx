@@ -6,6 +6,7 @@ import { PricingCard } from "@/components/pricing/pricing-card"
 import { PricingAddons } from "@/components/pricing/pricing-addons"
 import { getMainPlans } from "@/lib/pricing"
 import { ArrowRight } from "lucide-react"
+import { MARKETING_PRICE_NOTICE, MARKETING_PACKAGE_SCOPE_NOTICE } from "@/lib/marketing"
 
 export function PricingSection() {
   const plans = getMainPlans()
@@ -21,10 +22,10 @@ export function PricingSection() {
             Bekijk de pakketten voor je bedrijf
           </h2>
           <p className="mt-4 text-lg leading-relaxed text-[var(--landing-muted)]">
-            Kies je websitepakket en breid uit met Booking & Facturatie of meertaligheid wanneer je daar klaar voor bent.
+            {MARKETING_PACKAGE_SCOPE_NOTICE}
           </p>
           <p className="mt-3 text-sm font-semibold text-[var(--landing-primary)]">
-            De officiële tarieven volgen na de testfase. Daarom zijn de prijzen voorlopig vervaagd.
+            {MARKETING_PRICE_NOTICE}
           </p>
         </div>
 

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { PLATFORM_BASE_URL } from '@/lib/platform'
 import { MARKETING_DEMOS } from '@/lib/marketing-demos'
+import { MARKETING_PAGES } from '@/lib/marketing'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = PLATFORM_BASE_URL
@@ -64,7 +65,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ]
 
-  return [...staticUrls, ...MARKETING_DEMOS.map((demo) => ({
+  return [...staticUrls, ...Object.keys(MARKETING_PAGES).map(path => ({
+    url: `${baseUrl}${path}`,
+    changeFrequency: 'monthly' as const,
+    priority: 0.8,
+  })), ...MARKETING_DEMOS.map((demo) => ({
     url: `${baseUrl}/voorbeelden/${demo.slug}`,
     changeFrequency: 'monthly' as const,
     priority: 0.7,

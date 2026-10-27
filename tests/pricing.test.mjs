@@ -7,7 +7,15 @@ const module = { exports: {} }
 const compiled = ts.transpileModule(fs.readFileSync("lib/pricing.ts", "utf8"), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
 })
-Function("module", "exports", compiled.outputText)(module, module.exports)
+const entitlements = { exports: {} }
+const entitlementCode = ts.transpileModule(fs.readFileSync("lib/entitlements.ts", "utf8"), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
+})
+Function("module", "exports", entitlementCode.outputText)(entitlements, entitlements.exports)
+Function("module", "exports", "require", compiled.outputText)(module, module.exports, (specifier) => {
+  assert.equal(specifier, "@/lib/entitlements")
+  return entitlements.exports
+})
 const { calculateMonthlyPrice, formatPrice } = module.exports
 
 test("Gold is recommended in the center while plan rank remains Bronze, Silver, Gold", () => {

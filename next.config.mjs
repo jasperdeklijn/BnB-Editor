@@ -28,6 +28,15 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  async redirects() {
+    const domain = (process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || "flexpagina.nl").toLowerCase().replace(/^www\./, "")
+    return [{
+      source: "/:path*",
+      has: [{ type: "host", value: `www\\.${domain.replaceAll(".", "\\.")}` }],
+      destination: `https://${domain}/:path*`,
+      permanent: true,
+    }]
+  },
   async headers() {
     return [
       {

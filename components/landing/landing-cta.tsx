@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { PLATFORM_BRAND_NAME } from "@/lib/platform"
+import { MARKETING_ACCESS_NOTICE } from "@/lib/marketing"
 
 export function LandingCta() {
   return (
@@ -26,7 +27,7 @@ export function LandingCta() {
             </Button>
           </div>
           <p className="mt-6 text-xs text-white/65">
-            Kies een betaald websitepakket wanneer je klaar bent om te publiceren.
+            {MARKETING_ACCESS_NOTICE}
           </p>
         </div>
       </div>

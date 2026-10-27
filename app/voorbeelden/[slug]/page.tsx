@@ -6,6 +6,7 @@ import { AboutSection } from "@/components/sections/about-section"
 import { PricingSection } from "@/components/sections/pricing-section"
 import { FaqSection } from "@/components/sections/faq-section"
 import { MARKETING_DEMOS, getDemoStyles } from "@/lib/marketing-demos"
+import { marketingBreadcrumbs, marketingMetadata } from "@/lib/seo/marketing"
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -17,12 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const demo = MARKETING_DEMOS.find((item) => item.slug === slug)
   if (!demo) notFound()
-  return {
-    title: `${demo.name} | FlexPagina voorbeeldwebsite`,
-    description: demo.description,
-    alternates: { canonical: `/voorbeelden/${demo.slug}` },
-    robots: { index: true, follow: true },
-  }
+  return marketingMetadata(`/voorbeelden/${demo.slug}`, `${demo.name}: fictieve ${demo.category}-voorbeeldwebsite`, `Fictieve demo, geen klantcase. ${demo.description} Aanvragen en boekingen zijn uitgeschakeld.`)
 }
 
 export default async function ExamplePage({ params }: Props) {
@@ -33,11 +29,12 @@ export default async function ExamplePage({ params }: Props) {
 
   return (
     <div className="min-h-screen bg-white text-[#24382d]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(marketingBreadcrumbs([{ path: "/voorbeelden", name: "Voorbeeldwebsites" }, { path: `/voorbeelden/${demo.slug}`, name: demo.name }])).replace(/</g, "\\u003c") }} />
       <aside className="border-b border-[var(--landing-border)] bg-[var(--landing-primary-dark)] px-5 py-3 text-sm text-white" aria-label="Voorbeeldwebsite">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
           <p>FlexPagina demo · fictief bedrijf · geen echte aanvragen of boekingen</p>
           <div className="flex flex-wrap items-center gap-5">
-            <Link href="/#voorbeelden" className="underline underline-offset-4">Alle voorbeelden</Link>
+            <Link href="/voorbeelden" className="underline underline-offset-4">Alle voorbeelden</Link>
             <Link href="/auth/sign-up" className="rounded-full bg-white px-4 py-2 font-bold text-[var(--landing-primary-dark)]">Gratis starten</Link>
           </div>
         </div>
@@ -56,7 +53,8 @@ export default async function ExamplePage({ params }: Props) {
       </main>
       <footer className="border-t border-[var(--landing-border)] px-6 py-8 text-center text-sm">
         <p>{demo.name} · Een voorbeeldwebsite met FlexPagina</p>
-        <Link href="/#voorbeelden" className="mt-3 inline-block font-semibold underline underline-offset-4">Bekijk de andere voorbeelden</Link>
+        <Link href="/voorbeelden" className="mt-3 inline-block font-semibold underline underline-offset-4">Bekijk de andere voorbeelden</Link>
+        <Link href={demo.slug === "bnb" ? "/website-voor-bnb" : "/website-voor-zzp"} className="ml-5 mt-3 inline-block font-semibold underline underline-offset-4">Maak een website voor jouw bedrijf</Link>
       </footer>
     </div>
   )

@@ -1,6 +1,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { PLATFORM_BRAND_NAME, PLATFORM_EMAILS } from "@/lib/platform"
+import { MARKETING_PAGES } from "@/lib/marketing"
 
 const legalLinks = [
   { href: "/terms", label: "Algemene voorwaarden" },
@@ -36,8 +37,9 @@ export function SharedFooter() {
           <div>
             <h3 className="mb-3 text-sm font-semibold">Product</h3>
             <nav className="flex flex-col gap-2">
+              {Object.entries(MARKETING_PAGES).map(([href, page]) => <Link key={href} href={href} className="text-xs text-white/60 transition-colors hover:text-white">{page.label}</Link>)}
               <Link href="/auth/sign-up" className="text-xs text-white/60 transition-colors hover:text-white">
-                Gratis starten
+                Testversie proberen
               </Link>
               <Link href="/auth/login" className="text-xs text-white/60 transition-colors hover:text-white">
                 Inloggen

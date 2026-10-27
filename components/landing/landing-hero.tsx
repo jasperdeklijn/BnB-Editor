@@ -2,6 +2,7 @@ import Link from "next/link"
 import { Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PLATFORM_EMAILS } from "@/lib/platform"
+import { MARKETING_ACCESS_NOTICE } from "@/lib/marketing"
 
 export function LandingHero() {
   return (
@@ -15,7 +16,7 @@ export function LandingHero() {
           Je website, aanvragen en boekingen. <span className="text-[var(--landing-primary)]">Alles op één plek.</span>
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-[var(--landing-muted)]">
-          Probeer de testversie van FlexPagina. Maak zonder technische kennis je bedrijfswebsite en ontdek de mogelijkheden voor aanvragen, boekingen en facturatie.
+          Maak zonder technische kennis een website voor je bedrijf en koppel je eigen domein. Ontdek in de testversie de mogelijkheden voor aanvragen en de optionele uitbreiding Booking &amp; Facturatie.
         </p>
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
           <Button asChild size="lg" className="rounded-full bg-[var(--landing-primary)] px-8 py-6 text-base font-bold text-white shadow-[0_10px_24px_rgba(36,56,45,0.18)] hover:bg-[var(--landing-primary-dark)]">
@@ -33,6 +34,7 @@ export function LandingHero() {
           ))}
         </ul>
         <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-[var(--landing-border)] bg-white px-5 py-4 text-sm leading-relaxed text-[var(--landing-muted)]">
+          <p className="mb-3 font-semibold text-[var(--landing-primary-dark)]">{MARKETING_ACCESS_NOTICE}</p>
           <p className="font-semibold text-[var(--landing-secondary)]">Help FlexPagina beter te maken</p>
           <p className="mt-1">
             FlexPagina is in ontwikkeling. Functies en vormgeving kunnen tijdens de testfase veranderen.

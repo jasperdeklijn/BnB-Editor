@@ -1,10 +1,11 @@
 import { ChevronDown } from "lucide-react"
 import { PLATFORM_EMAILS } from "@/lib/platform"
+import { MARKETING_ACCESS_NOTICE, MARKETING_BOOKING_NOTICE } from "@/lib/marketing"
 
 export const homepageFaqItems = [
   {
     question: "Wat betekent het dat FlexPagina een testversie is?",
-    answer: `FlexPagina is in ontwikkeling. Je kunt de editor uitproberen en een website opbouwen, terwijl we functies en vormgeving verder verbeteren. Je kunt nog onvolkomenheden tegenkomen. Deel je ervaringen of meld een probleem via ${PLATFORM_EMAILS.support}. Een account aanmaken is gratis; voor publiceren en betaalde uitbreidingen gelden de vermelde pakketten.`,
+    answer: `FlexPagina is in ontwikkeling. Je kunt nog onvolkomenheden tegenkomen. Deel je ervaringen of meld een probleem via ${PLATFORM_EMAILS.support}. ${MARKETING_ACCESS_NOTICE}`,
   },
   {
     question: "Kan ik zelf een website maken zonder technische kennis?",
@@ -14,7 +15,7 @@ export const homepageFaqItems = [
   {
     question: "Wat kan ik gratis doen?",
     answer:
-      "Je kunt zonder creditcard een account aanmaken en beginnen met je website. Om je website te publiceren kies je een betaald websitepakket. De pakketten en extra mogelijkheden vind je op deze pagina; de officiële tarieven worden na de testfase bekendgemaakt.",
+      `Je kunt zonder creditcard een account aanmaken. ${MARKETING_ACCESS_NOTICE} De officiële tarieven voor het betaalde aanbod worden later bekendgemaakt.`,
   },
   {
     question: "Kan ik mijn eigen domeinnaam gebruiken?",
@@ -24,12 +25,12 @@ export const homepageFaqItems = [
   {
     question: "Kan ik later opzeggen of van pakket veranderen?",
     answer:
-      "Ja. De websitepakketten worden maandelijks gefactureerd. Je kunt van pakket veranderen en opzeggen via de mogelijkheden in je account of via support. Opzeggen stopt toekomstige verlengingen; een al begonnen periode wordt niet automatisch terugbetaald.",
+      "De beoogde websitepakketten worden maandelijks gefactureerd. Betaalde pakketten kopen of wijzigen is tijdens de tijdelijke testtoegang nog niet beschikbaar. Heb je vragen over een bestaand abonnement, neem dan contact op met support. Opzeggen en je account verwijderen zijn verschillende acties.",
   },
   {
     question: "Kan ik mijn huidige website vervangen?",
     answer:
-      "Ja. Bouw je nieuwe website eerst op in FlexPagina en neem je eigen teksten en afbeeldingen over. Als je klaar bent, kun je je domein aan de nieuwe website koppelen. Er is geen automatische import van je bestaande website.",
+      "Ja. Bouw je nieuwe website eerst op en neem teksten en afbeeldingen over die je mag gebruiken. De editor biedt ook een AI-overzetfunctie voor openbare pagina's, als de AI-dienst beschikbaar is. Controleer het concept zelf: formulieren, boekingswidgets, e-mail en oude URL's worden niet automatisch volledig verhuisd. Koppel je domein pas na controle.",
   },
   {
     question: "Wat gebeurt er als ik stop?",
@@ -42,7 +43,7 @@ export const homepageFaqItems = [
   },
   {
     question: "Zitten boekingen en facturen in mijn websitepakket?",
-    answer: "Booking & Facturatie is een aparte, betaalde uitbreiding voor Bronze, Silver en Gold. Je krijgt online boekingen, beschikbaarheid, boekingsbeheer en facturen vanuit boekingen. Een gewone aanvraag is nog geen bevestigde reservering.",
+    answer: `${MARKETING_BOOKING_NOTICE} Je krijgt online boekingen, beschikbaarheid, boekingsbeheer en facturen vanuit boekingen. Een gewone aanvraag is nog geen bevestigde reservering.`,
   },
 ]
 

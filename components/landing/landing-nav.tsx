@@ -7,6 +7,7 @@ import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { PLATFORM_BRAND_NAME } from "@/lib/platform"
+import { MARKETING_TEST_LABEL } from "@/lib/marketing"
 
 export function LandingNav() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -51,19 +52,11 @@ export function LandingNav() {
     }
   }
 
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault()
-    const href = e.currentTarget.getAttribute("href") || ""
-    const targetId = href.replace("#", "")
-    const element = document.getElementById(targetId)
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" })
-    }
-    setMenuOpen(false)
-  }
+  const handleNavClick = () => setMenuOpen(false)
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-[var(--landing-border)] bg-white/92 backdrop-blur">
+      <a href="#inhoud" className="sr-only rounded-full bg-white px-5 py-3 font-semibold text-[var(--landing-primary-dark)] focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:outline-2 focus:outline-offset-2">Naar de inhoud</a>
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <div className="flex items-center">
           <Link href="/" className="flex items-center gap-3" aria-label={`${PLATFORM_BRAND_NAME} homepage`}>
@@ -76,26 +69,26 @@ export function LandingNav() {
               className="h-12 w-auto object-contain"
             />
             <span className="rounded-full border border-[var(--landing-border)] bg-[var(--landing-primary-light)] px-2.5 py-1 text-xs font-semibold text-[var(--landing-primary-dark)]">
-              Testversie
+              {MARKETING_TEST_LABEL}
             </span>
           </Link>
         </div>
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-5 lg:flex" aria-label="Hoofdnavigatie">
-          <Link href="#voorbeeld" onClick={handleNavClick} className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
+          <Link href="/#voorbeeld" onClick={handleNavClick} className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
             Bekijk demo
           </Link>
-          <Link href="#functies" onClick={handleNavClick} className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
-            Functies
+          <Link href="/website-maken" onClick={handleNavClick} className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
+            Website maken
           </Link>
-          <Link href="#voorbeelden" onClick={handleNavClick} className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
+          <Link href="/voorbeelden" onClick={handleNavClick} className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
             Voorbeeldsites
           </Link>
-          <Link href="#prijzen" onClick={handleNavClick} className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
+          <Link href="/pricing" onClick={handleNavClick} className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
             Prijzen
           </Link>
-          <Link href="#faq" onClick={handleNavClick} className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
+          <Link href="/#faq" onClick={handleNavClick} className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
             FAQ
           </Link>
         </nav>
@@ -156,11 +149,11 @@ export function LandingNav() {
       {menuOpen && (
         <div className="border-t border-[var(--landing-border)] bg-white px-6 py-4 lg:hidden">
           <nav id="landing-mobile-menu" className="flex flex-col gap-4" aria-label="Mobiele navigatie">
-            <Link href="#functies" onClick={handleNavClick} className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">Functies</Link>
-            <Link href="#voorbeelden" onClick={handleNavClick} className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">Voorbeeldsites</Link>
-            <Link href="#voorbeeld" onClick={handleNavClick} className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">Bekijk demo</Link>
-            <Link href="#prijzen" onClick={handleNavClick} className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">Prijzen</Link>
-            <Link href="#faq" onClick={handleNavClick} className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">FAQ</Link>
+            <Link href="/website-maken" onClick={handleNavClick} className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">Website maken</Link>
+            <Link href="/voorbeelden" onClick={handleNavClick} className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">Voorbeeldsites</Link>
+            <Link href="/#voorbeeld" onClick={handleNavClick} className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">Bekijk demo</Link>
+            <Link href="/pricing" onClick={handleNavClick} className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">Prijzen</Link>
+            <Link href="/#faq" onClick={handleNavClick} className="text-sm font-medium text-slate-700 hover:text-[var(--landing-primary)]">FAQ</Link>
             <div className="flex gap-3 pt-2">
               {!isLoading && (
                 <>

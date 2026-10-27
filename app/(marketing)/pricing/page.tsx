@@ -1,29 +1,18 @@
 import Link from "next/link"
-import { ArrowLeft, ArrowRight, CheckCircle2, ShieldCheck, X } from "lucide-react"
+import { ArrowRight, CheckCircle2, ShieldCheck, X } from "lucide-react"
 
 import { PricingCard } from "@/components/pricing/pricing-card"
 import { PricingAddons } from "@/components/pricing/pricing-addons"
 import { PricePreview } from "@/components/pricing/price-preview"
 import { PricingFaq } from "@/components/pricing/pricing-faq"
 import { SharedFooter } from "@/components/layout/shared-footer"
-import { FEATURE_COMPARISON, getMainPlans } from "@/lib/pricing"
-import { PLATFORM_BRAND_INITIALS, PLATFORM_BRAND_NAME } from "@/lib/platform"
+import { FEATURE_COMPARISON, getMainPlans, getPublishedPageLabel } from "@/lib/pricing"
+import { LandingNav } from "@/components/landing/landing-nav"
+import { MARKETING_PRICE_NOTICE, MARKETING_PACKAGE_SCOPE_NOTICE } from "@/lib/marketing"
+import { marketingBreadcrumbs, marketingMetadata } from "@/lib/seo/marketing"
 import type { PlanId } from "@/lib/types/pricing"
 
-export const metadata = {
-  title: "Prijzen",
-  description:
-    "Vergelijk Bronze, Silver en Gold tijdens de testfase van FlexPagina. De officiële tarieven worden later bekendgemaakt.",
-  alternates: {
-    canonical: "/pricing",
-  },
-  openGraph: {
-    url: "/pricing",
-    title: `Prijzen | ${PLATFORM_BRAND_NAME}`,
-    description:
-      "Vergelijk de websitepakketten van FlexPagina. Officiële tarieven volgen na de testfase.",
-  },
-}
+export const metadata = marketingMetadata("/pricing", "Prijzen en websitepakketten vergelijken", "Vergelijk Bronze, Silver en Gold tijdens de testfase van FlexPagina. Bekijk paginalimieten en uitbreidingen. De officiële tarieven volgen na de testfase.")
 
 const planPosition: Record<PlanId, number> = {
   bronze: 1,
@@ -48,39 +37,11 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-white text-[var(--landing-secondary)]">
-      <header className="sticky top-0 z-50 border-b border-[var(--landing-border)] bg-white/92 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="flex items-center gap-3" aria-label={`${PLATFORM_BRAND_NAME} homepage`}>
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--landing-primary)] text-sm font-bold text-white shadow-sm">
-              {PLATFORM_BRAND_INITIALS}
-            </span>
-            <span className="text-base font-bold">{PLATFORM_BRAND_NAME}</span>
-          </Link>
+      <LandingNav />
 
-          <nav className="hidden items-center gap-8 md:flex" aria-label="Prijzen navigatie">
-            <Link href="/#functies" className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
-              Functies
-            </Link>
-            <Link href="/#hoe-het-werkt" className="text-sm font-medium text-slate-600 transition-colors hover:text-[var(--landing-primary)]">
-              Hoe het werkt
-            </Link>
-            <Link href="/pricing" className="text-sm font-medium text-[var(--landing-primary-dark)]">
-              Prijzen
-            </Link>
-          </nav>
-
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition-colors hover:text-[var(--landing-primary-dark)]"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Terug
-          </Link>
-        </div>
-      </header>
-
-      <main>
-        <section className="bg-[linear-gradient(180deg,#FFFFFF_0%,#F6F8F5_100%)] px-6 pb-20 pt-24">
+      <main id="inhoud">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(marketingBreadcrumbs([{ path: "/pricing", name: "Prijzen" }])).replace(/</g, "\\u003c") }} />
+        <section className="bg-[linear-gradient(180deg,#FFFFFF_0%,#F6F8F5_100%)] px-6 pb-20 pt-32 sm:pt-36">
           <div className="mx-auto max-w-6xl">
             <div className="mx-auto max-w-3xl text-center">
               <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-[var(--landing-primary)]">
@@ -90,10 +51,11 @@ export default function PricingPage() {
                 Ontdek de pakketten tijdens de testfase
               </h1>
               <p className="mt-5 text-lg leading-relaxed text-[var(--landing-muted)]">
-                Bronze zet je bedrijf online met 3 pagina&apos;s en basisstatistieken. Silver biedt 10 pagina&apos;s en gedetailleerde statistieken. Gold biedt onbeperkte pagina&apos;s (fair-use), conversies en meertaligheid. Booking & Facturatie voeg je aan elk plan toe. </p>
+                Bronze: {getPublishedPageLabel("bronze")} en basisstatistieken. Silver: {getPublishedPageLabel("silver")} en gedetailleerde statistieken. Gold: {getPublishedPageLabel("gold")}, conversies en meertaligheid. Booking &amp; Facturatie voeg je aan elk plan toe. </p>
               <p className="mt-3 text-sm font-semibold text-[var(--landing-primary)]">
-                De officiële tarieven volgen na de testfase. Daarom zijn de prijzen voorlopig vervaagd.
+                {MARKETING_PRICE_NOTICE}
               </p>
+              <p className="mt-5 rounded-2xl border border-[var(--landing-border)] bg-white p-5 text-sm leading-relaxed text-[var(--landing-primary-dark)]">{MARKETING_PACKAGE_SCOPE_NOTICE}</p>
             </div>
 
             <div className="mt-14 grid gap-8 lg:grid-cols-3">

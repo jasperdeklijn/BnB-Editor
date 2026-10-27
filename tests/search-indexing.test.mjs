@@ -68,7 +68,11 @@ test("marketing examples expose indexable metadata and their own canonical URLs"
     const metadata = await page.generateMetadata({ params: Promise.resolve({ slug: demo.slug }) })
     assert.deepEqual(metadata.robots, { index: true, follow: true })
     assert.equal(metadata.alternates.canonical, `/voorbeelden/${demo.slug}`)
-    assert.equal(metadata.description, demo.description)
+    assert.ok(metadata.description.includes(demo.description))
+    assert.match(metadata.description, /Fictieve demo, geen klantcase/)
+    assert.match(metadata.description, /Aanvragen en boekingen zijn uitgeschakeld/)
+    assert.equal(metadata.openGraph.url, `/voorbeelden/${demo.slug}`)
+    assert.equal(metadata.twitter.description, metadata.description)
   }
 })
 
