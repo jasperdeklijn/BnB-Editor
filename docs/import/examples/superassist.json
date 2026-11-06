@@ -1,0 +1,240 @@
+{
+  "format": "flexpagina",
+  "version": 2,
+  "title": "Super Assist | Ruimte om te ondernemen",
+  "theme": { "paletteId": "teal-fresh", "fontPairId": "dm-sans", "spacing": "comfortable", "radius": "large" },
+  "pages": [
+    { "key": "home", "title": "Home", "slug": "", "isHome": true, "includeInPublication": true, "showInNavigation": true, "seo": { "title": "Super Assist | Ruimte om te ondernemen", "description": "Een nieuw websiteconcept voor Super Assist: persoonlijke ondersteuning voor ondernemers door Brenda Willems vanuit Uden." } },
+    { "key": "diensten", "title": "Diensten", "slug": "diensten", "isHome": false, "includeInPublication": true, "showInNavigation": true, "seo": { "title": "Administratie, secretariaat en organisatie | Super Assist", "description": "Ontdek welke praktische werkzaamheden Super Assist kan overnemen. Onderdeel van het FlexPagina-ontwerpconcept." } },
+    { "key": "samenwerken", "title": "Samenwerken", "slug": "samenwerken", "isHome": false, "includeInPublication": true, "showInNavigation": true, "seo": { "title": "Ondersteuning die bij je past | Super Assist", "description": "Structureel, flexibel, tijdelijk of voor een project: verken samenwerken met Super Assist in dit ontwerpconcept." } },
+    { "key": "brenda", "title": "Over Brenda", "slug": "over-brenda", "isHome": false, "includeInPublication": true, "showInNavigation": true, "seo": { "title": "Maak kennis met Brenda Willems | Super Assist", "description": "De persoon achter Super Assist: ervaring in ondersteunende functies, een praktische aanpak en persoonlijk contact. FlexPagina-ontwerpconcept." } },
+    { "key": "contact", "title": "Contact", "slug": "contact", "isHome": false, "includeInPublication": true, "showInNavigation": true, "seo": { "title": "Kennismaken | Super Assist", "description": "De officiële contactgegevens van Super Assist. Dit ontwerpconcept verstuurt geen aanvragen; daarvoor verwijzen we naar superassist.nl." } }
+  ],
+  "sections": [
+    {
+      "key": "menu", "type": "nav", "scope": "site_header",
+      "content": { "brandName": "Super Assist", "isSticky": true, "navLinks": [], "layout": "classic", "styleType": "clean" },
+      "styles": { "backgroundColor": "#FFFFFF", "textColor": "#253747", "accentColor": "#087F83", "surfaceColor": "#FFFFFF" }
+    },
+    {
+      "key": "welkom", "type": "hero", "pageKey": "home",
+      "content": {
+        "title": "Jij onderneemt. Ik help je vooruit.",
+        "subtitle": "Een volle inbox, administratie of regelwerk dat blijft liggen? Ik ben Brenda, jouw virtual assistant vanuit Uden. Samen maken we ruimte voor het werk waar jij energie van krijgt.",
+        "ctaText": "Ontdek mijn ondersteuning", "ctaEnabled": true, "ctaHref": "page:diensten",
+        "layout": "banner", "styleType": "pattern", "decorationVariant": "arches", "decorationScale": 150, "decorationOpacity": 7
+      },
+      "styles": { "backgroundColor": "#EFF8F6", "textColor": "#253747", "accentColor": "#087F83", "surfaceColor": "#FFFFFF", "backgroundImage": "https://superassist.nl/wp-content/uploads/2022/11/Profielfoto2022l-1.jpg", "backgroundImageAlt": "Profielfoto van Brenda op de officiële Super Assist-website", "backgroundPosition": "center" }
+    },
+    {
+      "key": "hulp", "type": "features", "pageKey": "home",
+      "content": {
+        "title": "Wat mag er van jouw lijstje af?", "layout": "card", "styleType": "clean",
+        "features": [
+          { "text": "Administratie — gegevens, documenten en terugkerend werk op orde." },
+          { "text": "Secretariaat — aandacht voor je mailbox, correspondentie en afspraken." },
+          { "text": "Organisatie — overzicht in acties, planningen en praktische zaken." }
+        ]
+      },
+      "styles": { "backgroundColor": "#FFFFFF", "textColor": "#253747", "accentColor": "#087F83", "surfaceColor": "#EFF8F6" }
+    },
+    {
+      "key": "persoonlijk", "type": "about", "pageKey": "home",
+      "content": {
+        "title": "Een extra paar handen. Een vertrouwd gezicht.",
+        "description": "Bij Super Assist werk je rechtstreeks met mij. Ik ondersteun ondernemers op afstand, met een persoonlijke aanpak vanuit Uden. Je kunt tijdelijk hulp inschakelen of kiezen voor terugkerende ondersteuning.",
+        "images": [], "layout": "compact", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#F8F6F2", "textColor": "#253747", "accentColor": "#087F83", "surfaceColor": "#FFFFFF" }
+    },
+    {
+      "key": "home-vervolg", "type": "cta", "pageKey": "home",
+      "content": {
+        "title": "Begin met wat nu blijft liggen.", "subtitle": "Een concrete taak is een fijn vertrekpunt voor een kennismaking.",
+        "primaryCtaText": "Laten we kennismaken", "primaryCtaEnabled": true, "primaryCtaHref": "section:contact:contactgegevens",
+        "secondaryCtaText": "Zo kunnen we samenwerken", "secondaryCtaEnabled": true, "secondaryCtaHref": "page:samenwerken",
+        "layout": "classic", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#253747", "textColor": "#FFFFFF", "accentColor": "#087F83", "surfaceColor": "#354A59" }
+    },
+    {
+      "key": "diensten-intro", "type": "hero", "pageKey": "diensten",
+      "content": {
+        "title": "Praktische hulp voor jouw werkdag.", "subtitle": "Jij kiest wat je wilt overdragen. Van een terugkerende administratieve taak tot ondersteuning bij je organisatie.",
+        "ctaText": "Bekijk de mogelijkheden", "ctaEnabled": true, "ctaHref": "#diensten-overzicht",
+        "layout": "compact", "styleType": "pattern", "decorationVariant": "dots", "decorationScale": 140, "decorationOpacity": 8
+      },
+      "styles": { "backgroundColor": "#EFF8F6", "textColor": "#253747", "accentColor": "#087F83", "surfaceColor": "#FFFFFF" }
+    },
+    {
+      "key": "diensten-overzicht", "type": "features", "pageKey": "diensten",
+      "content": {
+        "title": "Hier kan ik je bij ondersteunen", "layout": "card", "styleType": "clean",
+        "features": [
+          { "text": "Administratie — gegevens verwerken, documenten ordenen en overzichten bijhouden." },
+          { "text": "Offertes en facturen — voorbereiden, verwerken en administratief bijhouden." },
+          { "text": "Mailbox en correspondentie — structuur aanbrengen en berichten voorbereiden." },
+          { "text": "Vergaderingen — voorbereidingen, notulen en actiepunten uitwerken." },
+          { "text": "Planning — afspraken organiseren en de opvolging van acties bijhouden." },
+          { "text": "Social media — ondersteunen bij de planning en het plaatsen van berichten." }
+        ]
+      },
+      "styles": { "backgroundColor": "#FFFFFF", "textColor": "#253747", "accentColor": "#087F83", "surfaceColor": "#EFF8F6" }
+    },
+    {
+      "key": "diensten-vragen", "type": "faq", "pageKey": "diensten",
+      "content": {
+        "title": "Past jouw vraag hierbij?", "subtitle": "Het hoeft geen groot pakket aan werkzaamheden te zijn.", "layout": "split", "styleType": "clean",
+        "items": [
+          { "question": "Kan ik één terugkerende taak overdragen?", "answer": "Ja, klein beginnen past bij de aanpak van Super Assist. Bespreek welke taak jou veel tijd kost en welke ondersteuning daarbij helpt." },
+          { "question": "Mijn taak staat er niet tussen. Wat nu?", "answer": "Vertel wat je zoekt. In een gesprek kun je samen met Brenda bekijken of de werkzaamheden passen." }
+        ]
+      },
+      "styles": { "backgroundColor": "#F8F6F2", "textColor": "#253747", "accentColor": "#087F83", "surfaceColor": "#FFFFFF" }
+    },
+    {
+      "key": "diensten-vervolg", "type": "cta", "pageKey": "diensten",
+      "content": {
+        "title": "Welke taak zou jij graag loslaten?", "subtitle": "Neem je vraag mee in een kennismaking.",
+        "primaryCtaText": "Naar contact", "primaryCtaEnabled": true, "primaryCtaHref": "page:contact",
+        "secondaryCtaText": "Bekijk de samenwerking", "secondaryCtaEnabled": true, "secondaryCtaHref": "page:samenwerken",
+        "layout": "banner", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#253747", "textColor": "#FFFFFF", "accentColor": "#087F83", "surfaceColor": "#354A59" }
+    },
+    {
+      "key": "samenwerken-intro", "type": "hero", "pageKey": "samenwerken",
+      "content": {
+        "title": "Ondersteuning op jouw ritme.", "subtitle": "Een paar uur per week, hulp in een drukke periode of een afgebakende klus: kies wat bij je past.",
+        "ctaText": "Verken de mogelijkheden", "ctaEnabled": true, "ctaHref": "#samenwerkingsvormen",
+        "layout": "compact", "styleType": "paint", "decorationVariant": "organic", "decorationScale": 150, "decorationOpacity": 7
+      },
+      "styles": { "backgroundColor": "#F8F6F2", "textColor": "#253747", "accentColor": "#087F83", "surfaceColor": "#FFFFFF" }
+    },
+    {
+      "key": "samenwerkingsvormen", "type": "features", "pageKey": "samenwerken",
+      "content": {
+        "title": "Hoe wil jij hulp inschakelen?", "layout": "card", "styleType": "clean",
+        "features": [
+          { "text": "Structureel — vaste ondersteuning voor werk dat steeds terugkomt." },
+          { "text": "Flexibel — hulp wanneer je daar behoefte aan hebt." },
+          { "text": "Tijdelijk — extra ondersteuning tijdens drukte of een achterstand." },
+          { "text": "Projectmatig — aandacht voor een afgebakende opdracht." }
+        ]
+      },
+      "styles": { "backgroundColor": "#FFFFFF", "textColor": "#253747", "accentColor": "#087F83", "surfaceColor": "#EFF8F6" }
+    },
+    {
+      "key": "klein-beginnen", "type": "about", "pageKey": "samenwerken",
+      "content": {
+        "title": "Eerst even kennismaken.", "description": "Bespreek waar je tegenaan loopt, wat je wilt overdragen en hoeveel hulp prettig is. Begin bijvoorbeeld met één taak. Maak samen afspraken over de werkwijze en bekijk daarna of je meer wilt uitbesteden.",
+        "images": [], "layout": "compact", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#EFF8F6", "textColor": "#253747", "accentColor": "#087F83", "surfaceColor": "#FFFFFF" }
+    },
+    {
+      "key": "samenwerken-vervolg", "type": "cta", "pageKey": "samenwerken",
+      "content": {
+        "title": "Maak ruimte in je werkweek.", "subtitle": "Verken samen welke ondersteuning voor jou passend is.",
+        "primaryCtaText": "Bekijk contactgegevens", "primaryCtaEnabled": true, "primaryCtaHref": "section:contact:contactgegevens",
+        "secondaryCtaText": "Wie is Brenda?", "secondaryCtaEnabled": true, "secondaryCtaHref": "page:brenda",
+        "layout": "classic", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#253747", "textColor": "#FFFFFF", "accentColor": "#087F83", "surfaceColor": "#354A59" }
+    },
+    {
+      "key": "brenda-intro", "type": "hero", "pageKey": "brenda",
+      "content": {
+        "title": "Aangenaam, ik ben Brenda.", "subtitle": "Ik houd van overzicht, duidelijke afspraken en werk dat wordt opgepakt.",
+        "ctaText": "Maak kennis met mij", "ctaEnabled": true, "ctaHref": "#mijn-verhaal",
+        "layout": "compact", "styleType": "pattern", "decorationVariant": "arches", "decorationScale": 150, "decorationOpacity": 7
+      },
+      "styles": { "backgroundColor": "#EFF8F6", "textColor": "#253747", "accentColor": "#087F83", "surfaceColor": "#FFFFFF" }
+    },
+    {
+      "key": "mijn-verhaal", "type": "about", "pageKey": "brenda",
+      "content": {
+        "title": "Ervaring die met je meewerkt.",
+        "description": "Ik ben Brenda Willems. Na ruim twintig jaar in ondersteunende functies begon ik in december 2022 met Super Assist. Mijn ervaring als managementassistente, juridisch secretaresse, personal assistant en office manager neem ik mee in mijn werk voor ondernemers. Vanuit Uden help ik praktisch en persoonlijk.",
+        "images": ["https://superassist.nl/wp-content/uploads/2022/11/Profielfoto2022l-1.jpg"], "layout": "showcase", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#FFFFFF", "textColor": "#253747", "accentColor": "#087F83", "surfaceColor": "#EFF8F6" }
+    },
+    {
+      "key": "werkwijze", "type": "features", "pageKey": "brenda",
+      "content": {
+        "title": "Zo werk ik graag", "layout": "showcase", "styleType": "clean",
+        "features": [
+          { "text": "Persoonlijk — je hebt rechtstreeks contact met mij." },
+          { "text": "Praktisch — ik denk mee en pak werkzaamheden op." },
+          { "text": "Zorgvuldig — aandacht voor afspraken en informatie." }
+        ]
+      },
+      "styles": { "backgroundColor": "#F8F6F2", "textColor": "#253747", "accentColor": "#087F83", "surfaceColor": "#FFFFFF" }
+    },
+    {
+      "key": "brenda-vervolg", "type": "cta", "pageKey": "brenda",
+      "content": {
+        "title": "Misschien kunnen we iets voor elkaar betekenen.", "subtitle": "Vertel me waar jij ondersteuning bij zoekt.",
+        "primaryCtaText": "Naar contact", "primaryCtaEnabled": true, "primaryCtaHref": "page:contact",
+        "secondaryCtaText": "Bekijk mijn diensten", "secondaryCtaEnabled": true, "secondaryCtaHref": "page:diensten",
+        "layout": "classic", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#253747", "textColor": "#FFFFFF", "accentColor": "#087F83", "surfaceColor": "#354A59" }
+    },
+    {
+      "key": "contact-intro", "type": "hero", "pageKey": "contact",
+      "content": {
+        "title": "Waar kan ik jou bij helpen?", "subtitle": "Stel je vraag aan Brenda of neem contact op voor een vrijblijvende kennismaking.",
+        "ctaText": "Bekijk contactgegevens", "ctaEnabled": true, "ctaHref": "#contactgegevens",
+        "layout": "compact", "styleType": "paint", "decorationVariant": "organic", "decorationScale": 150, "decorationOpacity": 7
+      },
+      "styles": { "backgroundColor": "#F8F6F2", "textColor": "#253747", "accentColor": "#087F83", "surfaceColor": "#FFFFFF" }
+    },
+    {
+      "key": "contactgegevens", "type": "about", "pageKey": "contact",
+      "content": {
+        "title": "Super Assist · Brenda Willems",
+        "description": "Vanuit Uden, op afstand betrokken.\n\nE-mail: info@superassist.nl\nTelefoon: 06-14629060\n\nDit is een ontwerpconcept. Voor een echte aanvraag open je de officiële contactpagina via de knop onderaan deze pagina.",
+        "images": [], "layout": "compact", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#FFFFFF", "textColor": "#253747", "accentColor": "#087F83", "surfaceColor": "#EFF8F6" }
+    },
+    {
+      "key": "contact-vragen", "type": "faq", "pageKey": "contact",
+      "content": {
+        "title": "Goed om te weten", "subtitle": "Over kennismaken en deze demo.", "layout": "classic", "styleType": "clean",
+        "items": [
+          { "question": "Wat kan ik in mijn bericht vertellen?", "answer": "Omschrijf kort je bedrijf, de werkzaamheden waarbij je hulp zoekt en of het om terugkerend of tijdelijk werk gaat. Dat helpt om het gesprek te beginnen." },
+          { "question": "Verstuurt deze demo een aanvraag?", "answer": "Nee. Voor een echte aanvraag gebruik je de officiële Super Assist-contactpagina. Externe knoppen werken na publicatie; in het importvoorbeeld zijn ze uitgeschakeld." },
+          { "question": "Is dit de officiële website?", "answer": "Dit is een nieuw ontwerpconcept met FlexPagina, gebaseerd op de openbare website van Super Assist. De officiële website is superassist.nl." }
+        ]
+      },
+      "styles": { "backgroundColor": "#EFF8F6", "textColor": "#253747", "accentColor": "#087F83", "surfaceColor": "#FFFFFF" }
+    },
+    {
+      "key": "officieel-contact", "type": "cta", "pageKey": "contact",
+      "content": {
+        "title": "Zullen we kennismaken?", "subtitle": "Ga verder op de officiële website van Super Assist.",
+        "primaryCtaText": "Open de contactpagina", "primaryCtaEnabled": true, "primaryCtaHref": "https://superassist.nl/index.php/contact/",
+        "secondaryCtaText": "Bekijk de diensten", "secondaryCtaEnabled": true, "secondaryCtaHref": "page:diensten",
+        "layout": "classic", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#253747", "textColor": "#FFFFFF", "accentColor": "#087F83", "surfaceColor": "#354A59" }
+    },
+    {
+      "key": "footer", "type": "footer", "scope": "site_footer",
+      "content": {
+        "companyName": "Super Assist",
+        "companyDescription": "Ontwerpconcept met FlexPagina · Gebaseerd op superassist.nl · Brenda Willems, Uden · info@superassist.nl · 06-14629060",
+        "layout": "classic", "styleType": "clean",
+        "columns": [
+          { "title": "Ondersteuning", "links": [{ "label": "Diensten", "href": "page:diensten" }, { "label": "Samenwerken", "href": "page:samenwerken" }] },
+          { "title": "Persoonlijk", "links": [{ "label": "Over Brenda", "href": "page:brenda" }, { "label": "Contactgegevens", "href": "section:contact:contactgegevens" }] },
+          { "title": "Officiële website", "links": [{ "label": "Bezoek superassist.nl", "href": "https://superassist.nl/" }, { "label": "Contact opnemen", "href": "https://superassist.nl/index.php/contact/" }] }
+        ]
+      },
+      "styles": { "backgroundColor": "#253747", "textColor": "#FFFFFF", "accentColor": "#087F83", "surfaceColor": "#354A59" }
+    }
+  ]
+}

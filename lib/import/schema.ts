@@ -129,7 +129,7 @@ export type ImportDocument = z.infer<typeof importSchema>
 export class ImportValidationError extends Error {
   constructor(public issues: string[]) { super(issues.join("\n")); this.name = "ImportValidationError" }
 }
-export function parseImport(raw: string): ImportDocument {
+export function parseImportJson(raw: string): unknown {
   if (new TextEncoder().encode(raw).length > MAX_IMPORT_BYTES) throw new ImportValidationError(["bestand: Maximaal 2 MB."])
   // Bound nesting before JSON.parse/Zod traversal (strings and escaped quotes excluded).
   let depth = 0, quoted = false, escaped = false
@@ -146,6 +146,10 @@ export function parseImport(raw: string): ImportDocument {
   let value: unknown
   try { value = JSON.parse(raw.replace(/^\uFEFF/, "")) }
   catch { throw new ImportValidationError(["bestand: Ongeldige JSON. Controleer komma's en aanhalingstekens."]) }
+  return value
+}
+export function parseImport(raw: string): ImportDocument {
+  const value = parseImportJson(raw)
   if (value && typeof value === "object" && "version" in value && value.version !== 1 && value.version !== 2) {
     throw new ImportValidationError(["version: Niet ondersteund. Gebruik versie 1 of 2."])
   }

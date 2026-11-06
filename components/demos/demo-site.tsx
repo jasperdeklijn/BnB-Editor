@@ -1,7 +1,7 @@
 "use client"
 
 import type { CSSProperties } from "react"
-import { SectionRenderer } from "@/components/editor/section-renderer"
+import { DemoSections } from "./demo-sections"
 import { WebsiteLinksProvider } from "@/components/editor/website-links-context"
 import { applyThemeDefaultsToSections, getGoogleFontsUrl, resolveWebsiteTheme } from "@/lib/themes"
 import { demoPages, type DemoDesign } from "@/lib/demos/shared"
@@ -14,9 +14,7 @@ export function DemoSite({ design, pageId, basePath }: { design: DemoDesign; pag
   return <WebsiteLinksProvider value={{ pages: demoPages(design), activePageId: pageId, localePath: "", basePath }}>
     {fonts && <link rel="stylesheet" href={fonts} />}
     <main className="website-theme-scope min-h-screen" style={theme.cssVariables as CSSProperties}>
-      {sections.map((section) => <div id={`section-${section.id}`} key={section.id}>
-        <SectionRenderer section={section} allSections={sections} isPreview />
-      </div>)}
+      <DemoSections sections={sections} transitions={design.transitions} />
     </main>
   </WebsiteLinksProvider>
 }

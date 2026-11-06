@@ -1,0 +1,683 @@
+{
+  "format": "flexpagina",
+  "version": 2,
+  "title": "Q3 | Onderhoud met overzicht",
+  "theme": {
+    "paletteId": "slate-modern",
+    "fontPairId": "inter-system",
+    "spacing": "comfortable",
+    "radius": "large"
+  },
+  "pages": [
+    {
+      "key": "home",
+      "title": "Home",
+      "slug": "",
+      "isHome": true,
+      "includeInPublication": true,
+      "showInNavigation": true,
+      "seo": {
+        "title": "Q3 | Grip op onderhoud",
+        "description": "Ontwerpconcept voor Q3: ontdek onderhoudssoftware, mobiele werkorders en persoonlijke begeleiding in een nieuwe FlexPagina-demo."
+      }
+    },
+    {
+      "key": "software",
+      "title": "Software",
+      "slug": "software",
+      "isHome": false,
+      "includeInPublication": true,
+      "showInNavigation": true,
+      "seo": {
+        "title": "Onderhoudssoftware | Q3",
+        "description": "Bekijk hoe Q3 onderhoudsplanning, werkorders, assets en voorraad samenbrengt. Onderdeel van het FlexPagina-ontwerpconcept."
+      }
+    },
+    {
+      "key": "aanpak",
+      "title": "Onze aanpak",
+      "slug": "onze-aanpak",
+      "isHome": false,
+      "includeInPublication": true,
+      "showInNavigation": true,
+      "seo": {
+        "title": "Van kennismaking tot dagelijks gebruik | Q3",
+        "description": "Een praktische start met Q3: inrichting, gegevens, training en ondersteuning. FlexPagina-ontwerpconcept."
+      }
+    },
+    {
+      "key": "over",
+      "title": "Over Q3",
+      "slug": "over-q3",
+      "isHome": false,
+      "includeInPublication": true,
+      "showInNavigation": true,
+      "seo": {
+        "title": "Gebouwd vanuit de praktijk | Q3",
+        "description": "Maak kennis met Q3 Concept uit Uden en de achtergrond van de onderhoudssoftware. FlexPagina-ontwerpconcept."
+      }
+    },
+    {
+      "key": "contact",
+      "title": "Contact",
+      "slug": "contact",
+      "isHome": false,
+      "includeInPublication": true,
+      "showInNavigation": true,
+      "seo": {
+        "title": "Kennismaken met Q3",
+        "description": "Contactgegevens en veelgestelde vragen over Q3. Dit ontwerpconcept verstuurt geen aanvragen; de officiële Q3-site biedt het contactformulier."
+      }
+    }
+  ],
+  "sections": [
+    {
+      "key": "menu",
+      "type": "nav",
+      "scope": "site_header",
+      "content": {
+        "brandName": "Q3 · Maintenance",
+        "isSticky": true,
+        "layout": "classic",
+        "styleType": "clean",
+        "navLinks": []
+      },
+      "styles": {
+        "backgroundColor": "#FFFFFF",
+        "textColor": "#00243B",
+        "accentColor": "#C65300",
+        "surfaceColor": "#FFFFFF"
+      }
+    },
+    {
+      "key": "welkom",
+      "type": "hero",
+      "pageKey": "home",
+      "content": {
+        "title": "Meer overzicht. Meer grip op onderhoud.",
+        "subtitle": "Van werkorder tot onderhoudsplanning: breng uw technische dienst samen in één omgeving. Ontdek Q3 in dit nieuwe websiteconcept.",
+        "ctaEnabled": true,
+        "ctaText": "Ontdek de software",
+        "ctaHref": "page:software",
+        "layout": "banner",
+        "styleType": "pattern",
+        "decorationVariant": "grid",
+        "decorationScale": 125,
+        "decorationOpacity": 7
+      },
+      "styles": {
+        "backgroundColor": "#F2F6F8",
+        "textColor": "#00243B",
+        "accentColor": "#C65300",
+        "surfaceColor": "#FFFFFF",
+        "backgroundImage": "https://www.q3.nl/wp-content/uploads/2024/09/Afbeelding1.png",
+        "backgroundImageAlt": "Voorbeeld van de Q3-software op de officiële Q3-website",
+        "backgroundPosition": "center"
+      }
+    },
+    {
+      "key": "dagelijks-overzicht",
+      "type": "features",
+      "pageKey": "home",
+      "content": {
+        "title": "Wat vraagt vandaag uw aandacht?",
+        "layout": "card",
+        "styleType": "clean",
+        "features": [
+          {
+            "text": "Planning — breng preventief onderhoud en dagelijks werk samen."
+          },
+          {
+            "text": "Werkorders — maak zichtbaar wie welk werk oppakt."
+          },
+          {
+            "text": "Assets — houd documenten en onderhoudshistorie bij elkaar."
+          },
+          {
+            "text": "Mobiel — werk met dezelfde informatie op de werkvloer."
+          }
+        ]
+      },
+      "styles": {
+        "backgroundColor": "#FFFFFF",
+        "textColor": "#00243B",
+        "accentColor": "#C65300",
+        "surfaceColor": "#F2F6F8"
+      }
+    },
+    {
+      "key": "inzicht",
+      "type": "about",
+      "pageKey": "home",
+      "content": {
+        "title": "Maak onderhoud bespreekbaar.",
+        "description": "Welke taken staan open? Waar ontstaan storingen? Wat gebeurt er met de kosten? Met dashboards en analyses brengt Q3 de informatie voor uw onderhoudsoverleg bijeen. Zo begint het gesprek bij wat er op de werkvloer speelt.",
+        "images": [
+          "https://www.q3.nl/wp-content/uploads/2024/06/2024-06-23_16-20-34-1024x562.png"
+        ],
+        "layout": "split",
+        "styleType": "clean"
+      },
+      "styles": {
+        "backgroundColor": "#F2F6F8",
+        "textColor": "#00243B",
+        "accentColor": "#C65300",
+        "surfaceColor": "#FFFFFF"
+      }
+    },
+    {
+      "key": "home-vervolg",
+      "type": "cta",
+      "pageKey": "home",
+      "content": {
+        "title": "Begin bij uw manier van werken.",
+        "subtitle": "Verken eerst de mogelijkheden of lees hoe de begeleiding is opgebouwd.",
+        "primaryCtaEnabled": true,
+        "primaryCtaText": "Bekijk onze aanpak",
+        "primaryCtaHref": "page:aanpak",
+        "secondaryCtaEnabled": true,
+        "secondaryCtaText": "Kennismaken",
+        "secondaryCtaHref": "section:contact:contactgegevens",
+        "layout": "classic",
+        "styleType": "pattern",
+        "decorationVariant": "diagonal",
+        "decorationScale": 130,
+        "decorationOpacity": 8
+      },
+      "styles": {
+        "backgroundColor": "#00243B",
+        "textColor": "#FFFFFF",
+        "accentColor": "#C65300",
+        "surfaceColor": "#12364B"
+      }
+    },
+    {
+      "key": "software-intro",
+      "type": "hero",
+      "pageKey": "software",
+      "content": {
+        "title": "Eén plek voor uw onderhoudsproces.",
+        "subtitle": "Organiseer het werk, vind informatie bij de juiste machine en volg de voortgang van uw team.",
+        "ctaEnabled": true,
+        "ctaText": "Bekijk de mogelijkheden",
+        "ctaHref": "#modules",
+        "layout": "compact",
+        "styleType": "pattern",
+        "decorationVariant": "grid",
+        "decorationScale": 125,
+        "decorationOpacity": 7
+      },
+      "styles": {
+        "backgroundColor": "#F2F6F8",
+        "textColor": "#00243B",
+        "accentColor": "#C65300",
+        "surfaceColor": "#FFFFFF"
+      }
+    },
+    {
+      "key": "modules",
+      "type": "features",
+      "pageKey": "software",
+      "content": {
+        "title": "Van melding tot uitvoering",
+        "layout": "card",
+        "styleType": "clean",
+        "features": [
+          {
+            "text": "Preventief onderhoud — plan terugkerend werk op frequentie of draaiuren."
+          },
+          {
+            "text": "Werkorders — richt statussen in die aansluiten op uw werkproces."
+          },
+          {
+            "text": "Checklists — loop onderhoudstaken volgens een vast stappenplan door."
+          },
+          {
+            "text": "Voorraad — houd onderdelen en bestelbehoeften in beeld."
+          },
+          {
+            "text": "Documentatie — verzamel informatie en historie per asset."
+          },
+          {
+            "text": "Autorisaties — bepaal welke informatie gebruikersgroepen zien."
+          }
+        ]
+      },
+      "styles": {
+        "backgroundColor": "#FFFFFF",
+        "textColor": "#00243B",
+        "accentColor": "#C65300",
+        "surfaceColor": "#F2F6F8"
+      }
+    },
+    {
+      "key": "software-beeld",
+      "type": "gallery",
+      "pageKey": "software",
+      "content": {
+        "title": "Een blik in de software",
+        "subtitle": "Softwarebeelden van q3.nl. Bespreek in een demonstratie welke inrichting bij uw organisatie past.",
+        "images": [
+          "https://www.q3.nl/wp-content/uploads/2024/09/Afbeelding1.png",
+          "https://www.q3.nl/wp-content/uploads/2024/06/2024-06-23_16-20-34-1024x562.png"
+        ],
+        "layout": "classic",
+        "styleType": "clean"
+      },
+      "styles": {
+        "backgroundColor": "#F2F6F8",
+        "textColor": "#00243B",
+        "accentColor": "#C65300",
+        "surfaceColor": "#FFFFFF"
+      }
+    },
+    {
+      "key": "software-vragen",
+      "type": "faq",
+      "pageKey": "software",
+      "content": {
+        "title": "Past Q3 bij uw organisatie?",
+        "subtitle": "Een eerste antwoord op praktische vragen.",
+        "layout": "split",
+        "styleType": "clean",
+        "items": [
+          {
+            "question": "Kunnen monteurs mobiel werken?",
+            "answer": "Q3 ondersteunt werken op smartphone en tablet. Bespreek welke taken uw team onderweg wil uitvoeren en neem die mee in de inrichting."
+          },
+          {
+            "question": "Kunnen we gegevens uitwisselen?",
+            "answer": "Q3 biedt import en export via Excel en mogelijkheden voor koppelingen met andere systemen. Laat vooraf beoordelen welke gegevens en koppelingen u nodig heeft."
+          },
+          {
+            "question": "Hoe zit het met tarieven en uitbreidingen?",
+            "answer": "Bekijk de actuele prijzen op de officiële Q3-website. Extra monitoring, koppelingen en maatwerk kunt u met Q3 bespreken."
+          }
+        ]
+      },
+      "styles": {
+        "backgroundColor": "#FFFFFF",
+        "textColor": "#00243B",
+        "accentColor": "#C65300",
+        "surfaceColor": "#F2F6F8"
+      }
+    },
+    {
+      "key": "software-vervolg",
+      "type": "cta",
+      "pageKey": "software",
+      "content": {
+        "title": "Bekijk het vanuit uw eigen werkdag.",
+        "subtitle": "Neem een onderhoudstaak of werkorder mee als vertrekpunt voor een kennismaking.",
+        "primaryCtaEnabled": true,
+        "primaryCtaText": "Naar contact",
+        "primaryCtaHref": "page:contact",
+        "secondaryCtaEnabled": true,
+        "secondaryCtaText": "Hoe starten we?",
+        "secondaryCtaHref": "page:aanpak",
+        "layout": "banner",
+        "styleType": "clean"
+      },
+      "styles": {
+        "backgroundColor": "#00243B",
+        "textColor": "#FFFFFF",
+        "accentColor": "#C65300",
+        "surfaceColor": "#12364B"
+      }
+    },
+    {
+      "key": "aanpak-intro",
+      "type": "hero",
+      "pageKey": "aanpak",
+      "content": {
+        "title": "Goed beginnen. Samen verder.",
+        "subtitle": "Van de eerste vragen tot dagelijks gebruik: maak de stap naar Q3 met aandacht voor uw mensen en processen.",
+        "ctaEnabled": true,
+        "ctaText": "Zo ziet de start eruit",
+        "ctaHref": "#starten",
+        "layout": "compact",
+        "styleType": "pattern",
+        "decorationVariant": "dots",
+        "decorationScale": 140,
+        "decorationOpacity": 8
+      },
+      "styles": {
+        "backgroundColor": "#FFF5EC",
+        "textColor": "#00243B",
+        "accentColor": "#C65300",
+        "surfaceColor": "#FFFFFF"
+      }
+    },
+    {
+      "key": "starten",
+      "type": "features",
+      "pageKey": "aanpak",
+      "content": {
+        "title": "Van uw vraag naar een werkbare inrichting",
+        "layout": "card",
+        "styleType": "clean",
+        "features": [
+          {
+            "text": "01 · Intake — bespreek wensen en werkprocessen met een consultant."
+          },
+          {
+            "text": "02 · Inrichting — stel gebruikers, groepen en de opzet van Q3 in."
+          },
+          {
+            "text": "03 · Gegevens — vul het systeem via import of handmatige invoer."
+          },
+          {
+            "text": "04 · Gebruik — combineer training met ondersteuning bij vragen."
+          }
+        ]
+      },
+      "styles": {
+        "backgroundColor": "#FFFFFF",
+        "textColor": "#00243B",
+        "accentColor": "#C65300",
+        "surfaceColor": "#F2F6F8"
+      }
+    },
+    {
+      "key": "begeleiding",
+      "type": "about",
+      "pageKey": "aanpak",
+      "content": {
+        "title": "Een aanspreekpunt voor uw vragen.",
+        "description": "Q3 begeleidt de inrichting met een eigen contactpersoon. Gebruikers kunnen oefenen in een aparte omgeving en krijgen toegang tot online uitleg. Telefonische ondersteuning helpt bij vragen tijdens het gebruik.",
+        "images": [
+          "https://www.q3.nl/wp-content/uploads/2025/06/wij-helpen-u.png"
+        ],
+        "layout": "showcase",
+        "styleType": "clean"
+      },
+      "styles": {
+        "backgroundColor": "#F2F6F8",
+        "textColor": "#00243B",
+        "accentColor": "#C65300",
+        "surfaceColor": "#FFFFFF"
+      }
+    },
+    {
+      "key": "aanpak-vervolg",
+      "type": "cta",
+      "pageKey": "aanpak",
+      "content": {
+        "title": "Welke stap wilt u als eerste zetten?",
+        "subtitle": "Begin met een gesprek over de informatie die uw team dagelijks nodig heeft.",
+        "primaryCtaEnabled": true,
+        "primaryCtaText": "Bekijk contactgegevens",
+        "primaryCtaHref": "section:contact:contactgegevens",
+        "secondaryCtaEnabled": true,
+        "secondaryCtaText": "Meer over Q3",
+        "secondaryCtaHref": "page:over",
+        "layout": "classic",
+        "styleType": "pattern",
+        "decorationVariant": "waves",
+        "decorationScale": 150,
+        "decorationOpacity": 8
+      },
+      "styles": {
+        "backgroundColor": "#00243B",
+        "textColor": "#FFFFFF",
+        "accentColor": "#C65300",
+        "surfaceColor": "#12364B"
+      }
+    },
+    {
+      "key": "over-intro",
+      "type": "hero",
+      "pageKey": "over",
+      "content": {
+        "title": "Techniek als vertrekpunt. Mensen centraal.",
+        "subtitle": "Onderhoudssoftware die haar oorsprong vindt in de dagelijkse praktijk van technische diensten.",
+        "ctaEnabled": true,
+        "ctaText": "Lees ons verhaal",
+        "ctaHref": "#verhaal",
+        "layout": "compact",
+        "styleType": "pattern",
+        "decorationVariant": "grid",
+        "decorationScale": 125,
+        "decorationOpacity": 7
+      },
+      "styles": {
+        "backgroundColor": "#F2F6F8",
+        "textColor": "#00243B",
+        "accentColor": "#C65300",
+        "surfaceColor": "#FFFFFF"
+      }
+    },
+    {
+      "key": "verhaal",
+      "type": "about",
+      "pageKey": "over",
+      "content": {
+        "title": "Van onderhoudsadvies naar software.",
+        "description": "Q3 Concept begon in 1998 met advies over onderhoud. Vragen van technische diensten vormden vervolgens het vertrekpunt voor eigen software. Wat moet er vandaag gebeuren? Welke storingen staan nog open? Is het benodigde materiaal beschikbaar? Die vragen uit de praktijk blijven de ontwikkeling richting geven.",
+        "layout": "compact",
+        "styleType": "clean",
+        "images": []
+      },
+      "styles": {
+        "backgroundColor": "#FFFFFF",
+        "textColor": "#00243B",
+        "accentColor": "#C65300",
+        "surfaceColor": "#F2F6F8"
+      }
+    },
+    {
+      "key": "uitgangspunten",
+      "type": "features",
+      "pageKey": "over",
+      "content": {
+        "title": "Dicht bij de werkvloer",
+        "layout": "showcase",
+        "styleType": "clean",
+        "features": [
+          {
+            "text": "Praktijkkennis — onderhoudsprocessen vormen de basis voor de software."
+          },
+          {
+            "text": "Samen ontwikkelen — gebruikersvragen dragen bij aan verbeteringen."
+          },
+          {
+            "text": "Blijven ondersteunen — software, advies en training komen samen."
+          }
+        ]
+      },
+      "styles": {
+        "backgroundColor": "#F2F6F8",
+        "textColor": "#00243B",
+        "accentColor": "#C65300",
+        "surfaceColor": "#FFFFFF"
+      }
+    },
+    {
+      "key": "over-vervolg",
+      "type": "cta",
+      "pageKey": "over",
+      "content": {
+        "title": "Vertel ons over uw technische dienst.",
+        "subtitle": "Begin bij uw vragen, uw werkwijze en de mensen die ermee werken.",
+        "primaryCtaEnabled": true,
+        "primaryCtaText": "Naar contact",
+        "primaryCtaHref": "page:contact",
+        "secondaryCtaEnabled": true,
+        "secondaryCtaText": "Bekijk de software",
+        "secondaryCtaHref": "page:software",
+        "layout": "classic",
+        "styleType": "clean"
+      },
+      "styles": {
+        "backgroundColor": "#00243B",
+        "textColor": "#FFFFFF",
+        "accentColor": "#C65300",
+        "surfaceColor": "#12364B"
+      }
+    },
+    {
+      "key": "contact-intro",
+      "type": "hero",
+      "pageKey": "contact",
+      "content": {
+        "title": "Een goed gesprek begint met uw vraag.",
+        "subtitle": "Wilt u onderhoud anders organiseren of Q3 beter leren kennen? Hieronder vindt u de officiële contactgegevens.",
+        "ctaEnabled": true,
+        "ctaText": "Bekijk contactgegevens",
+        "ctaHref": "#contactgegevens",
+        "layout": "compact",
+        "styleType": "pattern",
+        "decorationVariant": "dots",
+        "decorationScale": 140,
+        "decorationOpacity": 8
+      },
+      "styles": {
+        "backgroundColor": "#FFF5EC",
+        "textColor": "#00243B",
+        "accentColor": "#C65300",
+        "surfaceColor": "#FFFFFF"
+      }
+    },
+    {
+      "key": "contactgegevens",
+      "type": "about",
+      "pageKey": "contact",
+      "content": {
+        "title": "Q3 Concept BV · Uden",
+        "description": "Oostwijk 9a\n5406 XT Uden\n\nTelefoon: +31 (0)413-331 331\nE-mail: info@q3.nl\n\nDit is een ontwerpconcept in FlexPagina. Voor een echte aanvraag gebruikt u de officiële Q3-website via de knop onderaan deze pagina.",
+        "images": [],
+        "layout": "compact",
+        "styleType": "clean"
+      },
+      "styles": {
+        "backgroundColor": "#FFFFFF",
+        "textColor": "#00243B",
+        "accentColor": "#C65300",
+        "surfaceColor": "#F2F6F8"
+      }
+    },
+    {
+      "key": "contact-vragen",
+      "type": "faq",
+      "pageKey": "contact",
+      "content": {
+        "title": "Voor uw kennismaking",
+        "subtitle": "Handig om vooraf te weten.",
+        "layout": "classic",
+        "styleType": "clean",
+        "items": [
+          {
+            "question": "Wat kunnen we vooraf voorbereiden?",
+            "answer": "Denk aan een onderhoudstaak die vaak terugkomt of een werkorder die lastig te volgen is. Zo kunt u tijdens het gesprek concreet maken wat uw team nodig heeft."
+          },
+          {
+            "question": "Kan ik vanuit deze demo een aanvraag versturen?",
+            "answer": "Deze demo verstuurt geen formulieren. De knop naar de officiële Q3-contactpagina werkt op een gepubliceerde demo; in het importvoorbeeld zijn externe links uitgeschakeld."
+          },
+          {
+            "question": "Is dit de officiële Q3-website?",
+            "answer": "Dit is een nieuw ontwerpconcept, gemaakt met de huidige importmogelijkheden van FlexPagina. De officiële website is www.q3.nl. Informatie en afbeeldingen zijn daarop gebaseerd."
+          }
+        ]
+      },
+      "styles": {
+        "backgroundColor": "#F2F6F8",
+        "textColor": "#00243B",
+        "accentColor": "#C65300",
+        "surfaceColor": "#FFFFFF"
+      }
+    },
+    {
+      "key": "officieel-contact",
+      "type": "cta",
+      "pageKey": "contact",
+      "content": {
+        "title": "Verder kennismaken met Q3?",
+        "subtitle": "Open de officiële website voor een echte contactaanvraag.",
+        "primaryCtaEnabled": true,
+        "primaryCtaText": "Naar de Q3-contactpagina",
+        "primaryCtaHref": "https://www.q3.nl/contact/",
+        "secondaryCtaEnabled": true,
+        "secondaryCtaText": "Terug naar de software",
+        "secondaryCtaHref": "page:software",
+        "layout": "classic",
+        "styleType": "pattern",
+        "decorationVariant": "diagonal",
+        "decorationScale": 130,
+        "decorationOpacity": 8
+      },
+      "styles": {
+        "backgroundColor": "#00243B",
+        "textColor": "#FFFFFF",
+        "accentColor": "#C65300",
+        "surfaceColor": "#12364B"
+      }
+    },
+    {
+      "key": "footer",
+      "type": "footer",
+      "scope": "site_footer",
+      "content": {
+        "companyName": "Q3 · Maintenance software",
+        "companyDescription": "Ontwerpconcept met FlexPagina · Gebaseerd op q3.nl · Q3 Concept BV, Oostwijk 9a, 5406 XT Uden · +31 (0)413-331 331 · info@q3.nl",
+        "layout": "classic",
+        "styleType": "clean",
+        "columns": [
+          {
+            "title": "Ontdek Q3",
+            "links": [
+              {
+                "label": "Home",
+                "href": "page:home"
+              },
+              {
+                "label": "Software",
+                "href": "page:software"
+              },
+              {
+                "label": "Onze aanpak",
+                "href": "page:aanpak"
+              }
+            ]
+          },
+          {
+            "title": "Kennismaken",
+            "links": [
+              {
+                "label": "Over Q3",
+                "href": "page:over"
+              },
+              {
+                "label": "Contactgegevens",
+                "href": "section:contact:contactgegevens"
+              }
+            ]
+          },
+          {
+            "title": "Officiële website",
+            "links": [
+              {
+                "label": "Bezoek q3.nl",
+                "href": "https://www.q3.nl/"
+              },
+              {
+                "label": "Actuele prijzen",
+                "href": "https://www.q3.nl/prijzen/"
+              },
+              {
+                "label": "Privacybeleid Q3",
+                "href": "https://www.q3.nl/privacy-policy/"
+              }
+            ]
+          }
+        ]
+      },
+      "styles": {
+        "backgroundColor": "#00243B",
+        "textColor": "#FFFFFF",
+        "accentColor": "#C65300",
+        "surfaceColor": "#12364B"
+      }
+    }
+  ]
+}

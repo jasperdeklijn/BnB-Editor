@@ -216,6 +216,7 @@ export function EditorClient({
   const [themeConfig, setThemeConfig] = useState<ThemeConfig | null>(null)
   const [isCreatingWebsite, setIsCreatingWebsite] = useState(false)
   const [isRenamingWebsite, setIsRenamingWebsite] = useState(false)
+  const [isExportingWebsite, setIsExportingWebsite] = useState(false)
   const [isDeletingWebsite, setIsDeletingWebsite] = useState(false)
   const [deleteWebsiteConfirmationOpen, setDeleteWebsiteConfirmationOpen] = useState(false)
   const [websiteMessage, setWebsiteMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
@@ -830,6 +831,30 @@ export function EditorClient({
       return false
     }
   }, [])
+
+  const handleExportDemo = async () => {
+    if (!websiteId || isLoadingWebsite || isLoadingPage || isExportingWebsite) return
+    setIsExportingWebsite(true)
+    try {
+      if (!(await flushPendingSectionSaves())) throw new Error("Sla eerst je wijzigingen op en probeer opnieuw.")
+      const response = await fetch(`/api/websites/demo-export?websiteId=${encodeURIComponent(websiteId)}`, { cache: "no-store" })
+      if (!response.ok) {
+        const result = await response.json()
+        throw new Error(Array.isArray(result.issues) ? result.issues.join("\n") : result.error || "Exporteren is mislukt.")
+      }
+      const url = URL.createObjectURL(await response.blob())
+      const anchor = document.createElement("a")
+      anchor.href = url
+      anchor.download = `flexpagina-demo-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "website"}.json`
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+      toast.success("Demo-export gedownload", { description: "Upload dit JSON-bestand bij Beheer → Demowebsites en bekijk het voorbeeld." })
+    } catch (error) {
+      toast.error("Exporteren is mislukt", { description: error instanceof Error ? error.message : "Probeer het opnieuw." })
+    } finally { setIsExportingWebsite(false) }
+  }
 
   const handlePageChange = useCallback(async (pageId: string) => {
     if (!websiteId || !pages.some((page) => page.id === pageId)) return false
@@ -1735,7 +1760,7 @@ export function EditorClient({
           websiteId={websiteId}
           pageId={activePageId}
           title={title}
-          busy={isCreatingWebsite || isDeletingWebsite || isRenamingWebsite}
+          busy={isCreatingWebsite || isDeletingWebsite || isRenamingWebsite || isExportingWebsite || isLoadingWebsite || isLoadingPage}
           saving={isSaving}
           renaming={isRenamingWebsite}
           canUndo={canUndo}
@@ -1750,6 +1775,7 @@ export function EditorClient({
           onDelete={() => setDeleteWebsiteConfirmationOpen(true)}
           onRename={handleSave}
           onImport={handleOpenImport}
+          onExport={handleExportDemo}
           onUndo={handleUndo}
           onRedo={handleRedo}
           onPublish={handlePublish}

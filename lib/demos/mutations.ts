@@ -1,7 +1,8 @@
 import "server-only"
 import { createHash } from "node:crypto"
 import type { SupabaseClient } from "@supabase/supabase-js"
-import { ImportValidationError, MAX_IMPORT_BYTES, parseImport } from "@/lib/import/schema"
+import { ImportValidationError, MAX_IMPORT_BYTES } from "@/lib/import/schema"
+import { parseDemoImport } from "./editor-export"
 import { demoMetadataSchema, demoThumbnail, prepareDemo, publicDemoDesign, type DemoSummary } from "./shared"
 import { demoSummaryColumns } from "./server"
 
@@ -40,7 +41,7 @@ export async function createDemo(request: Request, db: SupabaseClient, userId: s
   const parsed = demoMetadataSchema.safeParse(metadata)
   if (!parsed.success) throw new DemoError(parsed.error.issues[0]?.message ?? "Controleer de demogegevens.")
   const raw = await readDemoBody(request)
-  const document = parseImport(raw)
+  const document = parseDemoImport(raw)
   const requestHash = createHash("sha256").update(JSON.stringify(parsed.data)).update(raw).digest("hex")
   const design = prepareDemo(document, () => crypto.randomUUID())
   const row = { ...parsed.data, design, live_design: publicDemoDesign(design), request_hash: requestHash, created_by: userId, thumbnail_url: demoThumbnail(design) }

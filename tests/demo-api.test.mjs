@@ -1,6 +1,6 @@
 import test from "node:test"
 import assert from "node:assert/strict"
-import fs from "node:fs"
+import { legacyDemo, editorDemo } from "./helpers/demo-fixture.mjs"
 import { createRequire } from "node:module"
 import { randomUUID } from "node:crypto"
 
@@ -13,7 +13,8 @@ const audit = load("lib/audit-log.ts")
 const { POST } = load("app/api/admin/demos/route.ts")
 const { GET, PATCH, DELETE } = load("app/api/admin/demos/[id]/route.ts")
 const { publicDemo } = load("lib/demos/server.ts")
-const raw = fs.readFileSync("docs/import/examples/bnb.json", "utf8")
+const { serializeEditorExport } = load("lib/demos/editor-export.ts")
+const raw = JSON.stringify(legacyDemo)
 const actor = randomUUID()
 const id = randomUUID()
 const metadata = { id, title: "Café De Lindenhof", slug: "demo-lindenhof", source_filename: "lindenhof.json", published: true }
@@ -63,6 +64,24 @@ function upload(body = raw, meta = metadata, headers = {}) {
 function patch(body, headers = {}) {
   return new Request(`https://flexpagina.nl/api/admin/demos/${id}`, { method: "PATCH", body, headers: { Origin: "https://flexpagina.nl", ...headers } })
 }
+
+test("editor download imports as an independent demo and publishes only included pages", async () => {
+  const state = setup()
+  const response = await POST(upload(serializeEditorExport(editorDemo())))
+  assert.equal(response.status, 201)
+  const row = state.rows.get(id)
+  assert.equal(row.design.sections.length, 6)
+  assert.equal(row.design.sections.find((section) => section.type === "services").data.services[0].title, "Kamer")
+  assert.equal(row.design.theme.languageSwitcher.style, "buttons")
+  assert.equal(row.design.transitions[0].type, "wave")
+  assert.equal(JSON.stringify(row.design).includes("customer-business"), false)
+  assert.equal(JSON.stringify(row.design).includes("customer-form"), false)
+  assert.equal(JSON.stringify(row.live_design).includes("PRIVATE CONTENT"), false)
+  assert.equal(row.live_design.pages.length, 2)
+  assert.equal((await PATCH(patch('{"published":false}'), context)).status, 200)
+  assert.equal((await PATCH(patch('{"published":true}'), context)).status, 200)
+  assert.equal(state.rows.get(id).live_design.transitions[0].type, "wave")
+})
 
 test("all demo endpoints reject signed-out users and non-admins before privileged access", async () => {
   for (const [user, status] of [[null, 401], [{ id: actor, app_metadata: {}, user_metadata: { role: "admin" } }, 403]]) {

@@ -3,7 +3,7 @@
 import { useRef, useState, type ReactNode } from "react"
 import Link from "next/link"
 import { Dialog, DropdownMenu } from "radix-ui"
-import { CheckCircle2, ChevronDown, Eye, FileJson, Globe, LayoutTemplate, Loader2, MoreHorizontal, Pencil, Plus, Redo2, Search, Trash2, Undo2, X } from "lucide-react"
+import { CheckCircle2, ChevronDown, Download, Eye, FileJson, Globe, LayoutTemplate, Loader2, MoreHorizontal, Pencil, Plus, Redo2, Search, Trash2, Undo2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface EditorWebsiteToolbarProps {
@@ -27,6 +27,7 @@ interface EditorWebsiteToolbarProps {
   onDelete: () => void
   onRename: (name: string) => Promise<boolean>
   onImport: () => void
+  onExport: () => void
   onUndo: () => void
   onRedo: () => void
   onPublish: () => void
@@ -58,6 +59,7 @@ export function EditorWebsiteToolbar(props: EditorWebsiteToolbarProps) {
             <DropdownMenu.Label className="px-3 py-2 text-xs font-semibold text-muted-foreground">Ontwerpen beheren</DropdownMenu.Label>
             <DropdownMenu.Item className={menuItemClass} onSelect={props.onCreate}><Plus className="h-4 w-4" />Nieuw ontwerp</DropdownMenu.Item>
             <DropdownMenu.Item className={menuItemClass} disabled={!props.websiteId} onSelect={() => { setName(props.title); setRenameError(""); setRenameOpen(true) }}><Pencil className="h-4 w-4" />Naam wijzigen</DropdownMenu.Item>
+            <DropdownMenu.Item className={menuItemClass} disabled={!props.websiteId || props.pagePreview || props.saving} onSelect={props.onExport}><Download className="h-4 w-4" />Exporteren voor demo</DropdownMenu.Item>
             <DropdownMenu.Separator className="my-1 h-px bg-border" />
             <DropdownMenu.Item className={`${menuItemClass} text-destructive`} disabled={!props.websiteId} onSelect={props.onDelete}><Trash2 className="h-4 w-4" />Ontwerp verwijderen</DropdownMenu.Item>
           </DropdownMenu.Content></DropdownMenu.Portal>
@@ -124,6 +126,7 @@ function MobileWebsiteActions(props: EditorWebsiteToolbarProps & { onRequestRena
             {props.languageControl ? <DropdownMenu.Item className={menuItemClass} onSelect={() => setLanguageOpen(true)}><Globe className="h-4 w-4" />Taal om te bewerken</DropdownMenu.Item> : null}
             <DropdownMenu.Separator className="my-1 h-px bg-border" />
             <DropdownMenu.Item className={menuItemClass} disabled={editingDisabled} onSelect={props.onImport}><FileJson className="h-4 w-4" />JSON importeren</DropdownMenu.Item>
+            <DropdownMenu.Item className={menuItemClass} disabled={editingDisabled || !props.websiteId || props.saving} onSelect={props.onExport}><Download className="h-4 w-4" />Exporteren voor demo</DropdownMenu.Item>
             <DropdownMenu.Item asChild className={menuItemClass} disabled={editingDisabled}><Link href="/editor/flexstart"><Globe className="h-4 w-4" />Bestaande website overnemen</Link></DropdownMenu.Item>
             <DropdownMenu.Separator className="my-1 h-px bg-border" />
             <DropdownMenu.Item className={menuItemClass} onSelect={props.onCreate}><Plus className="h-4 w-4" />Nieuw ontwerp</DropdownMenu.Item>

@@ -1,5 +1,6 @@
 import { z } from "zod"
-import { normalizeImport, type ImportDocument } from "@/lib/import/schema"
+import { normalizeImport } from "@/lib/import/schema"
+import { normalizeEditorExport, type DemoImportDocument, type EditorExportDesign } from "./editor-export"
 import { PLATFORM_DOMAIN } from "@/lib/platform"
 import type { WebsitePage } from "@/lib/website-pages"
 
@@ -12,7 +13,7 @@ export const demoMetadataSchema = z.object({
   published: z.boolean(),
 }).strict()
 
-export type DemoDesign = ReturnType<typeof normalizeImport>
+export type DemoDesign = Omit<EditorExportDesign, "pages"> & { pages?: EditorExportDesign["pages"] }
 export type DemoSummary = z.infer<typeof demoMetadataSchema> & {
   thumbnail_url: string | null
   created_at: string
@@ -29,8 +30,8 @@ export function demoUrl(slug: string) {
   return `https://${slug}.${PLATFORM_DOMAIN.toLowerCase().replace(/^www\./, "")}`
 }
 
-export function prepareDemo(document: ImportDocument, makeId: () => string): DemoDesign {
-  return normalizeImport(document, makeId)
+export function prepareDemo(document: DemoImportDocument, makeId: () => string): DemoDesign {
+  return document.format === "flexpagina-editor" ? normalizeEditorExport(document, makeId) : normalizeImport(document, makeId)
 }
 
 // Only pages explicitly included in publication are publicly reachable.
@@ -43,8 +44,10 @@ export function demoPages(design: DemoDesign): WebsitePage[] {
 export function publicDemoDesign(design: DemoDesign): DemoDesign {
   if (!design.pages) return design
   const ids = new Set(demoPages(design).map((page) => page.id))
-  return { ...design, pages: design.pages.filter((page) => ids.has(page.id)),
-    sections: design.sections.filter((section) => (section.scope && section.scope !== "page") || (section.pageId && ids.has(section.pageId))) }
+  const sections = design.sections.filter((section) => (section.scope && section.scope !== "page") || (section.pageId && ids.has(section.pageId)))
+  const sectionIds = new Set(sections.map((section) => section.id))
+  return { ...design, pages: design.pages.filter((page) => ids.has(page.id)), sections,
+    ...(design.transitions && { transitions: design.transitions.filter((transition) => sectionIds.has(transition.fromSectionId) && sectionIds.has(transition.toSectionId)) }) }
 }
 
 export function demoThumbnail(design: DemoDesign): string | null {

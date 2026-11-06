@@ -7,7 +7,8 @@ import { Check, Copy, ExternalLink, FileJson, Globe2, Loader2, Monitor, Search, 
 import { Button } from "@/components/ui/button"
 import * as Dialog from "@radix-ui/react-dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { ImportValidationError, MAX_IMPORT_BYTES, parseImport } from "@/lib/import/schema"
+import { ImportValidationError, MAX_IMPORT_BYTES } from "@/lib/import/schema"
+import { parseDemoImport } from "@/lib/demos/editor-export"
 import { demoMetadataSchema, demoSlugSchema, demoUrl, prepareDemo, suggestDemoSlug, type DemoDesign, type DemoSummary } from "@/lib/demos/shared"
 import { PLATFORM_DOMAIN } from "@/lib/platform"
 
@@ -53,7 +54,7 @@ export function DemoDashboard({ demos, loadError }: { demos: DemoSummary[]; load
       if (!file.name.toLowerCase().endsWith(".json")) throw new Error("Kies een .json-bestand.")
       if (file.size > MAX_IMPORT_BYTES) throw new Error("Het JSON-bestand mag maximaal 2 MB zijn.")
       const raw = await file.text()
-      const document = parseImport(raw)
+      const document = parseDemoImport(raw)
       if (generation !== fileGeneration.current) return
       const id = crypto.randomUUID()
       setSelection({ id, filename: file.name, raw, design: prepareDemo(document, () => crypto.randomUUID()) })
@@ -180,7 +181,8 @@ export function DemoDashboard({ demos, loadError }: { demos: DemoSummary[]; load
           <Upload aria-hidden="true" className="mx-auto size-8 text-primary" /><p className="mt-3 text-sm font-semibold">Sleep je JSON-export hier</p><p className="my-2 text-xs text-muted-foreground">of</p>
           <Button type="button" variant="outline" disabled={Boolean(busy) || Boolean(loadError)} onClick={() => input.current?.click()}>Bestand kiezen</Button>
           <input ref={input} type="file" aria-label="JSON-export kiezen" accept=".json,application/json" className="sr-only" tabIndex={-1} disabled={Boolean(busy) || Boolean(loadError)} onChange={(event) => void selectFile(event.target.files?.[0])} />
-          <p className="mt-3 text-xs text-muted-foreground">FlexPagina JSON v1 / v2 · maximaal 2 MB</p>
+          <p className="mt-3 text-xs text-muted-foreground">Editor-export of FlexPagina JSON v1 / v2 · maximaal 2 MB</p>
+          <p className="mt-2 text-xs text-muted-foreground">Kies in de editor Ontwerpen beheren → Exporteren voor demo.</p>
         </div>
         {busy === "file" && <p role="status" className="mt-3 text-sm">Bestand controleren…</p>}
         {selection && <div className="mt-3 flex items-center gap-3 rounded-lg border p-3"><FileJson aria-hidden="true" className="size-6 shrink-0 text-primary" /><div className="min-w-0"><p className="truncate text-sm">{selection.filename}</p><p className="mt-1 flex items-center gap-1 text-xs text-green-700"><Check className="size-3" />Gecontroleerd · {selection.design.pages?.length ?? 1} pagina’s</p></div></div>}

@@ -1,0 +1,241 @@
+{
+  "format": "flexpagina",
+  "version": 2,
+  "title": "RW Timmerwerken | Vakwerk voor uw woning",
+  "theme": { "paletteId": "steel-blue", "fontPairId": "montserrat-opensans", "spacing": "comfortable", "radius": "small" },
+  "pages": [
+    { "key": "home", "title": "Home", "slug": "", "isHome": true, "includeInPublication": true, "showInNavigation": true, "seo": { "title": "Rob Willems Timmerwerken | Timmerwerk in Uden", "description": "Een nieuw websiteconcept voor Rob Willems Timmerwerken: bekijk uitgevoerd timmerwerk, ontdek de mogelijkheden en bespreek uw plannen." } },
+    { "key": "diensten", "title": "Diensten", "slug": "diensten", "isHome": false, "includeInPublication": true, "showInNavigation": true, "seo": { "title": "Timmerwerk, renovatie en maatwerk | RW Timmerwerken", "description": "Van overkapping en dakkapel tot kozijnen en kasten op maat. Ontdek het werk van Rob Willems Timmerwerken in dit FlexPagina-ontwerpconcept." } },
+    { "key": "projecten", "title": "Projecten", "slug": "projecten", "isHome": false, "includeInPublication": true, "showInNavigation": true, "seo": { "title": "Uitgevoerd werk | RW Timmerwerken", "description": "Pergola, tuinhuis, aanbouw en schuifdeurkasten: een selectie projecten van de officiële website van Rob Willems Timmerwerken." } },
+    { "key": "rob", "title": "Over Rob", "slug": "over-rob", "isHome": false, "includeInPublication": true, "showInNavigation": true, "seo": { "title": "Over Rob Willems | Timmerman in Uden", "description": "Rob Willems startte zijn timmerbedrijf op 1 juni 2008. Maak kennis met het bedrijf en bekijk de contactgegevens in dit ontwerpconcept." } },
+    { "key": "contact", "title": "Contact", "slug": "contact", "isHome": false, "includeInPublication": true, "showInNavigation": true, "seo": { "title": "Uw plannen bespreken | RW Timmerwerken", "description": "De officiële contactgegevens van Rob Willems Timmerwerken in Uden. Dit ontwerpconcept verstuurt geen aanvragen." } }
+  ],
+  "sections": [
+    {
+      "key": "menu", "type": "nav", "scope": "site_header",
+      "content": { "brandName": "RW Timmerwerken", "isSticky": true, "navLinks": [], "layout": "classic", "styleType": "clean" },
+      "styles": { "backgroundColor": "#FFFFFF", "textColor": "#183246", "accentColor": "#155B78", "surfaceColor": "#FFFFFF" }
+    },
+    {
+      "key": "welkom", "type": "hero", "pageKey": "home",
+      "content": {
+        "title": "Timmerwerk dat bij uw woning past.",
+        "subtitle": "Een overkapping, een aanbouw of een praktische kast op maat. Rob Willems Timmerwerken uit Uden helpt u uw plannen vorm te geven, binnen en buiten.",
+        "ctaEnabled": true, "ctaText": "Bekijk uitgevoerd werk", "ctaHref": "page:projecten", "layout": "banner", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#183246", "textColor": "#FFFFFF", "accentColor": "#155B78", "surfaceColor": "#FFFFFF", "backgroundImage": "https://rwtimmerwerken.nl/afbeeldingen/Project1/project1_img6.jpg", "backgroundImageAlt": "Door Rob Willems Timmerwerken gemaakte houten pergola bij een woning", "backgroundPosition": "center" }
+    },
+    {
+      "key": "mogelijkheden", "type": "features", "pageKey": "home",
+      "content": {
+        "title": "Van meer leefruimte tot slim maatwerk", "layout": "showcase", "styleType": "clean",
+        "features": [
+          { "text": "Buiten wonen — pergola's, tuinhuizen en overkappingen." },
+          { "text": "Uw woning aanpassen — aanbouwen, dakkapellen en kozijnwerk." },
+          { "text": "Binnen afwerken — kasten, vloeren en timmerwerk op maat." }
+        ]
+      },
+      "styles": { "backgroundColor": "#FFFFFF", "textColor": "#183246", "accentColor": "#155B78", "surfaceColor": "#F5F3EF" }
+    },
+    {
+      "key": "werk-in-beeld", "type": "gallery", "pageKey": "home",
+      "content": {
+        "title": "Het werk in beeld", "subtitle": "Een selectie van uitgevoerde projecten: een tuinhuis met overkapping, een vergrote aanbouw en schuifdeurkasten.",
+        "images": ["https://rwtimmerwerken.nl/afbeeldingen/Project3/project3_img6.jpg", "https://rwtimmerwerken.nl/afbeeldingen/Project13/project13_img3.jpg", "https://rwtimmerwerken.nl/afbeeldingen/Project15/project15_img4.jpg"], "layout": "classic", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#F5F3EF", "textColor": "#183246", "accentColor": "#155B78", "surfaceColor": "#FFFFFF" }
+    },
+    {
+      "key": "home-vervolg", "type": "cta", "pageKey": "home",
+      "content": {
+        "title": "Heeft u plannen voor uw woning?", "subtitle": "Leg uw idee voor en bespreek wat er mogelijk is.",
+        "primaryCtaEnabled": true, "primaryCtaText": "Bespreek uw project", "primaryCtaHref": "section:contact:contactgegevens",
+        "secondaryCtaEnabled": true, "secondaryCtaText": "Ontdek de diensten", "secondaryCtaHref": "page:diensten", "layout": "classic", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#183246", "textColor": "#FFFFFF", "accentColor": "#155B78", "surfaceColor": "#29475B" }
+    },
+    {
+      "key": "diensten-intro", "type": "hero", "pageKey": "diensten",
+      "content": {
+        "title": "Ruimte voor uw plannen.", "subtitle": "Van een aanpassing in huis tot een nieuwe plek in de tuin: bekijk waarvoor u bij Rob Willems Timmerwerken terechtkunt.",
+        "ctaEnabled": true, "ctaText": "Bekijk de werkzaamheden", "ctaHref": "#werkzaamheden", "layout": "compact", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#F5F3EF", "textColor": "#183246", "accentColor": "#155B78", "surfaceColor": "#FFFFFF" }
+    },
+    {
+      "key": "werkzaamheden", "type": "features", "pageKey": "diensten",
+      "content": {
+        "title": "Timmerwerk binnen en buiten", "layout": "card", "styleType": "clean",
+        "features": [
+          { "text": "Pergola's en overkappingen — houten constructies voor uw buitenruimte." },
+          { "text": "Tuinhuizen en schuttingen — passend bij de indeling van uw tuin." },
+          { "text": "Aanbouw en verbouwing — uw bestaande woning aanpassen of uitbreiden." },
+          { "text": "Dakkapellen en dakramen — aanpassingen aan uw verdieping." },
+          { "text": "Kozijnen en renovatie — onder meer kozijnwerk en boeiboorden." },
+          { "text": "Interieur op maat — schuifdeurkasten, vloeren en ander binnentimmerwerk." }
+        ]
+      },
+      "styles": { "backgroundColor": "#FFFFFF", "textColor": "#183246", "accentColor": "#155B78", "surfaceColor": "#F5F3EF" }
+    },
+    {
+      "key": "maatwerk", "type": "about", "pageKey": "diensten",
+      "content": {
+        "title": "Maatwerk begint bij de ruimte.",
+        "description": "Een schuine kap vraagt om een andere oplossing dan een rechte wand. Op de projectpagina ziet u bijvoorbeeld schuifdeurkasten die op maat zijn gemaakt voor een zolder. Bespreek uw eigen situatie, afmetingen en wensen om de mogelijkheden te verkennen.",
+        "images": ["https://rwtimmerwerken.nl/afbeeldingen/Project15/project15_img4.jpg"], "layout": "split", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#F5F3EF", "textColor": "#183246", "accentColor": "#155B78", "surfaceColor": "#FFFFFF" }
+    },
+    {
+      "key": "diensten-vragen", "type": "faq", "pageKey": "diensten",
+      "content": {
+        "title": "Uw idee als vertrekpunt", "subtitle": "Een paar praktische vragen voor u contact opneemt.", "layout": "split", "styleType": "clean",
+        "items": [
+          { "question": "Mijn gewenste klus staat er niet tussen. Kan ik die voorleggen?", "answer": "De getoonde werkzaamheden zijn een selectie. Neem contact op met Rob om te bespreken of uw opdracht past." },
+          { "question": "Kan een pergola in een andere uitvoering worden gemaakt?", "answer": "Bij pergola's zijn verschillende houtsoorten en constructies mogelijk, in overleg met de klant. Bespreek de uitvoering die u voor ogen heeft." },
+          { "question": "Wat helpt bij het bespreken van mijn plannen?", "answer": "Verzamel enkele foto's, globale afmetingen en een korte omschrijving van het gewenste resultaat. Daarmee kunt u uw vraag concreet toelichten." }
+        ]
+      },
+      "styles": { "backgroundColor": "#FFFFFF", "textColor": "#183246", "accentColor": "#155B78", "surfaceColor": "#F5F3EF" }
+    },
+    {
+      "key": "diensten-vervolg", "type": "cta", "pageKey": "diensten",
+      "content": {
+        "title": "Van een eerste idee naar een concrete vraag.", "subtitle": "Bekijk voorbeelden of neem rechtstreeks contact op met Rob.",
+        "primaryCtaEnabled": true, "primaryCtaText": "Naar contact", "primaryCtaHref": "page:contact",
+        "secondaryCtaEnabled": true, "secondaryCtaText": "Bekijk de projecten", "secondaryCtaHref": "page:projecten", "layout": "banner", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#183246", "textColor": "#FFFFFF", "accentColor": "#155B78", "surfaceColor": "#29475B" }
+    },
+    {
+      "key": "projecten-intro", "type": "hero", "pageKey": "projecten",
+      "content": {
+        "title": "Uitgevoerd werk, van dichtbij.", "subtitle": "Vier projecten uit het portfolio van Rob Willems Timmerwerken. Verschillende ruimtes, materialen en oplossingen.",
+        "ctaEnabled": true, "ctaText": "Bekijk het eerste project", "ctaHref": "#pergola", "layout": "compact", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#F5F3EF", "textColor": "#183246", "accentColor": "#155B78", "surfaceColor": "#FFFFFF" }
+    },
+    {
+      "key": "pergola", "type": "about", "pageKey": "projecten",
+      "content": {
+        "title": "Een pergola van douglashout",
+        "description": "Bij deze woning is een pergola van douglashout gemaakt, gecombineerd met hardstenen sokkels. De constructie sluit aan op het terras en geeft de buitenruimte een duidelijke plek bij de woning.",
+        "images": ["https://rwtimmerwerken.nl/afbeeldingen/Project1/project1_img6.jpg"], "layout": "showcase", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#FFFFFF", "textColor": "#183246", "accentColor": "#155B78", "surfaceColor": "#F5F3EF" }
+    },
+    {
+      "key": "tuinhuis", "type": "about", "pageKey": "projecten",
+      "content": {
+        "title": "Tuinhuis en overkapping in één geheel",
+        "description": "Voor een klant in Uden zijn een tuinhuis en een overkapping gerealiseerd. De schutting is in dezelfde houtsoort uitgevoerd. Het project is afgewerkt met dakbedekking en daktrim.",
+        "images": ["https://rwtimmerwerken.nl/afbeeldingen/Project3/project3_img6.jpg"], "layout": "split", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#F5F3EF", "textColor": "#183246", "accentColor": "#155B78", "surfaceColor": "#FFFFFF" }
+    },
+    {
+      "key": "aanbouw", "type": "about", "pageKey": "projecten",
+      "content": {
+        "title": "Een bestaande aanbouw vergroot",
+        "description": "Bij deze woning is de bestaande aanbouw uitgebreid. Nieuwe kozijnen met tuindeuren verbinden de ruimte met de tuin en brengen extra daglicht naar binnen.",
+        "images": ["https://rwtimmerwerken.nl/afbeeldingen/Project13/project13_img3.jpg"], "layout": "showcase", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#FFFFFF", "textColor": "#183246", "accentColor": "#155B78", "surfaceColor": "#F5F3EF" }
+    },
+    {
+      "key": "kasten", "type": "about", "pageKey": "projecten",
+      "content": {
+        "title": "Opbergruimte onder een schuine kap",
+        "description": "Op deze zolder zijn twee schuifdeurkasten op maat gemonteerd. Samen met de gelegde laminaatvloer vormen ze een praktische invulling van de verdieping.",
+        "images": ["https://rwtimmerwerken.nl/afbeeldingen/Project15/project15_img4.jpg"], "layout": "split", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#F5F3EF", "textColor": "#183246", "accentColor": "#155B78", "surfaceColor": "#FFFFFF" }
+    },
+    {
+      "key": "projecten-vervolg", "type": "cta", "pageKey": "projecten",
+      "content": {
+        "title": "Wat wilt u laten maken?", "subtitle": "Gebruik deze projecten als inspiratie en leg uw eigen wensen voor.",
+        "primaryCtaEnabled": true, "primaryCtaText": "Bespreek uw project", "primaryCtaHref": "section:contact:contactgegevens",
+        "secondaryCtaEnabled": true, "secondaryCtaText": "Alle diensten", "secondaryCtaHref": "page:diensten", "layout": "classic", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#183246", "textColor": "#FFFFFF", "accentColor": "#155B78", "surfaceColor": "#29475B" }
+    },
+    {
+      "key": "rob-intro", "type": "hero", "pageKey": "rob",
+      "content": {
+        "title": "Rob Willems. Timmerman uit Uden.", "subtitle": "Een eigen timmerbedrijf sinds 1 juni 2008, met uiteenlopend werk aan woningen, interieurs en buitenruimtes.",
+        "ctaEnabled": true, "ctaText": "Meer over het bedrijf", "ctaHref": "#het-bedrijf", "layout": "compact", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#F5F3EF", "textColor": "#183246", "accentColor": "#155B78", "surfaceColor": "#FFFFFF" }
+    },
+    {
+      "key": "het-bedrijf", "type": "about", "pageKey": "rob",
+      "content": {
+        "title": "Een veelzijdig timmerbedrijf",
+        "description": "Rob Willems begon op 1 juni 2008 als zelfstandig timmerman. Het portfolio laat de breedte van het werk zien: van een pergola en kozijnen tot kasten en een grotere aanbouw. Het bedrijf is gevestigd in Uden. Wilt u weten of uw plannen hierbij passen? Neem rechtstreeks contact op.",
+        "images": ["https://rwtimmerwerken.nl/afbeeldingen/bus2.jpg"], "layout": "split", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#FFFFFF", "textColor": "#183246", "accentColor": "#155B78", "surfaceColor": "#F5F3EF" }
+    },
+    {
+      "key": "rob-vervolg", "type": "cta", "pageKey": "rob",
+      "content": {
+        "title": "Uw plannen persoonlijk bespreken.", "subtitle": "Vertel Rob welk timmerwerk u voor ogen heeft.",
+        "primaryCtaEnabled": true, "primaryCtaText": "Neem contact op", "primaryCtaHref": "page:contact",
+        "secondaryCtaEnabled": true, "secondaryCtaText": "Bekijk het portfolio", "secondaryCtaHref": "page:projecten", "layout": "classic", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#183246", "textColor": "#FFFFFF", "accentColor": "#155B78", "surfaceColor": "#29475B" }
+    },
+    {
+      "key": "contact-intro", "type": "hero", "pageKey": "contact",
+      "content": {
+        "title": "Vertel ons over uw plannen.", "subtitle": "Een eerste idee of al een concrete vraag? Neem contact op met Rob Willems Timmerwerken.",
+        "ctaEnabled": true, "ctaText": "Bekijk contactgegevens", "ctaHref": "#contactgegevens", "layout": "compact", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#F5F3EF", "textColor": "#183246", "accentColor": "#155B78", "surfaceColor": "#FFFFFF" }
+    },
+    {
+      "key": "contactgegevens", "type": "about", "pageKey": "contact",
+      "content": {
+        "title": "Rob Willems Timmerwerken",
+        "description": "Cimbaallaan 12\n5402 AZ Uden\n\nTelefoon: 06-51703342\nE-mail: rob@rwtimmerwerken.nl\n\nDit is een ontwerpconcept. U kunt Rob bereiken via de gegevens hierboven. De knop onderaan verwijst naar de officiële informatiepagina.",
+        "images": [], "layout": "compact", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#FFFFFF", "textColor": "#183246", "accentColor": "#155B78", "surfaceColor": "#F5F3EF" }
+    },
+    {
+      "key": "contact-vragen", "type": "faq", "pageKey": "contact",
+      "content": {
+        "title": "Voor een goed eerste gesprek", "subtitle": "Maak uw vraag zo concreet mogelijk.", "layout": "classic", "styleType": "clean",
+        "items": [
+          { "question": "Welke informatie kan ik alvast verzamelen?", "answer": "Denk aan foto's van de ruimte, globale afmetingen en voorbeelden van wat u mooi vindt. Vermeld ook wat er moet veranderen en welke vragen u heeft." },
+          { "question": "Kan ik via deze demo een aanvraag versturen?", "answer": "Deze demo verstuurt geen formulieren. Gebruik het telefoonnummer of e-mailadres om echt contact op te nemen. De officiële informatiepagina is bereikbaar via de knop hieronder; externe links zijn in het importvoorbeeld uitgeschakeld." }
+        ]
+      },
+      "styles": { "backgroundColor": "#F5F3EF", "textColor": "#183246", "accentColor": "#155B78", "surfaceColor": "#FFFFFF" }
+    },
+    {
+      "key": "officieel-contact", "type": "cta", "pageKey": "contact",
+      "content": {
+        "title": "De volgende stap begint met contact.", "subtitle": "Bekijk de contactinformatie op de officiële website.",
+        "primaryCtaEnabled": true, "primaryCtaText": "Open de contactpagina", "primaryCtaHref": "https://rwtimmerwerken.nl/info.html",
+        "secondaryCtaEnabled": true, "secondaryCtaText": "Terug naar de projecten", "secondaryCtaHref": "page:projecten", "layout": "classic", "styleType": "clean"
+      },
+      "styles": { "backgroundColor": "#183246", "textColor": "#FFFFFF", "accentColor": "#155B78", "surfaceColor": "#29475B" }
+    },
+    {
+      "key": "footer", "type": "footer", "scope": "site_footer",
+      "content": {
+        "companyName": "Rob Willems Timmerwerken",
+        "companyDescription": "Ontwerpconcept met FlexPagina · Gebaseerd op rwtimmerwerken.nl · Cimbaallaan 12, 5402 AZ Uden · 06-51703342 · rob@rwtimmerwerken.nl",
+        "layout": "classic", "styleType": "clean",
+        "columns": [
+          { "title": "Ontdek het werk", "links": [{ "label": "Diensten", "href": "page:diensten" }, { "label": "Projecten", "href": "page:projecten" }, { "label": "Pergola van douglashout", "href": "section:projecten:pergola" }] },
+          { "title": "Het bedrijf", "links": [{ "label": "Over Rob", "href": "page:rob" }, { "label": "Contactgegevens", "href": "section:contact:contactgegevens" }] },
+          { "title": "Officiële website", "links": [{ "label": "Bezoek rwtimmerwerken.nl", "href": "https://rwtimmerwerken.nl/" }, { "label": "Contact opnemen", "href": "https://rwtimmerwerken.nl/info.html" }] }
+        ]
+      },
+      "styles": { "backgroundColor": "#183246", "textColor": "#FFFFFF", "accentColor": "#155B78", "surfaceColor": "#29475B" }
+    }
+  ]
+}

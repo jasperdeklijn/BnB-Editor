@@ -2,13 +2,14 @@
 
 import { useMemo, useState, type CSSProperties } from "react"
 import { createPortal } from "react-dom"
-import { SectionRenderer } from "./section-renderer"
+import { DemoSections } from "@/components/demos/demo-sections"
 import { applyThemeDefaultsToSections, getGoogleFontsUrl, resolveWebsiteTheme } from "@/lib/themes"
 import type { PreviewDesign } from "@/lib/flexstart/shared"
 import { WebsiteLinksProvider } from "./website-links-context"
 import { parseWebsiteLink } from "@/lib/website-links"
+import type { Transition } from "@/lib/types"
 
-export function ImportPreviewFrame({ design, mobile }: { design: PreviewDesign; mobile: boolean }) {
+export function ImportPreviewFrame({ design, mobile }: { design: PreviewDesign & { transitions?: Transition[] }; mobile: boolean }) {
   const [frameDocument, setFrameDocument] = useState<Document | null>(null)
   const [selectedPageId, setSelectedPageId] = useState<string | null>(null)
   const pageId = design.pages?.some((page) => page.id === selectedPageId) ? selectedPageId : design.pages?.find((page) => page.isHome)?.id
@@ -45,9 +46,7 @@ export function ImportPreviewFrame({ design, mobile }: { design: PreviewDesign; 
           const href = link.getAttribute("href")
           if (href?.startsWith("#")) frameDocument.getElementById(href.slice(1))?.scrollIntoView({ behavior: "smooth" })
         }}>
-        {sections.map((section) => <div id={`section-${section.id}`} key={section.id}>
-          <SectionRenderer section={section} allSections={sections} isPreview device={mobile ? "mobile" : "desktop"} />
-        </div>)}
+        <DemoSections sections={sections} transitions={design.transitions} device={mobile ? "mobile" : "desktop"} />
       </div>
     </WebsiteLinksProvider>, frameDocument.body)}
   </div>
