@@ -21,11 +21,11 @@ function safeJson(value: unknown, depth = 0): boolean {
   if (Array.isArray(value)) return value.length <= 2000 && value.every((item) => safeJson(item, depth + 1))
   return typeof value === "object" && Object.entries(value).every(([key, item]) => !unsafeKeys.has(key) && safeJson(item, depth + 1))
 }
-const content = z.record(z.unknown()).refine(safeJson, "Ongeldige of onveilige ontwerpinhoud.")
+const content = z.record(z.string(), z.unknown()).refine(safeJson, "Ongeldige of onveilige ontwerpinhoud.")
 const editorExportSchema = z.object({
   format: z.literal("flexpagina-editor"), version: z.literal(1),
   title: z.string().trim().min(1).max(200),
-  theme: importSchema.innerType().shape.theme.removeDefault().extend({
+  theme: importSchema.shape.theme.unwrap().extend({
     languageSwitcher: z.object({ style: z.enum(["dropdown", "buttons", "compact"]), position: z.enum(["nav-left", "nav-right", "bottom-left", "bottom-right"]) }).strict().optional(),
   }),
   pages: z.array(z.object({

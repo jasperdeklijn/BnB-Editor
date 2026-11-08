@@ -3,7 +3,7 @@ import { logAuditEvent } from "@/lib/audit-log"
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
-import { removeDomainFromVercel } from "@/lib/vercel-domains"
+import { DOMAIN_PROVISIONING_COLUMNS, isTrustedProvisionedDomain, removeDomainFromVercel, type ProvisionedDomain } from "@/lib/vercel-domains"
 
 const STORAGE_LIST_PAGE_SIZE = 1000
 const IMAGE_METADATA_PAGE_SIZE = 1000
@@ -89,17 +89,21 @@ export async function DELETE(request: Request) {
 
   const websiteIds = (websites ?? []).map((website) => website.id)
   const { data: domains, error: domainsError } = websiteIds.length
-    ? await admin.from("website_domains").select("domain").in("website_id", websiteIds)
+    ? await admin.from("website_domains").select(DOMAIN_PROVISIONING_COLUMNS).in("website_id", websiteIds)
     : { data: [], error: null }
   if (domainsError) {
     return NextResponse.json({ error: "Domeinen konden niet worden gecontroleerd." }, { status: 500 })
   }
 
-  const domainCleanup = await Promise.all((domains ?? []).map((domain) => removeDomainFromVercel(domain.domain)))
+  const provisionedDomains = (domains ?? []) as unknown as ProvisionedDomain[]
+  if (provisionedDomains.some((domain) => !isTrustedProvisionedDomain(domain))) {
+    return NextResponse.json({ error: "Een domeintoewijzing moet eerst door support worden gecontroleerd voordat dit account kan worden verwijderd." }, { status: 409 })
+  }
+  const domainCleanup = await Promise.all(provisionedDomains.map((domain) => removeDomainFromVercel(domain)))
   const failedDomainIndex = domainCleanup.findIndex((result) => !result.success)
   if (failedDomainIndex >= 0) {
     return NextResponse.json(
-      { error: `Account kon niet worden verwijderd omdat ${(domains ?? [])[failedDomainIndex]?.domain ?? "een domein"} niet uit Vercel kon worden verwijderd.` },
+      { error: `Account kon niet worden verwijderd omdat ${provisionedDomains[failedDomainIndex]?.domain ?? "een domein"} niet uit Vercel kon worden verwijderd.` },
       { status: 502 },
     )
   }

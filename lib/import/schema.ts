@@ -58,7 +58,7 @@ export const importSchema = z.object({
     fontPairId: z.string().refine((id) => FONT_PAIRS.some((p) => p.id === id), "Onbekende lettertypecombinatie.").default("inter-system"),
     spacing: z.enum(["compact", "comfortable", "spacious"]).default("comfortable"),
     radius: z.enum(["none", "small", "medium", "large", "full"]).default("medium"),
-  }).strict().default({}),
+  }).strict().prefault({}),
   sections: z.array(z.discriminatedUnion("type", [
     section("nav", { brandName: heading, isSticky: z.boolean().default(true),
       navLinks: z.array(z.object({ sectionKey: key, label: text(80).min(1), enabled: z.boolean().default(true) }).strict()).max(20).default([]) }),
@@ -158,9 +158,8 @@ export function parseImport(raw: string): ImportDocument {
     // Never include unknown property names or received enum values in reports.
     `${issue.path.map((part) => String(part).slice(0, 48)).join(".") || "bestand"}: ${
       issue.code === "unrecognized_keys" ? "Onbekende velden zijn niet toegestaan."
-        : issue.code === "invalid_union_discriminator" ? "Niet-ondersteund sectietype."
-        : issue.code === "invalid_enum_value" ? "Niet-ondersteunde optie."
-        : issue.code === "invalid_literal" ? "Onjuist formaat of ontbrekend verplicht veld."
+        : issue.code === "invalid_union" ? "Niet-ondersteund formaat of sectietype."
+        : issue.code === "invalid_value" ? "Onjuiste of niet-ondersteunde waarde."
         : issue.message}`,
   ))
   return result.data

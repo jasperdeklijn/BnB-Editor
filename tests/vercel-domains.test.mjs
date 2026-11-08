@@ -19,6 +19,7 @@ const {
   addDomainToVercel,
   normalizeDomain,
   removeDomainFromVercel,
+  isTrustedProvisionedDomain,
   validateDomain,
 } = domainModule.exports
 
@@ -56,7 +57,7 @@ test("requires configured Vercel project credentials", async () => {
   assert.equal(result.skipped, true)
 })
 
-test("treats an existing project domain as an idempotent add success", async () => {
+test("does not adopt an existing project domain as customer provisioning evidence", async () => {
   process.env.VERCEL_ACCESS_TOKEN = "token"
   process.env.VERCEL_PROJECT_ID = "project"
   process.env.VERCEL_TEAM_ID = "team"
@@ -68,9 +69,40 @@ test("treats an existing project domain as an idempotent add success", async () 
   }
 
   const result = await addDomainToVercel("example.com")
+  assert.equal(result.success, false)
+  assert.equal(result.provisioning, undefined)
+  assert.deepEqual(requests.map((request) => request.method), ["POST"])
+  assert.match(requests[0].url, /teamId=team/)
+})
+
+test("only a matching successful create response produces project-bound evidence", async () => {
+  process.env.VERCEL_ACCESS_TOKEN = "token"
+  process.env.VERCEL_PROJECT_ID = "project"
+  globalThis.fetch = async () => Response.json({ name: "example.com", projectId: "project" }, { status: 201 })
+  const result = await addDomainToVercel("example.com")
   assert.equal(result.success, true)
-  assert.deepEqual(requests.map((request) => request.method), ["POST", "GET"])
-  assert.match(requests[1].url, /teamId=team/)
+  assert.deepEqual(result.provisioning, { provider_domain: "example.com", provider_project_id: "project" })
+  globalThis.fetch = async () => Response.json({ name: "other.example", projectId: "project" }, { status: 201 })
+  assert.equal((await addDomainToVercel("example.com")).success, false)
+})
+
+test("forged, legacy, reserved and wrong-project domains never reach the provider", async () => {
+  process.env.VERCEL_ACCESS_TOKEN = "token"
+  process.env.VERCEL_PROJECT_ID = "project"
+  let calls = 0
+  globalThis.fetch = async () => { calls++; throw new Error("unexpected provider call") }
+  for (const record of [
+    { domain: "example.com", provider_domain: null, provider_project_id: null },
+    { domain: "example.com", provider_domain: "other.example", provider_project_id: "project" },
+    { domain: "example.com", provider_domain: "example.com", provider_project_id: "other-project" },
+    { domain: "flexpagina.nl", provider_domain: "flexpagina.nl", provider_project_id: "project" },
+    { domain: "preview.flexpagina.nl", provider_domain: "preview.flexpagina.nl", provider_project_id: "project" },
+  ]) {
+    assert.equal(isTrustedProvisionedDomain(record), false)
+    assert.equal((await removeDomainFromVercel(record)).success, false)
+  }
+  assert.equal((await addDomainToVercel("flexpagina.nl")).success, false)
+  assert.equal(calls, 0)
 })
 
 test("treats a Vercel 404 as an already completed removal", async () => {
@@ -78,7 +110,7 @@ test("treats a Vercel 404 as an already completed removal", async () => {
   process.env.VERCEL_PROJECT_ID = "project"
   globalThis.fetch = async () => Response.json({}, { status: 404 })
 
-  const result = await removeDomainFromVercel("example.com")
+  const result = await removeDomainFromVercel({ domain: "example.com", provider_domain: "example.com", provider_project_id: "project" })
   assert.equal(result.success, true)
   assert.equal(result.status, 404)
 })

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { logAuditEvent } from "@/lib/audit-log"
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { addDomainToVercel, normalizeDomain, validateDomain } from "@/lib/vercel-domains"
 
 function serializeDomain(row: {
@@ -76,9 +77,10 @@ export async function POST(request: Request) {
     .maybeSingle()
   if (!website) return NextResponse.json({ error: "Website niet gevonden." }, { status: 404 })
 
-  const { data: inserted, error: insertError } = await supabase
+  const domainStore = await createAdminClient()
+  const { data: inserted, error: insertError } = await domainStore
     .from("website_domains")
-    .insert({ website_id: websiteId, domain: normalized, status: "provisioning" })
+    .insert({ website_id: websiteId, domain: normalized, status: "provisioning", provider_domain: null, provider_project_id: null })
     .select("id, website_id, domain, is_primary, status, last_error, created_at")
     .single()
 
@@ -93,7 +95,7 @@ export async function POST(request: Request) {
   const vercel = await addDomainToVercel(normalized!)
   if (!vercel.success) {
     const errorMessage = vercel.error || "Het domein kon niet aan Vercel worden toegevoegd."
-    const { data: failed } = await supabase
+    const { data: failed } = await domainStore
       .from("website_domains")
       .update({ status: "add_failed", last_error: errorMessage })
       .eq("id", inserted.id)
@@ -113,9 +115,9 @@ export async function POST(request: Request) {
     )
   }
 
-  const { data: active, error: activateError } = await supabase
+  const { data: active, error: activateError } = await domainStore
     .from("website_domains")
-    .update({ status: "active", last_error: null })
+    .update({ status: "active", last_error: null, ...vercel.provisioning })
     .eq("id", inserted.id)
     .select("id, website_id, domain, is_primary, status, last_error, created_at")
     .single()

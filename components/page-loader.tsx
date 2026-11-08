@@ -14,6 +14,7 @@ import { resolveAllSections } from "@/lib/supabase/section-resolver"
 import { WebsiteThemeProvider } from "@/components/themes/website-theme-provider"
 import { applyThemeDefaultsToSections, type ThemeConfig } from "@/lib/themes"
 import { buildLocalBusinessJsonLd } from "@/lib/business/structured-data"
+import { serializeJsonLd } from "@/lib/seo/json-ld"
 import { isWebsiteLiveSnapshot, type WebsiteLiveSnapshot } from "@/lib/website-snapshot"
 import { DEFAULT_WEBSITE_LOCALE, type SupportedWebsiteLocale } from "@/lib/i18n/locales"
 import { applySectionTranslation, materializeNavigationTranslationSource } from "@/lib/i18n/section-translations"
@@ -472,7 +473,7 @@ export async function loadPublicWebsitePage({
         {jsonLd && (
           <script
             type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
           />
         )}
       </WebsiteThemeProvider>

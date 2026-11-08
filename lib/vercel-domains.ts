@@ -3,6 +3,21 @@ export type VercelDomainResult = {
   skipped: boolean
   status: number | null
   error: string | null
+  provisioning?: { provider_domain: string; provider_project_id: string }
+}
+
+export type ProvisionedDomain = {
+  domain: string
+  provider_domain: string | null
+  provider_project_id: string | null
+}
+
+export const DOMAIN_PROVISIONING_COLUMNS = "domain, provider_domain, provider_project_id"
+
+/** Evidence is written only after this application successfully creates a domain. */
+export function isTrustedProvisionedDomain(domain: ProvisionedDomain) {
+  return !validateDomain(domain.domain) && domain.provider_domain === domain.domain
+    && Boolean(domain.provider_project_id && domain.provider_project_id === process.env.VERCEL_PROJECT_ID?.trim())
 }
 
 type VercelConfig = {
@@ -78,6 +93,8 @@ async function readVercelError(response: Response) {
 }
 
 export async function addDomainToVercel(domain: string): Promise<VercelDomainResult> {
+  const validationError = validateDomain(domain)
+  if (validationError) return { success: false, skipped: false, status: null, error: validationError }
   const config = getVercelConfig()
   if (!config) {
     return {
@@ -99,16 +116,16 @@ export async function addDomainToVercel(domain: string): Promise<VercelDomainRes
     })
 
     if (response.ok) {
-      return { success: true, skipped: false, status: response.status, error: null }
+      const created = await response.json().catch(() => null)
+      if (created?.name !== domain || created?.projectId !== config.projectId) {
+        return { success: false, skipped: false, status: 502, error: "De domeintoewijzing kon niet veilig worden bevestigd. Neem contact op met support." }
+      }
+      return { success: true, skipped: false, status: response.status, error: null,
+        provisioning: { provider_domain: domain, provider_project_id: config.projectId } }
     }
 
-    // A previous request may have reached Vercel even when our response was lost.
-    const existing = await fetch(projectDomainUrl(config, domain), {
-      headers: { Authorization: `Bearer ${config.token}` },
-    })
-    if (existing.ok) {
-      return { success: true, skipped: false, status: existing.status, error: null }
-    }
+    // An existing project domain is not proof that this customer provisioned it.
+    // A lost response requires support reconciliation instead of adopting it.
 
     return {
       success: false,
@@ -126,10 +143,11 @@ export async function addDomainToVercel(domain: string): Promise<VercelDomainRes
   }
 }
 
-export async function removeDomainFromVercel(domain: string | null | undefined): Promise<VercelDomainResult> {
+export async function removeDomainFromVercel(record: ProvisionedDomain): Promise<VercelDomainResult> {
   const config = getVercelConfig()
-  if (!domain) {
-    return { success: true, skipped: true, status: null, error: null }
+  if (!isTrustedProvisionedDomain(record)) {
+    return { success: false, skipped: false, status: 409,
+      error: "De oorspronkelijke domeintoewijzing moet eerst door support worden gecontroleerd. Het domein is niet verwijderd." }
   }
   if (!config) {
     return {
@@ -141,7 +159,7 @@ export async function removeDomainFromVercel(domain: string | null | undefined):
   }
 
   try {
-    const response = await fetch(projectDomainUrl(config, domain), {
+    const response = await fetch(projectDomainUrl(config, record.domain), {
       method: "DELETE",
       headers: { Authorization: `Bearer ${config.token}` },
     })

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { logAuditEvent } from "@/lib/audit-log"
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
 import { createClient } from "@/lib/supabase/server"
-import { removeDomainFromVercel } from "@/lib/vercel-domains"
+import { DOMAIN_PROVISIONING_COLUMNS, isTrustedProvisionedDomain, removeDomainFromVercel, type ProvisionedDomain } from "@/lib/vercel-domains"
 
 export async function DELETE(request: Request) {
   const supabase = await createClient()
@@ -36,7 +36,7 @@ export async function DELETE(request: Request) {
 
   const { data: domains, error: domainsError } = await supabase
     .from("website_domains")
-    .select("domain")
+    .select(DOMAIN_PROVISIONING_COLUMNS)
     .eq("website_id", website.id)
 
   if (domainsError) {
@@ -48,12 +48,16 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Domeinen konden niet worden gecontroleerd." }, { status: 500 })
   }
 
-  const domainCleanup = await Promise.all((domains ?? []).map((domain) => removeDomainFromVercel(domain.domain)))
+  const provisionedDomains = (domains ?? []) as unknown as ProvisionedDomain[]
+  if (provisionedDomains.some((domain) => !isTrustedProvisionedDomain(domain))) {
+    return NextResponse.json({ error: "Een domeintoewijzing moet eerst door support worden gecontroleerd voordat deze website kan worden verwijderd." }, { status: 409 })
+  }
+  const domainCleanup = await Promise.all(provisionedDomains.map((domain) => removeDomainFromVercel(domain)))
   const failedDomainIndex = domainCleanup.findIndex((result) => !result.success)
   if (failedDomainIndex >= 0) {
     return NextResponse.json(
       {
-        error: `Website kon niet worden verwijderd omdat ${(domains ?? [])[failedDomainIndex]?.domain ?? "een domein"} niet uit Vercel kon worden verwijderd.`,
+        error: `Website kon niet worden verwijderd omdat ${provisionedDomains[failedDomainIndex]?.domain ?? "een domein"} niet uit Vercel kon worden verwijderd.`,
       },
       { status: 502 },
     )
@@ -83,7 +87,7 @@ export async function DELETE(request: Request) {
       deletedWebsiteId: website.id,
       title: website.title,
       slug: website.slug,
-      domains: (domains ?? []).map((domain) => domain.domain),
+      domains: provisionedDomains.map((domain) => domain.domain),
       domainCleanup,
     },
     request,

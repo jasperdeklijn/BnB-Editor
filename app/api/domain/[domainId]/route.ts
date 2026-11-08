@@ -2,7 +2,8 @@ import { NextResponse } from "next/server"
 import { logAuditEvent } from "@/lib/audit-log"
 import { checkRateLimit, getRateLimitKey } from "@/lib/rate-limit"
 import { createClient } from "@/lib/supabase/server"
-import { addDomainToVercel, removeDomainFromVercel } from "@/lib/vercel-domains"
+import { createAdminClient } from "@/lib/supabase/admin"
+import { addDomainToVercel, isTrustedProvisionedDomain, removeDomainFromVercel } from "@/lib/vercel-domains"
 
 type RouteContext = { params: Promise<{ domainId: string }> }
 
@@ -10,7 +11,7 @@ async function getOwnedDomain(domainId: string, userId: string) {
   const supabase = await createClient()
   const { data: domain } = await supabase
     .from("website_domains")
-    .select("id, website_id, domain, is_primary, status, last_error, created_at")
+    .select("id, website_id, domain, is_primary, status, last_error, created_at, provider_domain, provider_project_id")
     .eq("id", domainId)
     .maybeSingle()
   if (!domain) return { supabase, domain: null }
@@ -37,6 +38,9 @@ export async function PATCH(request: Request, context: RouteContext) {
   const domain = owned.domain
 
   if (action === "makePrimary") {
+    if (!isTrustedProvisionedDomain(domain)) {
+      return NextResponse.json({ error: "De oorspronkelijke domeintoewijzing moet eerst door support worden gecontroleerd." }, { status: 409 })
+    }
     if (domain.status !== "active") {
       return NextResponse.json({ error: "Alleen een actief domein kan primair worden gemaakt." }, { status: 409 })
     }
@@ -60,18 +64,19 @@ export async function PATCH(request: Request, context: RouteContext) {
     if (!["add_failed", "provisioning"].includes(domain.status)) {
       return NextResponse.json({ error: "Dit domein hoeft niet opnieuw toegevoegd te worden." }, { status: 409 })
     }
+    const domainStore = await createAdminClient()
     const vercel = await addDomainToVercel(domain.domain)
     if (!vercel.success) {
-      await owned.supabase
+      await domainStore
         .from("website_domains")
         .update({ status: "add_failed", last_error: vercel.error })
         .eq("id", domain.id)
       return NextResponse.json({ error: vercel.error || "Opnieuw toevoegen is mislukt." }, { status: vercel.skipped ? 503 : 502 })
     }
 
-    const { error } = await owned.supabase
+    const { error } = await domainStore
       .from("website_domains")
-      .update({ status: "active", last_error: null })
+      .update({ status: "active", last_error: null, ...vercel.provisioning })
       .eq("id", domain.id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -107,7 +112,12 @@ export async function DELETE(request: Request, context: RouteContext) {
   if (!owned.domain) return NextResponse.json({ error: "Domein niet gevonden." }, { status: 404 })
   const domain = owned.domain
 
-  const { error: pendingError } = await owned.supabase
+  if (!isTrustedProvisionedDomain(domain)) {
+    return NextResponse.json({ error: "De oorspronkelijke domeintoewijzing moet eerst door support worden gecontroleerd." }, { status: 409 })
+  }
+  const domainStore = await createAdminClient()
+
+  const { error: pendingError } = await domainStore
     .from("website_domains")
     .update({ status: "removal_pending", last_error: null })
     .eq("id", domain.id)
@@ -121,10 +131,10 @@ export async function DELETE(request: Request, context: RouteContext) {
     request,
   })
 
-  const vercel = await removeDomainFromVercel(domain.domain)
+  const vercel = await removeDomainFromVercel(domain)
   if (!vercel.success) {
     const errorMessage = vercel.error || "Het domein kon niet uit Vercel worden verwijderd."
-    await owned.supabase
+    await domainStore
       .from("website_domains")
       .update({ status: "removal_failed", last_error: errorMessage })
       .eq("id", domain.id)
