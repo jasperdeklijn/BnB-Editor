@@ -2075,7 +2075,7 @@ function ServicesSectionContent({
       />
       <div data-section-content className="relative mx-auto max-w-4xl text-center" data-media-content>
         <div className="mb-5 inline-flex items-center rounded-full border border-border bg-[var(--section-surface)] px-4 py-2 text-sm font-medium text-[var(--section-accent)] shadow-sm">
-          Aanbod beheren
+          Diensten beheren
         </div>
         <EditableText as="h2" data={data} path={["title"]} value={title} isPreview={isPreview} onUpdate={onUpdate} className="mb-6 text-4xl font-extrabold tracking-tight text-foreground" style={textStyle} />
         <div className="relative overflow-hidden rounded-2xl border border-border bg-[var(--section-surface)] p-12 text-[var(--section-surface-foreground)] shadow-sm">
@@ -2084,17 +2084,17 @@ function ServicesSectionContent({
               <Briefcase className="h-10 w-10 text-[var(--section-accent-foreground)]" />
             </div>
             <h3 className="mb-3 text-2xl font-bold text-foreground">
-              Nog geen aanbod aangemaakt
+              Nog geen diensten aangemaakt
             </h3>
             <p className="max-w-xl text-base leading-8 text-muted-foreground">
-              Maak eerst aanbod aan via de aanbod pagina en selecteer items daarna hier om ze zichtbaar te maken op je website.
+              Maak eerst diensten aan via Diensten en kies daarna welke je hier op je website wilt tonen.
             </p>
             <Link
               href="/editor/services"
               className="mt-10 inline-flex items-center gap-3 rounded-full bg-[var(--section-accent)] px-7 py-4 text-sm font-semibold text-[var(--section-accent-foreground)] transition-all duration-200 hover:brightness-90"
             >
               <Briefcase className="h-4 w-4" />
-              Aanbod aanmaken
+              Diensten aanmaken
             </Link>
           </div>
         </div>

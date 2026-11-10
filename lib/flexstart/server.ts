@@ -34,7 +34,7 @@ export async function loadWebsiteCheck(db: SupabaseClient, websiteId: string, ow
   const [sections, business, services, destinations, domains, evidence, pages] = await Promise.all([
     db.from("website_sections").select("id,page_id,scope,type,content,styles").eq("website_id", websiteId).order("position"),
     website.business_id ? db.from("businesses").select("name,city,email,phone").eq("id", website.business_id).eq("user_id", ownerId).maybeSingle() : Promise.resolve({ data: null, error: null }),
-    website.business_id ? db.from("services").select("id,title,description,price,duration,capacity,image_urls,position").eq("business_id", website.business_id).order("position") : Promise.resolve({ data: [], error: null }),
+    website.business_id ? db.from("services").select("id,title,description,price,duration,capacity,image_urls,position").eq("business_id", website.business_id).is("archived_at", null).order("position") : Promise.resolve({ data: [], error: null }),
     db.from("website_form_destinations").select("section_id,recipient_email").eq("website_id", websiteId),
     db.from("website_domains").select("status").eq("website_id", websiteId).eq("status", "active"),
     db.from("website_check_evidence").select("tested_version,tested_at").eq("website_id", websiteId).maybeSingle(),
@@ -45,7 +45,7 @@ export async function loadWebsiteCheck(db: SupabaseClient, websiteId: string, ow
     ...(s.type === "services" ? { services: services.data ?? [] } : {}) }, styles: s.styles ?? {} })) }
   const formIds = design.sections.filter((s) => ["contact", "request_form"].includes(s.type)).map((s) => s.id)
   const destination = destinations.data?.find((d) => formIds.includes(d.section_id))?.recipient_email || business.data?.email || ""
-  const check = runFlexCheck({ website, business: business.data, sections: design.sections, services: services.data ?? [],
+  const check = runFlexCheck({ website, business: business.data, sections: design.sections, pages: design.pages, services: services.data ?? [],
     hasDestination: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(destination), domainActive: !!domains.data?.length, testedVersion: evidence.data?.tested_version })
   return { website, design, check, destination }
 }

@@ -47,6 +47,19 @@ test("intro fields keep accessible names across multiple mounted editors", () =>
   assert.match(html, /<textarea[^>]*rows="4"/)
   assert.ok(html.indexOf(">Titel</label>") < html.indexOf("Icoon bij de knop"))
 })
+
+test("legacy starter contact links show the same section as the real link renderer", () => {
+  const { SectionLinkSelect } = load("components/editor/section-link-select.tsx")
+  const { WebsiteLinksProvider } = load("components/editor/website-links-context.tsx")
+  const html = renderToStaticMarkup(React.createElement(WebsiteLinksProvider, { value: {
+    pages: [{ id: "home", title: "Home", slug: "", isHome: true, includeInPublication: true }],
+    activePageId: "home", localePath: "", sectionAliases: { "#contact": "section:home:contact-block" },
+    sectionOptions: [{ value: "contact-block", label: "Neem contact op" }],
+  } }, React.createElement(SectionLinkSelect, { value: "#contact", onChange() {}, options: [], ariaLabel: "Knopdoel" })))
+  assert.match(html, /value="contact-block" selected="">Neem contact op/)
+  assert.match(html, /#section-contact-block/)
+  assert.doesNotMatch(html, /Onbekende sectie|Verwijderde pagina/)
+})
 async function render(section, isPreview = true) {
   return new Promise((resolve, reject) => {
     const chunks = []

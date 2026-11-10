@@ -486,7 +486,7 @@ export function EditorCanvas({
     >
       <EditorPageSelector panelId={pagePanelId} />
       <EditorPagePanel id={pagePanelId} className={isPreview ? "" : "p-3 sm:p-4 md:p-8"}>
-        <div className={`mx-auto ${getDeviceWidth()} transition-all duration-300`}>
+        <div className={`mx-auto ${getDeviceWidth()} ${device !== "desktop" && sections.length > 0 ? "overflow-y-auto [scrollbar-gutter:stable]" : ""} transition-all duration-300`}>
           {device !== "desktop" && sections.length > 0 ? <p className="mb-3 text-center text-xs text-muted-foreground">{device === "mobile" ? "Telefoon · 390 px" : "Tablet · 768 px"}</p> : null}
           {!isPreview && sections.length === 0 && !tutorialDismissed && (
             <div

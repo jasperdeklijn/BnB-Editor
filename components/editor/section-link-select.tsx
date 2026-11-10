@@ -18,9 +18,11 @@ const selectClass = "h-11 w-full min-w-0 rounded-md border border-input bg-backg
 export function SectionLinkSelect({ value, onChange, options, ariaLabel, emptyLabel = "Kies een sectie" }: SectionLinkSelectProps) {
   const context = useWebsiteLinks()
   const id = useId()
-  const target = parseWebsiteLink(value)
+  // Match the link renderer: existing templates may still use aliases such as #contact.
+  const resolvedValue = context?.sectionAliases?.[value] ?? value
+  const target = parseWebsiteLink(resolvedValue)
   const [emptyKind, setEmptyKind] = useState("section")
-  const kind = value ? target.type === "url" && value.startsWith("#") ? "section" : target.type : emptyKind
+  const kind = resolvedValue ? target.type === "url" && resolvedValue.startsWith("#") ? "section" : target.type : emptyKind
   const [sectionPage, setSectionPage] = useState(context?.activePageId ?? "")
   const pageId = target.type === "section" ? target.pageId : sectionPage || context?.activePageId || ""
   const [remote, setRemote] = useState<{ pageId: string; options: SectionTargetOption[]; error?: string } | null>(null)
@@ -34,8 +36,8 @@ export function SectionLinkSelect({ value, onChange, options, ariaLabel, emptyLa
     return () => { cancelled = true }
   }, [kind, pageId, currentPage, loadSections])
   const sectionOptions = context ? currentPage ? context.sectionOptions ?? [] : remote?.pageId === pageId ? remote.options : [] : options
-  const sectionValue = target.type === "section" ? target.sectionId : context && value.startsWith("#section-") ? value.slice(9) : value
-  const resolved = resolveWebsiteLink(value, context?.pages ?? [], context?.activePageId, context?.localePath)
+  const sectionValue = target.type === "section" ? target.sectionId : context && resolvedValue.startsWith("#section-") ? resolvedValue.slice(9) : resolvedValue
+  const resolved = resolveWebsiteLink(resolvedValue, context?.pages ?? [], context?.activePageId, context?.localePath)
   const loading = kind === "section" && !currentPage && Boolean(loadSections) && remote?.pageId !== pageId
   const missingPage = target.type !== "url" && !context?.pages.some((page) => page.id === target.pageId)
   return <div className="min-w-0 space-y-2">
