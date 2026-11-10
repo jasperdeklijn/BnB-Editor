@@ -46,11 +46,11 @@ export function TeamSection({ data, isPreview, styles, onUpdate }: TeamSectionPr
   }
 
   return (
-    <section className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+    <section className={`px-4 ${layout.section} @min-[640px]:px-6 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
       <div data-section-content className={`mx-auto ${layout.container}`} data-media-content>
         <div className={`mb-10 ${layout.heading}`}>
           <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-[var(--section-accent)]">{messages.team}</p>
-          <EditableText as="h2" data={data} path={["title"]} value={title} isPreview={isPreview} onUpdate={onUpdate} className="text-3xl font-bold md:text-4xl" style={textStyle} />
+          <EditableText as="h2" data={data} path={["title"]} value={title} isPreview={isPreview} onUpdate={onUpdate} className="text-3xl font-bold @min-[768px]:text-4xl" style={textStyle} />
           {subtitle ? <EditableText as="p" data={data} path={["subtitle"]} value={subtitle} isPreview={isPreview} onUpdate={onUpdate} multiline className="mx-auto mt-3 max-w-2xl text-muted-foreground" style={textStyle} /> : null}
         </div>
 
@@ -59,7 +59,7 @@ export function TeamSection({ data, isPreview, styles, onUpdate }: TeamSectionPr
             {messages.addTeam}
           </div>
         ) : (
-          <div className={isHorizontal ? "flex snap-x gap-5 overflow-x-auto pb-3" : isList ? "grid gap-5 md:grid-cols-2" : `grid gap-6 ${layout.grid}`}>
+          <div className={isHorizontal ? "flex snap-x gap-5 overflow-x-auto pb-3" : isList ? "grid gap-5 @min-[768px]:grid-cols-2" : `grid gap-6 ${layout.grid}`}>
             {members.map((member, index) => (
               <article
                 key={member.id ?? index}

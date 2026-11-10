@@ -39,7 +39,7 @@ export function runFlexCheck(input: CheckInput): CheckResult {
   add("form", "Contactformulier ingesteld", contact.length > 0 && input.hasDestination, true, "Een formulier met een geldig ontvangstadres; verzending wordt apart getest.")
   add("services", "Minimaal één dienst", visibleService, true, "Een opgeslagen dienst die in een dienstensectie is geselecteerd.", "/editor/services")
   add("images", "Afbeeldingen zonder lege placeholders", images.length > 0 && images.every((url) => filled(url) && !placeholder(url)), false, "Controleert ingevulde verwijzingen. Bereikbaarheid en beeldkwaliteit controleer je persoonlijk.")
-  add("seo", "SEO-titel en omschrijving", filled(website.seo?.title) && filled(website.seo?.description), true, "Beide velden moeten zijn ingevuld.", `/editor/seo?websiteId=${website.id}`)
+  add("seo", "Websitebrede SEO-standaarden", filled(website.seo?.title) && filled(website.seo?.description), true, "Vul de standaardtitel en -omschrijving voor deze website in. Pagina-SEO kan deze standaarden overschrijven en wordt hier niet gecontroleerd.", `/editor/seo?websiteId=${website.id}`)
   add("area", "Plaats of werkgebied genoemd", filled(business?.city) && content.includes(business!.city!.toLowerCase()), false, "Zoekt de vestigingsplaats in de website-inhoud. Controleer je volledige werkgebied zelf.")
   add("mobile", "Mobiele weergave beschikbaar", sections.length > 0, false, "Het concept heeft een mobielvoorbeeld. Dit is geen automatische visuele goedkeuring.")
   add("privacy", "Privacyverklaring gekoppeld", privacy, true, "Een privacylink in de footer. De inhoud en juridische juistheid worden niet automatisch beoordeeld.")

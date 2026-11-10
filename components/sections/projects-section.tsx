@@ -25,10 +25,10 @@ export function ProjectsSection({ data, isPreview, styles, onUpdate }: SectionRe
   const layout = getLayoutClasses(data.layout)
   if (isPreview && projects.length === 0) return null
   const textStyle = { color: styles?.textColor }
-  return <section className={`px-4 sm:px-6 ${layout.section} ${styles?.fontFamily ?? ""}`} style={{ ...getSectionColorVars(styles), backgroundColor: styles?.backgroundColor, backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url("${styles.backgroundImage}")` : undefined, backgroundSize: "cover", backgroundPosition: styles?.backgroundPosition || "center" }} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+  return <section className={`px-4 @min-[640px]:px-6 ${layout.section} ${styles?.fontFamily ?? ""}`} style={{ ...getSectionColorVars(styles), backgroundColor: styles?.backgroundColor, backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url("${styles.backgroundImage}")` : undefined, backgroundSize: "cover", backgroundPosition: styles?.backgroundPosition || "center" }} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
     <div data-section-content className={`mx-auto ${layout.container} ${css.container}`} data-media-content>
       <div className={`mb-10 ${layout.heading}`}>
-        <EditableText as="h2" data={data} path={["title"]} value={typeof data.title === "string" ? data.title : messages.projects} isPreview={isPreview} onUpdate={onUpdate} className="text-3xl font-bold md:text-4xl" style={textStyle} />
+        <EditableText as="h2" data={data} path={["title"]} value={typeof data.title === "string" ? data.title : messages.projects} isPreview={isPreview} onUpdate={onUpdate} className="text-3xl font-bold @min-[768px]:text-4xl" style={textStyle} />
         {typeof data.subtitle === "string" && data.subtitle ? <EditableText as="p" data={data} path={["subtitle"]} value={data.subtitle} isPreview={isPreview} onUpdate={onUpdate} multiline className="mt-3 text-muted-foreground" style={textStyle} /> : null}
       </div>
       {projects.length ? <div className={css.collection} data-project-layout={layout.layout}>

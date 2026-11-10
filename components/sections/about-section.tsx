@@ -40,12 +40,12 @@ export function AboutSection({ data, isPreview, styles, onUpdate }: { data: Reco
   )
 
   return (
-    <section className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
-      <div data-section-columns={isSplit || undefined} data-section-content className={`mx-auto ${layout.container} ${isSplit ? "grid items-center gap-10 md:grid-cols-2" : ""} ${layout.layout === "card" ? "rounded-2xl border border-border bg-[var(--section-surface)] p-8 text-[var(--section-surface-foreground)] shadow-sm" : ""}`} data-media-content>
+    <section className={`px-4 ${layout.section} @min-[640px]:px-6 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+      <div data-section-columns={isSplit || undefined} data-section-content className={`mx-auto ${layout.container} ${isSplit ? "grid items-center gap-10 @min-[768px]:grid-cols-2" : ""} ${layout.layout === "card" ? "rounded-2xl border border-border bg-[var(--section-surface)] p-8 text-[var(--section-surface-foreground)] shadow-sm" : ""}`} data-media-content>
         {isSplit && layout.layout === "showcase" ? imageGallery : null}
         <div className={layout.heading}>
-          <EditableText as="h2" data={data} path={["title"]} value={title} isPreview={isPreview} onUpdate={onUpdate} className="mb-5 text-3xl font-bold md:text-4xl" style={textStyle} />
-          <EditableText as="p" data={data} path={["description"]} value={description} isPreview={isPreview} onUpdate={onUpdate} multiline className="text-base leading-relaxed text-muted-foreground sm:text-lg" style={textStyle} />
+          <EditableText as="h2" data={data} path={["title"]} value={title} isPreview={isPreview} onUpdate={onUpdate} className="mb-5 text-3xl font-bold @min-[768px]:text-4xl" style={textStyle} />
+          <EditableText as="p" data={data} path={["description"]} value={description} isPreview={isPreview} onUpdate={onUpdate} multiline className="text-base leading-relaxed text-muted-foreground @min-[640px]:text-lg" style={textStyle} />
         </div>
         {isSplit && layout.layout !== "showcase" ? imageGallery : null}
         {!isSplit && imageGallery ? <div className="mt-8">{imageGallery}</div> : null}

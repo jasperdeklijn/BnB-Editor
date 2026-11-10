@@ -466,9 +466,9 @@ export function EditorCanvas({
   const getDeviceWidth = () => {
     switch (device) {
       case "mobile":
-        return "max-w-[375px]"
+        return "w-[390px] max-w-none"
       case "tablet":
-        return "max-w-[768px]"
+        return "w-[768px] max-w-none"
       default:
         return "max-w-7xl"
     }
@@ -487,6 +487,7 @@ export function EditorCanvas({
       <EditorPageSelector panelId={pagePanelId} />
       <EditorPagePanel id={pagePanelId} className={isPreview ? "" : "p-3 sm:p-4 md:p-8"}>
         <div className={`mx-auto ${getDeviceWidth()} transition-all duration-300`}>
+          {device !== "desktop" && sections.length > 0 ? <p className="mb-3 text-center text-xs text-muted-foreground">{device === "mobile" ? "Telefoon · 390 px" : "Tablet · 768 px"}</p> : null}
           {!isPreview && sections.length === 0 && !tutorialDismissed && (
             <div
               className={`flex ${showNewSectionDropTargets ? "min-h-[420px] md:min-h-[600px]" : "min-h-[360px] md:min-h-[500px]"} items-center justify-center rounded-lg border-2 border-dashed ${showNewSectionDropTargets ? "border-primary bg-primary/5" : "border-muted-foreground/30 bg-background/50"} animate-in fade-in slide-in-from-bottom-4 duration-500 transition-all`}
@@ -507,11 +508,11 @@ export function EditorCanvas({
                 <div className="grid gap-2 rounded-md border border-border bg-muted/50 p-3 text-left text-sm text-muted-foreground">
                   <div className="flex gap-2">
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    <span>Voegt vier blokken toe: intro bovenaan, over ons, aanbod en contact.</span>
+                    <span>Voegt vier blokken toe: intro bovenaan, over ons, diensten en contact.</span>
                   </div>
                   <div className="flex gap-2">
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    <span>Opent daarna direct de intro zodat u de titel en knoptekst kunt aanpassen.</span>
+                    <span>Opent daarna direct de intro zodat je de titel en knoptekst kunt aanpassen.</span>
                   </div>
                 </div>
                 <div className="flex flex-col justify-center gap-2 sm:flex-row">
@@ -659,7 +660,7 @@ export function EditorCanvas({
 
                   <div
                     id={section.type !== "nav" && section.type !== "footer" ? `section-${section.id}` : undefined}
-                    className={`${!isPreview ? "cursor-pointer rounded-lg border bg-background shadow-sm transition-all hover:shadow-md" : ""} ${
+                    className={`${!isPreview ? "cursor-pointer rounded-lg bg-background ring-1 ring-border shadow-sm transition-all hover:shadow-md" : ""} ${
                       showImageDropTargets && !isPreview
                         ? "border-primary bg-primary/5 shadow-lg"
                         : ""

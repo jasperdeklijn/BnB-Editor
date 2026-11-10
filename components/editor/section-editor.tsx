@@ -90,26 +90,6 @@ const SECTION_STYLE_CONTROLS: Partial<Record<SectionType, StyleControl[]>> = {
   footer: ["backgroundColor", "textColor"],
 }
 
-const SECTION_TARGET_LABELS: Record<SectionType, string> = {
-  projects: "Projecten",
-  freeform: "Vrije sectie",
-  hero: "Home",
-  about: "Over",
-  services: "Aanbod",
-  gallery: "Galerij",
-  features: "Kenmerken",
-  contact: "Contact",
-  nav: "Navigatie",
-  footer: "Footer",
-  testimonials: "Recensies",
-  faq: "FAQ",
-  opening_hours: "Openingstijden",
-  pricing: "Tarieven",
-  team: "Team",
-  map: "Locatie",
-  cta: "Actie",
-  request_form: "Aanvraag",
-}
 
 const SECTION_TARGET_TYPES: SectionType[] = [
   "projects",
@@ -153,7 +133,7 @@ function getSectionStyleControls(type: SectionType): StyleControl[] {
 }
 
 function getSectionTargetLabel(section: Section) {
-  const defaultLabel = SECTION_TARGET_LABELS[section.type]
+  const defaultLabel = getSectionDefinition(section.type)?.label ?? section.type.replaceAll("_", " ")
   const title = typeof section.data?.title === "string" ? section.data.title.trim() : ""
 
   if (!title || title.toLowerCase() === defaultLabel.toLowerCase()) {
@@ -253,7 +233,7 @@ export function SelectionEditor({
             </div>
             <p className="text-sm font-semibold text-foreground">Kies een sectie om te bewerken</p>
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-              Selecteer hieronder een blok van uw pagina, of ga terug naar het doek en tik op het blok zelf.
+              Kies hieronder een sectie, of klik op een sectie op het canvas.
             </p>
           </div>
 
@@ -286,13 +266,13 @@ export function SelectionEditor({
             </div>
           ) : (
             <div className="mt-5 rounded-md border border-dashed border-border bg-background/60 p-4 text-center text-sm text-muted-foreground">
-              Voeg eerst een sectie toe voordat u de stijl kunt aanpassen.
+              Voeg eerst een sectie toe voordat je de stijl kunt aanpassen.
             </div>
           )}
 
           {onOpenCanvas ? (
             <Button type="button" variant="outline" className="mt-4 w-full" onClick={onOpenCanvas}>
-              Op doek kiezen
+              Op het canvas kiezen
             </Button>
           ) : null}
         </div>

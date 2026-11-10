@@ -215,12 +215,12 @@ export function getLayoutClasses(layoutValue: unknown) {
     layout,
     section:
       layout === "compact"
-        ? "py-8 sm:py-10 md:py-12"
+        ? "py-8 @min-[640px]:py-10 @min-[768px]:py-12"
         : layout === "showcase"
-          ? "py-16 sm:py-20 md:py-28"
+          ? "py-16 @min-[640px]:py-20 @min-[768px]:py-28"
           : layout === "banner"
-            ? "py-10 sm:py-12 md:py-14"
-            : "py-12 sm:py-16 md:py-20",
+            ? "py-10 @min-[640px]:py-12 @min-[768px]:py-14"
+            : "py-12 @min-[640px]:py-16 @min-[768px]:py-20",
     container:
       layout === "compact"
         ? "max-w-3xl"
@@ -231,18 +231,18 @@ export function getLayoutClasses(layoutValue: unknown) {
       layout === "split"
         ? "text-left"
         : layout === "compact"
-          ? "text-left md:text-center"
+          ? "text-left @min-[768px]:text-center"
           : "text-center",
     grid:
       layout === "compact"
         ? "grid-cols-1"
         : layout === "split"
-          ? "md:grid-cols-2"
+          ? "@min-[768px]:grid-cols-2"
           : layout === "showcase"
-            ? "lg:grid-cols-2"
+            ? "@min-[1024px]:grid-cols-2"
             : layout === "banner"
-              ? "lg:grid-cols-4"
-              : "md:grid-cols-2 lg:grid-cols-3",
+              ? "@min-[1024px]:grid-cols-4"
+              : "@min-[768px]:grid-cols-2 @min-[1024px]:grid-cols-3",
     card:
       layout === "compact"
         ? "rounded-lg p-4"

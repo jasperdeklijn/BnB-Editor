@@ -50,7 +50,7 @@ export function TestimonialsSection({ data, isPreview, styles, onUpdate, website
     {reviews.length > 0 ? <>
       <p className="mb-4 text-sm opacity-75">Gepubliceerde klantervaringen. De nieuwste recensies staan bovenaan.</p>
       <div className={`grid gap-4 ${layout.layout === "split" ? "grid-cols-1" : layout.grid}`}>
-        {reviews.map((review, index) => <article key={review.id} className={`${getReviewPanelClass(data.styleType)} flex flex-col gap-3 ${layout.layout === "showcase" && index === 0 ? "lg:col-span-2 text-lg" : "text-sm"}`}>
+        {reviews.map((review, index) => <article key={review.id} className={`${getReviewPanelClass(data.styleType)} flex flex-col gap-3 ${layout.layout === "showcase" && index === 0 ? "@min-[1024px]:col-span-2 text-lg" : "text-sm"}`}>
           <div className="flex gap-1" role="img" aria-label={`${review.rating} van 5 sterren`}>{[1, 2, 3, 4, 5].map((star) => <Star aria-hidden="true" key={star} className={`h-5 w-5 ${star <= review.rating ? "fill-yellow-400 text-yellow-400" : "text-current/35"}`} />)}</div>
           <p className="whitespace-pre-wrap break-words leading-relaxed">{review.body}</p>
           <div className="mt-auto border-t border-current/15 pt-3"><p className="break-words text-sm font-semibold">{review.display_name}</p><time className="text-xs opacity-75" dateTime={review.created_at}>{new Date(review.created_at).toLocaleDateString("nl-NL", { timeZone: "Europe/Amsterdam" })}</time></div>
@@ -62,14 +62,14 @@ export function TestimonialsSection({ data, isPreview, styles, onUpdate, website
     </div>}
     {collection?.failed && !preview && <button type="button" className="mt-3 min-h-11 text-sm underline underline-offset-4" onClick={() => setAttempt((value) => value + 1)}>Opnieuw proberen</button>}
   </div>
-  return <section className={`px-4 sm:px-6 ${layout.section} ${styles?.fontFamily ?? ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+  return <section className={`px-4 @min-[640px]:px-6 ${layout.section} ${styles?.fontFamily ?? ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
     <div data-section-content className={`mx-auto ${layout.container}`} data-media-content>
       <div className={`mb-10 ${layout.heading}`}>
-        <EditableText as="h2" data={data} path={["title"]} value={String(data.title || "Ervaringen van klanten")} isPreview={isPreview} onUpdate={onUpdate} className="mb-3 text-balance text-3xl font-bold md:text-4xl" />
+        <EditableText as="h2" data={data} path={["title"]} value={String(data.title || "Ervaringen van klanten")} isPreview={isPreview} onUpdate={onUpdate} className="mb-3 text-balance text-3xl font-bold @min-[768px]:text-4xl" />
         {(Boolean(data.subtitle) || editing) && <EditableText as="p" data={data} path={["subtitle"]} value={String(data.subtitle || "")} fallback="" isPreview={isPreview} onUpdate={onUpdate} className={`opacity-75 ${editing && !data.subtitle ? "min-h-6" : ""}`} multiline />}
       </div>
       {mode === "google" ? <div className={layout.heading}>{(url || editing) && <a href={url || "#"} target="_blank" rel="noopener noreferrer" onClick={preview ? (event) => event.preventDefault() : undefined} className="inline-flex max-w-full rounded-xl bg-[var(--section-accent)] px-6 py-3 text-center text-sm font-semibold text-[var(--section-accent-foreground)] shadow-sm"><EditableText data={data} path={["googleButtonText"]} value={String(data.googleButtonText || "Lees onze recensies op Google")} isPreview={isPreview} onUpdate={onUpdate} /></a>}{!url && <p className="mt-4 rounded-lg border border-dashed border-current/20 p-5 text-sm">{preview ? "Voeg een Google-recensielink toe in de sectie-instellingen." : "Recensies volgen binnenkort."}</p>}</div>
-        : <div className={`grid items-start gap-8 ${layout.layout === "split" && showWebsiteForm ? "lg:grid-cols-2" : "grid-cols-1"}`}>
+        : <div className={`grid items-start gap-8 ${layout.layout === "split" && showWebsiteForm ? "@min-[1024px]:grid-cols-2" : "grid-cols-1"}`}>
           {reviewList}
           {showWebsiteForm && (preview || collection) && <div data-section-content className={`min-w-0 w-full ${layout.layout === "split" ? "" : "mx-auto max-w-2xl"} ${formFirst ? "order-1" : ""}`}>
             <ReviewForm websiteId={websiteId ?? ""} available={preview || !collection?.failed} preview={preview} data={data} styles={styles} onUpdate={formUpdate} />

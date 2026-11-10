@@ -226,7 +226,7 @@ export function SiteDesignPanel({
     {
       value: "templates",
       label: "Sjablonen",
-      description: "Bekijk een complete startopzet voordat u die toepast.",
+      description: "Bekijk een complete startopzet voordat je die toepast.",
       summary: "Voorbeeld en herstelpunt",
       icon: LayoutTemplate,
     },
@@ -322,7 +322,7 @@ export function SiteDesignPanel({
                   <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                   Eerst bekijken, daarna bevestigen
                 </div>
-                Een sjabloon opent eerst als voorbeeld. Pas na uw bevestiging vervangen we de huidige secties en voorbeeldinhoud.
+                Een sjabloon opent eerst als voorbeeld. Pas na je bevestiging vervangen we de huidige secties en voorbeeldinhoud.
               </div>
 
               {templateGroups.map((group) => {
@@ -447,7 +447,7 @@ export function SiteDesignPanel({
             <AlertDialogTitle>Huidige inhoud vervangen?</AlertDialogTitle>
             <AlertDialogDescription>
               {confirmTemplate
-                ? `${confirmTemplate.name} vervangt de huidige secties en voorbeelditems van deze website. We maken eerst een herstelpunt, zodat u dit direct kunt terugzetten.`
+                ? `${confirmTemplate.name} vervangt de huidige secties en voorbeelditems van deze website. We maken eerst een herstelpunt, zodat je dit direct kunt terugzetten.`
                 : "Dit sjabloon vervangt de huidige website-inhoud."}
             </AlertDialogDescription>
           </AlertDialogHeader>

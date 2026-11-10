@@ -55,7 +55,7 @@ export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProp
 
   return (
     <section
-      className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`}
+      className={`px-4 ${layout.section} @min-[640px]:px-6 ${styles?.fontFamily || ""}`}
       style={sectionStyle}
      data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
       <div data-section-content className={`mx-auto ${layout.container}`} data-media-content>
@@ -70,7 +70,7 @@ export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProp
             value={title}
             isPreview={isPreview}
             onUpdate={onUpdate}
-            className="mb-2 text-balance text-3xl font-bold text-amber-950 md:text-4xl"
+            className="mb-2 text-balance text-3xl font-bold text-amber-950 @min-[768px]:text-4xl"
             style={textStyle}
           />
           {subtitle && (
@@ -79,9 +79,9 @@ export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProp
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-border bg-[var(--section-surface)] text-[var(--section-surface-foreground)] shadow-sm">
-          <div className={`grid ${layout.layout === "compact" ? "" : "md:grid-cols-5"}`}>
+          <div className={`grid ${layout.layout === "compact" ? "" : "@min-[768px]:grid-cols-5"}`}>
             {/* Info panel */}
-            <div className={`flex flex-col justify-center gap-5 bg-[var(--section-accent)] px-8 py-10 text-[var(--section-accent-foreground)] ${layout.layout === "compact" ? "" : "md:col-span-2"}`}>
+            <div className={`flex flex-col justify-center gap-5 bg-[var(--section-accent)] px-8 py-10 text-[var(--section-accent-foreground)] ${layout.layout === "compact" ? "" : "@min-[768px]:col-span-2"}`}>
               <h3 className="text-lg font-semibold">{messages.visitUs}</h3>
 
               {address && (
@@ -136,7 +136,7 @@ export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProp
             </div>
 
             {/* Map panel */}
-            <div className={`min-h-64 md:min-h-80 ${layout.layout === "compact" ? "" : "md:col-span-3"}`}>
+            <div className={`min-h-64 @min-[768px]:min-h-80 ${layout.layout === "compact" ? "" : "@min-[768px]:col-span-3"}`}>
               {showMap && mapUrl && !isPreview ? (
                 <iframe
                   title="Locatiekaart"
@@ -150,7 +150,7 @@ export function MapSection({ data, styles, isPreview, onUpdate }: MapSectionProp
                   className="block h-full w-full"
                 />
               ) : (
-                <div className="flex h-full min-h-64 items-center justify-center bg-[var(--section-surface)] text-[var(--section-surface-foreground)] md:min-h-80">
+                <div className="flex h-full min-h-64 items-center justify-center bg-[var(--section-surface)] text-[var(--section-surface-foreground)] @min-[768px]:min-h-80">
                   <div className="text-center text-muted-foreground">
                     <SectionIcon icon={data.addressIcon} fallback="tabler:map-pin" className="mx-auto mb-2 h-8 w-8 text-[var(--section-accent)]" />
                     <p className="text-sm">

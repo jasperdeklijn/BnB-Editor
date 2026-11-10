@@ -78,7 +78,7 @@ function FaqRow({
         onClick={() => setOpen((s) => !s)}
         className="flex w-full items-center justify-between gap-4 py-5 text-left"
       >
-        <SectionIcon icon={item.icon ?? null} className="h-5 w-5 text-[var(--section-accent)]" /><EditableText data={data} path={["items", index, "question"]} value={item.question} isPreview={isPreview} onUpdate={onUpdate} className="flex-1 text-sm font-medium md:text-base" style={textStyle} />
+        <SectionIcon icon={item.icon ?? null} className="h-5 w-5 text-[var(--section-accent)]" /><EditableText data={data} path={["items", index, "question"]} value={item.question} isPreview={isPreview} onUpdate={onUpdate} className="flex-1 text-sm font-medium @min-[768px]:text-base" style={textStyle} />
         <ChevronDown
           className={`h-4 w-4 flex-shrink-0 text-[var(--section-accent)] transition-transform duration-200 ${
             open ? "rotate-180" : ""
@@ -126,7 +126,7 @@ export function FaqSection({ data, isPreview, styles, onUpdate }: FaqSectionProp
 
   return (
     <section
-      className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`}
+      className={`px-4 ${layout.section} @min-[640px]:px-6 ${styles?.fontFamily || ""}`}
       style={sectionStyle}
      data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
       <div data-section-content className={`mx-auto ${layout.container}`} data-media-content>
@@ -141,7 +141,7 @@ export function FaqSection({ data, isPreview, styles, onUpdate }: FaqSectionProp
             value={title}
             isPreview={isPreview}
             onUpdate={onUpdate}
-            className="mb-3 text-balance text-3xl font-bold text-amber-950 md:text-4xl"
+            className="mb-3 text-balance text-3xl font-bold text-amber-950 @min-[768px]:text-4xl"
             style={textStyle}
           />
           {subtitle && (
@@ -149,7 +149,7 @@ export function FaqSection({ data, isPreview, styles, onUpdate }: FaqSectionProp
           )}
         </div>
 
-        <div className={`${layout.layout === "split" ? "columns-1 md:columns-2 md:gap-6" : ""} rounded-2xl border border-border bg-[var(--section-surface)] px-6 text-[var(--section-surface-foreground)] shadow-sm backdrop-blur`}>
+        <div className={`${layout.layout === "split" ? "columns-1 @min-[768px]:columns-2 @min-[768px]:gap-6" : ""} rounded-2xl border border-border bg-[var(--section-surface)] px-6 text-[var(--section-surface-foreground)] shadow-sm backdrop-blur`}>
           {items.map((item, idx) => (
             <FaqRow key={item.id ?? idx} item={item} data={editableData} index={idx} isPreview={isPreview} onUpdate={onUpdate} textStyle={textStyle} />
           ))}

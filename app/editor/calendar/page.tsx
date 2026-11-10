@@ -25,9 +25,9 @@ function getCalendarCopy(category: string | null | undefined) {
   if (category === "bnb") {
     return {
       title: "Boekingskalender",
-      description: "Beheer boekingen, check-ins, check-outs en geblokkeerde periodes voor uw accommodaties.",
+      description: "Beheer boekingen, check-ins, check-outs en geblokkeerde periodes voor je accommodaties.",
       emptyTitle: "Nog geen boekingen",
-      emptyText: "Nieuwe boekingen, blokkades en notities verschijnen straks in deze kalender.",
+      emptyText: "Kies een dag in de kalender om je eerste boeking of blokkade toe te voegen.",
       primaryAction: "Boeking toevoegen",
       linkedOfferingLabel: "Accommodatie",
       upcomingTitle: "Aankomende boekingen",
@@ -36,9 +36,9 @@ function getCalendarCopy(category: string | null | undefined) {
 
   return {
     title: "Afsprakenkalender",
-    description: "Beheer afspraken, aanvragen, geblokkeerde tijden en planning voor uw aanbod.",
+    description: "Beheer afspraken, aanvragen, geblokkeerde tijden en planning voor je aanbod.",
     emptyTitle: "Nog geen afspraken",
-    emptyText: "Nieuwe afspraken, blokkades en notities verschijnen straks in deze kalender.",
+    emptyText: "Kies een dag of tijdslot in de kalender om je eerste afspraak toe te voegen.",
     primaryAction: "Afspraak toevoegen",
     linkedOfferingLabel: "Aanbod",
     upcomingTitle: "Aankomende afspraken",

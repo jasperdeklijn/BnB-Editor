@@ -147,7 +147,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
   // Layout: Grid (default)
   if (layout === "grid") {
     return (
-      <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+      <section className={`bg-background px-4 py-10 @min-[640px]:px-6 @min-[640px]:py-12 @min-[768px]:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
         <div data-section-content className="mx-auto max-w-6xl" data-media-content>
           <EditableText
             as="h2"
@@ -156,10 +156,10 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
             value={title}
             isPreview={isPreview}
             onUpdate={onUpdate}
-            className="mb-8 text-balance text-center text-2xl font-bold text-amber-950 sm:mb-10 sm:text-3xl md:mb-12 md:text-4xl"
+            className="mb-8 text-balance text-center text-2xl font-bold text-amber-950 @min-[640px]:mb-10 @min-[640px]:text-3xl @min-[768px]:mb-12 @min-[768px]:text-4xl"
             style={textStyle}
           />
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 @min-[640px]:gap-4 @min-[768px]:grid-cols-2 @min-[1024px]:grid-cols-3">
             {images.map((image, index) => (
               <div
                 key={index}
@@ -190,9 +190,9 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
   // Layout: Vertical Carousel on Right with Text on Left
   if (layout === "vertical-carousel") {
     return (
-      <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+      <section className={`bg-background px-4 py-10 @min-[640px]:px-6 @min-[640px]:py-12 @min-[768px]:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
         <div data-section-content className="mx-auto max-w-6xl" data-media-content>
-          <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
+          <div className="flex flex-col @min-[1024px]:flex-row gap-8 @min-[1024px]:gap-12">
             {/* Text Side */}
             <div className="flex-1">
               <EditableText
@@ -202,7 +202,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
                 value={title}
                 isPreview={isPreview}
                 onUpdate={onUpdate}
-                className="mb-4 text-balance text-2xl font-bold text-amber-950 sm:text-3xl md:text-4xl"
+                className="mb-4 text-balance text-2xl font-bold text-amber-950 @min-[640px]:text-3xl @min-[768px]:text-4xl"
                 style={textStyle}
               />
               {subtitle && (
@@ -214,7 +214,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
                   isPreview={isPreview}
                   onUpdate={onUpdate}
                   multiline
-                  className="text-pretty text-base text-amber-800 sm:text-lg"
+                  className="text-pretty text-base text-amber-800 @min-[640px]:text-lg"
                   style={textStyle}
                 />
               )}
@@ -256,7 +256,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
   // Layout: Horizontal Carousel
   if (layout === "horizontal-carousel") {
     return (
-      <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+      <section className={`bg-background px-4 py-10 @min-[640px]:px-6 @min-[640px]:py-12 @min-[768px]:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
         <div data-section-content className="mx-auto max-w-6xl" data-media-content>
           <EditableText
             as="h2"
@@ -265,7 +265,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
             value={title}
             isPreview={isPreview}
             onUpdate={onUpdate}
-            className="mb-8 text-balance text-center text-2xl font-bold text-amber-950 sm:mb-10 sm:text-3xl md:mb-12 md:text-4xl"
+            className="mb-8 text-balance text-center text-2xl font-bold text-amber-950 @min-[640px]:mb-10 @min-[640px]:text-3xl @min-[768px]:mb-12 @min-[768px]:text-4xl"
             style={textStyle}
           />
           <div className="overflow-x-auto">
@@ -301,7 +301,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
   // Layout: Masonry Grid
   if (layout === "masonry") {
     return (
-      <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+      <section className={`bg-background px-4 py-10 @min-[640px]:px-6 @min-[640px]:py-12 @min-[768px]:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
         <div data-section-content className="mx-auto max-w-6xl" data-media-content>
           <EditableText
             as="h2"
@@ -310,10 +310,10 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
             value={title}
             isPreview={isPreview}
             onUpdate={onUpdate}
-            className="mb-8 text-balance text-center text-2xl font-bold text-amber-950 sm:mb-10 sm:text-3xl md:mb-12 md:text-4xl"
+            className="mb-8 text-balance text-center text-2xl font-bold text-amber-950 @min-[640px]:mb-10 @min-[640px]:text-3xl @min-[768px]:mb-12 @min-[768px]:text-4xl"
             style={textStyle}
           />
-          <div className="columns-2 gap-3 sm:columns-3 sm:gap-4 md:columns-4">
+          <div className="columns-2 gap-3 @min-[640px]:columns-3 @min-[640px]:gap-4 @min-[768px]:columns-4">
             {images.map((image, index) => (
               <div
                 key={index}
@@ -344,7 +344,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
   // Layout: Single Large Image with Thumbnails
   if (layout === "single-with-thumbs") {
     return (
-      <section className={`bg-background px-4 py-10 sm:px-6 sm:py-12 md:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
+      <section className={`bg-background px-4 py-10 @min-[640px]:px-6 @min-[640px]:py-12 @min-[768px]:py-16 ${styles?.fontFamily || ""}`} style={sectionStyle} data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
         <div data-section-content className="mx-auto max-w-6xl" data-media-content>
           <EditableText
             as="h2"
@@ -353,7 +353,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
             value={title}
             isPreview={isPreview}
             onUpdate={onUpdate}
-            className="mb-8 text-balance text-center text-2xl font-bold text-amber-950 sm:mb-10 sm:text-3xl md:mb-12 md:text-4xl"
+            className="mb-8 text-balance text-center text-2xl font-bold text-amber-950 @min-[640px]:mb-10 @min-[640px]:text-3xl @min-[768px]:mb-12 @min-[768px]:text-4xl"
             style={textStyle}
           />
           <div data-section-content className="mx-auto max-w-2xl space-y-4">
@@ -438,7 +438,7 @@ export function GallerySection({ data, isPreview, styles, onUpdate }: GallerySec
               value={title}
               isPreview={isPreview}
               onUpdate={onUpdate}
-              className="text-balance text-center text-3xl font-bold text-white drop-shadow-lg sm:text-4xl md:text-5xl lg:text-6xl"
+              className="text-balance text-center text-3xl font-bold text-white drop-shadow-lg @min-[640px]:text-4xl @min-[768px]:text-5xl @min-[1024px]:text-6xl"
               style={styles?.textColor ? textStyle : undefined}
             />
           </div>

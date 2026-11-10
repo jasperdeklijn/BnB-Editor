@@ -66,9 +66,9 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
         }}
        data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
         {styles?.backgroundImage && <div className="absolute inset-0 bg-black/50" />}
-        <div className="relative z-10 flex flex-col items-center justify-between gap-6 px-6 py-10 text-center sm:flex-row sm:text-left md:px-16" data-media-content>
+        <div className="relative z-10 flex flex-col items-center justify-between gap-6 px-6 py-10 text-center @min-[640px]:flex-row @min-[640px]:text-left @min-[768px]:px-16" data-media-content>
           <div>
-            <EditableText as="h2" data={data} path={["title"]} value={title} isPreview={isPreview} onUpdate={onUpdate} className="text-2xl font-bold text-white md:text-3xl" style={textStyle} />
+            <EditableText as="h2" data={data} path={["title"]} value={title} isPreview={isPreview} onUpdate={onUpdate} className="text-2xl font-bold text-white @min-[768px]:text-3xl" style={textStyle} />
             {subtitle && (
               <EditableText as="p" data={data} path={["subtitle"]} value={subtitle} isPreview={isPreview} onUpdate={onUpdate} className="mt-1 text-white/80" multiline />
             )}
@@ -98,12 +98,12 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
   if (layout === "split") {
     return (
       <section
-        className={`px-4 py-12 sm:px-6 md:py-20 ${styles?.fontFamily || ""}`}
+        className={`px-4 py-12 @min-[640px]:px-6 @min-[768px]:py-20 ${styles?.fontFamily || ""}`}
         style={sectionStyle}
        data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
         <div data-section-content className="mx-auto max-w-5xl" data-media-content>
-          <div className="flex flex-col items-center gap-8 rounded-2xl border border-border bg-[var(--section-surface)] px-8 py-12 text-[var(--section-surface-foreground)] shadow-sm backdrop-blur md:flex-row md:justify-between">
-            <div className="max-w-lg text-center md:text-left">
+          <div className="flex flex-col items-center gap-8 rounded-2xl border border-border bg-[var(--section-surface)] px-8 py-12 text-[var(--section-surface-foreground)] shadow-sm backdrop-blur @min-[768px]:flex-row @min-[768px]:justify-between">
+            <div className="max-w-lg text-center @min-[768px]:text-left">
               <EditableText
                 as="h2"
                 data={data}
@@ -111,7 +111,7 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
                 value={title}
                 isPreview={isPreview}
                 onUpdate={onUpdate}
-                className="mb-3 text-balance text-3xl font-bold text-amber-950 md:text-4xl"
+                className="mb-3 text-balance text-3xl font-bold text-amber-950 @min-[768px]:text-4xl"
                 style={textStyle}
               />
               {subtitle && (
@@ -145,7 +145,7 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
   // Default: centered
   return (
     <section
-      className={`px-4 py-16 sm:px-6 md:py-24 ${styles?.fontFamily || ""}`}
+      className={`px-4 py-16 @min-[640px]:px-6 @min-[768px]:py-24 ${styles?.fontFamily || ""}`}
       style={sectionStyle}
      data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
       <div data-section-content className="mx-auto max-w-2xl text-center" data-media-content>
@@ -156,7 +156,7 @@ export function CtaSection({ data, isPreview, styles, onUpdate }: CtaSectionProp
           value={title}
           isPreview={isPreview}
           onUpdate={onUpdate}
-          className="mb-4 text-balance text-3xl font-bold text-amber-950 md:text-5xl"
+          className="mb-4 text-balance text-3xl font-bold text-amber-950 @min-[768px]:text-5xl"
           style={textStyle}
         />
         {subtitle && (

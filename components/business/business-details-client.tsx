@@ -105,7 +105,7 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
   return (
     <EditorPageShell
       title="Bedrijfsgegevens"
-      description="Beheer de basisinformatie, contactgegevens en online aanwezigheid van uw bedrijf."
+      description="Beheer de basisinformatie, contactgegevens en online aanwezigheid van je bedrijf."
       maxWidth="2xl"
       contentClassName="pb-24"
     >
@@ -119,7 +119,7 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
             <div>
               <h2 className="font-semibold text-foreground">Type bedrijf</h2>
               <p className="text-xs text-muted-foreground">
-                Kies de categorie die het beste bij uw bedrijf past
+                Kies de categorie die het beste bij je bedrijf past
               </p>
             </div>
           </div>
@@ -166,7 +166,7 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
             </div>
             <div>
               <h2 className="font-semibold text-foreground">Algemene informatie</h2>
-              <p className="text-xs text-muted-foreground">Naam en omschrijving van uw bedrijf</p>
+              <p className="text-xs text-muted-foreground">Naam en omschrijving van je bedrijf</p>
             </div>
           </div>
           <div className="p-6 space-y-5">
@@ -194,7 +194,7 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
                 onChange={(e) => setTagline(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Een korte zin die bezoekers direct vertelt wat u doet
+                Een korte zin die bezoekers direct vertelt wat je doet
               </p>
             </div>
             <div className="space-y-2">
@@ -204,7 +204,7 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
               </Label>
               <Textarea
                 id="description"
-                placeholder="Vertel bezoekers meer over uw bedrijf, werkwijze of aanpak..."
+                placeholder="Vertel bezoekers meer over je bedrijf, werkwijze of aanpak..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
@@ -308,7 +308,7 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
             <div>
               <h2 className="font-semibold text-foreground">Contactgegevens</h2>
               <p className="text-xs text-muted-foreground">
-                Telefoon, e-mail en WhatsApp — zichtbaar op uw website
+                Telefoon, e-mail en WhatsApp — zichtbaar op je website
               </p>
             </div>
           </div>
@@ -355,7 +355,7 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
                 onChange={(e) => setWhatsapp(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Optioneel — laat leeg als u geen WhatsApp-knop wilt
+                Optioneel — laat leeg als je geen WhatsApp-knop wilt
               </p>
             </div>
           </div>
@@ -388,7 +388,7 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
                 rows={3}
               />
               <p className="text-xs text-muted-foreground">
-                Vrij in te vullen — een online boekingsmodule volgt later
+                Deze tekst verschijnt op je website. Stel boekbare tijden in bij Planning en koppel ze aan een dienst.
               </p>
             </div>
           </div>
@@ -421,7 +421,7 @@ export function BusinessDetailsClient({ initialBusiness }: BusinessDetailsClient
                 onChange={(e) => setWebsiteUrl(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Optioneel — verschijnt als extra knop op uw website
+                Optioneel — verschijnt als extra knop op je website
               </p>
             </div>
           </div>

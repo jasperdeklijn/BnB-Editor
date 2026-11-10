@@ -48,8 +48,8 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
   const languageSwitcher = normalizeLanguageSwitcherConfig(data.languageSwitcher)
   const isEditorLanguagePreview = data.languageSwitcherEditorPreview === true
 
-  // Force mobile view when device is mobile or tablet
-  const isMobileView = device === "mobile" || device === "tablet"
+  // Phone preview explicitly uses the mobile menu; other sizes follow the nav container.
+  const isMobileView = device === "mobile"
 
   // Generate navigation links from sections
   const configuredLinks = data.navigationMode === "pages" && linkContext
@@ -217,29 +217,29 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
 
   const containerClass =
     layout === "card"
-      ? "mx-auto max-w-7xl px-3 py-3 sm:px-6"
+      ? "mx-auto max-w-7xl px-3 py-3 @min-[640px]:px-6"
       : layout === "showcase"
-        ? "mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 md:py-2"
-        : "mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
+        ? "mx-auto max-w-7xl px-4 @min-[640px]:px-6 @min-[1024px]:px-8 @min-[768px]:py-2"
+        : "mx-auto max-w-7xl px-4 @min-[640px]:px-6 @min-[1024px]:px-8"
 
   const barClass =
     layout === "split"
-      ? "flex h-16 items-center justify-between md:justify-start md:gap-12"
+      ? "flex h-16 items-center justify-between @min-[768px]:justify-start @min-[768px]:gap-12"
       : layout === "showcase"
-        ? "flex min-h-16 items-center justify-between md:flex-col md:justify-center md:gap-4 md:py-4"
+        ? "flex min-h-16 items-center justify-between @min-[768px]:flex-col @min-[768px]:justify-center @min-[768px]:gap-4 @min-[768px]:py-4"
         : layout === "compact"
           ? "flex h-12 items-center justify-between"
           : layout === "card"
-            ? "flex h-16 items-center justify-between rounded-2xl border border-current/10 bg-[var(--section-surface)] px-4 text-[var(--section-surface-foreground)] shadow-xl sm:px-6"
+            ? "flex h-16 items-center justify-between rounded-2xl border border-current/10 bg-[var(--section-surface)] px-4 text-[var(--section-surface-foreground)] shadow-xl @min-[640px]:px-6"
             : layout === "banner"
-              ? "flex h-20 items-center justify-between md:justify-center md:gap-12"
+              ? "flex h-20 items-center justify-between @min-[768px]:justify-center @min-[768px]:gap-12"
               : "flex h-16 items-center justify-between"
 
   const brandClass =
     layout === "compact"
       ? "text-lg"
       : layout === "showcase"
-        ? "text-2xl md:text-3xl"
+        ? "text-2xl @min-[768px]:text-3xl"
         : layout === "banner"
           ? "text-2xl"
           : "text-2xl"
@@ -264,7 +264,7 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
 
   return (
     <nav
-      className={`${navClass} ${styleTypeClass} ${getSectionDecorationClass(styleType)} ${isSticky ? "sticky top-0 z-50" : ""}`}
+      className={`@container ${navClass} ${styleTypeClass} ${getSectionDecorationClass(styleType)} ${isSticky ? "sticky top-0 z-50" : ""}`}
       style={sectionStyle}
     >
       <div className={containerClass}>
@@ -286,7 +286,7 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
           </div>
 
           {/* Desktop navigation */}
-          <div className={`${isMobileView ? "hidden" : "hidden md:flex"} items-center ${desktopNavClass}`}>
+          <div className={`${isMobileView ? "hidden" : "hidden @min-[768px]:flex"} items-center ${desktopNavClass}`}>
             {languageSwitcher.position === "nav-left" ? renderLanguageSwitcher() : null}
             {links.map((link) => (
               <WebsiteLink
@@ -302,7 +302,7 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
           </div>
 
           {/* Mobile menu button */}
-          <div className={`${isMobileView ? "flex" : "flex md:hidden"} items-center gap-1`}>
+          <div className={`${isMobileView ? "flex" : "flex @min-[768px]:hidden"} items-center gap-1`}>
             {languageSwitcher.position === "nav-left" ? renderLanguageSwitcher() : null}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -323,7 +323,7 @@ export function NavSection({ data, isPreview, styles, onUpdate, allSections, dev
           inert={!mobileMenuOpen}
           aria-hidden={!mobileMenuOpen}
           style={{ overflowY: mobileMenuOpen ? "auto" : undefined }}
-          className={`${isMobileView ? "block" : "md:hidden"} overflow-hidden transition-all duration-300 ease-in-out ${
+          className={`${isMobileView ? "block" : "@min-[768px]:hidden"} overflow-hidden transition-all duration-300 ease-in-out ${
             mobileMenuOpen ? "max-h-[70dvh] opacity-100 pb-4" : "max-h-0 opacity-0"
           }`}
         >

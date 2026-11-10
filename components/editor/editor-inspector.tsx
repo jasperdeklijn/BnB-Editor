@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { ArrowLeft, LayoutTemplate, Trash2 } from "lucide-react"
+import { getSectionDefinition } from "./section-registry"
 import { SelectionEditor } from "./section-editor"
 import { SiteDesignPanel } from "./site-design-panel"
 import { Button } from "@/components/ui/button"
@@ -223,5 +224,5 @@ export function EditorInspector({
 function getSectionInspectorLabel(section: Section) {
   const title = typeof section.data?.title === "string" ? section.data.title.trim() : ""
   if (title) return title
-  return section.type.replaceAll("_", " ")
+  return getSectionDefinition(section.type)?.label ?? section.type.replaceAll("_", " ")
 }

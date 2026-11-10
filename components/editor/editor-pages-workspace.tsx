@@ -112,7 +112,7 @@ export function EditorPagesWorkspace({
     if (!advancedReady) { setSwitchError("Installeer eerst de nieuwe multipage-migratie om pagina's en gedeelde onderdelen te wijzigen."); return }
     setSwitching(true); setSwitchError("")
     try {
-      if (!(await beforePageChange())) throw new Error("Sla eerst uw wijzigingen op.")
+      if (!(await beforePageChange())) throw new Error("Sla eerst je wijzigingen op.")
       await action()
       setAnnouncement("Wijziging opgeslagen.")
     } catch (error) { setSwitchError(error instanceof Error ? error.message : "De wijziging kon niet worden opgeslagen.") }
@@ -135,7 +135,7 @@ export function EditorPagesWorkspace({
     setSwitchError("")
     try {
       if (!(await beforePageChange())) {
-        setSwitchError("Uw wijzigingen konden niet worden opgeslagen. Probeer opnieuw voordat u van pagina wisselt.")
+        setSwitchError("Je wijzigingen konden niet worden opgeslagen. Probeer opnieuw voordat je van pagina wisselt.")
         return false
       }
       return await onPageChange(page.id)
@@ -256,7 +256,7 @@ export function EditorPagesWorkspace({
             }} className="fixed inset-y-0 right-0 z-[101] flex w-full max-w-2xl flex-col border-l border-border bg-background shadow-xl">
               <div className="shrink-0 border-b border-border px-5 py-4 pr-14">
                 <div className="flex items-center gap-2"><Dialog.Title className="text-lg font-semibold">Pagina&apos;s</Dialog.Title><span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-xs font-medium text-primary">Concept</span></div>
-                <Dialog.Description className="mt-1 text-sm leading-relaxed text-muted-foreground">Beheer uw pagina&apos;s. Iedere pagina heeft eigen secties en een eigen webadres.</Dialog.Description>
+                <Dialog.Description className="mt-1 text-sm leading-relaxed text-muted-foreground">Beheer je pagina&apos;s. Iedere pagina heeft eigen secties en een eigen webadres.</Dialog.Description>
                 <Dialog.Close asChild><Button type="button" variant="ghost" size="icon" aria-label="Pagina's sluiten" className="absolute right-3 top-3"><X className="h-4 w-4" /></Button></Dialog.Close>
               </div>
               <div className="min-h-0 flex-1 overflow-y-auto sm:grid sm:grid-cols-[240px_minmax(0,1fr)]">
@@ -281,7 +281,7 @@ export function EditorPagesWorkspace({
                     <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Gedeeld op alle pagina&apos;s. Wijzigingen aan deze onderdelen gelden overal.</p>
                     {(["nav", "footer"] as const).map((type) => {
                       const shared = sections.find((section) => section.scope === (type === "nav" ? "site_header" : "site_footer"))
-                      return <Button key={type} type="button" variant="outline" className="mt-2 min-h-11 w-full" disabled={busy || !advancedReady} onClick={() => shared ? (onSelectSection(shared.id), setManagerOpen(false)) : void runAction(() => onCreateShared(type))}>{type === "nav" ? "Header" : "Footer"} {shared ? "bewerken" : "toevoegen"}</Button>
+                      return <Button key={type} type="button" variant="outline" className="mt-2 min-h-11 w-full" disabled={busy || !advancedReady} onClick={() => shared ? (onSelectSection(shared.id), setManagerOpen(false)) : void runAction(() => onCreateShared(type))}>{type === "nav" ? "Navigatie" : "Voettekst"} {shared ? "bewerken" : "toevoegen"}</Button>
                     })}
                     {selectedSection ? <div className="mt-3 space-y-2">
                       <Label htmlFor="section-destination">Verplaatsen naar pagina</Label>
@@ -293,7 +293,7 @@ export function EditorPagesWorkspace({
                   </div>
                 </div>
                 <div className="min-w-0 p-5">
-                  {!advancedReady ? <p role="status" className="mb-4 rounded-md border p-3 text-sm">De nieuwe multipage-migratie moet nog worden geïnstalleerd. Bestaande pagina&apos;s kunt u bekijken; de nieuwe beheeracties volgen na installatie.</p> : null}
+                  {!advancedReady ? <p role="status" className="mb-4 rounded-md border p-3 text-sm">De nieuwe multipage-migratie moet nog worden geïnstalleerd. Bestaande pagina&apos;s kun je bekijken; de nieuwe beheeracties volgen na installatie.</p> : null}
                   <PageSettingsForm advancedSeoAllowed={advancedSeoAllowed} key={settingsPage?.id ?? "new"} page={settingsPage} pages={pages} localePath={localePath} busy={busy || !advancedReady || (!settingsPage && !hasMultipageAccess)} onApply={applySettings} />
                   {settingsPage && advancedReady ? <PageLocaleAndRedirectSettings key={`${settingsPage.id}:${localePath}`} page={settingsPage} localePath={localePath} busy={busy} /> : null}
                   {announcement ? <p role="status" className="mt-3 rounded-md border border-primary/20 bg-primary/5 p-3 text-xs leading-relaxed text-primary">{announcement}</p> : null}
@@ -350,7 +350,7 @@ function PageSettingsForm({ advancedSeoAllowed, page, pages, localePath, busy, o
     event.preventDefault()
     if (busy) return
     const normalizedSlug = slug.trim().toLowerCase()
-    if (!title.trim()) { setError("Geef uw pagina een naam."); return }
+    if (!title.trim()) { setError("Geef je pagina een naam."); return }
     if (!isHome && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalizedSlug)) { setError("Gebruik letters, cijfers en koppeltekens voor het webadres."); return }
     if (RESERVED_SLUGS.has(normalizedSlug)) { setError("Dit webadres is gereserveerd. Kies een ander adres."); return }
     if (pages.some((candidate) => candidate.id !== page?.id && candidate.slug === normalizedSlug)) { setError("Dit webadres wordt al door een andere pagina gebruikt."); return }
@@ -360,7 +360,7 @@ function PageSettingsForm({ advancedSeoAllowed, page, pages, localePath, busy, o
 
   return (
     <form onSubmit={submit} className="space-y-5">
-      <div><h3 className="text-base font-semibold">{page ? "Pagina-instellingen" : "Nieuwe pagina"}</h3><p className="mt-1 text-xs leading-relaxed text-muted-foreground">{isHome ? "Dit is uw startpagina. De inhoud bewerkt u op het canvas." : "Geef uw pagina een naam en een herkenbaar webadres."}</p></div>
+      <div><h3 className="text-base font-semibold">{page ? "Pagina-instellingen" : "Nieuwe pagina"}</h3><p className="mt-1 text-xs leading-relaxed text-muted-foreground">{isHome ? "Dit is je startpagina. De inhoud bewerk je op het canvas." : "Geef je pagina een naam en een herkenbaar webadres."}</p></div>
       <div className="space-y-2"><Label htmlFor={`${id}-title`}>Paginanaam</Label><Input id={`${id}-title`} className="h-10" value={title} disabled={busy} maxLength={80} required placeholder="Bijvoorbeeld Over ons" onChange={(event) => { setTitle(event.target.value); if (!slugEdited) setSlug(suggestSlug(event.target.value)) }} /></div>
       <div className="space-y-2"><Label htmlFor={`${id}-slug`}>Webadres</Label><div className="flex items-center rounded-md border border-input focus-within:ring-[3px] focus-within:ring-ring/50"><span className="shrink-0 border-r border-border px-3 text-sm text-muted-foreground">/</span><Input id={`${id}-slug`} className="h-10 border-0 shadow-none focus-visible:ring-0" value={slug} disabled={busy || isHome} required={!isHome} maxLength={80} placeholder={isHome ? "Startpagina" : "over-ons"} autoCapitalize="none" spellCheck={false} aria-describedby={`${id}-path`} onChange={(event) => { setSlug(event.target.value); setSlugEdited(true) }} /></div><p id={`${id}-path`} className="break-all text-xs text-muted-foreground">{isHome ? "Uw startpagina opent op" : "Webadres:"} <span className="font-medium text-foreground">{path}</span></p></div>
       <div className="space-y-4 rounded-lg border border-border p-3">
@@ -432,11 +432,11 @@ function PageLocaleAndRedirectSettings({ page, localePath, busy }: { page: Websi
       <Button type="button" variant="outline" disabled={busy || saving || !title.trim()} onClick={() => void saveTranslation()}>Vertaling opslaan</Button>
     </div></details> : null}
     <details className="rounded-lg border p-3"><summary className="cursor-pointer text-sm font-medium">Links naar deze pagina · {incoming.length}</summary>
-      <p className="mt-2 text-xs text-muted-foreground">Controleer deze links voordat u de pagina uitsluit of verwijdert. Publicatie stopt bij een ontbrekend doel; open de sectie om een ander doel te kiezen of de link te verwijderen.</p>
+      <p className="mt-2 text-xs text-muted-foreground">Controleer deze links voordat je de pagina uitsluit of verwijdert. Publicatie stopt bij een ontbrekend doel; open de sectie om een ander doel te kiezen of de link te verwijderen.</p>
       {incoming.map((section) => <a className="mt-2 block min-h-11 break-all rounded border p-2 text-sm underline" key={section.id} href={`/editor?websiteId=${page.websiteId}&pageId=${section.page_id ?? page.id}#section-${section.id}`}>{section.type} · Link aanpassen</a>)}
     </details>
     <details className="rounded-lg border p-3"><summary className="cursor-pointer text-sm font-medium">Doorverwijzingen · {redirects.length}</summary>
-      <p className="mt-2 text-xs text-muted-foreground">Een gewijzigd live webadres verwijst na publicatie naar dezelfde pagina. Verwijder conflicterende doorverwijzingen voordat u publiceert.</p>
+      <p className="mt-2 text-xs text-muted-foreground">Een gewijzigd live webadres verwijst na publicatie naar dezelfde pagina. Verwijder conflicterende doorverwijzingen voordat je publiceert.</p>
       {redirects.map((redirect) => <div key={redirect.from_slug} className="mt-2 flex items-center justify-between gap-2"><span className="min-w-0 break-all text-xs">/{redirect.from_slug}</span><Button type="button" variant="outline" disabled={busy || saving} onClick={() => { void (async () => {
         setSaving(true)
         const { error } = await createClient().from("website_page_redirects").delete().eq("website_id", page.websiteId).eq("from_slug", redirect.from_slug)

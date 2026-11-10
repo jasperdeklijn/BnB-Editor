@@ -118,7 +118,7 @@ export function OpeningHoursSection({ data, isPreview, styles, onUpdate }: Openi
 
   return (
     <section
-      className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`}
+      className={`px-4 ${layout.section} @min-[640px]:px-6 ${styles?.fontFamily || ""}`}
       style={sectionStyle}
      data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
       <div data-section-content className={`mx-auto ${layout.layout === "split" || layout.layout === "showcase" ? "max-w-4xl" : layout.container}`} data-media-content>
@@ -134,7 +134,7 @@ export function OpeningHoursSection({ data, isPreview, styles, onUpdate }: Openi
             value={title}
             isPreview={isPreview}
             onUpdate={onUpdate}
-            className="mb-2 text-balance text-3xl font-bold text-amber-950 md:text-4xl"
+            className="mb-2 text-balance text-3xl font-bold text-amber-950 @min-[768px]:text-4xl"
             style={textStyle}
           />
           {subtitle && (
@@ -142,7 +142,7 @@ export function OpeningHoursSection({ data, isPreview, styles, onUpdate }: Openi
           )}
         </div>
 
-        <div className={`overflow-hidden rounded-2xl border border-border bg-[var(--section-surface)] text-[var(--section-surface-foreground)] shadow-sm backdrop-blur ${layout.layout === "split" || layout.layout === "showcase" ? "grid md:grid-cols-2" : ""}`}>
+        <div className={`overflow-hidden rounded-2xl border border-border bg-[var(--section-surface)] text-[var(--section-surface-foreground)] shadow-sm backdrop-blur ${layout.layout === "split" || layout.layout === "showcase" ? "grid @min-[768px]:grid-cols-2" : ""}`}>
           {rows.map((row, idx) => (
             <div
               key={idx}

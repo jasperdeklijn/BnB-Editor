@@ -1756,6 +1756,7 @@ export function EditorClient({
     <div className="flex h-full min-h-0 flex-col bg-muted" onClickCapture={handleEditorNavigationCapture}>
       <div className="border-b border-border bg-background px-3 py-2 md:px-4">
         <EditorWebsiteToolbar
+          isEmpty={displayedSections.length === 0}
           websites={websites.map((website, index) => ({ id: website.id, label: getWebsiteOptionLabel(website, index) }))}
           websiteId={websiteId}
           pageId={activePageId}
@@ -1919,7 +1920,7 @@ export function EditorClient({
             onSharedSaved={refreshSharedLocaleStatuses}
             className="flex h-full w-80 shrink-0 flex-col border-l bg-background xl:w-96"
           />
-        ) : !isPreview ? (
+        ) : !isPreview && displayedSections.length > 0 ? (
           <EditorInspector
             userId={userId}
             selectedSection={selectedSection}

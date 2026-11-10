@@ -47,10 +47,10 @@ export function FooterSection({ data, isPreview, styles, onUpdate, allSections }
   }
 
   return (
-    <footer style={sectionStyle} className={styles?.fontFamily || ""}>
-      <div className={`mx-auto px-4 sm:px-6 lg:px-8 ${layout.section} ${layout.layout === "compact" ? "max-w-5xl" : "max-w-7xl"}`}>
-        <div className={`mb-8 grid gap-8 ${showLinks || hasCompanyInfo ? "md:grid-cols-3" : ""}`}>
-          <div className={layout.layout === "banner" ? "text-center md:col-span-3" : ""}>
+    <footer style={sectionStyle} className={`@container ${styles?.fontFamily || ""}`}>
+      <div className={`mx-auto px-4 @min-[640px]:px-6 @min-[1024px]:px-8 ${layout.section} ${layout.layout === "compact" ? "max-w-5xl" : "max-w-7xl"}`}>
+        <div className={`mb-8 grid gap-8 ${showLinks || hasCompanyInfo ? "@min-[768px]:grid-cols-3" : ""}`}>
+          <div className={layout.layout === "banner" ? "text-center @min-[768px]:col-span-3" : ""}>
             <EditableText as="h3" data={editableData} path={["companyName"]} value={companyName} isPreview={isPreview} onUpdate={onUpdate} className="mb-3 text-lg font-bold text-[var(--section-accent)]" />
             <EditableText as="p" data={editableData} path={["companyDescription"]} value={companyDescription} isPreview={isPreview} onUpdate={onUpdate} className="max-w-md text-sm leading-relaxed opacity-75" multiline />
           </div>
@@ -66,10 +66,10 @@ export function FooterSection({ data, isPreview, styles, onUpdate, allSections }
             </ul>
           </div> : null}
 
-          {showLinks ? <div className={hasCompanyInfo ? "" : "md:col-span-2"}>
+          {showLinks ? <div className={hasCompanyInfo ? "" : "@min-[768px]:col-span-2"}>
             {columns.map((column, columnIndex) => <div key={columnIndex}>
               <EditableText as="h4" data={editableData} path={["columns", columnIndex, "title"]} value={column.title} isPreview={isPreview} onUpdate={onUpdate} className="mb-4 text-sm font-semibold" />
-              <ul className="flex flex-wrap gap-x-5 gap-y-2 md:flex-col">
+              <ul className="flex flex-wrap gap-x-5 gap-y-2 @min-[768px]:flex-col">
                 {column.links.map((link, linkIndex) => <li key={`${link.href}-${linkIndex}`}><WebsiteLink href={resolveHref(link.href)} className="text-sm opacity-75 transition hover:text-[var(--section-accent)] hover:opacity-100"><EditableText data={editableData} path={["columns", columnIndex, "links", linkIndex, "label"]} value={link.label} isPreview={isPreview} onUpdate={onUpdate} /></WebsiteLink></li>)}
               </ul>
             </div>)}
@@ -77,7 +77,7 @@ export function FooterSection({ data, isPreview, styles, onUpdate, allSections }
         </div>
 
         <div className="border-t border-white/20 pt-6">
-          <div className="flex flex-col items-center justify-between gap-4 text-center sm:flex-row sm:text-left">
+          <div className="flex flex-col items-center justify-between gap-4 text-center @min-[640px]:flex-row @min-[640px]:text-left">
             <p className="text-sm opacity-75">&copy; {currentYear} <EditableText data={editableData} path={["companyName"]} value={companyName} isPreview={isPreview} onUpdate={onUpdate} />. {messages.rightsReserved}</p>
             {showSocialLinks ? <div className="flex flex-wrap justify-center gap-4">{socialLinks.map((link, index) => <WebsiteLink key={`${link.href}-${index}`} href={link.href} className="text-sm opacity-75 transition hover:text-[var(--section-accent)] hover:opacity-100"><EditableText data={editableData} path={["socialLinks", index, "label"]} value={link.label} isPreview={isPreview} onUpdate={onUpdate} /></WebsiteLink>)}</div> : null}
           </div>

@@ -545,7 +545,9 @@ export function CalendarClient({
       : ""
   const rangeEmptyText = `Er zijn ${filteredCountLabel}${rangeEmptyFilterText}, maar geen daarvan valt in ${calendarViewRange.emptyRangeLabel}. Kies een andere periode${hasActiveFilters ? " of pas de filters aan" : ""}.`
   const upcomingRuleText = `Komende 30 dagen binnen huidige filters, zonder geannuleerde items.`
-  const upcomingEmptyText = visibleEntries.length === 0
+  const upcomingEmptyText = entries.length === 0
+    ? "Je hebt nog geen kalenderitems. Voeg een afspraak of boeking toe via de kalender."
+    : visibleEntries.length === 0
     ? "Er zijn geen kalenderitems binnen de huidige filters. Pas de filters aan om meer items te zien."
     : `Er zijn ${filteredCountLabel}, maar geen actieve items in de komende 30 dagen. Kies een andere periode in de kalender${hasActiveFilters ? " of pas de filters aan" : ""}.`
   const formConflicts = form ? getEntryConflicts(form, entries) : []
@@ -956,7 +958,8 @@ export function CalendarClient({
                 onClear={hasActiveFilters ? clearFilters : undefined}
                 disabled={Boolean(schemaError)}
               />
-            ) : activeView === "month" ? (
+            ) : null}
+            {activeView === "month" ? (
                 <MonthView
                   cursorDate={cursorDate}
                   entriesByDay={entriesByDay}
@@ -1301,24 +1304,21 @@ function CalendarEmptyState({
   onClear?: () => void
 }) {
   return (
-    <div className="grid min-h-[24rem] place-items-center rounded-lg border border-dashed border-border bg-background p-6 text-center">
-      <div className="max-w-sm">
-        <div className="mx-auto mb-4 flex h-11 w-11 items-center justify-center rounded-md bg-primary/10 text-primary">
-          <CalendarDays className="h-5 w-5" />
-        </div>
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-dashed border-border bg-background p-4">
+      <div className="min-w-0 flex-1">
         <h3 className="font-semibold text-foreground">{title}</h3>
-        <p className="mt-2 text-sm text-muted-foreground">{text}</p>
-        <div className="mt-4 flex flex-col justify-center gap-2 sm:flex-row">
-          {onClear ? (
-            <Button type="button" variant="outline" onClick={onClear}>
-              Filters wissen
-            </Button>
-          ) : null}
-          <Button type="button" onClick={onCreate} disabled={disabled}>
-            <Plus className="h-4 w-4" />
-            {actionLabel}
+        <p className="mt-1 text-sm text-muted-foreground">{text}</p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {onClear ? (
+          <Button type="button" variant="outline" onClick={onClear}>
+            Filters wissen
           </Button>
-        </div>
+        ) : null}
+        <Button type="button" onClick={onCreate} disabled={disabled}>
+          <Plus className="h-4 w-4" />
+          {actionLabel}
+        </Button>
       </div>
     </div>
   )

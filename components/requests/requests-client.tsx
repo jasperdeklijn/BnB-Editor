@@ -44,7 +44,7 @@ const REQUEST_TYPE_LABELS: Record<InquiryListItem["request_type"], string> = {
 
 const SOURCE_LABELS: Record<string, string> = {
   website_form: "Websiteformulier",
-  contact_request: "Websiteformulier",
+  contact_request: "Contactaanvraag (bestaand formulier)",
   request_form_section: "Aanvraagformulier",
   contact_section: "Contactformulier",
   services_booking_space: "Dienstenblok",
@@ -123,6 +123,10 @@ export function RequestsClient({
   const [service, setService] = useState(filters.service)
   const [dateFrom, setDateFrom] = useState(filters.dateFrom)
   const [dateTo, setDateTo] = useState(filters.dateTo)
+  const hasActiveFilters = filters.status !== "all" || filters.requestType !== "all"
+    || Boolean(filters.search || filters.service || filters.dateFrom || filters.dateTo || filters.dueOnly)
+    || Boolean(filters.source && filters.source !== "all")
+  const isFirstUse = overview.total === 0 && !hasActiveFilters && !schemaError && !detailError && !selected
 
   useEffect(() => setSearch(filters.search), [filters.search])
   useEffect(() => setService(filters.service), [filters.service])
@@ -144,7 +148,13 @@ export function RequestsClient({
   return (
     <div className="grid gap-4 sm:gap-5">
       {schemaError ? <StatusMessage tone="error">{schemaError}</StatusMessage> : null}
-      <section aria-label="Overzicht aanvragen" className="grid grid-cols-2 gap-2 lg:grid-cols-5">
+      {isFirstUse ? <section className="rounded-xl border bg-card p-6 sm:p-8" aria-labelledby="first-inquiry-title">
+        <MessageSquareText className="mb-3 h-8 w-8 text-primary" aria-hidden="true" />
+        <h2 id="first-inquiry-title" className="text-lg font-semibold">Ontvang je eerste aanvraag</h2>
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">Voeg een contact- of aanvraagformulier toe aan je website en controleer het ontvangstadres. Berichten verschijnen hier zodra een bezoeker het formulier op je gepubliceerde website verstuurt.</p>
+        <div className="mt-4 flex flex-wrap gap-2"><Button asChild><Link href="/editor">Websiteformulier instellen</Link></Button><Button asChild variant="outline"><Link href="/editor/business">Ontvangstadres controleren</Link></Button></div>
+      </section> : null}
+      {!isFirstUse ? <section aria-label="Overzicht aanvragen" className="grid grid-cols-2 gap-2 lg:grid-cols-5">
         {summary.map((item) => (
           <button
             key={item.status}
@@ -156,7 +166,7 @@ export function RequestsClient({
             <strong className="mt-1 block text-2xl">{item.count}</strong>
           </button>
         ))}
-      </section>
+      </section> : null}
 
       {overview.followUpDue ? (
         <button type="button" onClick={() => navigate({ dueOnly: !filters.dueOnly })} className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-left text-sm text-amber-950">
@@ -165,16 +175,16 @@ export function RequestsClient({
         </button>
       ) : null}
 
-      <form className="grid gap-2 rounded-xl border bg-card p-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_auto_auto]" onSubmit={(event) => { event.preventDefault(); navigate({ search, service, dateFrom, dateTo, page: 1 }) }}>
+      {!isFirstUse ? <form className="grid gap-2 rounded-xl border bg-card p-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_auto_auto]" onSubmit={(event) => { event.preventDefault(); navigate({ search, service, dateFrom, dateTo, page: 1 }) }}>
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input value={search} onChange={(event) => setSearch(event.target.value)} className="pl-9" placeholder="Zoek naam, e-mail, telefoon of aanbod" aria-label="Zoek aanvragen" />
         </div>
-        <select value={filters.status} onChange={(event) => navigate({ status: event.target.value as Required<InquiryFilters>["status"] })} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
+        <select aria-label="Filter op status" value={filters.status} onChange={(event) => navigate({ status: event.target.value as Required<InquiryFilters>["status"] })} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
           <option value="all">Alle statussen</option>
           {INQUIRY_STATUSES.map((status) => <option key={status} value={status}>{INQUIRY_STATUS_LABELS[status]}</option>)}
         </select>
-        <select value={filters.requestType} onChange={(event) => navigate({ requestType: event.target.value as Required<InquiryFilters>["requestType"] })} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
+        <select aria-label="Filter op type" value={filters.requestType} onChange={(event) => navigate({ requestType: event.target.value as Required<InquiryFilters>["requestType"] })} className="h-10 rounded-md border border-input bg-background px-3 text-sm">
           <option value="all">Alle types</option>
           {Object.entries(REQUEST_TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select>
@@ -187,16 +197,17 @@ export function RequestsClient({
           <Input type="date" value={dateFrom} onChange={(event) => setDateFrom(event.target.value)} aria-label="Vanaf datum" />
           <Input type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} aria-label="Tot en met datum" />
         </div>
-      </form>
+        <div className="flex flex-wrap gap-2 sm:col-span-2 lg:col-span-3"><Button type="submit" size="sm">Filters toepassen</Button>{hasActiveFilters ? <Button type="button" variant="outline" size="sm" onClick={() => router.push("/editor/requests")}>Filters wissen</Button> : null}</div>
+      </form> : null}
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.8fr)]">
+      {!isFirstUse ? <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,0.8fr)]">
         <section className="overflow-hidden rounded-xl border bg-card" aria-label="Aanvragenlijst">
           {overview.items.length ? (
             <ul className="divide-y">
               {overview.items.map((item) => <InquiryRow key={item.id} item={item} active={selected?.inquiry.id === item.id} href={toQuery(filters, item.id)} />)}
             </ul>
           ) : (
-            <div className="p-8 text-center text-sm text-muted-foreground">Nog geen aanvragen voor deze selectie.</div>
+            <div className="p-8 text-center"><h2 className="font-semibold">Geen aanvragen gevonden</h2><p className="mt-2 text-sm text-muted-foreground">Pas je zoekopdracht of filters aan om andere aanvragen te zien.</p>{hasActiveFilters ? <Button type="button" variant="outline" className="mt-4" onClick={() => router.push("/editor/requests")}>Alle aanvragen bekijken</Button> : null}</div>
           )}
           {overview.pageCount > 1 ? (
             <div className="flex items-center justify-between border-t p-3 text-sm">
@@ -206,7 +217,7 @@ export function RequestsClient({
           ) : null}
         </section>
         <InquiryDetailPanel businessId={businessId} detail={selected} replyTemplates={replyTemplates} detailError={detailError} />
-      </div>
+      </div> : null}
     </div>
   )
 }
@@ -304,9 +315,9 @@ function InquiryDetailPanel({ businessId, detail, replyTemplates, detailError }:
       {inquiry.message ? <section className="mt-4 rounded-lg bg-muted/60 p-3 text-sm whitespace-pre-wrap"><p className="mb-1 text-xs font-medium text-muted-foreground">Bericht</p>{inquiry.message}</section> : null}
       <QuoteEntryActions requestId={inquiry.id} />{bookingHref ? <Button asChild variant="outline" className="mt-3 w-full"><Link href={bookingHref}><CalendarDays className="h-4 w-4" />Open in {active.calendarEntry?.entry_type === "booking" ? "reserveringen" : "kalender"}</Link></Button> : null}
 
-      <section className="mt-5 grid gap-3 border-t pt-4"><Label htmlFor="inquiry-status">Fase</Label><select id="inquiry-status" value={inquiry.status} disabled={isPending} onChange={(event) => update({ businessId, inquiryId: inquiry.id, status: event.target.value as InquiryStatus }, "Fase bijgewerkt.")} className="h-10 rounded-md border border-input bg-background px-3 text-sm">{INQUIRY_STATUSES.map((status) => <option key={status} value={status}>{INQUIRY_STATUS_LABELS[status]}</option>)}</select><div><Label htmlFor="inquiry-followup">Opvolgmoment</Label><div className="mt-1 flex gap-2"><Input id="inquiry-followup" type="datetime-local" value={followUp} disabled={isPending} onChange={(event) => setFollowUp(event.target.value)} /><Button type="button" variant="outline" disabled={isPending} onClick={() => update({ businessId, inquiryId: inquiry.id, followUpAt: followUp ? new Date(followUp).toISOString() : null }, "Opvolgmoment opgeslagen.")}>Bewaar</Button></div></div><div><Label htmlFor="inquiry-notes">Interne notities</Label><Textarea id="inquiry-notes" className="mt-1" value={notes} maxLength={4000} disabled={isPending} onChange={(event) => setNotes(event.target.value)} onBlur={() => update({ businessId, inquiryId: inquiry.id, ownerNotes: notes }, "Notities opgeslagen.")} placeholder="Alleen zichtbaar voor u." /></div></section>
+      <section className="mt-5 grid gap-3 border-t pt-4"><Label htmlFor="inquiry-status">Fase</Label><select id="inquiry-status" value={inquiry.status} disabled={isPending} onChange={(event) => update({ businessId, inquiryId: inquiry.id, status: event.target.value as InquiryStatus }, "Fase bijgewerkt.")} className="h-10 rounded-md border border-input bg-background px-3 text-sm">{INQUIRY_STATUSES.map((status) => <option key={status} value={status}>{INQUIRY_STATUS_LABELS[status]}</option>)}</select><div><Label htmlFor="inquiry-followup">Opvolgmoment</Label><div className="mt-1 flex gap-2"><Input id="inquiry-followup" type="datetime-local" value={followUp} disabled={isPending} onChange={(event) => setFollowUp(event.target.value)} /><Button type="button" variant="outline" disabled={isPending} onClick={() => update({ businessId, inquiryId: inquiry.id, followUpAt: followUp ? new Date(followUp).toISOString() : null }, "Opvolgmoment opgeslagen.")}>Bewaar</Button></div></div><div><Label htmlFor="inquiry-notes">Interne notities</Label><Textarea id="inquiry-notes" className="mt-1" value={notes} maxLength={4000} disabled={isPending} onChange={(event) => setNotes(event.target.value)} onBlur={() => update({ businessId, inquiryId: inquiry.id, ownerNotes: notes }, "Notities opgeslagen.")} placeholder="Alleen zichtbaar voor jou." /></div></section>
 
-      <section className="mt-5 border-t pt-4"><div className="flex items-center gap-2"><Send className="h-4 w-4" /><h3 className="font-semibold">E-mail beantwoorden</h3></div><p className="mt-1 text-xs text-muted-foreground">Verzonden via FlexPagina. Een reply komt terecht op het ingestelde ontvangstadres van dit bedrijf.</p><div className="mt-3 grid gap-2">{templates.length ? <select aria-label="Kies reactietemplate" defaultValue="" disabled={isPending} onChange={(event) => { const template = templates.find((item) => item.id === event.target.value); if (template) setReply({ subject: applyReplyTemplate(template.subject, inquiry), body: applyReplyTemplate(template.body, inquiry) }); event.currentTarget.value = "" }} className="h-10 rounded-md border border-input bg-background px-3 text-sm"><option value="">Gebruik een opgeslagen template…</option>{templates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}</select> : null}<p className="text-xs text-muted-foreground">Templates ondersteunen alleen <code>{"{{name}}"}</code>, <code>{"{{service}}"}</code> en <code>{"{{preferred_date}}"}</code>.</p><Input value={reply.subject} maxLength={200} disabled={isPending} onChange={(event) => setReply((current) => ({ ...current, subject: event.target.value }))} aria-label="Onderwerp antwoord" /><Textarea value={reply.body} maxLength={8000} disabled={isPending} onChange={(event) => setReply((current) => ({ ...current, body: event.target.value }))} placeholder="Schrijf uw reactie…" aria-label="Tekst antwoord" /><div className="flex gap-2"><Input value={templateName} maxLength={80} disabled={isPending} onChange={(event) => setTemplateName(event.target.value)} placeholder="Naam voor deze template" aria-label="Naam reactietemplate" /><Button type="button" variant="outline" disabled={isPending || !templateName.trim() || !reply.subject.trim() || !reply.body.trim()} onClick={saveTemplate}>Opslaan</Button></div><Button type="button" disabled={isPending || !reply.subject.trim() || !reply.body.trim()} onClick={sendReply}><Send className="h-4 w-4" />{isPending ? "Versturen…" : "Verstuur reactie"}</Button></div></section>
+      <section className="mt-5 border-t pt-4"><div className="flex items-center gap-2"><Send className="h-4 w-4" /><h3 className="font-semibold">E-mail beantwoorden</h3></div><p className="mt-1 text-xs text-muted-foreground">Verzonden via FlexPagina. Een reply komt terecht op het ingestelde ontvangstadres van dit bedrijf.</p><div className="mt-3 grid gap-2">{templates.length ? <select aria-label="Kies reactietemplate" defaultValue="" disabled={isPending} onChange={(event) => { const template = templates.find((item) => item.id === event.target.value); if (template) setReply({ subject: applyReplyTemplate(template.subject, inquiry), body: applyReplyTemplate(template.body, inquiry) }); event.currentTarget.value = "" }} className="h-10 rounded-md border border-input bg-background px-3 text-sm"><option value="">Gebruik een opgeslagen template…</option>{templates.map((template) => <option key={template.id} value={template.id}>{template.name}</option>)}</select> : null}<p className="text-xs text-muted-foreground">Templates ondersteunen alleen <code>{"{{name}}"}</code>, <code>{"{{service}}"}</code> en <code>{"{{preferred_date}}"}</code>.</p><Input value={reply.subject} maxLength={200} disabled={isPending} onChange={(event) => setReply((current) => ({ ...current, subject: event.target.value }))} aria-label="Onderwerp antwoord" /><Textarea value={reply.body} maxLength={8000} disabled={isPending} onChange={(event) => setReply((current) => ({ ...current, body: event.target.value }))} placeholder="Schrijf je reactie…" aria-label="Tekst antwoord" /><div className="flex gap-2"><Input value={templateName} maxLength={80} disabled={isPending} onChange={(event) => setTemplateName(event.target.value)} placeholder="Naam voor deze template" aria-label="Naam reactietemplate" /><Button type="button" variant="outline" disabled={isPending || !templateName.trim() || !reply.subject.trim() || !reply.body.trim()} onClick={saveTemplate}>Opslaan</Button></div><Button type="button" disabled={isPending || !reply.subject.trim() || !reply.body.trim()} onClick={sendReply}><Send className="h-4 w-4" />{isPending ? "Versturen…" : "Verstuur reactie"}</Button></div></section>
 
       <section className="mt-5 border-t pt-4"><h3 className="font-semibold">Geschiedenis</h3><ol className="mt-3 grid gap-2 text-sm">{active.messages.map((message) => <li key={message.id} className={`rounded-lg p-3 ${message.direction === "outbound" ? "bg-primary/5" : "bg-muted/60"}`}><div className="flex justify-between gap-2 text-xs text-muted-foreground"><span>{message.customer_visible ? (message.direction === "outbound" ? "Gedeeld op klantpagina" : "Bericht van klant") : message.direction === "outbound" ? "E-mail aan klant" : "Aanvraag ontvangen"}</span><time>{formatDate(message.sent_at ?? message.created_at)}</time></div><p className="mt-1 font-medium">{message.subject || "Website aanvraag"}</p><p className="mt-1 whitespace-pre-wrap text-sm">{message.body || "Geen bericht ingevuld."}</p>{message.delivery_status === "failed" ? <p className="mt-1 text-xs text-destructive">Niet verzonden: {message.error_message || "onbekende fout"}</p> : null}</li>)}{activities.map((activity) => <li key={activity.id} className="rounded-lg border border-dashed p-2 text-xs text-muted-foreground"><time>{formatDate(activity.created_at)}</time> · {activity.body}</li>)}</ol></section>
     </aside>

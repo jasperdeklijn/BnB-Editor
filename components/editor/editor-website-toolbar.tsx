@@ -19,6 +19,7 @@ interface EditorWebsiteToolbarProps {
   canPublish: boolean
   published: boolean
   pagePreview?: boolean
+  isEmpty?: boolean
   previewHref: string
   liveHref: string
   languageControl: ReactNode
@@ -54,7 +55,7 @@ export function EditorWebsiteToolbar(props: EditorWebsiteToolbarProps) {
           <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         </div>
         <DropdownMenu.Root>
-          <DropdownMenu.Trigger asChild><Button variant="outline" className="hidden h-11 px-3 md:inline-flex" disabled={props.busy} aria-label="Ontwerpen beheren"><MoreHorizontal className="h-4 w-4" />Ontwerpen beheren</Button></DropdownMenu.Trigger>
+          <DropdownMenu.Trigger asChild><Button variant="outline" className={props.isEmpty ? "hidden" : "hidden h-11 px-3 md:inline-flex"} disabled={props.busy} aria-label="Ontwerpen beheren"><MoreHorizontal className="h-4 w-4" />Ontwerpen beheren</Button></DropdownMenu.Trigger>
           <DropdownMenu.Portal><DropdownMenu.Content align="start" sideOffset={6} className={menuContentClass}>
             <DropdownMenu.Label className="px-3 py-2 text-xs font-semibold text-muted-foreground">Ontwerpen beheren</DropdownMenu.Label>
             <DropdownMenu.Item className={menuItemClass} onSelect={props.onCreate}><Plus className="h-4 w-4" />Nieuw ontwerp</DropdownMenu.Item>
@@ -67,19 +68,19 @@ export function EditorWebsiteToolbar(props: EditorWebsiteToolbarProps) {
         <Button variant={props.canPublish ? "default" : "outline"} className="h-11 shrink-0 px-3 md:hidden" disabled={!props.websiteId || props.saving || props.busy || props.pagePreview} onClick={props.onPublish} title={props.pagePreview ? "Voorbeeldpagina's kunnen nog niet worden gepubliceerd" : props.canPublish ? "Website publiceren" : "Bekijk wat publiceren blokkeert"}>Publiceren</Button>
         <MobileWebsiteActions {...props} onRequestRename={() => { setName(props.title); setRenameError(""); setRenameOpen(true) }} />
       </div>
-      <div className="hidden md:block">{props.languageControl}</div>
-      <div className="hidden items-center rounded-md border border-border bg-background md:inline-flex">
+      <div className={props.isEmpty ? "hidden" : "hidden md:block"}>{props.languageControl}</div>
+      <div className={props.isEmpty ? "hidden" : "hidden items-center rounded-md border border-border bg-background md:inline-flex"}>
         <Button variant="ghost" className="h-11 w-11 px-0" onClick={props.onUndo} disabled={!props.canUndo || props.busy || props.pagePreview} aria-label="Wijziging ongedaan maken" title="Ongedaan maken (Ctrl+Z)"><Undo2 className="h-4 w-4" /></Button>
         <Button variant="ghost" className="h-11 w-11 px-0" onClick={props.onRedo} disabled={!props.canRedo || props.busy || props.pagePreview} aria-label="Wijziging opnieuw toepassen" title="Opnieuw toepassen (Ctrl+Shift+Z)"><Redo2 className="h-4 w-4" /></Button>
       </div>
       <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild><Button variant="outline" className="hidden h-11 md:inline-flex" disabled={props.busy || props.pagePreview}>Importeren<ChevronDown className="h-4 w-4" /></Button></DropdownMenu.Trigger>
+        <DropdownMenu.Trigger asChild><Button variant="outline" className={props.isEmpty ? "hidden" : "hidden h-11 md:inline-flex"} disabled={props.busy || props.pagePreview}>Importeren<ChevronDown className="h-4 w-4" /></Button></DropdownMenu.Trigger>
         <DropdownMenu.Portal><DropdownMenu.Content align="start" sideOffset={6} className={menuContentClass}>
           <DropdownMenu.Item className={menuItemClass} onSelect={props.onImport}><FileJson className="h-4 w-4" />JSON importeren</DropdownMenu.Item>
           <DropdownMenu.Item asChild className={menuItemClass}><Link href="/editor/flexstart"><Globe className="h-4 w-4" />Bestaande website overnemen</Link></DropdownMenu.Item>
         </DropdownMenu.Content></DropdownMenu.Portal>
       </DropdownMenu.Root>
-      {props.pagePreview ? <Button variant="ghost" className="hidden h-11 md:inline-flex" disabled><Search className="h-4 w-4" />SEO & Analytics</Button> : <Button variant="ghost" asChild className="hidden h-11 md:inline-flex"><Link href={`/editor/seo${props.websiteId ? `?websiteId=${encodeURIComponent(props.websiteId)}${props.pageId ? `&pageId=${encodeURIComponent(props.pageId)}` : ""}` : ""}`}><Search className="h-4 w-4" />SEO & Analytics</Link></Button>}
+      {props.pagePreview ? <Button variant="ghost" className={props.isEmpty ? "hidden" : "hidden h-11 md:inline-flex"} disabled><Search className="h-4 w-4" />SEO & Analytics</Button> : <Button variant="ghost" asChild className={props.isEmpty ? "hidden" : "hidden h-11 md:inline-flex"}><Link href={`/editor/seo${props.websiteId ? `?websiteId=${encodeURIComponent(props.websiteId)}${props.pageId ? `&pageId=${encodeURIComponent(props.pageId)}` : ""}` : ""}`}><Search className="h-4 w-4" />SEO & Analytics</Link></Button>}
       <div className="ml-auto hidden w-auto flex-wrap items-center justify-end gap-2 md:flex">
         {props.pagePreview ? <Button variant="outline" className="h-11" disabled><Eye className="h-4 w-4" /><span className="sr-only sm:not-sr-only">Preview</span></Button> : props.previewHref ? <Button variant="outline" asChild className="h-11"><a href={props.previewHref} target="_blank" rel="noreferrer"><Eye className="h-4 w-4" /><span className="sr-only sm:not-sr-only">Preview</span></a></Button> : null}
         {props.published && props.liveHref ? <a className="hidden max-w-36 truncate text-xs text-primary underline xl:block" href={props.liveHref} target="_blank" rel="noreferrer">Website live</a> : null}
@@ -111,7 +112,7 @@ function MobileWebsiteActions(props: EditorWebsiteToolbarProps & { onRequestRena
   return (
     <>
       <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild><Button ref={menuButtonRef} variant="outline" className="h-11 w-11 shrink-0 px-0 md:hidden" disabled={props.busy} aria-label="Meer website-acties"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenu.Trigger>
+        <DropdownMenu.Trigger asChild><Button ref={menuButtonRef} variant="outline" className={`h-11 w-11 shrink-0 px-0 ${props.isEmpty ? "" : "md:hidden"}`} disabled={props.busy} aria-label="Meer website-acties"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenu.Trigger>
         <DropdownMenu.Portal>
           <DropdownMenu.Content align="end" sideOffset={6} className={`${menuContentClass} max-h-[70dvh] overflow-y-auto`}>
             <DropdownMenu.Label className="px-3 py-2 text-xs font-semibold text-muted-foreground">Website-acties</DropdownMenu.Label>
@@ -140,7 +141,7 @@ function MobileWebsiteActions(props: EditorWebsiteToolbarProps & { onRequestRena
           <Dialog.Overlay className="fixed inset-0 z-[100] bg-black/40" />
           <Dialog.Content onCloseAutoFocus={(event) => { event.preventDefault(); menuButtonRef.current?.focus() }} className="fixed inset-x-3 bottom-3 z-[101] rounded-xl border border-border bg-background p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl">
             <Dialog.Title className="pr-9 text-lg font-semibold">Website-taal</Dialog.Title>
-            <Dialog.Description className="mb-4 mt-1 text-sm text-muted-foreground">Kies de taal die u wilt bewerken of beheer uw talen.</Dialog.Description>
+            <Dialog.Description className="mb-4 mt-1 text-sm text-muted-foreground">Kies de taal die je wilt bewerken of beheer je talen.</Dialog.Description>
             {props.languageControl}
             <Dialog.Close asChild><Button variant="ghost" className="absolute right-2 top-2 h-11 w-11 px-0" aria-label="Taalkeuze sluiten"><X className="h-4 w-4" /></Button></Dialog.Close>
           </Dialog.Content>

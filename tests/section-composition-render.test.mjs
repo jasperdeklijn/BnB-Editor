@@ -5,7 +5,7 @@ import path from "node:path"
 import { createRequire } from "node:module"
 import { Writable } from "node:stream"
 import React from "react"
-import { renderToPipeableStream } from "react-dom/server"
+import { renderToPipeableStream, renderToStaticMarkup } from "react-dom/server"
 import ts from "typescript"
 
 const require = createRequire(import.meta.url)
@@ -31,6 +31,22 @@ function load(file) {
 }
 const { SectionRenderer } = load("components/editor/section-renderer.tsx")
 const { createSectionElement } = load("lib/section-composition.ts")
+
+test("intro fields keep accessible names across multiple mounted editors", () => {
+  const { HeroSectionEditor } = load("components/sections/hero-section.editor.tsx")
+  const section = { id: "intro", type: "hero", data: { title: "Welkom", subtitle: "Een lange beschrijving", ctaText: "Contact" } }
+  const editor = React.createElement(HeroSectionEditor, { section, updateField() {}, sectionTargetOptions: [] })
+  const html = renderToStaticMarkup(React.createElement(React.Fragment, null, editor, editor))
+  const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1])
+  assert.equal(new Set(ids).size, ids.length, "mounted editors must not share field ids")
+  for (const name of ["Titel", "Ondertitel", "Knoptekst"]) {
+    const labels = [...html.matchAll(new RegExp(`<label[^>]*for="([^"]+)"[^>]*>${name}</label>`, "g"))]
+    assert.equal(labels.length, 2, name)
+    for (const [, id] of labels) assert.ok(ids.includes(id), `${name} has an associated control`)
+  }
+  assert.match(html, /<textarea[^>]*rows="4"/)
+  assert.ok(html.indexOf(">Titel</label>") < html.indexOf("Icoon bij de knop"))
+})
 async function render(section, isPreview = true) {
   return new Promise((resolve, reject) => {
     const chunks = []

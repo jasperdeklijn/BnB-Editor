@@ -129,7 +129,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
 
     return (
       <section
-        className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`}
+        className={`px-4 ${layout.section} @min-[640px]:px-6 ${styles?.fontFamily || ""}`}
         style={sectionStyle}
        data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
         <div data-section-content className={`mx-auto ${layout.container} text-center`} data-media-content>
@@ -137,7 +137,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
             <SectionIcon icon={data.headingIcon} fallback="tabler:phone" className="h-4 w-4" />
             WhatsApp
           </div>
-          <EditableText as="h2" data={data} path={["title"]} value={title} isPreview={isPreview} onUpdate={onUpdate} className="mb-3 text-balance text-3xl font-bold text-amber-950 md:text-4xl" style={textStyle} />
+          <EditableText as="h2" data={data} path={["title"]} value={title} isPreview={isPreview} onUpdate={onUpdate} className="mb-3 text-balance text-3xl font-bold text-amber-950 @min-[768px]:text-4xl" style={textStyle} />
           {subtitle && (
             <EditableText as="p" data={data} path={["subtitle"]} value={subtitle} isPreview={isPreview} onUpdate={onUpdate} className="mb-8 text-muted-foreground" style={textStyle} multiline />
           )}
@@ -166,11 +166,11 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
 
   return (
     <section
-      className={`px-4 ${layout.section} sm:px-6 ${styles?.fontFamily || ""}`}
+      className={`px-4 ${layout.section} @min-[640px]:px-6 ${styles?.fontFamily || ""}`}
       style={sectionStyle}
      data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
-      <div data-section-columns={layout.layout === "split" || layout.layout === "showcase" || undefined} data-section-content className={`mx-auto ${layout.layout === "split" || layout.layout === "showcase" ? "grid max-w-6xl gap-8 md:grid-cols-[0.8fr_1.2fr] md:items-start" : layout.container}`} data-media-content>
-        <div className={`mb-10 ${layout.layout === "split" || layout.layout === "showcase" ? "md:mb-0 md:text-left" : layout.heading}`}>
+      <div data-section-columns={layout.layout === "split" || layout.layout === "showcase" || undefined} data-section-content className={`mx-auto ${layout.layout === "split" || layout.layout === "showcase" ? "grid max-w-6xl gap-8 @min-[768px]:grid-cols-[0.8fr_1.2fr] @min-[768px]:items-start" : layout.container}`} data-media-content>
+        <div className={`mb-10 ${layout.layout === "split" || layout.layout === "showcase" ? "@min-[768px]:mb-0 @min-[768px]:text-left" : layout.heading}`}>
           <div className="mb-3 inline-flex items-center justify-center gap-2 rounded-full bg-[var(--section-accent)] px-4 py-2 text-sm font-medium text-[var(--section-accent-foreground)]">
             <SectionIcon icon={data.headingIcon} fallback={requestFormIcon(requestType)} className="h-4 w-4" />
             {localizedLabel}
@@ -182,7 +182,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
             value={title}
             isPreview={isPreview}
             onUpdate={onUpdate}
-            className="mb-2 text-balance text-3xl font-bold text-amber-950 md:text-4xl"
+            className="mb-2 text-balance text-3xl font-bold text-amber-950 @min-[768px]:text-4xl"
             style={textStyle}
           />
           {subtitle && (
@@ -212,7 +212,7 @@ export function RequestFormSection({ data, styles, isPreview, onUpdate }: Reques
                   onChange={(e) => update("company", e.target.value)}
                 />
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 @min-[640px]:grid-cols-2">
                 {fields.includes("name") && (
                   <div className="space-y-1.5">
                     <Label htmlFor="req-name">{messages.name} *</Label>

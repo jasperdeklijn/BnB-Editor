@@ -201,6 +201,14 @@ export function SectionsSelector({ className = "", userId, onSectionAdded, onSec
   const [images, setImages] = useState<EditorImage[]>([])
   const [isLoadingImages, setIsLoadingImages] = useState(false)
   const [draggingImage, setDraggingImage] = useState<string | null>(null)
+  const starterTypes: SectionType[] = ["nav", "hero", "about", "services", "contact", "footer"]
+  const starterSections = starterTypes.flatMap((type) => selectableSectionDefinitions.filter((definition) => definition.type === type))
+  const otherSections = selectableSectionDefinitions.filter((definition) => !starterTypes.includes(definition.type))
+  const renderCards = (definitions: typeof selectableSectionDefinitions) => definitions.map(({ type, label, icon: Icon, description }) => (
+    <SectionCard key={type} type={type} label={label} Icon={Icon} description={description}
+      collapsed={collapsed} isDragging={draggingType === type} onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd} onAddSection={onSectionAddRequest} currentPlan={currentPlan} />
+  ))
 
   // Listen for touch drag drops so we can call onSectionAdded
   useEffect(() => {
@@ -334,28 +342,21 @@ export function SectionsSelector({ className = "", userId, onSectionAdded, onSec
           </div>
 
           <div className={`space-y-2 ${collapsed ? "flex flex-col items-center" : ""}`}>
-            {selectableSectionDefinitions.map(({ type, label, icon: Icon, description }) => (
-              <SectionCard
-                key={type}
-                type={type}
-                label={label}
-                Icon={Icon}
-                description={description}
-                collapsed={collapsed}
-                isDragging={draggingType === type}
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-                onAddSection={onSectionAddRequest}
-                currentPlan={currentPlan}
-              />
-            ))}
+            {collapsed ? renderCards([...starterSections, ...otherSections]) : <>
+              <h4 className="text-xs font-medium text-muted-foreground">Basis voor je pagina</h4>
+              {renderCards(starterSections)}
+              <details className="pt-2">
+                <summary className="cursor-pointer rounded-md py-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Meer secties</summary>
+                <div className="mt-2 space-y-2">{renderCards(otherSections)}</div>
+              </details>
+            </>}
           </div>
 
           {!collapsed && (
             <div className="mt-6 rounded-xl border border-dashed border-border bg-secondary/70 p-3 text-center animate-in fade-in slide-in-from-left-2 duration-300">
               <p className="text-xs text-muted-foreground">
-                <span className="md:hidden">Op mobiel kiest u na het tikken waar de sectie op de pagina komt.</span>
-                <span className="hidden md:inline">Een klik plaatst de sectie na uw selectie, of onderaan als niets geselecteerd is.</span>
+                <span className="md:hidden">Op mobiel kies je na het tikken waar de sectie op de pagina komt.</span>
+                <span className="hidden md:inline">Een klik plaatst de sectie na je selectie, of onderaan als niets geselecteerd is.</span>
               </p>
             </div>
           )}

@@ -124,7 +124,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
   if (layout === "centered") {
     return (
       <section data-editor-background
-        className={`relative flex min-h-[400px] items-center justify-center overflow-hidden px-4 py-12 sm:min-h-[500px] sm:px-6 sm:py-16 md:min-h-[600px] md:py-24 ${styles?.fontFamily || ""} ${styleTypeRootClass}`}
+        className={`relative flex min-h-[400px] items-center justify-center overflow-hidden px-4 py-12 @min-[640px]:min-h-[500px] @min-[640px]:px-6 @min-[640px]:py-16 @min-[768px]:min-h-[600px] @min-[768px]:py-24 ${styles?.fontFamily || ""} ${styleTypeRootClass}`}
         style={{
           ...colorVars,
           backgroundColor: styleBackgroundColor || "#fffbeb",
@@ -143,7 +143,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             value={title}
             isPreview={isPreview}
             onUpdate={onUpdate}
-            className={`mb-4 text-balance text-3xl font-bold tracking-tight text-amber-950 sm:mb-6 sm:text-4xl md:text-5xl lg:text-6xl ${styleTypeTitleClass}`}
+            className={`mb-4 text-balance text-3xl font-bold tracking-tight text-amber-950 @min-[640px]:mb-6 @min-[640px]:text-4xl @min-[768px]:text-5xl @min-[1024px]:text-6xl ${styleTypeTitleClass}`}
             style={textStyle}
           />
           <EditableText
@@ -154,7 +154,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             isPreview={isPreview}
             onUpdate={onUpdate}
             multiline
-            className={`mb-6 text-pretty text-base text-amber-900 sm:mb-8 sm:text-lg md:text-xl ${styleTypeBodyClass}`}
+            className={`mb-6 text-pretty text-base text-amber-900 @min-[640px]:mb-8 @min-[640px]:text-lg @min-[768px]:text-xl ${styleTypeBodyClass}`}
             style={textStyle}
           />
           {ctaEnabled ? <Button asChild size="lg" className={`bg-[var(--section-accent)] text-[var(--section-accent-foreground)] hover:brightness-90 ${styleTypeButtonClass}`}>
@@ -169,14 +169,14 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
   if (layout === "split") {
     return (
       <section data-editor-background
-        className={`relative min-h-[400px] overflow-hidden sm:min-h-[500px] lg:min-h-[600px] ${styles?.fontFamily || ""} ${styleTypeRootClass}`}
+        className={`relative min-h-[400px] overflow-hidden @min-[640px]:min-h-[500px] @min-[1024px]:min-h-[600px] ${styles?.fontFamily || ""} ${styleTypeRootClass}`}
         style={colorVars}
        data-media-host><BackgroundMedia src={["split", "split-reverse", "minimal"].includes(layout) ? undefined : styles?.backgroundImage} position={styles?.backgroundPosition} />
-        <div data-section-content data-section-columns className="flex min-h-[inherit] flex-col md:flex-row" data-media-content>
+        <div data-section-content data-section-columns className="flex min-h-[inherit] flex-col @min-[768px]:flex-row" data-media-content>
           {/* Image Side - Full left half */}
           <div
             data-section-image data-editor-background data-media-host
-            className="relative min-h-[280px] w-full sm:min-h-[400px] md:min-h-[500px] lg:min-h-[600px] md:w-1/2"
+            className="relative min-h-[280px] w-full @min-[640px]:min-h-[400px] @min-[768px]:min-h-[500px] @min-[1024px]:min-h-[600px] @min-[768px]:w-1/2"
             style={{
               backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url(${styles.backgroundImage})`
                 : "url('/placeholder.svg?height=800&width=800')",
@@ -190,7 +190,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
 
           {/* Text Side - Clean background */}
           <div
-            className={`flex w-full flex-col justify-center px-8 py-12 md:w-1/2 md:px-12 lg:px-16 ${styleTypePanelClass}`}
+            className={`flex w-full flex-col justify-center px-8 py-12 @min-[768px]:w-1/2 @min-[768px]:px-12 @min-[1024px]:px-16 ${styleTypePanelClass}`}
             style={{ backgroundColor: styleBackgroundColor || "#fffbeb" }}
           >
             <EditableText
@@ -200,7 +200,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
               value={title}
               isPreview={isPreview}
               onUpdate={onUpdate}
-              className={`mb-4 text-balance text-3xl font-bold tracking-tight text-amber-950 sm:text-4xl md:text-5xl ${styleTypeTitleClass}`}
+              className={`mb-4 text-balance text-3xl font-bold tracking-tight text-amber-950 @min-[640px]:text-4xl @min-[768px]:text-5xl ${styleTypeTitleClass}`}
               style={textStyle}
             />
             <EditableText
@@ -211,7 +211,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
               isPreview={isPreview}
               onUpdate={onUpdate}
               multiline
-              className={`mb-6 text-pretty text-base text-amber-800 sm:text-lg md:text-xl ${styleTypeBodyClass}`}
+              className={`mb-6 text-pretty text-base text-amber-800 @min-[640px]:text-lg @min-[768px]:text-xl ${styleTypeBodyClass}`}
               style={textStyle}
             />
             {ctaEnabled ? <div><Button asChild size="lg" className={`bg-[var(--section-accent)] text-[var(--section-accent-foreground)] hover:brightness-90 ${styleTypeButtonClass}`}><WebsiteLink href={ctaHref} className="inline-flex items-center justify-center gap-2"><SectionIcon icon={data.ctaIcon ?? null} /><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></WebsiteLink></Button></div> : null}
@@ -225,7 +225,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
   if (layout === "fullwidth") {
     return (
       <section data-editor-background
-        className={`relative flex min-h-[500px] items-center justify-center overflow-hidden sm:min-h-[600px] md:min-h-[700px] ${styles?.fontFamily || ""} ${styleTypeRootClass}`}
+        className={`relative flex min-h-[500px] items-center justify-center overflow-hidden @min-[640px]:min-h-[600px] @min-[768px]:min-h-[700px] ${styles?.fontFamily || ""} ${styleTypeRootClass}`}
         style={{
           ...colorVars,
           backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url(${styles.backgroundImage})`
@@ -246,7 +246,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             value={title}
             isPreview={isPreview}
             onUpdate={onUpdate}
-            className={`mb-6 text-balance text-4xl font-bold tracking-tight text-white drop-shadow-lg sm:text-5xl md:text-6xl lg:text-7xl ${styleTypeTitleClass}`}
+            className={`mb-6 text-balance text-4xl font-bold tracking-tight text-white drop-shadow-lg @min-[640px]:text-5xl @min-[768px]:text-6xl @min-[1024px]:text-7xl ${styleTypeTitleClass}`}
             style={textStyle}
           />
           <EditableText
@@ -257,7 +257,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             isPreview={isPreview}
             onUpdate={onUpdate}
             multiline
-            className={`mb-8 text-pretty text-lg text-white/90 drop-shadow-md sm:text-xl md:text-2xl ${styleTypeBodyClass}`}
+            className={`mb-8 text-pretty text-lg text-white/90 drop-shadow-md @min-[640px]:text-xl @min-[768px]:text-2xl ${styleTypeBodyClass}`}
             style={textStyle}
           />
           {ctaEnabled ? <Button asChild size="lg" className={`bg-[var(--section-accent)] text-[var(--section-accent-foreground)] shadow-lg transition-all hover:brightness-90 hover:shadow-xl ${styleTypeButtonClass}`}><WebsiteLink href={ctaHref} className="inline-flex items-center justify-center gap-2"><SectionIcon icon={data.ctaIcon ?? null} /><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></WebsiteLink></Button> : null}
@@ -270,7 +270,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
   if (layout === "minimal") {
     return (
       <section data-editor-background
-        className={`relative flex min-h-[400px] items-center justify-center px-4 py-12 sm:px-6 sm:py-16 md:py-24 ${styles?.fontFamily || ""} ${styleTypeRootClass}`}
+        className={`relative flex min-h-[400px] items-center justify-center px-4 py-12 @min-[640px]:px-6 @min-[640px]:py-16 @min-[768px]:py-24 ${styles?.fontFamily || ""} ${styleTypeRootClass}`}
         style={{
           ...colorVars,
           backgroundColor: styleBackgroundColor || "#ffffff",
@@ -284,7 +284,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             value={title}
             isPreview={isPreview}
             onUpdate={onUpdate}
-            className={`mb-4 text-balance text-3xl font-bold tracking-tight sm:mb-6 sm:text-4xl md:text-5xl lg:text-6xl ${styleTypeTitleClass}`}
+            className={`mb-4 text-balance text-3xl font-bold tracking-tight @min-[640px]:mb-6 @min-[640px]:text-4xl @min-[768px]:text-5xl @min-[1024px]:text-6xl ${styleTypeTitleClass}`}
             style={textStyle}
           />
           <EditableText
@@ -295,7 +295,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             isPreview={isPreview}
             onUpdate={onUpdate}
             multiline
-            className={`mb-6 text-pretty text-base sm:mb-8 sm:text-lg md:text-xl ${styleTypeBodyClass}`}
+            className={`mb-6 text-pretty text-base @min-[640px]:mb-8 @min-[640px]:text-lg @min-[768px]:text-xl ${styleTypeBodyClass}`}
             style={textStyle}
           />
           {ctaEnabled ? <Button asChild size="lg" className={`bg-[var(--section-accent)] text-[var(--section-accent-foreground)] hover:brightness-90 ${styleTypeButtonClass}`}><WebsiteLink href={ctaHref} className="inline-flex items-center justify-center gap-2"><SectionIcon icon={data.ctaIcon ?? null} /><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></WebsiteLink></Button> : null}
@@ -308,7 +308,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
   if (layout === "card") {
     return (
       <section data-editor-background
-        className={`relative flex min-h-[500px] items-center justify-center overflow-hidden sm:min-h-[600px] md:min-h-[700px] ${styles?.fontFamily || ""} ${styleTypeRootClass}`}
+        className={`relative flex min-h-[500px] items-center justify-center overflow-hidden @min-[640px]:min-h-[600px] @min-[768px]:min-h-[700px] ${styles?.fontFamily || ""} ${styleTypeRootClass}`}
         style={{
           ...colorVars,
           backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url(${styles.backgroundImage})`
@@ -329,7 +329,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             value={title}
             isPreview={isPreview}
             onUpdate={onUpdate}
-            className={`mb-4 text-balance text-2xl font-bold tracking-tight text-amber-950 sm:text-3xl md:text-4xl ${styleTypeTitleClass}`}
+            className={`mb-4 text-balance text-2xl font-bold tracking-tight text-amber-950 @min-[640px]:text-3xl @min-[768px]:text-4xl ${styleTypeTitleClass}`}
             style={textStyle}
           />
           <EditableText
@@ -340,7 +340,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
             isPreview={isPreview}
             onUpdate={onUpdate}
             multiline
-            className={`mb-6 text-pretty text-sm text-amber-800 sm:text-base ${styleTypeBodyClass}`}
+            className={`mb-6 text-pretty text-sm text-amber-800 @min-[640px]:text-base ${styleTypeBodyClass}`}
             style={textStyle}
           />
           {ctaEnabled ? <Button asChild size="lg" className={`w-full bg-[var(--section-accent)] text-[var(--section-accent-foreground)] hover:brightness-90 ${styleTypeButtonClass}`}><WebsiteLink href={ctaHref} className="inline-flex items-center justify-center gap-2"><SectionIcon icon={data.ctaIcon ?? null} /><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></WebsiteLink></Button> : null}
@@ -353,13 +353,13 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
   if (layout === "split-reverse") {
     return (
       <section data-editor-background
-        className={`relative min-h-[400px] overflow-hidden sm:min-h-[500px] lg:min-h-[600px] ${styles?.fontFamily || ""} ${styleTypeRootClass}`}
+        className={`relative min-h-[400px] overflow-hidden @min-[640px]:min-h-[500px] @min-[1024px]:min-h-[600px] ${styles?.fontFamily || ""} ${styleTypeRootClass}`}
         style={colorVars}
        data-media-host><BackgroundMedia src={["split", "split-reverse", "minimal"].includes(layout) ? undefined : styles?.backgroundImage} position={styles?.backgroundPosition} />
-        <div data-section-content data-section-columns className="flex min-h-[inherit] flex-col md:flex-row" data-media-content>
+        <div data-section-content data-section-columns className="flex min-h-[inherit] flex-col @min-[768px]:flex-row" data-media-content>
           {/* Text Side - Clean background */}
           <div
-            className={`flex w-full flex-col justify-center px-8 py-12 md:w-1/2 md:px-12 lg:px-16 ${styleTypePanelClass}`}
+            className={`flex w-full flex-col justify-center px-8 py-12 @min-[768px]:w-1/2 @min-[768px]:px-12 @min-[1024px]:px-16 ${styleTypePanelClass}`}
             style={{ backgroundColor: styleBackgroundColor || "#fffbeb" }}
           >
             <EditableText
@@ -369,7 +369,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
               value={title}
               isPreview={isPreview}
               onUpdate={onUpdate}
-              className={`mb-4 text-balance text-3xl font-bold tracking-tight text-amber-950 sm:text-4xl md:text-5xl ${styleTypeTitleClass}`}
+              className={`mb-4 text-balance text-3xl font-bold tracking-tight text-amber-950 @min-[640px]:text-4xl @min-[768px]:text-5xl ${styleTypeTitleClass}`}
               style={textStyle}
             />
             <EditableText
@@ -380,7 +380,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
               isPreview={isPreview}
               onUpdate={onUpdate}
               multiline
-              className={`mb-6 text-pretty text-base text-amber-800 sm:text-lg md:text-xl ${styleTypeBodyClass}`}
+              className={`mb-6 text-pretty text-base text-amber-800 @min-[640px]:text-lg @min-[768px]:text-xl ${styleTypeBodyClass}`}
               style={textStyle}
             />
             {ctaEnabled ? <div><Button asChild size="lg" className={`bg-[var(--section-accent)] text-[var(--section-accent-foreground)] hover:brightness-90 ${styleTypeButtonClass}`}><WebsiteLink href={ctaHref} className="inline-flex items-center justify-center gap-2"><SectionIcon icon={data.ctaIcon ?? null} /><EditableText data={data} path={["ctaText"]} value={ctaText} isPreview={isPreview} onUpdate={onUpdate} /></WebsiteLink></Button></div> : null}
@@ -389,7 +389,7 @@ export function HeroSection({ data, isPreview, styles, onUpdate }: HeroSectionPr
           {/* Image Side - Full right half */}
           <div
             data-section-image data-editor-background data-media-host
-            className={`relative min-h-[280px] w-full sm:min-h-[400px] md:min-h-[500px] lg:min-h-[600px] md:w-1/2`}
+            className={`relative min-h-[280px] w-full @min-[640px]:min-h-[400px] @min-[768px]:min-h-[500px] @min-[1024px]:min-h-[600px] @min-[768px]:w-1/2`}
             style={{
               backgroundImage: styles?.backgroundImage && !isVideoSource(styles.backgroundImage) ? `url(${styles.backgroundImage})`
                 : "url('/placeholder.svg?height=800&width=800')",

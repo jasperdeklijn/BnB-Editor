@@ -407,7 +407,7 @@ function GridLayout({
   textStyle: React.CSSProperties
 } & ServiceLayoutActions) {
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-6 @min-[640px]:grid-cols-2 @min-[1024px]:grid-cols-3">
       {services.map((service) => (
         <div
           key={service.id}
@@ -597,7 +597,7 @@ function FeaturedLayout({
 
       {/* Rest in grid */}
       {rest.length > 0 && (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 @min-[640px]:grid-cols-2 @min-[1024px]:grid-cols-3">
           {rest.map((service) => (
             <div
               key={service.id}
@@ -661,17 +661,17 @@ function MagazineLayout({
           <div
             key={service.id}
             className={`group flex flex-col overflow-hidden rounded-2xl bg-[var(--section-surface)] shadow-sm hover:shadow-md transition-shadow ${
-              isReversed ? "sm:flex-row-reverse" : "sm:flex-row"
+              isReversed ? "@min-[640px]:flex-row-reverse" : "@min-[640px]:flex-row"
             }`}
           >
-            <div className="relative aspect-square w-full shrink-0 self-start overflow-hidden sm:w-1/2">
+            <div className="relative aspect-square w-full shrink-0 self-start overflow-hidden @min-[640px]:w-1/2">
               <ServiceImage
                 serviceId={service.id} images={service.images}
                 name={service.name}
                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
             </div>
-            <div className="sm:w-1/2 p-8 sm:p-10 flex flex-col justify-center">
+            <div className="@min-[640px]:w-1/2 p-8 @min-[640px]:p-10 flex flex-col justify-center">
               <span className="mb-3 text-xs font-semibold uppercase tracking-widest text-[var(--section-accent)]">
                 Dienst {i + 1}
               </span>
@@ -1576,8 +1576,8 @@ function ServicesBookingSpace({
 
   if (settings.mode === "cta") {
     return (
-      <div className="mt-10 rounded-2xl border border-border bg-secondary p-5 shadow-sm sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-10 rounded-2xl border border-border bg-secondary p-5 shadow-sm @min-[640px]:p-6">
+        <div className="flex flex-col gap-4 @min-[640px]:flex-row @min-[640px]:items-center @min-[640px]:justify-between">
           <div className="min-w-0">
             <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-primary">
               <CalendarDays className="h-3.5 w-3.5" />
@@ -1606,8 +1606,8 @@ function ServicesBookingSpace({
 
   return (
     <div className="mt-10 overflow-hidden rounded-2xl border border-border bg-[var(--section-surface)] text-[var(--section-surface-foreground)] shadow-sm">
-      <div className="grid gap-0 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="bg-secondary p-5 sm:p-6">
+      <div className="grid gap-0 @min-[1024px]:grid-cols-[0.9fr_1.1fr]">
+        <div className="bg-secondary p-5 @min-[640px]:p-6">
           <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold text-primary">
             <CalendarDays className="h-3.5 w-3.5" />
             {isAccommodation ? messages.bookingRequest : messages.appointmentRequest}
@@ -1621,7 +1621,7 @@ function ServicesBookingSpace({
           ) : null}
         </div>
 
-        <div className="p-5 sm:p-6">
+        <div className="p-5 @min-[640px]:p-6">
           {status === "success" ? (
             <div className="flex min-h-64 flex-col items-center justify-center gap-3 text-center">
               <CheckCircle className="h-10 w-10 text-primary" />
@@ -1691,7 +1691,7 @@ function ServicesBookingSpace({
 
                   {activeBookingMode === "stay" ? (
                     <div className="space-y-3">
-                      <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="grid gap-3 @min-[640px]:grid-cols-2">
                         <div className={`rounded-lg border bg-white px-3 py-2.5 ${stayDateSelectionStep === "arrival" ? "border-[var(--section-accent)] ring-2 ring-[var(--section-accent)]/15" : "border-border"}`}>
                           <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{flowCopy.arrival}</p>
                           <p className="mt-0.5 text-sm font-semibold text-foreground" data-testid="services-selected-arrival">
@@ -1726,7 +1726,7 @@ function ServicesBookingSpace({
                         {availabilityLoading ? (
                           <p className="text-sm text-muted-foreground" aria-live="polite">{flowCopy.loading}</p>
                         ) : availability?.appointment_slots.length ? (
-                          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                          <div className="grid grid-cols-2 gap-2 @min-[640px]:grid-cols-3">
                             {availability.appointment_slots.map((slot) => {
                               const label = new Intl.DateTimeFormat(locale || "nl-NL", {
                                 hour: "2-digit",
@@ -1768,7 +1768,7 @@ function ServicesBookingSpace({
                 </div>
               ) : null}
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 @min-[640px]:grid-cols-2">
                 <div className="space-y-1.5">
                   <label htmlFor="services-booking-name" className="text-sm font-medium text-foreground">
                     {messages.name} *
@@ -1798,7 +1798,7 @@ function ServicesBookingSpace({
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3 @min-[640px]:grid-cols-2">
                 <div className="space-y-1.5">
                   <label htmlFor="services-booking-phone" className="text-sm font-medium text-foreground">
                     {messages.phone}
@@ -2109,6 +2109,7 @@ function ServicesSectionContent({
       style={sectionStyle}
      data-media-host><BackgroundMedia src={styles?.backgroundImage} position={styles?.backgroundPosition} />
       <div data-section-content className="mx-auto max-w-6xl" data-media-content>
+        <div className="@container">
         <EditableText
           as="h2"
           data={data}
@@ -2116,7 +2117,7 @@ function ServicesSectionContent({
           value={title}
           isPreview={isPreview}
           onUpdate={onUpdate}
-          className="mb-8 text-balance text-center text-2xl font-bold text-foreground sm:mb-10 sm:text-3xl md:mb-12 md:text-4xl"
+          className="mb-8 text-balance text-center text-2xl font-bold text-foreground @min-[640px]:mb-10 @min-[640px]:text-3xl @min-[768px]:mb-12 @min-[768px]:text-4xl"
           style={textStyle}
         />
 
@@ -2179,6 +2180,7 @@ function ServicesSectionContent({
           locale={activeLocale}
           isPreview={isPreview}
         />}
+        </div>
         {activeService ? (
           <ServiceInfoPopup
             service={activeService}
