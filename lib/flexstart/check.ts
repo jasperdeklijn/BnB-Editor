@@ -28,14 +28,17 @@ export function runFlexCheck(input: CheckInput): CheckResult {
   const publishedPage = (pageId: string) => input.pages?.some((page) => page.id === pageId && page.includeInPublication)
   const validTarget = (href: unknown, sourcePageId?: string | null, contactOnly = false) => {
     if (typeof href !== "string" || !href) return false
-    const target = parseWebsiteLink(href)
+    // The editor and page loader resolve legacy type aliases to the first section on this page.
+    const alias = sections.find((section) => href === `#${section.type}` && (!section.pageId || section.pageId === sourcePageId))
+    const resolvedHref = alias ? `#section-${alias.id}` : href
+    const target = parseWebsiteLink(resolvedHref)
     if (target.type === "page") return Boolean(publishedPage(target.pageId))
     if (target.type === "section") return Boolean(publishedPage(target.pageId)) && sections.some((section) =>
       section.id === target.sectionId && section.pageId === target.pageId
       && (!contactOnly || ["contact", "request_form", "services"].includes(section.type)))
-    if (!safeWebsiteUrl(href)) return false
-    if (/^(tel:|mailto:|https?:\/\/)/i.test(href)) return contactOnly || /^https?:\/\//i.test(href)
-    return href.startsWith("#section-") && sections.some((section) => `#section-${section.id}` === href
+    if (!safeWebsiteUrl(resolvedHref)) return false
+    if (/^(tel:|mailto:|https?:\/\/)/i.test(resolvedHref)) return contactOnly || /^https?:\/\//i.test(resolvedHref)
+    return resolvedHref.startsWith("#section-") && sections.some((section) => `#section-${section.id}` === resolvedHref
       && (!sourcePageId || section.pageId === sourcePageId)
       && (!contactOnly || ["contact", "request_form", "services"].includes(section.type)))
   }

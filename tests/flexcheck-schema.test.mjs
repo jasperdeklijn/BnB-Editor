@@ -39,6 +39,20 @@ test("FlexCheck accepts a privacy page selected in the editor but rejects unavai
   for (const href of ["page:draft", "page:missing", "javascript:alert(1)", "mailto:privacy@example.test"]) assert.equal(state(href), "required", href)
 })
 
+test("FlexCheck resolves legacy section aliases on the current page like the preview", () => {
+  const input = {
+    website: { id: "site", title: "Test", draft_version: "v1" }, business: null, services: [], hasDestination: false, domainActive: false,
+    pages: [{ id: "home", includeInPublication: true }, { id: "other", includeInPublication: true }],
+  }
+  const intro = { id: "intro", type: "hero", pageId: "home", data: { ctaText: "Contact", ctaHref: "#contact" } }
+  const contact = { id: "contact", type: "contact", pageId: "home", data: {} }
+  const state = (sections) => runFlexCheck({ ...input, sections }).items.find((item) => item.id === "cta").state
+  assert.equal(state([intro, contact]), "ready")
+  assert.equal(state([intro]), "required")
+  assert.equal(state([intro, { ...contact, pageId: "other" }]), "required")
+  assert.equal(state([{ ...intro, data: { ...intro.data, ctaHref: "#hero" } }, contact]), "required")
+})
+
 // Execute the loader's selected columns and owner filters against PostgreSQL,
 // rather than accepting arbitrary column names in a mocked response.
 function clientFor(db) {

@@ -2,6 +2,27 @@
 
 Datum: 10 november 2026. Getest op flexpagina.nl met toestemming om ‘Mijn website 4’ te wijzigen. De eerdere acht verbeterpunten zijn opnieuw doorlopen met echte opgeslagen inhoud.
 
+## Hercontrole na push — 10 november 2026
+
+De aanvullende wijzigingen hieronder zijn inmiddels live waargenomen na opnieuw laden van de editor. De oorspronkelijke bevindingen blijven als historie staan.
+
+| Punt | Hercontrole |
+| --- | --- |
+| 1. Responsive preview | Editor en losse preview komen nu overeen: tablet heeft 753 pixels inhoud en een titel van 36 pixels; telefoon heeft 375 pixels inhoud en een titel van 30 pixels. De losse telefoonpreview heeft geen horizontale overflow. |
+| 2. Veldlabels | Titel, Ondertitel en Knoptekst blijven via hun toegankelijke naam bedienbaar. |
+| 3. Tekstbewerking | Knoptekst tijdelijk aangepast, Opgeslagen afgewacht en herladen. De wijziging bleef behouden en is daarna teruggezet. |
+| 4. Kalender | Het lege maand- en weekraster is opnieuw aanwezig. De dagweergave toont de juiste datum. Het toevoegen van afspraken is bij deze hercontrole niet opnieuw uitgevoerd. |
+| 5. Eerste ingebruikname en links | De sectiegroepen blijven aanwezig. Een tijdelijke #contact-link wordt nu correct als Neem contact op weergegeven en verwijst naar dezelfde sectie als de preview. De basisopzet is niet opnieuw aangemaakt omdat website 4 al inhoud bevat. |
+| 6. Aanvragen | Zoeken zonder resultaten en Filters wissen opnieuw uitgevoerd. De URL werd /editor/requests en de begeleiding Ontvang je eerste aanvraag keerde terug. |
+| 7. FlexCheck | De opgeslagen interne contactknop en websitebrede SEO zijn Gereed. Lege diensten staan op Vereist en afbeeldingen op Aanbevolen. Het totaal is nu terecht 5/12: tegenover de eerdere 6 zijn twee onterechte vinkjes verwijderd en de contactknop toegevoegd. Een ingestelde privacypagina is niet opnieuw live getest. |
+| 8. Terminologie | De lege dienstensectie gebruikt nu Diensten beheren, Nog geen diensten aangemaakt en Diensten aanmaken. FlexCheck gebruikt voettekst. |
+
+Er bleef één randgeval over: een werkende oude #contact-link kreeg in FlexCheck nog Vereist. Dit is live gereproduceerd, waarna de knoptekst en de oorspronkelijke stabiele sectieverwijzing zijn hersteld. De lokale controle herkent nu ook deze oude aliassen binnen dezelfde pagina; ontbrekende doelen, doelen op een andere pagina en verwijzingen naar niet-contactsecties worden afgewezen. **Deze laatste correctie is nog niet gedeployd.**
+
+Website 4 blijft offline. Er zijn geen afspraken, aanvragen of e-mails aangemaakt en er is niets gepubliceerd. De editor en FlexCheck registreerden geen consolefouten tijdens de hercontrole. Bewijsbeelden staan bij de gespreksartefacten als ux-hercontrole-editor.jpg en ux-hercontrole-flexcheck.jpg.
+
+De lokale aliascorrectie is gecontroleerd met 27 geslaagde tests en ESLint. De TypeScript-controle heeft opnieuw 111 bestaande fouten buiten de gewijzigde bestanden en geen fouten in de gewijzigde bestanden.
+
 ## Resultaten per punt
 
 | Punt | Live resultaat |
